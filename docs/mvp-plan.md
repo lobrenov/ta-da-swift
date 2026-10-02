@@ -46,12 +46,13 @@ Description markdown (first paragraph = summary).
 - [x] Every GFM checklist item in the body is a subtask (done/total)
 - [ ] …
 ```
-Title = filename without `.md`. Projects: same keys minus `project`. Unknown keys preserved. Only `[ ]`/`[x]`/`[X]` count (Obsidian's `[/]` etc. stay text).
+Title = filename without `.md`. Projects: same keys minus `project`. Unknown keys preserved. Checkboxes follow the Alternative Checkboxes Reference Set; which states count as subtasks is in `docs/file-format.md` (changed in M1).
 
 ## Editor design (the riskiest part)
 - **Live mode** (right pane of Today / Project / Agenda artboards): `NativeTextViewWrapper(text: $body, configuration:, header: { title + PropertyTable })`. The engine gets **only the body**; frontmatter is rendered natively by `PropertyTable` and spliced back on save — sidestepping the engine's lack of frontmatter support. Its `header:` slot scrolls title/properties with the document, as designed. Wikilinks via a `WikiLinkResolver` backed by the index; `onLinkClick` navigates. Engine checkbox clicks edit text in place → reparse updates subtask counts.
 - **Source mode** (Editor artboard): our own `SourceTextView` — `NSTextView` (TextKit 1) + line-number ruler + highlighting from the artboard's role table (key=accent, value=fg, string=done, date=due, heading=strong, punct/check=muted, checkDone=done, link=link). Whole file incl. frontmatter. Built ourselves because the engine's raw mode has no colouring/line numbers and drops undo on switch; it also doubles as the fallback editor and ports to `UITextView`. File inspector = SwiftUI `.inspector` panel.
 - **Engine risk** (pre-1.0, ~one maintainer, API may change): pin `exact: "0.13.0"`, import it in one file, fork into `libs/` if a patch is needed. Known quirks: `[[Target|Alias]]` displays backwards vs Obsidian (file text untouched); no selection/focus binding (external edits just reset text); no checkbox veto.
+- **M1 outcome: go-with-fork.** `libs/swift-markdown-engine` is 0.13.0 plus alternative checkboxes, depth bullets, Tab/Shift-Tab rules, alias resolution by target, and theme-driven link/selection colours with in-place theme switching (`libs/swift-markdown-engine/FORK.md`). Aliased links still display the target name rather than the alias.
 - **iOS later**: SwiftUI `TextEditor` + `AttributedString` (built-in, can't hide syntax), CodeMirror 6 in a web view (Obsidian's own approach; one bundle for all platforms), or STTextView (GPL-3.0/commercial).
 
 ## Xcode setup (I'll walk you through this live in M0, pausing after each step)

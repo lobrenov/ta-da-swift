@@ -1,0 +1,26 @@
+# Ta Da fork of swift-markdown-engine
+
+- Upstream: https://github.com/nodes-app/swift-markdown-engine (Apache-2.0, see `LICENSE`)
+- Forked from: `0.13.0`, commit `d1421012aeece640e2c2e47e0e573a93cbe2a420`
+- Why: the M1 spike (`docs/mvp-plan.md`) needed changes the engine has no hooks for.
+
+## Removed
+- `MarkdownEngineCodeBlocks` and `MarkdownEngineLatex` products (and their HighlighterSwift / SwiftMath dependencies), `Demo/`, `media/`, `.github/`.
+
+## Changes
+Every change is marked `Ta Da fork` in the source. Tests: `Tests/MarkdownEngineTests/TaDaForkTests.swift`.
+
+1. **Alternative checkboxes.** `Parser/TaskMarker.swift` defines the accepted markers: `[ ]`, `[x]`, `[X]` plus the [Alternative Checkboxes Reference Set](https://github.com/damiankorcz/Alternative-Checkboxes-Reference-Set). The `.taskCheckbox` attribute holds the marker character (a `String`) instead of a `Bool`. `TaskCheckboxStyle` maps each marker to an SF Symbol, an optional tint, strikethrough, click transition and right-click menu entry.
+2. **Checkbox size and spacing.** `TaskCheckboxStyle.sizeScale` and `contentGap` set the box size and its gap from the text. The hidden spacer after `-` is kerned so the box fits the bullet slot.
+3. **Bullets by depth.** `ListStyle.bulletSymbolNames` (circle.fill, circle, square.fill, diamond.fill, cycling) and `bulletSymbolScale` replace the fixed `•`.
+4. **Tab / Shift-Tab** (`Input/MarkdownListIndent.swift`). These act on every selected list line plus its children. Tab only nests an item under a previous sibling. The edits are whitespace-only and go in one undo group.
+5. **Obsidian wiki-link aliases.** `[[Target|alias]]` resolves, links and reports clicks by `Target`. Upstream treats the part after `|` as an opaque id.
+6. **Theme.** `MarkdownEditorTheme` is `Equatable` and has `selectionBackground`. The theme sets NSTextView's `linkTextAttributes` and `selectedTextAttributes`. A theme change in `updateNSView` restyles in place, so the editor isn't rebuilt.
+7. **Bindings follow SwiftUI updates.** Upstream kept the text binding, `isWikiLinkActive` binding and `onLinkClick` from `init`. An embedder that switches documents by passing a new binding therefore had every later edit written into the first document, and the editor snapped back to the unchanged text. `NativeTextViewCoordinator.refresh` runs on every update. `publish` captures the binding and document when it schedules each async write.
+8. **Right-click on a task box.** `NativeTextView.menu(for:)` checks for a box before `super`. AppKit's right-click moves the caret onto the line, which reveals the raw `[ ]` and removes the box.
+
+## Known upstream test failure
+`MarkdownHTMLRendererTests` "bare URLs and emails autolink" fails on macOS 27 before any fork change (`www.example.com` isn't autolinked). The editor doesn't use the HTML renderer.
+
+## Updating from upstream
+Diff this folder against a clean checkout of the base commit to get the fork's patch. Apply it to the new upstream version, then run `swift test --package-path libs/swift-markdown-engine`.

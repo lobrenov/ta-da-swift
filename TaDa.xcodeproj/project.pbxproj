@@ -194,7 +194,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				2B593606306FCE4600D4BBDB /* XCLocalSwiftPackageReference "Packages/TaDaCore" */,
-				2B593609306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "swift-markdown-engine" */,
+				2B593609306FCF3A00D4BBDB /* XCLocalSwiftPackageReference "libs/swift-markdown-engine" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2B5935D3306FCAE300D4BBDB /* Products */;
@@ -630,18 +630,11 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/TaDaCore;
 		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		2B593609306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "swift-markdown-engine" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/nodes-app/swift-markdown-engine";
-			requirement = {
-				kind = exactVersion;
-				version = 0.13.0;
-			};
+		2B593609306FCF3A00D4BBDB /* XCLocalSwiftPackageReference "libs/swift-markdown-engine" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "libs/swift-markdown-engine";
 		};
-/* End XCRemoteSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		2B593607306FCE4600D4BBDB /* TaDaCore */ = {
@@ -650,7 +643,6 @@
 		};
 		2B59360A306FCF3A00D4BBDB /* MarkdownEngine */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 2B593609306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "swift-markdown-engine" */;
 			productName = MarkdownEngine;
 		};
 /* End XCSwiftPackageProductDependency section */

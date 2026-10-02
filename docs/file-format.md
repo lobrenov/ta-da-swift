@@ -54,7 +54,19 @@ Bring the project instruction files in line with how I actually work now.
 ## Body
 
 - **Description**: the whole body. Its first paragraph is the summary shown in lists.
-- **Subtasks**: every GFM checklist item (`- [ ]`, `- [x]` or `- [X]`, followed by a space) anywhere in the body, at any depth. They are counted as done/total. Items inside code blocks don't count, and Obsidian's custom statuses such as `[/]` stay plain text.
+- **Checkboxes**: a list item whose marker is followed by `[c]` and a space, where `c` is one character from the [Alternative Checkboxes Reference Set](https://github.com/damiankorcz/Alternative-Checkboxes-Reference-Set). Items inside code blocks don't count, and any other character inside the brackets (e.g. `[y]`) stays plain text.
+- **Subtasks** are the checkboxes in these states, anywhere in the body and at any depth, counted as done/total:
+
+  | Marker | State | Counts as |
+  |---|---|---|
+  | `[ ]` | To do | open |
+  | `[/]` | Incomplete | open |
+  | `[>]` | Forwarded | open |
+  | `[<]` | Scheduling | open |
+  | `[x]` `[X]` | Done | done |
+  | `[-]` | Cancelled | left out of the total |
+
+  The other reference markers (`[?] [!] [*] ["] [l] [b] [i] [S] [I] [p] [c] [f] [k] [w] [u] [d]`) are icons only. They render as checkboxes but aren't subtasks.
 - **Links**: `[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]` and `[[folder/Title]]` resolve to the file with that title, case-insensitively. Body links are links only; they never set project membership.
 
 ## Behaviour rules
@@ -69,7 +81,7 @@ Bring the project instruction files in line with how I actually work now.
 
 - Ta Da never re-serialises YAML or markdown. Each change splices only the lines it affects:
   - a property change replaces that key's line(s), appends the key before the closing `---` if it's missing, or creates the frontmatter block if there is none;
-  - a subtask toggle changes only `[ ]` ↔ `[x]` on that line.
+  - a checkbox change replaces only the one character between its brackets. A click completes an open subtask (`[x]`) and reopens a done or cancelled one (`[ ]`); icon-only markers ignore clicks. Any marker can be chosen from the checkbox's right-click menu.
 - Line endings (LF or CRLF) and all other bytes are preserved.
 - Written values: dates as `YYYY-MM-DD` (unquoted); links quoted as `"[[Title]]"`; lists in block style with quoted items.
 - Filenames come from titles. Ta Da replaces `/ : \ * ? " < > |` and the Obsidian link-breakers `[ ] # ^ |` (a `:` becomes ` -`, so "Game Jam: Starfall" becomes `Game Jam - Starfall.md`). If the name is taken, it adds ` 2`, ` 3`, and so on.
