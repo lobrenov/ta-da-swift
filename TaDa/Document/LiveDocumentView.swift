@@ -66,6 +66,9 @@ struct TitleField: View {
     let document: OpenDocument
     let size: CGFloat
     @State private var draft = ""
+    /// The file whose title is being edited. The view is reused across files, so a commit only renames
+    /// the file the editing started in, and only while it's still the one shown.
+    @State private var editingPath: String?
     @FocusState private var focused: Bool
     @Environment(\.theme) private var theme
 
@@ -89,24 +92,33 @@ struct TitleField: View {
                 draft = draft.filter { !$0.isNewline }
                 focused = false
             }
-            .onChange(of: focused) { if !focused { commit() } }
-            .onChange(of: document.path, initial: true) { draft = title }
-            .onChange(of: model.titleFocus, initial: true) {
-                guard model.titleFocus == document.path else { return }
-                model.titleFocus = nil
-                focused = true
+            .onChange(of: focused) {
+                if focused { editingPath = document.path } else { commit() }
             }
+            .onChange(of: document.path, initial: true) {
+                draft = title
+                if editingPath != document.path { editingPath = nil }
+                takeFocusIfAsked()
+            }
+            .onChange(of: model.titleFocus) { takeFocusIfAsked() }
             .accessibilityLabel("Title")
             .help("Rename the file")
     }
 
+    /// A file just created asks for its title to take focus, ready to type a name.
+    private func takeFocusIfAsked() {
+        guard model.titleFocus == document.path else { return }
+        model.titleFocus = nil
+        focused = true
+    }
+
     private func commit() {
+        defer { editingPath = nil }
         let new = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !new.isEmpty, new != title else {
+        guard let path = editingPath, path == document.path, !new.isEmpty, new != title else {
             draft = title
             return
         }
-        let path = document.path
         Task {
             await model.rename(path, to: new)
             draft = title
