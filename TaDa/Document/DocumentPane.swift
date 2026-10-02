@@ -11,7 +11,16 @@ struct DocumentPane: View {
             VStack(spacing: 0) {
                 DocumentBar(model: model, document: document)
                 Hairline()
-                if let item = document.item, item.properties.kind == .project {
+                if model.isSourceMode {
+                    HStack(spacing: 0) {
+                        SourceEditor(text: Binding { document.text } set: { document.text = $0 },
+                                     theme: theme, documentID: document.path)
+                            .frame(maxWidth: 760 + 2 * SourceTextView.gutter)
+                            .frame(maxWidth: .infinity)
+                        Hairline(axis: .vertical)
+                        FileInspector(model: model, document: document)
+                    }
+                } else if let item = document.item, item.properties.kind == .project {
                     ProjectDocumentView(model: model, document: document, project: model.index[item.path] ?? item)
                 } else {
                     LiveDocumentView(model: model, document: document)
@@ -36,28 +45,64 @@ private struct DocumentBar: View {
     var body: some View {
         let parts = document.path.split(separator: "/").map(String.init)
         HStack(spacing: 8) {
-            Image(systemName: "doc").font(.system(size: 12))
-            ForEach(Array(([model.vault?.root.lastPathComponent ?? ""] + parts.dropLast()).enumerated()), id: \.offset) { _, part in
-                Text(part)
-                Text("/")
+            HStack(spacing: 8) {
+                Image(systemName: "doc").font(.system(size: 12))
+                ForEach(Array(([model.vault?.root.lastPathComponent ?? ""] + parts.dropLast()).enumerated()), id: \.offset) { _, part in
+                    Text(part)
+                    Text("/")
+                }
+                Text(parts.last ?? "")
+                    .foregroundStyle(theme.color(\.fg))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                if document.isDirty {
+                    Circle().fill(theme.color(\.muted)).frame(width: 6, height: 6)
+                        .help("Unsaved changes")
+                        .accessibilityLabel("Unsaved changes")
+                }
             }
-            Text(parts.last ?? "")
-                .foregroundStyle(theme.color(\.fg))
-                .lineLimit(1)
-                .truncationMode(.middle)
-            if document.isDirty {
-                Circle().fill(theme.color(\.muted)).frame(width: 6, height: 6)
-                    .help("Unsaved changes")
-                    .accessibilityLabel("Unsaved changes")
-            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(document.path)
             Spacer(minLength: 12)
+            ModeToggle(isSource: Binding { model.isSourceMode } set: { model.isSourceMode = $0 })
         }
         .font(.system(size: 11.5, design: .monospaced))
         .foregroundStyle(theme.color(\.muted))
         .lineLimit(1)
         .padding(.horizontal, 20)
         .frame(height: 46)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(document.path)
+    }
+}
+
+/// Live | Source, as a two-segment pill.
+private struct ModeToggle: View {
+    @Binding var isSource: Bool
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        HStack(spacing: 2) {
+            segment("Live", selected: !isSource) { isSource = false }
+            segment("Source", selected: isSource) { isSource = true }
+        }
+        .padding(2)
+        .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
+        .fixedSize()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Editor mode")
+    }
+
+    private func segment(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: selected ? .semibold : .regular))
+                .foregroundStyle(theme.color(selected ? \.strong : \.fg))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 3)
+                .background(selected ? theme.color(\.bg) : .clear, in: .rect(cornerRadius: 5))
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .help("\(title) (⌘E)")
     }
 }

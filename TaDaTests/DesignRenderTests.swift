@@ -39,12 +39,14 @@ struct DesignRenderTests {
             ("project", .project(project), project),
             ("project-task", .project(project), "tasks/Live preview editor on swift-markdown-engine.md"),
             ("loose", .loose, nil),
+            ("source", .today, "tasks/Update my claude.md files.md"),
         ]
         for theme in Theme.all {
             model.themeName = theme.name
             for (name, domain, selection) in screens where name == "today" || theme.name == Theme.all[0].name {
                 model.domain = domain
                 model.selection = selection
+                model.isSourceMode = name == "source"
                 try await render(model, to: output.appending(path: "\(theme.name)-\(name).png"))
             }
         }

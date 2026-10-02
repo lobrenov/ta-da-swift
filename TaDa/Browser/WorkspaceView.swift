@@ -26,6 +26,14 @@ struct WorkspaceView: View {
     }
 
     @ViewBuilder private var domain: some View {
+        if model.isSourceMode, model.document != nil {
+            DocumentPane(model: model)
+        } else {
+            domainLayout
+        }
+    }
+
+    @ViewBuilder private var domainLayout: some View {
         switch model.domain {
         case .today:
             split { TaskListView(model: model, kind: .today).id(AppModel.Domain.today) }

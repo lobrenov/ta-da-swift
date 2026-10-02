@@ -26,8 +26,15 @@ import TaDaCore
     }
     /// The file shown in the document pane, by vault-relative path. Picking another domain clears it.
     var selection: String? {
-        didSet { if selection != oldValue { Task { await loadSelection() } } }
+        didSet {
+            guard selection != oldValue else { return }
+            if selection == nil { isSourceMode = false }
+            Task { await loadSelection() }
+        }
     }
+    /// Source mode shows the whole file, frontmatter included, full width with the file inspector.
+    /// It ends when nothing is selected, so picking another domain brings the lists back.
+    var isSourceMode = false
     /// The selected file's text. It stays on the previous file until the new one has been read.
     private(set) var document: OpenDocument?
     /// Why the selected file couldn't be opened.
