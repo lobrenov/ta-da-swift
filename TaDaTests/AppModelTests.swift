@@ -78,6 +78,67 @@ struct AppModelTests {
         #expect(message.contains("moved or deleted"))
     }
 
+    @Test func completingAndReopeningChangesOnlyStatusAndCompletedDate() async throws {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        model.today = LocalDate("2026-10-03")!
+        await model.choose(folder)
+        let url = folder.appending(path: "tasks/Due today.md")
+        func expected(_ status: String, _ completed: String) -> String {
+            "---\ntype: task\nstatus: \(status)\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\ncompletedDate:\(completed)\n---\n"
+        }
+
+        await model.toggleCompletion(try #require(model.index["tasks/Due today.md"]))
+        #expect(try String(contentsOf: url, encoding: .utf8) == expected("Done", " 2026-10-03"))
+        #expect(model.index["tasks/Due today.md"]?.properties.status == .done)
+        #expect(model.projects.first?.open == 0)
+
+        await model.toggleCompletion(try #require(model.index["tasks/Due today.md"]))
+        #expect(try String(contentsOf: url, encoding: .utf8) == expected("Not Started", ""))
+        #expect(model.index["tasks/Due today.md"]?.properties.status == .notStarted)
+    }
+
+    @Test func completionReadsTheStatusFromTheFileNotTheList() async throws {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        await model.choose(folder)
+        let stale = try #require(model.index["tasks/Loose.md"])
+        // Another app completed it after the index was read.
+        let url = folder.appending(path: "tasks/Loose.md")
+        try String(contentsOf: url, encoding: .utf8).replacingOccurrences(of: "Not Started", with: "Done")
+            .write(to: url, atomically: true, encoding: .utf8)
+        await model.toggleCompletion(stale)
+        #expect(model.index["tasks/Loose.md"]?.properties.status == .notStarted)
+    }
+
+    @Test func savingToAMissingFileReportsAnError() async throws {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        await model.choose(folder)
+        let item = try #require(model.index["tasks/Loose.md"])
+        try FileManager.default.removeItem(at: folder.appending(path: "tasks/Loose.md"))
+        await model.toggleCompletion(item)
+        #expect(model.errorMessage?.contains("Loose") == true)
+    }
+
+    @Test func pickingADomainClearsTheSelectionAndProjectsOpenAsPages() async {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        await model.choose(folder)
+        model.selection = "tasks/Loose.md"
+        model.domain = .today
+        #expect(model.selection == "tasks/Loose.md", "same domain keeps the selection")
+        model.domain = .upcoming
+        #expect(model.selection == nil)
+
+        model.open("projects/Ta Da MVP.md")
+        #expect(model.domain == .project("projects/Ta Da MVP.md"))
+        #expect(model.selection == "projects/Ta Da MVP.md")
+        model.open("tasks/Due today.md")
+        #expect(model.domain == .project("projects/Ta Da MVP.md"))
+        #expect(model.selection == "tasks/Due today.md")
+    }
+
     @Test func unknownThemeNamesFallBackToTheFirstScheme() {
         defer { cleanUp() }
         defaults.set("Monokai", forKey: "themeName")

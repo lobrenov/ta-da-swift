@@ -58,8 +58,11 @@ struct SidebarView: View {
     }
 
     private func projectRow(_ progress: ProjectProgress) -> some View {
-        SidebarRow(selected: model.domain == .project(progress.project.path), height: 30, count: progress.open) {
-            model.domain = .project(progress.project.path)
+        let path = progress.project.path
+        return SidebarRow(selected: model.domain == .project(path), height: 30, count: progress.open) {
+            // Clicking the open project again goes from its page back to its tasks.
+            if model.domain == .project(path), model.selection == path { model.selection = nil }
+            model.domain = .project(path)
         } icon: {
             ProgressRing(fraction: progress.fraction)
                 .foregroundStyle(theme.color(\.accent))

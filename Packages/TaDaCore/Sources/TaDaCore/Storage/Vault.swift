@@ -81,6 +81,12 @@ public struct Vault: Sendable {
         try CoordinatedFileIO.write(text, to: url(for: path))
     }
 
+    /// Changes one file in a single coordinated read and write, and returns it reparsed
+    /// (nil when it's no longer a Ta Da file).
+    public func update(_ path: String, _ transform: (String) throws -> String) throws -> Item? {
+        Item(parsing: try CoordinatedFileIO.update(url(for: path), transform), path: path)
+    }
+
     /// Creates `<folder>/<title>.md`, numbering the name if it's taken. Returns the new path.
     public func create(_ text: String, in folder: String, title: String) throws -> String {
         let path = (folder.isEmpty ? "" : folder + "/") + FileNaming.filename(for: title, existing: filenames(in: folder))

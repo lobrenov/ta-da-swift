@@ -25,7 +25,12 @@ struct ContentView: View {
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .toolbar(removing: .title)
         .containerBackground(model.theme.color(\.bg), for: .window)
-        .frame(minWidth: 760, minHeight: 480)
+        .frame(minWidth: 900, minHeight: 480)
+        .alert("Couldn’t save", isPresented: Binding { model.errorMessage != nil } set: { if !$0 { model.errorMessage = nil } }) {
+            Button("OK") {}
+        } message: {
+            Text(model.errorMessage ?? "")
+        }
         .task { await model.start() }
         .onChange(of: model.themeName, initial: true) {
             // Light themes use the light system appearance so menus, pickers and scroll bars match.

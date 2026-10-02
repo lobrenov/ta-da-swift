@@ -21,7 +21,13 @@ import TaDaCore
     private(set) var state = VaultState.noFolder
     private(set) var vault: Vault?
     private(set) var index = VaultIndex()
-    var domain = Domain.today
+    var domain = Domain.today {
+        didSet { if domain != oldValue { selection = nil } }
+    }
+    /// The file shown in the document pane, by vault-relative path. Picking another domain clears it.
+    var selection: String?
+    /// The last failed file operation, shown as an alert.
+    var errorMessage: String?
     /// Refreshed when the day changes, so every query uses the same `today`.
     var today = LocalDate(Date())
 
@@ -83,6 +89,42 @@ import TaDaCore
         state = .loading
         index = await vault.loadIndex()
         state = .ready
+    }
+
+    // MARK: Navigation
+
+    /// Shows a file: a project opens as its own page in its domain; a task opens beside the current list.
+    func open(_ path: String) {
+        guard let item = index[path] else { return }
+        if item.properties.kind == .project { domain = .project(path) }
+        selection = path
+    }
+
+    // MARK: Editing files
+
+    /// Completes an open task or reopens a done one. Only `status` and `completedDate` change.
+    func toggleCompletion(_ item: Item) async {
+        let today = today, fallback = item.properties.status
+        await edit(item.path) { text in
+            Completion.toggle(Item(parsing: text, path: item.path)?.properties.status ?? fallback, in: text, today: today)
+        }
+    }
+
+    /// Applies a text change to one file in a single coordinated read and write, then patches the index.
+    func edit(_ path: String, _ transform: @escaping @Sendable (String) -> String) async {
+        guard let vault else { return }
+        do {
+            let item = try await Self.update(path, in: vault, transform)
+            if let item { index.update(item) } else { index.remove(path) }
+        } catch {
+            errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
+        }
+    }
+
+    @concurrent nonisolated private static func update(
+        _ path: String, in vault: Vault, _ transform: @Sendable (String) -> String
+    ) async throws -> Item? {
+        try vault.update(path, transform)
     }
 
     // MARK: Queries for the sidebar

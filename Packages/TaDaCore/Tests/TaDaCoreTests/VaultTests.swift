@@ -86,6 +86,18 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
     }
 }
 
+@Test func updateReparsesTheChangedFile() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile(task, "tasks/A.md", in: folder)
+        let vault = Vault(root: folder)
+        let item = try vault.update("tasks/A.md") { Completion.toggle(.notStarted, in: $0, today: LocalDate("2026-10-03")!) }
+        #expect(item?.properties.status == .done)
+        #expect(item?.properties.completedDate == LocalDate("2026-10-03"))
+        #expect(try vault.read("tasks/A.md") == "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\n---\n")
+        #expect(try vault.update("tasks/A.md") { _ in "no longer a task" } == nil)
+    }
+}
+
 @Test func bookmarksRoundTrip() async throws {
     try await withTemporaryFolder { folder in
         let bookmark = try Vault.bookmark(for: folder)

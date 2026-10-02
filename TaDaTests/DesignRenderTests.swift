@@ -30,14 +30,21 @@ struct DesignRenderTests {
         model.today = LocalDate("2026-10-02")!
         await model.choose(sampleVault)
         #expect(model.state == .ready)
-        let project = try #require(model.projects.first { $0.project.title == "Ta Da MVP" })
-        let domains: [(String, AppModel.Domain)] = [
-            ("today", .today), ("upcoming", .upcoming), ("loose", .loose), ("project", .project(project.project.path)),
+        let project = "projects/Ta Da MVP.md"
+        // Artboard name → domain and selection.
+        let screens: [(String, AppModel.Domain, String?)] = [
+            ("today", .today, "tasks/Update my claude.md files.md"),
+            ("upcoming", .upcoming, nil),
+            ("upcoming-task", .upcoming, "tasks/Live preview editor on swift-markdown-engine.md"),
+            ("project", .project(project), project),
+            ("project-task", .project(project), "tasks/Live preview editor on swift-markdown-engine.md"),
+            ("loose", .loose, nil),
         ]
         for theme in Theme.all {
             model.themeName = theme.name
-            for (name, domain) in domains where name == "today" || theme.name == Theme.all[0].name {
+            for (name, domain, selection) in screens where name == "today" || theme.name == Theme.all[0].name {
                 model.domain = domain
+                model.selection = selection
                 try await render(model, to: output.appending(path: "\(theme.name)-\(name).png"))
             }
         }

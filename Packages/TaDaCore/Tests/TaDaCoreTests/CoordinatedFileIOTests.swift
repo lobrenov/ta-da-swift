@@ -35,3 +35,18 @@ import Testing
         #expect(throws: FileIOError.notUTF8("a.md")) { try CoordinatedFileIO.read(a) }
     }
 }
+
+@Test func coordinatedUpdateWritesOnlyWhenTheTextChanges() async throws {
+    try await withTemporaryFolder { folder in
+        let url = folder.appending(path: "a.md")
+        try CoordinatedFileIO.write("one\r\n", to: url)
+        let updated = try CoordinatedFileIO.update(url) { $0 + "two\r\n" }
+        #expect(updated == "one\r\ntwo\r\n")
+        #expect(try Data(contentsOf: url) == Data("one\r\ntwo\r\n".utf8))
+
+        let before = try FileManager.default.attributesOfItem(atPath: url.path)[.systemFileNumber] as? Int
+        try CoordinatedFileIO.update(url) { $0 }
+        #expect(try FileManager.default.attributesOfItem(atPath: url.path)[.systemFileNumber] as? Int == before, "an atomic write replaces the file")
+        #expect(throws: (any Error).self) { try CoordinatedFileIO.update(folder.appending(path: "missing.md")) { $0 } }
+    }
+}

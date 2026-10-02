@@ -23,6 +23,24 @@ public enum CoordinatedFileIO {
         }
     }
 
+    /// Reads, transforms and writes back in one coordinated access, so no other coordinated writer
+    /// can change the file in between. Writes only when the text changes. Returns the resulting text.
+    @discardableResult
+    public static func update(_ url: URL, _ transform: (String) throws -> String) throws -> String {
+        try withoutActuallyEscaping(transform) { transform in
+            try coordinate { coordinator, error, body in
+                coordinator.coordinate(writingItemAt: url, options: .forMerging, error: error) { url in
+                    body {
+                        let old = try decode(url)
+                        let new = try transform(old)
+                        if new != old { try Data(new.utf8).write(to: url, options: .atomic) }
+                        return new
+                    }
+                }
+            }
+        }
+    }
+
     /// Writes a new file, creating its folder; fails if the file already exists.
     public static func create(_ text: String, at url: URL) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
