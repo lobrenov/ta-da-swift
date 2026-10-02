@@ -1,17 +1,19 @@
-//
-//  TaDaApp.swift
-//  TaDa
-//
-//  Created by Leon Obrenov on 2/10/2026.
-//
-
+// App entry: one main window plus Settings, sharing one AppModel.
 import SwiftUI
 
 @main
 struct TaDaApp: App {
+    @State private var model = AppModel()
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        Window("Ta Da", id: "main") {
+            ContentView(model: model)
+        }
+        .defaultSize(width: 1280, height: 800)
+        .commands { AppCommands(model: model) }
+
+        Settings {
+            SettingsView(model: model)
         }
     }
 }

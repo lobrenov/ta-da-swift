@@ -34,3 +34,8 @@ nonisolated extension Theme {
         Color(nsColor: self[keyPath: keyPath])
     }
 }
+
+extension EnvironmentValues {
+    /// The active theme. Every themed view reads its colours from here.
+    @Entry var theme: Theme = Theme.all[0]
+}

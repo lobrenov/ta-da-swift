@@ -11,6 +11,7 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - Editor engine tests: `swift test --package-path libs/swift-markdown-engine` (one known upstream failure, see `libs/swift-markdown-engine/FORK.md`)
 - App build: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' build`
 - App + core tests: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test`. This runs `TaDa.xctestplan`, which covers TaDaTests and TaDaCoreTests; TaDaUITests is disabled until M10 because it needs the Accessibility permission.
+- Design renders (PNG per theme/domain on SampleVault, to compare with the canvas): `TEST_RUNNER_TADA_RENDER_DIR=<dir> xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test -only-testing:TaDaTests/DesignRenderTests ENABLE_APP_SANDBOX=NO`. Offscreen capture can't draw glass or the title bar, so check those in the running app.
 - Always open `TaDa.xcworkspace`, not the `.xcodeproj`. Xcode 27 only shows a local package's tests in app test plans when the package is a workspace member.
 
 ## Layout
