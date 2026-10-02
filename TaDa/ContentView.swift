@@ -39,6 +39,12 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
             model.today = LocalDate(Date())
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
+            if let document = model.document { Task { await model.save(document) } }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
+            model.saveBeforeQuitting()
+        }
     }
 }
 

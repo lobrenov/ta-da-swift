@@ -81,6 +81,11 @@ public struct Vault: Sendable {
         try CoordinatedFileIO.write(text, to: url(for: path))
     }
 
+    /// When the file's contents last changed; nil when it can't be read.
+    public func modificationDate(of path: String) -> Date? {
+        try? url(for: path).resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+    }
+
     /// Changes one file in a single coordinated read and write, and returns it reparsed
     /// (nil when it's no longer a Ta Da file).
     public func update(_ path: String, _ transform: (String) throws -> String) throws -> Item? {

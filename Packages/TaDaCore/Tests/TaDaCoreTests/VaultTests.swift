@@ -95,6 +95,8 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
         #expect(item?.properties.completedDate == LocalDate("2026-10-03"))
         #expect(try vault.read("tasks/A.md") == "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\n---\n")
         #expect(try vault.update("tasks/A.md") { _ in "no longer a task" } == nil)
+        #expect(vault.modificationDate(of: "tasks/A.md") != nil)
+        #expect(vault.modificationDate(of: "tasks/missing.md") == nil)
     }
 }
 

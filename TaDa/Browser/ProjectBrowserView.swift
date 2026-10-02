@@ -23,6 +23,7 @@ struct ProjectBrowserView: View {
                             .foregroundStyle(theme.color(\.muted))
                             .padding(.horizontal, 10)
                     }
+                    NewLinkedTaskButton(model: model).padding(.leading, 6)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 4)

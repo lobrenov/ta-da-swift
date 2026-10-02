@@ -52,7 +52,7 @@ struct WorkspaceView: View {
         case let .project(path):
             if let project = model.index[path] {
                 if model.selection == path {
-                    DocumentArea(model: model)
+                    DocumentPane(model: model)
                 } else {
                     split { ProjectBrowserView(model: model, project: project) }
                 }
@@ -84,30 +84,8 @@ struct WorkspaceView: View {
             browser()
                 .frame(minWidth: 320, idealWidth: 460, maxWidth: 460, maxHeight: .infinity, alignment: .topLeading)
             Hairline(axis: .vertical)
-            DocumentArea(model: model)
+            DocumentPane(model: model)
                 .frame(minWidth: 360, maxWidth: .infinity, maxHeight: .infinity)
-        }
-    }
-}
-
-/// The selected file, or a prompt to pick one. M7 replaces this with the live document.
-struct DocumentArea: View {
-    let model: AppModel
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        if let path = model.selection, let item = model.index[path] {
-            VStack(alignment: .leading, spacing: 18) {
-                Text(item.title)
-                    .font(.system(size: 23, weight: .bold))
-                    .foregroundStyle(theme.color(\.strong))
-                if let summary = item.summary { Text(summary).font(.system(size: 14)) }
-            }
-            .padding(.horizontal, 44)
-            .padding(.vertical, 30)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        } else {
-            EmptyState(systemImage: "doc.text", title: "No task selected", message: "Pick a task to read and edit it here.")
         }
     }
 }
