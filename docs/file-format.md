@@ -28,7 +28,7 @@ Bring the project instruction files in line with how I actually work now.
 
 ## Identity
 
-- **Kind** comes only from `type: task` or `type: project`. Files without either value are not Ta Da files and are ignored. This lets Ta Da share a folder (or an Obsidian vault) with other notes.
+- **Kind** comes only from `type: task` or `type: project` (any case). Files without either value are not Ta Da files and are ignored. This lets Ta Da share a folder (or an Obsidian vault) with other notes.
 - **Title** is the filename without `.md`. Renaming a task or project renames its file.
 - **Location** doesn't matter. The whole chosen folder is scanned recursively; hidden folders, `.obsidian` and `.trash` are skipped. New files are created in `tasks/` and `projects/`.
 
@@ -49,12 +49,14 @@ Bring the project instruction files in line with how I actually work now.
 
 - Dates are calendar days in local time, with no times or time zones. They are read as plain strings, never as YAML timestamps.
 - Any other keys, plus comments, key order and formatting, are preserved untouched.
-- An empty key (`dueDate:`) is the same as a missing one.
+- An empty key (`dueDate:`), or an unquoted `~` or `null`, is the same as a missing one.
+- Values that can't be read (a bad date, a `project` that isn't a link, a list where text belongs) are treated as missing, with a warning.
+- If the frontmatter isn't valid YAML, the file still loads when an unindented `type: task` or `type: project` line is present. Its other properties read as missing and it gets a warning.
 
 ## Body
 
 - **Description**: the whole body. Its first paragraph is the summary shown in lists.
-- **Checkboxes**: a list item whose marker is followed by `[c]` and a space, where `c` is one character from the [Alternative Checkboxes Reference Set](https://github.com/damiankorcz/Alternative-Checkboxes-Reference-Set). Items inside code blocks don't count, and any other character inside the brackets (e.g. `[y]`) stays plain text.
+- **Checkboxes**: a list item whose marker is followed by `[c]` and a space or tab, where `c` is one character from the [Alternative Checkboxes Reference Set](https://github.com/damiankorcz/Alternative-Checkboxes-Reference-Set). Items inside code blocks don't count, and any other character inside the brackets (e.g. `[y]`) stays plain text.
 - **Subtasks** are the checkboxes in these states, anywhere in the body and at any depth, counted as done/total:
 
   | Marker | State | Counts as |
