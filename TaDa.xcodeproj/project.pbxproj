@@ -6,6 +6,11 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2B593608306FCE4600D4BBDB /* TaDaCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2B593607306FCE4600D4BBDB /* TaDaCore */; };
+		2B59360B306FCF3A00D4BBDB /* MarkdownEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 2B59360A306FCF3A00D4BBDB /* MarkdownEngine */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		2B5935E0306FCAE500D4BBDB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -51,6 +56,8 @@
 		2B5935CF306FCAE300D4BBDB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				2B593608306FCE4600D4BBDB /* TaDaCore in Frameworks */,
+				2B59360B306FCF3A00D4BBDB /* MarkdownEngine in Frameworks */,
 			);
 		};
 		2B5935DC306FCAE500D4BBDB /* Frameworks */ = {
@@ -103,6 +110,10 @@
 				2B5935D4306FCAE300D4BBDB /* TaDa */,
 			);
 			name = TaDa;
+			packageProductDependencies = (
+				2B593607306FCE4600D4BBDB /* TaDaCore */,
+				2B59360A306FCF3A00D4BBDB /* MarkdownEngine */,
+			);
 			productName = TaDa;
 			productReference = 2B5935D2306FCAE300D4BBDB /* TaDa.app */;
 			productType = "com.apple.product-type.application";
@@ -181,6 +192,10 @@
 			);
 			mainGroup = 2B5935C9306FCAE300D4BBDB;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2B593606306FCE4600D4BBDB /* XCLocalSwiftPackageReference "Packages/TaDaCore" */,
+				2B593609306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "swift-markdown-engine" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2B5935D3306FCAE300D4BBDB /* Products */;
 			projectDirPath = "";
@@ -369,9 +384,21 @@
 				DEVELOPMENT_TEAM = U398Z5XX5X;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Ta Da";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -392,13 +419,13 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				SWIFT_VERSION = 6.0;
 				XROS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
@@ -413,9 +440,21 @@
 				DEVELOPMENT_TEAM = U398Z5XX5X;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Ta Da";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -436,13 +475,13 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = macosx;
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				SWIFT_VERSION = 6.0;
 				XROS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
@@ -466,7 +505,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TaDa.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TaDa";
 				XROS_DEPLOYMENT_TARGET = 27.0;
@@ -492,7 +531,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TaDa.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TaDa";
 				XROS_DEPLOYMENT_TARGET = 27.0;
@@ -517,7 +556,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				TEST_TARGET_NAME = TaDa;
 				XROS_DEPLOYMENT_TARGET = 27.0;
@@ -542,7 +581,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				TEST_TARGET_NAME = TaDa;
 				XROS_DEPLOYMENT_TARGET = 27.0;
@@ -585,6 +624,36 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		2B593606306FCE4600D4BBDB /* XCLocalSwiftPackageReference "Packages/TaDaCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/TaDaCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2B593609306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "swift-markdown-engine" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nodes-app/swift-markdown-engine";
+			requirement = {
+				kind = exactVersion;
+				version = 0.13.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2B593607306FCE4600D4BBDB /* TaDaCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TaDaCore;
+		};
+		2B59360A306FCF3A00D4BBDB /* MarkdownEngine */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2B593609306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "swift-markdown-engine" */;
+			productName = MarkdownEngine;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2B5935CA306FCAE300D4BBDB /* Project object */;
 	validationLevel = 1;

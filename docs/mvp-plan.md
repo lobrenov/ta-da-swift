@@ -65,9 +65,9 @@ Title = filename without `.md`. Projects: same keys minus `project`. Unknown key
 3. **Target ▸ General**: Supported Destinations → **Mac** only (re-add iPhone/iPad in the iOS phase); Minimum Deployment **macOS 27.0** (drop to 26.0 only if another Mac of yours runs Tahoe); Display Name **Ta Da**; App Category Productivity.
 4. **Target ▸ Signing & Capabilities ▸ App Sandbox**: User Selected File → **Read/Write** (default is Read Only). Xcode 27 stores sandbox settings as build settings — no `.entitlements` file, no Info.plist file; nothing else to add.
 5. **Target ▸ Build Settings**: Swift Language Version → **Swift 6** (default 5). Keep Default Actor Isolation = MainActor, Approachable Concurrency = Yes.
-6. **Local package** (after I scaffold `Packages/TaDaCore`): File ▸ Add Package Dependencies… ▸ **Add Local…** (bottom-left) ▸ `Packages/TaDaCore` ▸ add `TaDaCore` to target TaDa. Then Product ▸ Scheme ▸ Edit Scheme ▸ Test ▸ **+** ▸ `TaDaCoreTests`, so ⌘U runs core tests too.
+6. **Local package** (after I scaffold `Packages/TaDaCore`): File ▸ Add Package Dependencies… ▸ **Add Local…** (bottom-left) ▸ `Packages/TaDaCore` ▸ add `TaDaCore` to target TaDa. *(As built: Xcode 27 hides a dependency package's tests from app test plans, so the repo has `TaDa.xcworkspace` (project + TaDaCore as members) and `TaDa.xctestplan` (TaDaTests + TaDaCoreTests; TaDaUITests disabled until M10). Open the workspace.)*
 7. **Editor engine**: File ▸ Add Package Dependencies… ▸ `https://github.com/nodes-app/swift-markdown-engine` ▸ Dependency Rule **Exact Version 0.13.0** ▸ product `MarkdownEngine` → TaDa. (swift-markdown and Yams are pinned in `Packages/TaDaCore/Package.swift`.) Commit `Package.resolved`.
-8. **Verify**: ⌘R opens a window; ⌘U green. Headless (what I'll use): `xcodebuild -project TaDa.xcodeproj -scheme TaDa -destination 'platform=macOS' build` and `swift test --package-path Packages/TaDaCore`.
+8. **Verify**: ⌘R opens a window; ⌘U green. Headless (what I'll use): `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' build` and `swift test --package-path Packages/TaDaCore`.
 - Note: Xcode 27.2 (in beta) introduces the JSON `.xcproj` format; stay on `.pbxproj` for now — conversion is optional later.
 
 ## Technical structure
@@ -147,6 +147,6 @@ Each milestone is small, ends green, and is verified before the next. Riskiest f
 **Post-MVP backlog**: recurrence, `.itermcolors` import, per-file iCloud sync state, JetBrains Mono, editing UI for area/contexts/project, iOS/iPad (editor choice), upstream fix for alias display.
 
 ## Verification (every milestone)
-- `swift test --package-path Packages/TaDaCore` and `xcodebuild -project TaDa.xcodeproj -scheme TaDa -destination 'platform=macOS' test` — run headless after each change.
+- `swift test --package-path Packages/TaDaCore` and `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test` — run headless after each change.
 - Manual run against `SampleVault/`; `git diff SampleVault` is the write-safety check, `git checkout SampleVault` resets it.
 - Screenshot comparison with the canvas artboards for M5–M8.

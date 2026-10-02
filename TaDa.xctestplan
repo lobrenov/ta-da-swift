@@ -1,0 +1,39 @@
+{
+  "configurations" : [
+    {
+      "id" : "C704D668-93A8-451C-8609-214700A0DD97",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:TaDa.xcodeproj",
+        "identifier" : "2B5935DE306FCAE500D4BBDB",
+        "name" : "TaDaTests"
+      }
+    },
+    {
+      "enabled" : false,
+      "target" : {
+        "containerPath" : "container:TaDa.xcodeproj",
+        "identifier" : "2B5935E8306FCAE500D4BBDB",
+        "name" : "TaDaUITests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Packages\/TaDaCore",
+        "identifier" : "TaDaCoreTests",
+        "name" : "TaDaCoreTests"
+      }
+    }
+  ],
+  "version" : 1
+}
