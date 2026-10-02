@@ -61,10 +61,7 @@ func itemIgnoresNonTaDaFiles(_ text: String) {
 
 /// Every SampleVault file parses cleanly; the note without frontmatter is ignored.
 @Test func sampleVaultParses() throws {
-    let vault = URL(filePath: #filePath).deletingLastPathComponent()
-        .appending(path: "../../../../SampleVault").standardized
-    let files = try #require(FileManager.default.enumerator(at: vault, includingPropertiesForKeys: nil))
-        .compactMap { $0 as? URL }.filter { $0.pathExtension == "md" }
+    let files = try sampleFiles()
     #expect(files.count > 20)
 
     var items: [String: Item] = [:]

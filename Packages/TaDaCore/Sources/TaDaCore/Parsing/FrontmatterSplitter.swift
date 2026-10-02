@@ -42,7 +42,7 @@ public enum FrontmatterSplitter {
         return noFrontmatter
     }
 
-    private static func isFenceLine(_ line: Substring.UnicodeScalarView) -> Bool {
+    static func isFenceLine(_ line: Substring.UnicodeScalarView) -> Bool {
         var rest = line
         while let last = rest.last, last == " " || last == "\t" || last == "\r" { rest.removeLast() }
         return rest.elementsEqual("---".unicodeScalars)

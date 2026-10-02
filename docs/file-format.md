@@ -82,9 +82,9 @@ Bring the project instruction files in line with how I actually work now.
 ## Writing rules (how Ta Da edits files)
 
 - Ta Da never re-serialises YAML or markdown. Each change splices only the lines it affects:
-  - a property change replaces that key's line(s), appends the key before the closing `---` if it's missing, or creates the frontmatter block if there is none;
+  - a property change replaces that key's line(s) (the unindented `key:` line plus its indented or `- ` continuation lines), appends the key before the closing `---` if it's missing, or creates the frontmatter block if there is none. Clearing a property leaves `key:` with no value; a missing key stays missing;
   - a checkbox change replaces only the one character between its brackets. A click completes an open subtask (`[x]`) and reopens a done or cancelled one (`[ ]`); icon-only markers ignore clicks. Any marker can be chosen from the checkbox's right-click menu.
 - Line endings (LF or CRLF) and all other bytes are preserved.
-- Written values: dates as `YYYY-MM-DD` (unquoted); links quoted as `"[[Title]]"`; lists in block style with quoted items.
-- Filenames come from titles. Ta Da replaces `/ : \ * ? " < > |` and the Obsidian link-breakers `[ ] # ^ |` (a `:` becomes ` -`, so "Game Jam: Starfall" becomes `Game Jam - Starfall.md`). If the name is taken, it adds ` 2`, ` 3`, and so on.
+- Written values: dates as `YYYY-MM-DD` (unquoted); links quoted as `"[[Title]]"`; lists in block style with quoted items (`[]` when empty); text plain when it starts with a letter and YAML can't misread it (e.g. as `yes`, a comment or a mapping), otherwise double-quoted.
+- Filenames come from titles. Ta Da replaces `/ : \ * ? " < > |` and the Obsidian link-breakers `[ ] # ^ |`: a `:` becomes ` -` (so "Game Jam: Starfall" becomes `Game Jam - Starfall.md`), `/ \ |` become `-`, and the rest are dropped. Leading dots and repeated spaces are removed, names are capped at 200 bytes, and an empty name becomes `Untitled`. If the name is taken (ignoring case), it adds ` 2`, ` 3`, and so on.
 - Renaming a project rewrites the `project:` link in each of its tasks.
