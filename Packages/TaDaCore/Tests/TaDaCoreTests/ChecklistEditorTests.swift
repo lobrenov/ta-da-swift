@@ -3,7 +3,7 @@ import Testing
 
 private let text = "---\ntype: task\n---\nÜber 🙂\n\n- [ ] Open\n  - [x] Done\n> - [-] Cancelled\n1. [?] Icon\n"
 
-private func boxes(_ text: String) -> [Checkbox] { Item(parsing: text, title: "t")!.checkboxes }
+private func boxes(_ text: String) -> [Checkbox] { Item(parsing: text, path: "t.md")!.checkboxes }
 
 @Test func clickCompletesAndReopens() throws {
     let b = boxes(text)

@@ -1,4 +1,5 @@
 import Foundation
+@testable import TaDaCore
 
 /// What an edit changed: the lines outside the longest common subsequence, in order.
 /// Lines are split on LF only, so a CRLF line shows its `\r`.
@@ -32,4 +33,23 @@ let sampleVault = URL(filePath: #filePath).deletingLastPathComponent()
 func sampleFiles() throws -> [URL] {
     (FileManager.default.enumerator(at: sampleVault, includingPropertiesForKeys: nil)?.allObjects ?? [])
         .compactMap { $0 as? URL }.filter { $0.pathExtension == "md" }
+}
+
+/// A fresh folder under the temporary directory, removed when `body` returns.
+func withTemporaryFolder(_ body: (URL) async throws -> Void) async throws {
+    let folder = FileManager.default.temporaryDirectory.appending(path: "TaDaTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: folder) }
+    try await body(folder)
+}
+
+func writeFile(_ text: String, _ path: String, in folder: URL) throws {
+    let url = folder.appending(path: path)
+    try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data(text.utf8).write(to: url)
+}
+
+/// An item from frontmatter lines and an optional body.
+func makeItem(_ path: String, _ frontmatter: String, body: String = "") -> Item {
+    Item(parsing: "---\n\(frontmatter)\n---\n\(body)", path: path)!
 }

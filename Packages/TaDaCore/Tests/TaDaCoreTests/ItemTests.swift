@@ -22,7 +22,7 @@ import Testing
 
     Related: [[Ta Da MVP]]
     """
-    let item = try #require(Item(parsing: text, title: "Update files"))
+    let item = try #require(Item(parsing: text, path: "Update files.md"))
     #expect(item.title == "Update files")
     #expect(item.properties.kind == .task && item.properties.status == .doing)
     #expect(item.summary == "Bring the files in line.")
@@ -34,7 +34,7 @@ import Testing
 
 @Test func itemCheckboxLinesAreFileLinesWithCRLF() throws {
     let text = "---\r\ntype: task\r\nstatus: Done\r\n---\r\n- [x] A\r\n- [ ] B\r\n"
-    let item = try #require(Item(parsing: text, title: "T"))
+    let item = try #require(Item(parsing: text, path: "T.md"))
     let lines = text.components(separatedBy: "\r\n")
     for box in item.checkboxes {
         #expect(Array(lines[box.lineIndex].utf8)[box.column] == box.marker.asciiValue)
@@ -50,11 +50,11 @@ import Testing
     "",
 ])
 func itemIgnoresNonTaDaFiles(_ text: String) {
-    #expect(Item(parsing: text, title: "x") == nil)
+    #expect(Item(parsing: text, path: "x.md") == nil)
 }
 
 @Test func itemWithBrokenYAMLStillLoads() throws {
-    let item = try #require(Item(parsing: "---\ntype: task\ncontexts:\n  - @computer\n---\n- [ ] Still counted\n", title: "Broken"))
+    let item = try #require(Item(parsing: "---\ntype: task\ncontexts:\n  - @computer\n---\n- [ ] Still counted\n", path: "Broken.md"))
     #expect(item.subtasks == (done: 0, total: 1))
     #expect(item.warnings.count == 1)
 }
@@ -67,7 +67,7 @@ func itemIgnoresNonTaDaFiles(_ text: String) {
     var items: [String: Item] = [:]
     for file in files {
         let title = file.deletingPathExtension().lastPathComponent
-        guard let item = Item(parsing: try String(contentsOf: file, encoding: .utf8), title: title) else {
+        guard let item = Item(parsing: try String(contentsOf: file, encoding: .utf8), path: file.lastPathComponent) else {
             #expect(file.path.contains("/notes/"), "\(title) didn't parse")
             continue
         }

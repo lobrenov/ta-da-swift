@@ -1,9 +1,11 @@
 /// One task or project file, as parsed from its text.
-public struct Item: Hashable, Sendable {
+public struct Item: Hashable, Sendable, Identifiable {
     public enum Kind: String, Sendable {
         case task, project
     }
 
+    /// Path relative to the vault folder, e.g. `tasks/Pick a test framework.md`.
+    public var path: String
     /// The filename without `.md`.
     public var title: String
     public var properties: Properties
@@ -27,17 +29,28 @@ public struct Item: Hashable, Sendable {
         return (done, total)
     }
 
+    public var id: String { path }
+
     /// Nil when the text isn't a Ta Da file (no `type: task` or `type: project`).
-    public init?(parsing text: String, title: String) {
+    public init?(parsing text: String, path: String) {
         let split = FrontmatterSplitter.split(text)
         guard let yaml = split.yaml, let read = PropertyReader.read(yaml) else { return nil }
         let body = BodyScanner.scan(split.body, firstLineIndex: split.bodyFirstLineIndex)
-        self.title = title
+        self.path = path
+        title = Self.title(ofPath: path)
         properties = read.properties
         summary = body.summary
         checkboxes = body.checkboxes
         links = body.links
         warnings = read.warnings
+    }
+}
+
+extension Item {
+    /// `folder/Name.md` → `Name`.
+    public static func title(ofPath path: String) -> String {
+        let name = path.split(separator: "/").last.map(String.init) ?? path
+        return name.lowercased().hasSuffix(".md") ? String(name.dropLast(3)) : name
     }
 }
 
@@ -74,4 +87,6 @@ public enum Warning: Hashable, Sendable {
     case invalidProject(String)
     /// A list or mapping where text was expected, or vice versa.
     case unexpectedValue(key: String)
+    /// A task's `project` link doesn't match any project file, so the task is loose.
+    case unresolvedProject(String)
 }

@@ -8,10 +8,7 @@ public struct WikiLink: Hashable, Sendable {
     public var alias: String?
 
     /// The title of the file the link points at: the target's last path component, without `.md`.
-    public var title: String {
-        let name = target.split(separator: "/").last.map(String.init) ?? target
-        return name.lowercased().hasSuffix(".md") ? String(name.dropLast(3)) : name
-    }
+    public var title: String { Item.title(ofPath: target) }
 
     /// Parses the text between `[[` and `]]`. Nil when there's no target (e.g. `[[#heading]]`).
     public init?(inner: String) {

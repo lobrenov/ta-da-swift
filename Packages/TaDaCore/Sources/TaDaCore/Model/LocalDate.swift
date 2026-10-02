@@ -47,3 +47,41 @@ public struct LocalDate: Hashable, Comparable, Sendable, CustomStringConvertible
         }
     }
 }
+
+extension LocalDate {
+    /// The calendar day of `date` in `calendar`'s time zone.
+    public init(_ date: Date, calendar: Calendar = .current) {
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        self.init(year: parts.year!, month: parts.month!, day: parts.day!)!
+    }
+
+    public func adding(days: Int) -> LocalDate {
+        let calendar = Self.utc
+        let date = calendar.date(byAdding: .day, value: days, to: midnightUTC)!
+        return LocalDate(date, calendar: calendar)
+    }
+
+    /// Whole days from `self` to `other`; negative when `other` is earlier.
+    public func days(to other: LocalDate) -> Int {
+        Self.utc.dateComponents([.day], from: midnightUTC, to: other.midnightUTC).day!
+    }
+
+    /// 1 = Sunday … 7 = Saturday, as in `Calendar`.
+    public var weekday: Int {
+        Self.utc.component(.weekday, from: midnightUTC)
+    }
+
+    /// The same day at midnight in `calendar`'s time zone, for formatting and date pickers.
+    public func date(in calendar: Calendar = .current) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day))!
+    }
+
+    // Day arithmetic in UTC, where every day is 24 hours long.
+    private static let utc: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }()
+
+    private var midnightUTC: Date { date(in: Self.utc) }
+}

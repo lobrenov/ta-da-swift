@@ -74,8 +74,9 @@ Bring the project instruction files in line with how I actually work now.
 ## Behaviour rules
 
 - **Completing** sets `status: Done` and `completedDate: <today>`. **Reopening** sets `status: Not Started` and clears `completedDate`. `status` is the source of truth; a mismatched `completedDate` is ignored. Ticking every subtask does not complete the task.
-- **Today** shows items that aren't Done and whose `dueDate` or `deadline` is today or earlier; overdue items are flagged. It also shows items completed today.
-- **Upcoming** starts tomorrow. An item gets one entry on its `dueDate` and another on its `deadline`.
+- **Today** shows tasks that aren't Done and whose `dueDate` or `deadline` is today or earlier; overdue tasks are flagged. It also shows tasks completed today.
+- **Upcoming** starts tomorrow. An open task gets one entry on its `dueDate` and another on its `deadline`.
+- Today and Upcoming list tasks only; a project's own dates show on its page.
 - **Loose tasks** are open tasks without a resolvable `project`.
 - **Projects** in the sidebar are those not Done. Progress is done/total of linked tasks.
 
@@ -87,4 +88,4 @@ Bring the project instruction files in line with how I actually work now.
 - Line endings (LF or CRLF) and all other bytes are preserved.
 - Written values: dates as `YYYY-MM-DD` (unquoted); links quoted as `"[[Title]]"`; lists in block style with quoted items (`[]` when empty); text plain when it starts with a letter and YAML can't misread it (e.g. as `yes`, a comment or a mapping), otherwise double-quoted.
 - Filenames come from titles. Ta Da replaces `/ : \ * ? " < > |` and the Obsidian link-breakers `[ ] # ^ |`: a `:` becomes ` -` (so "Game Jam: Starfall" becomes `Game Jam - Starfall.md`), `/ \ |` become `-`, and the rest are dropped. Leading dots and repeated spaces are removed, names are capped at 200 bytes, and an empty name becomes `Untitled`. If the name is taken (ignoring case), it adds ` 2`, ` 3`, and so on.
-- Renaming a project rewrites the `project:` link in each of its tasks.
+- Renaming a project rewrites the `project:` link in each of its tasks as `"[[New title]]"`. Body links aren't changed.

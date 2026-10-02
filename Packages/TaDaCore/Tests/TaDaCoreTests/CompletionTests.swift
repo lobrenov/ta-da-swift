@@ -34,13 +34,13 @@ private let today = LocalDate("2026-10-02")!
 @Test func sampleVaultCompletionTouchesOnlyStatusLines() throws {
     for url in try sampleFiles() {
         let text = try String(contentsOf: url, encoding: .utf8)
-        guard let item = Item(parsing: text, title: url.lastPathComponent) else { continue }
+        guard let item = Item(parsing: text, path: url.lastPathComponent) else { continue }
         let after = Completion.toggle(item.properties.status, in: text, today: today)
         let changes = changedLines(text, after)
         for line in changes.removed + changes.added {
             #expect(line.hasPrefix("status:") || line.hasPrefix("completedDate:"), "\(url.lastPathComponent): \(line)")
         }
-        let reread = try #require(Item(parsing: after, title: "x"))
+        let reread = try #require(Item(parsing: after, path: "x.md"))
         #expect(reread.properties.status == (item.properties.status == .done ? .notStarted : .done))
         #expect(reread.properties.completedDate == (item.properties.status == .done ? nil : today))
         #expect(reread.warnings.isEmpty)
