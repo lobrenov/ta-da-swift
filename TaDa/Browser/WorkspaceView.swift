@@ -28,6 +28,8 @@ struct WorkspaceView: View {
     @ViewBuilder private var domain: some View {
         if model.isSourceMode, model.document != nil {
             DocumentPane(model: model)
+        } else if model.isSearching {
+            split { SearchResultsView(model: model) }
         } else {
             domainLayout
         }

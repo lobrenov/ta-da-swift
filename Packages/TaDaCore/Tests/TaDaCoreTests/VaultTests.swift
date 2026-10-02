@@ -108,3 +108,77 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
         #expect(resolved.refreshed == nil)
     }
 }
+
+@Test func changesReportNewChangedAndRemovedFiles() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile(task, "tasks/A.md", in: folder)
+        try writeFile(task, "tasks/B.md", in: folder)
+        try writeFile("note", "notes/N.md", in: folder)
+        let vault = Vault(root: folder)
+        let known = vault.modificationDates()
+        #expect(known.keys.sorted() == ["notes/N.md", "tasks/A.md", "tasks/B.md"])
+        #expect(vault.changes(since: known).isEmpty)
+
+        try await Task.sleep(for: .milliseconds(20))
+        try writeFile(task.replacingOccurrences(of: "Not Started", with: "Done"), "tasks/A.md", in: folder)
+        try FileManager.default.removeItem(at: folder.appending(path: "tasks/B.md"))
+        try writeFile(task, "tasks/C.md", in: folder)
+        try writeFile("still a note", "notes/N.md", in: folder)
+        let changes = vault.changes(since: known)
+        #expect(changes.changed.keys.sorted() == ["notes/N.md", "tasks/A.md", "tasks/C.md"])
+        #expect(changes.changed["tasks/A.md"]??.properties.status == .done)
+        #expect(changes.changed["notes/N.md"]! == nil)
+        #expect(changes.removed == ["tasks/B.md"])
+        #expect(vault.changes(since: changes.dates).isEmpty)
+    }
+}
+
+@Test func unreadableFilesAreRetriedLater() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try Data([0xff, 0xfe]).write(to: folder.appending(path: "Bad.md"))
+        let changes = vault.changes(since: [:])
+        #expect(changes.changed.isEmpty)
+        #expect(changes.dates["Bad.md"] == nil, "no date recorded, so it's checked again")
+    }
+}
+
+@Test func localFilesHaveNoConflicts() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile(task, "A.md", in: folder)
+        #expect(Conflicts.versions(of: folder.appending(path: "A.md")).isEmpty)
+    }
+}
+
+@Test func theWatcherReportsChanges() async throws {
+    try await withTemporaryFolder { folder in
+        let fired = Fired()
+        let watcher = try #require(VaultWatcher(root: folder, latency: 0.05) { fired.set() })
+        try await Task.sleep(for: .milliseconds(200))
+        try writeFile(task, "tasks/New.md", in: folder)
+        for _ in 0..<40 where !fired.value { try await Task.sleep(for: .milliseconds(50)) }
+        #expect(fired.value)
+        _ = watcher
+    }
+}
+
+private final class Fired: @unchecked Sendable {
+    private let lock = NSLock()
+    private var fired = false
+    var value: Bool { lock.withLock { fired } }
+    func set() { lock.withLock { fired = true } }
+}
+
+@Test func guardedWritesNeverOverwriteSomeoneElsesChange() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile(task, "A.md", in: folder)
+        let vault = Vault(root: folder)
+        #expect(try vault.write(task + "mine\n", to: "A.md", ifUnchangedFrom: task) == nil)
+        #expect(try vault.read("A.md") == task + "mine\n")
+
+        try writeFile(task + "theirs\n", "A.md", in: folder)
+        #expect(try vault.write(task + "mine again\n", to: "A.md", ifUnchangedFrom: task + "mine\n") == task + "theirs\n")
+        #expect(try vault.read("A.md") == task + "theirs\n")
+        #expect(throws: (any Error).self) { try vault.write("x", to: "Gone.md", ifUnchangedFrom: "") }
+    }
+}

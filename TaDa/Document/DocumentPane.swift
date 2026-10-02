@@ -11,6 +11,7 @@ struct DocumentPane: View {
             VStack(spacing: 0) {
                 DocumentBar(model: model, document: document)
                 Hairline()
+                DocumentBanner(model: model, document: document)
                 if model.isSourceMode {
                     HStack(spacing: 0) {
                         SourceEditor(text: Binding { document.text } set: { document.text = $0 },

@@ -22,6 +22,13 @@ import TaDaCore
     var modified: Date?
     /// The text parsed; nil when it's no longer a Ta Da file.
     private(set) var item: Item?
+    /// The file's text on disk when another app changed it while this one had unsaved edits.
+    /// Nothing is saved until the user picks a side.
+    var diskText: String?
+    /// The file was deleted or renamed outside Ta Da while this one had unsaved edits.
+    var isRemovedOnDisk = false
+    /// Versions iCloud kept because another device changed the file at the same time.
+    var conflicts: [ConflictVersion] = []
     @ObservationIgnored var onChange: (() -> Void)?
 
     init(path: String, text: String, modified: Date?) {

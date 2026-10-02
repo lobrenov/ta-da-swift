@@ -41,8 +41,14 @@ import TaDaCore
     private(set) var documentError: String?
     /// A file whose title field should take focus when it opens (a file just created).
     var titleFocus: String?
-    /// The last failed file operation, shown as an alert.
+    /// The last failed file operation, or a note about edits kept in a copy, shown as an alert.
     var errorMessage: String?
+    /// Search text from the sidebar; while it isn't empty the browser shows matches.
+    var searchText = ""
+    /// Bumped by the Search Files command; the sidebar's search field takes focus.
+    var searchFocusRequest = 0
+    /// Whether FSEvents is watching the folder. Without it, changes are picked up when the app becomes active.
+    private(set) var isWatching = false
     /// Refreshed when the day changes, so every query uses the same `today`.
     var today = LocalDate(Date())
 
@@ -57,6 +63,11 @@ import TaDaCore
     private var saving: Task<Void, Never>?
     /// The folder whose security-scoped access is held while it's open.
     private var accessedFolder: URL?
+    private var watcher: VaultWatcher?
+    /// Modification dates of the folder's Markdown files as last seen, to find what changed.
+    private var fileDates: [String: Date] = [:]
+    private var refreshing: Task<Void, Never>?
+    private var refreshAgain = false
 
     private enum Keys {
         static let bookmark = "vaultBookmark"
@@ -111,12 +122,164 @@ import TaDaCore
         self.vault = vault
         selection = nil
         document = nil
+        watcher = nil
         state = .loading
+        // Dates first: anything that changes while the index loads shows up as changed on the next refresh.
+        fileDates = await Self.modificationDates(in: vault)
         index = await vault.loadIndex()
         state = .ready
+        watcher = VaultWatcher(root: vault.root) { [weak self] in
+            Task { await self?.refresh() }
+        }
+        isWatching = watcher != nil
+    }
+
+    @concurrent nonisolated private static func modificationDates(in vault: Vault) async -> [String: Date] {
+        vault.modificationDates()
+    }
+
+    // MARK: Changes made outside Ta Da
+
+    /// Brings the index and the open document up to date with the files on disk. Runs when the folder
+    /// watcher fires and when the app becomes active. Calls during a refresh fold into one more pass.
+    func refresh() async {
+        guard let vault else { return }
+        if let refreshing {
+            refreshAgain = true
+            await refreshing.value
+            return
+        }
+        let task = Task {
+            repeat {
+                refreshAgain = false
+                let changes = await Self.changes(in: vault, since: fileDates)
+                guard self.vault?.root == vault.root else { return }
+                fileDates = changes.dates
+                await apply(changes, from: vault)
+            } while refreshAgain
+        }
+        refreshing = task
+        await task.value
+        refreshing = nil
+    }
+
+    private func apply(_ changes: VaultChanges, from vault: Vault) async {
+        let open = document
+        for path in changes.removed where path != open?.path { index.remove(path) }
+        for (path, item) in changes.changed where path != open?.path {
+            if let item { index.update(item) } else { index.remove(path) }
+        }
+        guard let open else { return }
+        if changes.removed.contains(open.path) {
+            if open.isDirty {
+                open.isRemovedOnDisk = true
+            } else {
+                index.remove(open.path)
+                if selection == open.path { selection = nil }
+            }
+        } else if changes.changed.keys.contains(open.path) {
+            await reload(open, from: vault)
+        }
+    }
+
+    /// Takes the file's new text if there are no unsaved edits; otherwise keeps them and asks.
+    private func reload(_ document: OpenDocument, from vault: Vault) async {
+        guard let (disk, modified) = try? await Self.read(document.path, in: vault) else { return }
+        document.conflicts = await Self.conflicts(of: document.path, in: vault)
+        guard disk != document.savedText else { return }
+        if document.isDirty, disk != document.text {
+            document.diskText = disk
+        } else {
+            document.savedText = disk
+            document.modified = modified
+            document.text = disk
+        }
+    }
+
+    /// Keeps the unsaved edits and overwrites the other app's change.
+    func keepMine(_ document: OpenDocument) async {
+        guard let disk = document.diskText else { return }
+        document.savedText = disk
+        document.diskText = nil
+        await save(document)
+    }
+
+    /// Drops the unsaved edits and shows the file as the other app left it.
+    func useTheirs(_ document: OpenDocument) {
+        guard let disk = document.diskText else { return }
+        document.diskText = nil
+        document.savedText = disk
+        document.text = disk
+    }
+
+    /// Writes a file that was deleted outside Ta Da back, with the unsaved edits.
+    func saveAgain(_ document: OpenDocument) async {
+        guard let vault else { return }
+        do {
+            document.modified = try await Self.write(document.text, to: document.path, in: vault)
+            document.savedText = document.text
+            document.isRemovedOnDisk = false
+            if let item = document.item { index.update(item) }
+        } catch {
+            errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: document.path))”. (\(error.localizedDescription))"
+        }
+    }
+
+    /// Lets a file that was deleted outside Ta Da go, with its unsaved edits.
+    func discardRemoved(_ document: OpenDocument) {
+        document.savedText = document.text
+        index.remove(document.path)
+        if selection == document.path { selection = nil }
+    }
+
+    /// Keeps the file as it is and discards iCloud's other versions.
+    func keepCurrentVersion(_ document: OpenDocument) async {
+        guard let vault else { return }
+        let url = vault.url(for: document.path)
+        do {
+            try await Self.run { try Conflicts.keepCurrent(url) }
+            document.conflicts = []
+        } catch {
+            errorMessage = "Ta Da couldn’t resolve the conflict. (\(error.localizedDescription))"
+        }
+    }
+
+    /// Replaces the file with one of iCloud's other versions.
+    func adopt(_ version: ConflictVersion, for document: OpenDocument) async {
+        guard let vault else { return }
+        let url = vault.url(for: document.path)
+        do {
+            let text = try await Self.run { try Conflicts.adopt(version, at: url) }
+            document.conflicts = []
+            document.diskText = nil
+            document.savedText = text
+            document.text = text
+        } catch {
+            errorMessage = "Ta Da couldn’t use the other version. (\(error.localizedDescription))"
+        }
+    }
+
+    @concurrent nonisolated private static func changes(in vault: Vault, since known: [String: Date]) async -> VaultChanges {
+        vault.changes(since: known)
+    }
+
+    @concurrent nonisolated private static func conflicts(of path: String, in vault: Vault) async -> [ConflictVersion] {
+        Conflicts.versions(of: vault.url(for: path))
+    }
+
+    @concurrent nonisolated private static func run<T: Sendable>(_ work: @Sendable () throws -> T) async throws -> T {
+        try work()
     }
 
     // MARK: Navigation
+
+    /// Shows a domain from the sidebar or a menu, ending any search.
+    func show(_ domain: Domain) {
+        searchText = ""
+        self.domain = domain
+    }
+
+    var isSearching: Bool { !searchText.trimmingCharacters(in: .whitespaces).isEmpty }
 
     /// Shows a file: a project opens as its own page in its domain; a task opens beside the current list.
     func open(_ path: String) {
@@ -130,7 +293,10 @@ import TaDaCore
     /// Reads the selected file into `document`, saving the previous one first.
     func loadSelection() async {
         guard let vault, document?.path != selection else { return }
-        if let previous = document { await save(previous) }
+        if let previous = document {
+            await save(previous)
+            await keepUnsavedEdits(of: previous)
+        }
         guard let path = selection else {
             document = nil
             return
@@ -144,6 +310,7 @@ import TaDaCore
             }
             self.document = document
             documentError = nil
+            document.conflicts = await Self.conflicts(of: path, in: vault)
         } catch {
             guard selection == path else { return }
             document = nil
@@ -176,21 +343,70 @@ import TaDaCore
         await task.value
     }
 
+    /// Writes unsaved edits, unless another app changed or removed the file since Ta Da read it:
+    /// then nothing is written and the document asks what to keep.
     private func write(_ document: OpenDocument) async {
-        guard let vault, document.isDirty else { return }
+        guard let vault, document.isDirty, document.diskText == nil, !document.isRemovedOnDisk else { return }
         let text = document.text, path = document.path
         do {
-            document.modified = try await Self.write(text, to: path, in: vault)
-            document.savedText = text
+            switch try await Self.write(text, to: path, ifUnchangedFrom: document.savedText, in: vault) {
+            case let .written(modified):
+                document.savedText = text
+                document.modified = modified
+                if let modified { fileDates[path] = modified }
+            case let .changed(disk):
+                document.diskText = disk
+            case .missing:
+                document.isRemovedOnDisk = true
+            }
         } catch {
             errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
         }
     }
 
+    /// When unsaved edits couldn't be saved (the file changed or went away outside Ta Da) and the document
+    /// is being left, writes them to a new file beside it so nothing is lost.
+    private func keepUnsavedEdits(of document: OpenDocument) async {
+        guard let vault, document.isDirty else { return }
+        let path = document.path, text = document.text
+        let title = document.isRemovedOnDisk ? Item.title(ofPath: path) : "\(Item.title(ofPath: path)) (unsaved edits)"
+        do {
+            let copy = try await Self.create(text, in: Vault.folder(of: path), title: title, vault: vault)
+            if let item = Item(parsing: text, path: copy) { index.update(item) }
+            document.savedText = text
+            errorMessage = "“\(Item.title(ofPath: path))” changed outside Ta Da while you were editing it, so your edits were saved as “\(Item.title(ofPath: copy))”."
+        } catch {
+            errorMessage = "Ta Da couldn’t keep your edits to “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
+        }
+    }
+
     /// Saves unsaved edits before the app quits. Synchronous, because there's no later chance.
+    /// If another app changed the file meanwhile, the edits go to a copy instead.
     func saveBeforeQuitting() {
         guard let vault, let document, document.isDirty else { return }
-        try? vault.write(document.text, to: document.path)
+        let path = document.path
+        if !document.isRemovedOnDisk, document.diskText == nil {
+            do {
+                if try vault.write(document.text, to: path, ifUnchangedFrom: document.savedText) == nil { return }
+            } catch {}
+        }
+        let title = document.isRemovedOnDisk ? Item.title(ofPath: path) : "\(Item.title(ofPath: path)) (unsaved edits)"
+        _ = try? vault.create(document.text, in: Vault.folder(of: path), title: title)
+    }
+
+    private enum WriteResult: Sendable {
+        case written(Date?)
+        /// Another app changed the file; this is its text.
+        case changed(String)
+        case missing
+    }
+
+    @concurrent nonisolated private static func write(
+        _ text: String, to path: String, ifUnchangedFrom expected: String, in vault: Vault
+    ) async throws -> WriteResult {
+        guard FileManager.default.fileExists(atPath: vault.url(for: path).path(percentEncoded: false)) else { return .missing }
+        if let disk = try vault.write(text, to: path, ifUnchangedFrom: expected) { return .changed(disk) }
+        return .written(vault.modificationDate(of: path))
     }
 
     @concurrent nonisolated private static func read(_ path: String, in vault: Vault) async throws -> (String, Date?) {
@@ -244,7 +460,13 @@ import TaDaCore
     /// Renames a file from a new title. Renaming a project also rewrites the `project:` link in its tasks.
     func rename(_ path: String, to title: String) async {
         guard let vault, Item.title(ofPath: path) != title else { return }
-        if let document, document.path == path { await save(document) }
+        if let document, document.path == path {
+            await save(document)
+            guard !document.isDirty else {
+                errorMessage = "“\(Item.title(ofPath: path))” changed outside Ta Da. Choose which version to keep before renaming it."
+                return
+            }
+        }
         do {
             let (newPath, items) = try await Self.rename(path, to: title, in: vault, index: index)
             guard newPath != path else { return }
@@ -290,7 +512,7 @@ import TaDaCore
     private func create(_ text: String, in folder: String) async -> String? {
         guard let vault else { return nil }
         do {
-            let path = try await Self.create(text, in: folder, vault: vault)
+            let path = try await Self.create(text, in: folder, title: "Untitled", vault: vault)
             if let item = Item(parsing: text, path: path) { index.update(item) }
             titleFocus = path
             return path
@@ -300,8 +522,8 @@ import TaDaCore
         }
     }
 
-    @concurrent nonisolated private static func create(_ text: String, in folder: String, vault: Vault) async throws -> String {
-        try vault.create(text, in: folder, title: "Untitled")
+    @concurrent nonisolated private static func create(_ text: String, in folder: String, title: String, vault: Vault) async throws -> String {
+        try vault.create(text, in: folder, title: title)
     }
 
     @concurrent nonisolated private static func update(

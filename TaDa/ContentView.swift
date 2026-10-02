@@ -26,7 +26,7 @@ struct ContentView: View {
         .toolbar(removing: .title)
         .containerBackground(model.theme.color(\.bg), for: .window)
         .frame(minWidth: 900, minHeight: 480)
-        .alert("Couldn’t save", isPresented: Binding { model.errorMessage != nil } set: { if !$0 { model.errorMessage = nil } }) {
+        .alert("Ta Da", isPresented: Binding { model.errorMessage != nil } set: { if !$0 { model.errorMessage = nil } }) {
             Button("OK") {}
         } message: {
             Text(model.errorMessage ?? "")
@@ -38,6 +38,10 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
             model.today = LocalDate(Date())
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            // Catches anything the folder watcher missed (or everything, if it couldn't start).
+            Task { await model.refresh() }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
             if let document = model.document { Task { await model.save(document) } }

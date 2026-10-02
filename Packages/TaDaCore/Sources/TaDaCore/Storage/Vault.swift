@@ -48,22 +48,45 @@ public struct Vault: Sendable {
     /// Every `.md` file, recursively. Hidden files and folders (including `.obsidian` and `.trash`)
     /// and packages are skipped. Sorted for a stable order.
     public func markdownPaths() -> [String] {
-        let keys: [URLResourceKey] = [.isRegularFileKey]
+        modificationDates().keys.sorted()
+    }
+
+    /// Every `.md` file (as `markdownPaths()` finds them) and when its contents last changed.
+    public func modificationDates() -> [String: Date] {
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .contentModificationDateKey]
         guard let files = FileManager.default.enumerator(
-            at: root, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else { return [] }
+            at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else { return [:] }
         let rootComponents = root.pathComponents.count
-        var paths: [String] = []
+        var dates: [String: Date] = [:]
         for case let url as URL in files where url.pathExtension.lowercased() == "md" {
-            guard (try? url.resourceValues(forKeys: Set(keys)))?.isRegularFile == true else { continue }
-            paths.append(url.standardizedFileURL.pathComponents.dropFirst(rootComponents).joined(separator: "/"))
+            guard let values = try? url.resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
+            let path = url.standardizedFileURL.pathComponents.dropFirst(rootComponents).joined(separator: "/")
+            dates[path] = values.contentModificationDate ?? .distantPast
         }
-        return paths.sorted()
+        return dates
     }
 
     /// Reads and parses every Ta Da file. Unreadable files and other notes are left out.
     @concurrent public func loadIndex() async -> VaultIndex {
         VaultIndex(markdownPaths().compactMap { try? load($0) })
+    }
+
+    /// What changed on disk since `known` (from an earlier `changes` or `modificationDates()`).
+    /// Changed and new files are reparsed; a file that can't be read right now keeps its old date,
+    /// so the next call tries it again.
+    public func changes(since known: [String: Date]) -> VaultChanges {
+        var dates = modificationDates()
+        var changed: [String: Item?] = [:]
+        for (path, date) in dates where known[path] != date {
+            do {
+                changed[path] = .some(try load(path))
+            } catch {
+                dates[path] = known[path]
+            }
+        }
+        let removed = known.keys.filter { dates[$0] == nil }.sorted()
+        return VaultChanges(dates: dates, changed: changed, removed: removed)
     }
 
     /// Reads and parses one file; nil when it isn't a Ta Da file.
@@ -79,6 +102,21 @@ public struct Vault: Sendable {
 
     public func write(_ text: String, to path: String) throws {
         try CoordinatedFileIO.write(text, to: url(for: path))
+    }
+
+    /// Writes `text` only if the file still holds `expected`, in one coordinated access, so a change made
+    /// by another app since Ta Da last read the file is never overwritten.
+    /// Returns nil when it wrote, or the file's current text when it didn't.
+    public func write(_ text: String, to path: String, ifUnchangedFrom expected: String) throws -> String? {
+        var found: String?
+        try CoordinatedFileIO.update(url(for: path)) { current in
+            guard current == expected else {
+                found = current
+                return current
+            }
+            return text
+        }
+        return found
     }
 
     /// When the file's contents last changed; nil when it can't be read.
@@ -125,7 +163,8 @@ public struct Vault: Sendable {
         return (newPath, tasks.map(\.path))
     }
 
-    private static func folder(of path: String) -> String {
+    /// `tasks/Name.md` → `tasks`; `Name.md` → empty.
+    public static func folder(of path: String) -> String {
         path.split(separator: "/").dropLast().joined(separator: "/")
     }
 
@@ -133,4 +172,16 @@ public struct Vault: Sendable {
         let names = try? FileManager.default.contentsOfDirectory(atPath: url(for: folder).path(percentEncoded: false))
         return Set(names ?? [])
     }
+}
+
+/// The result of `Vault.changes(since:)`.
+public struct VaultChanges: Sendable {
+    /// Modification dates to pass to the next call.
+    public var dates: [String: Date]
+    /// New or changed files, parsed; nil for files that aren't Ta Da files (any more).
+    public var changed: [String: Item?]
+    /// Files that are gone.
+    public var removed: [String]
+
+    public var isEmpty: Bool { changed.isEmpty && removed.isEmpty }
 }

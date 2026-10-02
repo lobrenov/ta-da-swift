@@ -1,13 +1,19 @@
-// Sidebar: the three domains with counts, active projects with progress rings, and the folder line.
+// Sidebar: search, the three domains with counts, active projects with progress rings, the folder line
+// and the New buttons.
 import SwiftUI
 import TaDaCore
 
 struct SidebarView: View {
     @Bindable var model: AppModel
     @Environment(\.theme) private var theme
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            searchField
+                .padding(.horizontal, 10)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
                     row(.today, "Today", systemImage: "star.fill", tint: \.due, count: model.todayCount)
@@ -38,15 +44,17 @@ struct SidebarView: View {
                 .padding(.vertical, 8)
             }
             folderLine
+            newButtons
         }
         .background(theme.color(\.side))
+        .onChange(of: model.searchFocusRequest) { searchFocused = true }
         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
     }
 
     private func row(_ domain: AppModel.Domain, _ title: String, systemImage: String,
                      tint: KeyPath<Theme, NSColor>, count: Int?) -> some View {
-        SidebarRow(selected: model.domain == domain, height: 32, count: count) {
-            model.domain = domain
+        SidebarRow(selected: model.domain == domain && !model.isSearching, height: 32, count: count) {
+            model.show(domain)
         } icon: {
             Image(systemName: systemImage)
                 .font(.system(size: 13))
@@ -59,10 +67,10 @@ struct SidebarView: View {
 
     private func projectRow(_ progress: ProjectProgress) -> some View {
         let path = progress.project.path
-        return SidebarRow(selected: model.domain == .project(path), height: 30, count: progress.open) {
+        return SidebarRow(selected: model.domain == .project(path) && !model.isSearching, height: 30, count: progress.open) {
             // Clicking the open project again goes from its page back to its tasks.
             if model.domain == .project(path), model.selection == path { model.selection = nil }
-            model.domain = .project(path)
+            model.show(.project(path))
         } icon: {
             ProgressRing(fraction: progress.fraction)
                 .foregroundStyle(theme.color(\.accent))
@@ -73,19 +81,67 @@ struct SidebarView: View {
         .accessibilityValue("\(progress.done) of \(progress.total) tasks done")
     }
 
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass").font(.system(size: 12)).foregroundStyle(theme.color(\.muted))
+            TextField("Search files", text: $model.searchText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .foregroundStyle(theme.color(\.fg))
+                .focused($searchFocused)
+                .onExitCommand { model.searchText = "" }
+            if !model.searchText.isEmpty {
+                Button { model.searchText = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(theme.color(\.muted))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 30)
+        .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
+        .help("Search titles, summaries, areas and contexts (⌥⌘F)")
+    }
+
+    /// The folder, and whether Ta Da is watching it for changes made by other apps.
     private var folderLine: some View {
         HStack(spacing: 8) {
             Image(systemName: model.isInICloud ? "icloud" : "folder")
-                .foregroundStyle(theme.color(\.done))
-            Text(model.folderDisplayName)
+                .foregroundStyle(theme.color(model.isWatching ? \.done : \.muted))
+            Text("\(model.isWatching ? "Watching" : "Not watching") · \(model.folderDisplayName)")
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
         .font(.system(size: 12))
         .foregroundStyle(theme.color(\.muted))
         .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-        .help(model.vault?.root.path(percentEncoded: false) ?? "")
+        .padding(.vertical, 8)
+        .help(model.isWatching
+            ? "Changes made in other apps show up within a few seconds.\n\(model.vault?.root.path(percentEncoded: false) ?? "")"
+            : "Ta Da can’t watch this folder, so it checks for changes when you switch back to it.")
+    }
+
+    private var newButtons: some View {
+        HStack(spacing: 6) {
+            newButton("New task") { await model.newTask() }
+            newButton("New project") { await model.newProject() }
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 12)
+    }
+
+    private func newButton(_ title: String, action: @escaping () async -> Void) -> some View {
+        Button { Task { await action() } } label: {
+            Label(title, systemImage: "plus")
+                .font(.system(size: 12))
+                .foregroundStyle(theme.color(\.fg))
+                .frame(maxWidth: .infinity)
+                .frame(height: 32)
+                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)))
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 }
 
