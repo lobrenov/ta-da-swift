@@ -36,6 +36,8 @@ struct SearchResultsView: View {
                 }
             }
         }
+        // Tasks only: picking a project leaves the search for its page.
+        .arrowKeySelection(model, paths: results.filter { $0.properties.kind == .task }.map(\.path))
     }
 
     private func projectRow(_ project: Item) -> some View {

@@ -52,6 +52,7 @@ struct BodyEditor: View {
         )
         // The editor insets its text by 16pt; line it up with the title.
         .padding(.horizontal, -16)
+        .accessibilityLabel("Body")
     }
 
     private func openLink(_ target: String) {
@@ -175,6 +176,7 @@ struct WarningList: View {
                         Text(warning.message)
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(theme.color(\.blocked))
+                            .accessibilityHidden(true)
                     }
                 }
             }

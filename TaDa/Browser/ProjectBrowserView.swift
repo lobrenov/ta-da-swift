@@ -30,6 +30,7 @@ struct ProjectBrowserView: View {
                 .padding(.bottom, 24)
             }
         }
+        .arrowKeySelection(model, paths: (open + done).map(\.path))
     }
 
     private func header(done: Int, total: Int) -> some View {

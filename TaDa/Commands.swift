@@ -1,5 +1,7 @@
-// Menu commands: ⌘N/⇧⌘N new task/project; ⌥⌘F search; ⌘1–3 switch domains; ⌘E Live/Source; View ▸ Theme.
+// Menu commands: ⌘N/⇧⌘N new task/project; ⌥⌘F search; ⌘1–3 switch domains; ⌘E Live/Source; View ▸ Theme;
+// Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor.
 import SwiftUI
+import TaDaCore
 
 struct AppCommands: Commands {
     @Bindable var model: AppModel
@@ -34,6 +36,19 @@ struct AppCommands: Commands {
                 ForEach(Theme.all) { Text($0.name).tag($0.name) }
             }
             Divider()
+        }
+        CommandMenu("Task") {
+            let selected = model.selection.flatMap { model.index[$0] }
+            Button(selected?.properties.status == .done ? "Mark Not Done" : "Complete") {
+                if let selected { Task { await model.toggleCompletion(selected) } }
+            }
+            .keyboardShortcut("k")
+            .disabled(selected == nil)
+            Button("Add Subtask") {
+                if let editor = AddSubtask.focusedEditor { AddSubtask.perform(in: editor) } else { NSSound.beep() }
+            }
+            .keyboardShortcut("l")
+            .disabled(model.document == nil)
         }
     }
 }

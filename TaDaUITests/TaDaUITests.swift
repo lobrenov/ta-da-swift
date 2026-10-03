@@ -1,43 +1,70 @@
-//
-//  TaDaUITests.swift
-//  TaDaUITests
-//
-//  Created by Leon Obrenov on 2/10/2026.
-//
-
+// Smoke tests through the real UI, on the throwaway folder `-uiTesting` sets up. They need the
+// Accessibility permission for Xcode's test runner (System Settings ▸ Privacy & Security ▸ Accessibility).
 import XCTest
 
+@MainActor
 final class TaDaUITests: XCTestCase {
+    private var app: XCUIApplication!
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
+    override func setUp() async throws {
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
+        app = XCUIApplication()
+        app.launchArguments = ["-uiTesting"]
         app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // XCUIAutomation Documentation
-        // https://developer.apple.com/documentation/xcuiautomation
+        XCTAssertTrue(app.buttons["Alpha"].waitForExistence(timeout: 10), "the test folder's tasks are listed")
     }
 
-    @MainActor
-    func testLaunchPerformance() throws {
-        // This measures how long it takes to launch your application.
-        measure(metrics: [XCTApplicationLaunchMetric()]) {
-            XCUIApplication().launch()
-        }
+    private var title: XCUIElement { app.textViews["Title"].exists ? app.textViews["Title"] : app.textFields["Title"] }
+    /// The label sits on the editor's scroll view.
+    private var body: XCUIElement { app.scrollViews["Body"].textViews.firstMatch }
+
+    private func waitForTitle(_ expected: String, file: StaticString = #filePath, line: UInt = #line) {
+        let match = NSPredicate(format: "value == %@", expected)
+        let found = XCTNSPredicateExpectation(predicate: match, object: title)
+        XCTAssertEqual(XCTWaiter.wait(for: [found], timeout: 5), .completed, "title is \(expected)", file: file, line: line)
+    }
+
+    func testArrowKeysMoveThroughTodayButNotWhileEditing() throws {
+        app.typeKey(.downArrow, modifierFlags: [])
+        waitForTitle("Alpha")
+        app.typeKey(.downArrow, modifierFlags: [])
+        waitForTitle("Beta")
+        app.typeKey(.upArrow, modifierFlags: [])
+        waitForTitle("Alpha")
+
+        body.click()
+        app.typeKey(.downArrow, modifierFlags: [])
+        app.typeKey(.downArrow, modifierFlags: [])
+        waitForTitle("Alpha")
+
+        app.buttons["Beta"].click()
+        waitForTitle("Beta")
+        app.typeKey(.upArrow, modifierFlags: [])
+        waitForTitle("Alpha")
+    }
+
+    func testAddSubtaskAndUndo() throws {
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+        body.click()
+        app.typeKey(.upArrow, modifierFlags: .command)
+        app.typeKey("l", modifierFlags: .command)
+        XCTAssertEqual(body.value as? String, "- [ ] First line.\n")
+        app.typeKey("l", modifierFlags: .command)
+        app.typeText("Second")
+        XCTAssertEqual(body.value as? String, "- [ ] First line.\n- [ ] Second\n")
+
+        app.typeKey("z", modifierFlags: .command)
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertEqual(body.value as? String, "- [ ] First line.\n", "typing and each Add Subtask undo on their own")
+    }
+
+    func testCompleteSelectedTask() throws {
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+        app.typeKey("k", modifierFlags: .command)
+        XCTAssertTrue(app.buttons["Mark not done: Alpha"].waitForExistence(timeout: 5))
+        app.typeKey("k", modifierFlags: .command)
+        XCTAssertTrue(app.buttons["Complete: Alpha"].waitForExistence(timeout: 5))
     }
 }

@@ -18,6 +18,7 @@ Every change is marked `Ta Da fork` in the source. Tests: `Tests/MarkdownEngineT
 6. **Theme.** `MarkdownEditorTheme` is `Equatable` and has `selectionBackground`. The theme sets NSTextView's `linkTextAttributes` and `selectedTextAttributes`. A theme change in `updateNSView` restyles in place, so the editor isn't rebuilt.
 7. **Bindings follow SwiftUI updates.** Upstream kept the text binding, `isWikiLinkActive` binding and `onLinkClick` from `init`. An embedder that switches documents by passing a new binding therefore had every later edit written into the first document, and the editor snapped back to the unchanged text. `NativeTextViewCoordinator.refresh` runs on every update. `publish` captures the binding and document when it schedules each async write.
 8. **Right-click on a task box.** `NativeTextView.menu(for:)` checks for a box before `super`. AppKit's right-click moves the caret onto the line, which reveals the raw `[ ]` and removes the box.
+9. **Undo and redo reach the binding.** On macOS 27 a TextKit 2 `NSTextView` doesn't post `NSTextDidChangeNotification` for undo or redo (TextKit 1 does), so an undone edit stayed in the bound text and was saved. The coordinator observes each per-document undo manager and runs `textDidChange` after an undo or redo that didn't trigger it.
 
 ## Known upstream test failure
 `MarkdownHTMLRendererTests` "bare URLs and emails autolink" fails on macOS 27 before any fork change (`www.example.com` isn't autolinked). The editor doesn't use the HTML renderer.

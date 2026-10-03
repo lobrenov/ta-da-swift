@@ -51,10 +51,11 @@ struct TaskRow: View {
                 StatusLabel(status: p.status)
             }
             if subtasks.total > 0 {
-                Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)")
+                Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                     spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
             }
             if let rule = p.repeatRule {
-                Chip(systemImage: "repeat", text: rule)
+                Chip(systemImage: "repeat", text: rule, spoken: "Repeats \(rule)")
             }
             if !isDone {
                 if let due = p.dueDate, dates != .overdueDueAndDeadline || due < today {
@@ -143,10 +144,12 @@ struct StatusLabel: View {
     }
 }
 
+/// An icon and a short text. VoiceOver reads `spoken` (or the text) instead of the icon's name.
 struct Chip: View {
     let systemImage: String
     var tint: KeyPath<Theme, NSColor>? = nil
     let text: String
+    var spoken: String? = nil
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -156,6 +159,8 @@ struct Chip: View {
                 .foregroundStyle(tint.map { theme.color($0) } ?? theme.color(\.muted))
             Text(text)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(spoken ?? text)
     }
 }
 

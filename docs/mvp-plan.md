@@ -68,7 +68,7 @@ Title = filename without `.md`. Projects: same keys minus `project`. Unknown key
 3. **Target ▸ General**: Supported Destinations → **Mac** only (re-add iPhone/iPad in the iOS phase); Minimum Deployment **macOS 27.0** (drop to 26.0 only if another Mac of yours runs Tahoe); Display Name **Ta Da**; App Category Productivity.
 4. **Target ▸ Signing & Capabilities ▸ App Sandbox**: User Selected File → **Read/Write** (default is Read Only). Xcode 27 stores sandbox settings as build settings — no `.entitlements` file, no Info.plist file; nothing else to add.
 5. **Target ▸ Build Settings**: Swift Language Version → **Swift 6** (default 5). Keep Default Actor Isolation = MainActor, Approachable Concurrency = Yes.
-6. **Local package** (after I scaffold `Packages/TaDaCore`): File ▸ Add Package Dependencies… ▸ **Add Local…** (bottom-left) ▸ `Packages/TaDaCore` ▸ add `TaDaCore` to target TaDa. *(As built: Xcode 27 hides a dependency package's tests from app test plans, so the repo has `TaDa.xcworkspace` (project + TaDaCore as members) and `TaDa.xctestplan` (TaDaTests + TaDaCoreTests; TaDaUITests disabled until M10). Open the workspace.)*
+6. **Local package** (after I scaffold `Packages/TaDaCore`): File ▸ Add Package Dependencies… ▸ **Add Local…** (bottom-left) ▸ `Packages/TaDaCore` ▸ add `TaDaCore` to target TaDa. *(As built: Xcode 27 hides a dependency package's tests from app test plans, so the repo has `TaDa.xcworkspace` (project + TaDaCore as members) and `TaDa.xctestplan` (TaDaTests + TaDaCoreTests, plus TaDaUITests from M10). Open the workspace.)*
 7. **Editor engine**: File ▸ Add Package Dependencies… ▸ `https://github.com/nodes-app/swift-markdown-engine` ▸ Dependency Rule **Exact Version 0.13.0** ▸ product `MarkdownEngine` → TaDa. (swift-markdown and Yams are pinned in `Packages/TaDaCore/Package.swift`.) Commit `Package.resolved`.
 8. **Verify**: ⌘R opens a window; ⌘U green. Headless (what I'll use): `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' build` and `swift test --package-path Packages/TaDaCore`.
 - Note: Xcode 27.2 (in beta) introduces the JSON `.xcproj` format; stay on `.pbxproj` for now — conversion is optional later.
@@ -106,7 +106,7 @@ Ta Da/                                  repo root (git)
 │   │   └── SourceTextView.swift        NSTextView + line numbers + role-based highlighting
 │   └── Assets.xcassets
 ├── TaDaTests/                          Swift Testing — AppModel / OpenDocument logic
-├── TaDaUITests/                        template bundle; one launch smoke test later
+├── TaDaUITests/                        keyboard smoke tests (arrow keys, ⌘K, ⌘L + undo) on a throwaway folder (`-uiTesting`)
 ├── Packages/TaDaCore/
 │   ├── Package.swift                   swift-markdown exact 0.9.0, Yams exact 6.2.2
 │   ├── Sources/TaDaCore/
@@ -146,6 +146,8 @@ Each milestone is small, ends green, and is verified before the next. Riskiest f
 | M8 | Source mode | SourceTextView (highlighting, line numbers), ⌘E toggle, FileInspector | Edit frontmatter in Source → Live reflects it; broken YAML → warning, not crash |
 | M9 | Outside world | VaultWatcher (FSEvents), clean/dirty reload, conflict versions, sync line, search, ⌘N / ⇧⌘N | Edit a file in TextEdit and Obsidian while running → updates in ~2 s; dirty buffer warns and keeps your text. Fallback if FSEvents misbehaves under the sandbox: rescan on app activation |
 | M10 | Hardening | Shortcuts, accessibility labels, 1,000-file generated vault, then a copy of a real folder, then the real one | MVP acceptance ↓ |
+
+**As built (M10)**: Task menu: ⌘K completes or reopens the selected task; ⌘L (Add Subtask) makes the caret's line in either editor a subtask, or starts a new one below a subtask, as one undo step. ↑/↓ move through the list on screen and Escape clears the selection, whenever no editor, title or search field has the keyboard; clicking a row takes the keyboard from the editor. This is a key monitor on the main window, because SwiftUI never gave a focusable list focus in the app's window. Decorative icons are hidden from VoiceOver and chips read as words. The engine fork now publishes undo and redo (fork change 9: TextKit 2 on macOS 27 sends no change notification for them, so undone text used to be saved). Scale, on `GeneratedVault` (1,000 items + 200 notes, debug build): index load 1.2 s, almost all of it one `NSFileCoordinator` read per file (a folder-level coordinated read takes 25 ms); refresh with no changes 29 ms; list queries 33 ms; one keystroke 11 ms and one arrow step 10 ms including the window's update. The real-folder steps are still to do.
 
 **MVP acceptance**: all 7 artboards reproducible on SampleVault; theme switch applies everywhere incl. both editors; completing / property edits / subtask toggles never touch bytes outside the targeted lines; external edits appear without restart and nothing is lost when both sides edit; `swift test`, ⌘U and `xcodebuild` green.
 

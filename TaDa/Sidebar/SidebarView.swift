@@ -60,6 +60,7 @@ struct SidebarView: View {
                 .font(.system(size: 13))
                 .foregroundStyle(theme.color(tint))
                 .frame(width: 16)
+                .accessibilityHidden(true)
         } label: {
             Text(title)
         }
@@ -84,6 +85,7 @@ struct SidebarView: View {
     private var searchField: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass").font(.system(size: 12)).foregroundStyle(theme.color(\.muted))
+                .accessibilityHidden(true)
             TextField("Search files", text: $model.searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
@@ -109,6 +111,7 @@ struct SidebarView: View {
         HStack(spacing: 8) {
             Image(systemName: model.isInICloud ? "icloud" : "folder")
                 .foregroundStyle(theme.color(model.isWatching ? \.done : \.muted))
+                .accessibilityHidden(true)
             Text("\(model.isWatching ? "Watching" : "Not watching") · \(model.folderDisplayName)")
                 .lineLimit(1)
                 .truncationMode(.middle)

@@ -12,6 +12,7 @@ struct FolderPickerView: View {
             Image(systemName: "checkmark.circle")
                 .font(.system(size: 44, weight: .light))
                 .foregroundStyle(theme.color(\.accent))
+                .accessibilityHidden(true)
             Text("Ta Da")
                 .font(.system(size: 26, weight: .bold))
                 .foregroundStyle(theme.color(\.strong))

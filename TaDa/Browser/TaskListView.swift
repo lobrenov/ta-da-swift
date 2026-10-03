@@ -14,15 +14,17 @@ struct TaskListView: View {
         let all = kind == .today ? model.index.today(model.today) : model.index.loose()
         let contexts = Set(all.flatMap(\.properties.contexts)).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         let shown = all.filter { task in context.map { task.properties.contexts.contains($0) } ?? true }
+        let groups = model.index.grouped(shown)
 
         VStack(alignment: .leading, spacing: 0) {
             header(contexts: contexts)
             if shown.isEmpty {
                 empty
             } else {
-                list(shown)
+                list(groups)
             }
         }
+        .arrowKeySelection(model, paths: groups.flatMap(\.tasks).map(\.path))
         .onChange(of: contexts) { if let context, !contexts.contains(context) { self.context = nil } }
     }
 
@@ -56,10 +58,10 @@ struct TaskListView: View {
         }
     }
 
-    private func list(_ shown: [Item]) -> some View {
+    private func list(_ groups: [TaskGroup]) -> some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 22) {
-                ForEach(model.index.grouped(shown)) { group in
+                ForEach(groups) { group in
                     VStack(alignment: .leading, spacing: 1) {
                         if let project = group.project {
                             ProjectGroupHeader(project: project, fraction: model.index.progress(of: project))

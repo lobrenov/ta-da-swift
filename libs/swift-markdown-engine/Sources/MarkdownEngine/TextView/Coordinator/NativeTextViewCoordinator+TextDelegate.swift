@@ -37,7 +37,24 @@ extension NativeTextViewCoordinator {
         }
         let manager = UndoManager()
         undoManagers[key] = manager
+        // Ta Da fork: see `undoManagerDidUndoOrRedo`.
+        for name in [Notification.Name.NSUndoManagerDidUndoChange, .NSUndoManagerDidRedoChange] {
+            NotificationCenter.default.addObserver(self, selector: #selector(undoManagerDidUndoOrRedo(_:)), name: name, object: manager)
+        }
         return manager
+    }
+
+    /// Ta Da fork: on macOS 27 a TextKit 2 NSTextView doesn't post NSTextDidChangeNotification for
+    /// undo or redo (TextKit 1 does), so the text changed on screen but the binding never heard.
+    /// When the undo or redo is over and textDidChange didn't run for it, run it now.
+    @objc func undoManagerDidUndoOrRedo(_ notification: Notification) {
+        defer { sawUndoRedoTextChange = false }
+        guard !sawUndoRedoTextChange, let textView, notification.object as? UndoManager === textView.undoManager else { return }
+        // Without exactly one tracked edit the range can't be trusted; nil makes the wiki sync rebuild.
+        if pendingEditCount != 1 { pendingEditedRange = nil }
+        isReplayingUndoRedo = true
+        defer { isReplayingUndoRedo = false }
+        textDidChange(Notification(name: NSText.didChangeNotification, object: textView))
     }
 
     /// Drops `documentId`'s undo stack when its switch-away snapshot no longer
@@ -76,6 +93,8 @@ extension NativeTextViewCoordinator {
 
     public func textDidChange(_ notification: Notification) {
         guard let tv = notification.object as? NSTextView else { return }
+        // Ta Da fork: see `undoManagerDidUndoOrRedo`.
+        if tv.undoManager?.isUndoing == true || tv.undoManager?.isRedoing == true { sawUndoRedoTextChange = true }
         PerfTrace.checkpoint("didIn")
         let completedTextMutation = pendingEditCount == 1
             ? pendingTextMutation
@@ -128,6 +147,7 @@ extension NativeTextViewCoordinator {
         let activeUndoManager = undoManagers[documentId ?? "__default__"]
         let isUndoRedo = activeUndoManager?.isUndoing == true
             || activeUndoManager?.isRedoing == true
+            || isReplayingUndoRedo
         guard !tv.hasMarkedText() else { return }
         let safeLocation = min(rawSelRange.location, fullLength)
         let safeSelRange = NSRange(location: safeLocation, length: 0)

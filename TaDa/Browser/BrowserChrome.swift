@@ -18,7 +18,7 @@ struct DomainHeader<Trailing: View>: View {
             if let ring {
                 ProgressRing(fraction: ring).scaleEffect(size / 16).frame(width: size - 3, height: size - 3)
             } else if let systemImage {
-                Image(systemName: systemImage).font(.system(size: size * 0.77))
+                Image(systemName: systemImage).font(.system(size: size * 0.77)).accessibilityHidden(true)
             }
             Text(title)
                 .font(.system(size: size, weight: .bold))
@@ -129,6 +129,7 @@ struct EmptyState: View {
             Image(systemName: systemImage)
                 .font(.system(size: 28, weight: .light))
                 .foregroundStyle(theme.color(\.muted))
+                .accessibilityHidden(true)
             Text(title)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(theme.color(\.strong))

@@ -171,3 +171,47 @@ struct WikiLinkAliasTests {
         #expect(attrs.contains { $0.attributes[.link] as? String == "Target" })
     }
 }
+
+@MainActor
+@Suite("Ta Da fork — undo and redo reach the binding")
+struct UndoBindingTests {
+
+    private final class Box { var text = "" }
+
+    @Test func undoAndRedoArePublished() async throws {
+        _ = NSApplication.shared
+        let box = Box()
+        box.text = "First line.\n"
+        let textView = NativeTextView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        #expect(textView.textLayoutManager != nil, "the AppKit bug is TextKit 2 only")
+        textView.isEditable = true
+        textView.allowsUndo = true
+        textView.configuration = .default
+        let coordinator = NativeTextViewCoordinator(
+            text: Binding(get: { box.text }, set: { box.text = $0 }), fontName: "SF Pro Text", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        coordinator.documentId = "A"
+        coordinator.textView = textView
+        textView.delegate = coordinator
+        textView.string = box.text
+        coordinator.lastSyncedText = box.text
+        coordinator.lastComputedStorage = box.text
+        coordinator.previousDisplayLength = (box.text as NSString).length
+
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        textView.insertText("- [ ] ", replacementRange: textView.selectedRange())
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(box.text == "- [ ] First line.\n")
+
+        textView.undoManager?.undo()
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(textView.string == "First line.\n")
+        #expect(box.text == "First line.\n")
+
+        textView.undoManager?.redo()
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(box.text == "- [ ] First line.\n")
+    }
+}
+

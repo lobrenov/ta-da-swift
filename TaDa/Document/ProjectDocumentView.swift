@@ -66,6 +66,7 @@ private struct LinkedTasksTable: View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 Image(systemName: "link").font(.system(size: 12, weight: .semibold)).foregroundStyle(theme.color(\.link))
+                    .accessibilityHidden(true)
                 Text("Tasks").font(.system(size: 14, weight: .bold)).foregroundStyle(theme.color(\.strong))
                     .accessibilityAddTraits(.isHeader)
                 Text("type: task · project: [[\(project.title)]]")
@@ -110,13 +111,17 @@ private struct LinkedTasksTable: View {
             StatusLabel(status: p.status, dotSize: 7),
             HStack(spacing: 10) {
                 TaskTitle(item: task, size: 13).lineLimit(1)
-                if subtasks.total > 0 { Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)").font(.system(size: 11.5)) }
+                if subtasks.total > 0 {
+                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                         spoken: "\(subtasks.done) of \(subtasks.total) subtasks done").font(.system(size: 11.5))
+                }
             },
             Text(p.dueDate?.relativeLabel(today: model.today).capitalizedFirst ?? "—")
                 .foregroundStyle(theme.color(p.dueDate != nil && !done ? \.fg : \.muted)),
             HStack(spacing: 5) {
                 if p.deadline != nil {
                     Image(systemName: "flag").font(.system(size: 10, weight: .semibold)).foregroundStyle(theme.color(\.deadline))
+                        .accessibilityLabel("Deadline")
                 }
                 Text(p.deadline?.relativeLabel(today: model.today).capitalizedFirst ?? "—")
                     .foregroundStyle(theme.color(p.deadline != nil ? \.fg : \.muted))

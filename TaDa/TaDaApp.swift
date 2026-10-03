@@ -3,7 +3,7 @@ import SwiftUI
 
 @main
 struct TaDaApp: App {
-    @State private var model = AppModel()
+    @State private var model = AppModel.forLaunch()
 
     var body: some Scene {
         Window("Ta Da", id: "main") {

@@ -18,6 +18,7 @@ struct ContentView: View {
                 } detail: {
                     WorkspaceView(model: model)
                 }
+                .arrowKeyMonitor(model)
             }
         }
         .environment(\.theme, model.theme)

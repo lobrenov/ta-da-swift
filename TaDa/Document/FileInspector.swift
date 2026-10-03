@@ -54,6 +54,7 @@ struct FileInspector: View {
                                     .font(.system(size: 12))
                                     .foregroundStyle(theme.color(place.tint))
                                     .frame(width: 16)
+                                    .accessibilityHidden(true)
                                 Text(place.title).foregroundStyle(theme.color(\.fg))
                                 Spacer(minLength: 8)
                                 Text(place.reason).font(.system(size: 11.5)).foregroundStyle(theme.color(\.muted))

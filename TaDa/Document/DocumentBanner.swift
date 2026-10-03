@@ -33,6 +33,7 @@ struct DocumentBanner: View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(theme.color(\.blocked))
+                    .accessibilityHidden(true)
                 Text(message).foregroundStyle(theme.color(\.fg)).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
                 actions().controlSize(.small)

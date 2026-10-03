@@ -20,7 +20,6 @@
       }
     },
     {
-      "enabled" : false,
       "target" : {
         "containerPath" : "container:TaDa.xcodeproj",
         "identifier" : "2B5935E8306FCAE500D4BBDB",

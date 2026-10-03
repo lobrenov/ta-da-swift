@@ -47,6 +47,12 @@ import TaDaCore
     var searchText = ""
     /// Bumped by the Search Files command; the sidebar's search field takes focus.
     var searchFocusRequest = 0
+    /// The browser list on screen, top to bottom, for the arrow keys. Set by the list itself.
+    struct ArrowKeyList: Equatable {
+        var id: UUID
+        var paths: [String]
+    }
+    @ObservationIgnored var arrowKeyList: ArrowKeyList?
     /// Whether FSEvents is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
     /// Refreshed when the day changes, so every query uses the same `today`.
@@ -69,7 +75,7 @@ import TaDaCore
     private var refreshing: Task<Void, Never>?
     private var refreshAgain = false
 
-    private enum Keys {
+    enum Keys {
         static let bookmark = "vaultBookmark"
         static let theme = "themeName"
     }
@@ -280,6 +286,17 @@ import TaDaCore
     }
 
     var isSearching: Bool { !searchText.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    /// ↑/↓: selects the task `offset` places away in the list on screen, or its first or last task when
+    /// none is selected. False when there's no list or no task that way.
+    @discardableResult
+    func moveSelection(by offset: Int) -> Bool {
+        guard let paths = arrowKeyList?.paths, !paths.isEmpty else { return false }
+        let next = selection.flatMap { paths.firstIndex(of: $0) }.map { $0 + offset } ?? (offset > 0 ? 0 : paths.count - 1)
+        guard paths.indices.contains(next) else { return false }
+        selection = paths[next]
+        return true
+    }
 
     /// Shows a file: a project opens as its own page in its domain; a task opens beside the current list.
     func open(_ path: String) {

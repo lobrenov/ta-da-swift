@@ -44,6 +44,10 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     /// switch-back a mismatch means the file was rewritten while backgrounded, so
     /// the now-stale undo stack is dropped. Pruned alongside `undoManagers`.
     var undoContentSnapshots: [String: String] = [:]
+    /// Ta Da fork: textDidChange ran for the undo or redo in progress (see `undoManagerDidUndoOrRedo`).
+    var sawUndoRedoTextChange = false
+    /// Ta Da fork: textDidChange is being run for an undo or redo that has already finished.
+    var isReplayingUndoRedo = false
     @Binding var text: String
     @Binding var isWikiLinkActive: Bool
     var fontName: String

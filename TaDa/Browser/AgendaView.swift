@@ -22,6 +22,10 @@ struct AgendaView: View {
         let entries = model.index.upcoming(after: today)
         let lastDay = today.adding(days: Self.days)
         let later = Dictionary(grouping: entries.filter { $0.date > lastDay }) { $0.date.startOfMonth }
+        // A task can have two entries (due and deadline); the arrow keys stop at its first.
+        let listed = style == .wide ? entries.filter { $0.date <= lastDay } : entries
+        var seen = Set<String>()
+        let paths = listed.map(\.item.path).filter { seen.insert($0).inserted }
 
         ScrollView {
             LazyVStack(alignment: .leading, spacing: style == .wide ? 10 : 6) {
@@ -47,6 +51,7 @@ struct AgendaView: View {
             .padding(.top, 4)
             .padding(.bottom, 24)
         }
+        .arrowKeySelection(model, paths: paths)
     }
 
     @ViewBuilder private func row(_ entry: AgendaEntry, dated: Bool) -> some View {
