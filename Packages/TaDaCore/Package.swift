@@ -26,7 +26,9 @@ let package = Package(
                 "TaDaCore",
                 .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "Yams", package: "Yams"),
-            ]
+            ],
+            // Read from disk by path, not bundled.
+            exclude: ["Fixtures"]
         ),
     ]
 )

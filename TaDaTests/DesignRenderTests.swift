@@ -4,8 +4,9 @@ import Testing
 import TaDaCore
 @testable import TaDa
 
-/// Renders the main window on SampleVault for every theme and domain, as PNGs to compare with the
-/// design canvas. Off by default. It reads the repo's SampleVault, so run it without the sandbox:
+/// Renders the main window on the design's data (TaDaCore's DesignVault fixture, frozen from SampleVault)
+/// for every theme and domain, as PNGs to compare with the design canvas. Off by default. It reads the
+/// fixture from the repo, so run it without the sandbox:
 ///
 ///     TEST_RUNNER_TADA_RENDER_DIR=/path/to/output xcodebuild -workspace TaDa.xcworkspace -scheme TaDa \
 ///       -destination 'platform=macOS' test -only-testing:TaDaTests/DesignRenderTests ENABLE_APP_SANDBOX=NO
@@ -18,7 +19,7 @@ struct DesignRenderTests {
         let output = URL(filePath: try #require(Self.output), directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let sampleVault = URL(filePath: #filePath).deletingLastPathComponent()
-            .appending(path: "../SampleVault").standardized
+            .appending(path: "../Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/DesignVault").standardized
         let suite = "TaDaRender-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }

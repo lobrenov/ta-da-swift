@@ -121,7 +121,9 @@ struct KeyboardTests {
 
         AddSubtask.perform(in: textView)
         try await settle()
-        #expect(model.document?.text.hasSuffix("- [ ] First line.\n- [ ] \n") == true)
+        #expect(model.document?.text.hasSuffix("---\n- [x] First line.\n") == true, "a subtask completes")
+        #expect(model.document?.item?.subtasks.done == 1)
+        #expect(textView.selectedRange().location == 11)
 
         // The test runner never ends the event, so both edits sit in one undo group here; in the app each
         // ⌘L is its own step (TaDaUITests). What matters here is that the undo reaches the document.

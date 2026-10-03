@@ -1,32 +1,36 @@
-/// What Add Subtask (⌘L) inserts into the line the caret is on. It only ever inserts, so the edit is
-/// minimal and undoes in one step.
+/// What Add Subtask (⌘L) does to the line the caret is on. The edit is minimal and undoes in one step.
 public enum SubtaskLine {
-    public enum Insertion: Equatable, Sendable {
+    public enum Edit: Equatable, Sendable {
         /// Make the line a subtask: insert `text` at UTF-16 `offset` in the line. Text after it moves along.
         case convert(offset: Int, text: String)
-        /// The line is already a subtask: append `text` (a line ending and an empty subtask) to the line.
-        case newSubtask(text: String)
+        /// The line is already a subtask: replace the marker at UTF-16 `offset` with `marker`.
+        case setMarker(offset: Int, marker: Character)
+        /// An icon-only box, which isn't a subtask: nothing to do.
+        case none
     }
 
-    /// `line` is the line's content without its line ending; `ending` is the file's line ending.
-    /// A plain line gets `- [ ] ` after its indent (and any `>` quote markers); a list item gets `[ ] `
-    /// after its marker; a subtask gets an empty subtask below it, at the same depth.
-    public static func insertion(for line: Substring, ending: String = "\n") -> Insertion {
+    /// `line` is the line's content without its line ending. A plain line gets `- [ ] ` after its indent
+    /// (and any `>` quote markers); a list item gets `[ ] ` after its marker; a subtask is completed, or
+    /// reopened if it's done or cancelled, as a click on its box does.
+    public static func edit(for line: Substring) -> Edit {
         let scalars = Array(line.unicodeScalars)
         var i = 0
         while i < scalars.count, scalars[i] == " " || scalars[i] == "\t" || scalars[i] == ">" { i += 1 }
-        let lead = String(String.UnicodeScalarView(scalars[..<i]))
-        guard let (marker, afterMarker) = listMarker(scalars, at: i) else {
+        guard let afterMarker = listMarkerEnd(scalars, at: i) else {
             return .convert(offset: i, text: "- [ ] ")
         }
-        if isCheckbox(scalars, at: afterMarker) {
-            return .newSubtask(text: ending + lead + nextMarker(marker) + " [ ] ")
+        guard let state = checkbox(scalars, at: afterMarker) else {
+            return .convert(offset: afterMarker, text: "[ ] ")
         }
-        return .convert(offset: afterMarker, text: "[ ] ")
+        switch state {
+        case .open: return .setMarker(offset: afterMarker + 1, marker: "x")
+        case .done, .cancelled: return .setMarker(offset: afterMarker + 1, marker: " ")
+        case .icon: return .none
+        }
     }
 
-    /// `-`, `*`, `+` or `1.`/`1)` followed by a space or tab: the marker and the index after the whitespace.
-    private static func listMarker(_ s: [Unicode.Scalar], at start: Int) -> (String, Int)? {
+    /// `-`, `*`, `+` or `1.`/`1)` followed by a space or tab: the index after the whitespace.
+    private static func listMarkerEnd(_ s: [Unicode.Scalar], at start: Int) -> Int? {
         var i = start
         if i < s.count, s[i] == "-" || s[i] == "*" || s[i] == "+" {
             i += 1
@@ -36,18 +40,13 @@ public enum SubtaskLine {
             i += 1
         }
         guard i < s.count, s[i] == " " || s[i] == "\t" else { return nil }
-        return (String(String.UnicodeScalarView(s[start..<i])), i + 1)
+        return i + 1
     }
 
-    /// `[c]` followed by whitespace or the end of the line.
-    private static func isCheckbox(_ s: [Unicode.Scalar], at i: Int) -> Bool {
-        guard i + 2 < s.count, s[i] == "[", s[i + 2] == "]" else { return false }
-        return i + 3 == s.count || s[i + 3] == " " || s[i + 3] == "\t"
-    }
-
-    /// The same bullet, or the next number for an ordered list.
-    private static func nextMarker(_ marker: String) -> String {
-        guard let number = Int(marker.dropLast()) else { return marker }
-        return "\(number + 1)\(marker.last!)"
+    /// A reference-set `[c]` followed by whitespace or the end of the line.
+    private static func checkbox(_ s: [Unicode.Scalar], at i: Int) -> Checkbox.State? {
+        guard i + 2 < s.count, s[i] == "[", s[i + 2] == "]",
+              i + 3 == s.count || s[i + 3] == " " || s[i + 3] == "\t" else { return nil }
+        return Checkbox.State(marker: Character(s[i + 1]))
     }
 }

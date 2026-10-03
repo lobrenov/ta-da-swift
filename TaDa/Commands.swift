@@ -1,5 +1,6 @@
 // Menu commands: ⌘N/⇧⌘N new task/project; ⌥⌘F search; ⌘1–3 switch domains; ⌘E Live/Source; View ▸ Theme;
-// Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor.
+// Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
+// the caret is on.
 import SwiftUI
 import TaDaCore
 

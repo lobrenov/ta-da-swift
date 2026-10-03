@@ -50,13 +50,17 @@ final class TaDaUITests: XCTestCase {
         app.typeKey(.upArrow, modifierFlags: .command)
         app.typeKey("l", modifierFlags: .command)
         XCTAssertEqual(body.value as? String, "- [ ] First line.\n")
+        app.typeText("Do ")
+        XCTAssertEqual(body.value as? String, "- [ ] Do First line.\n")
         app.typeKey("l", modifierFlags: .command)
-        app.typeText("Second")
-        XCTAssertEqual(body.value as? String, "- [ ] First line.\n- [ ] Second\n")
+        XCTAssertEqual(body.value as? String, "- [x] Do First line.\n", "⌘L on a subtask completes it")
+        app.typeKey("l", modifierFlags: .command)
+        XCTAssertEqual(body.value as? String, "- [ ] Do First line.\n", "and again reopens it")
 
         app.typeKey("z", modifierFlags: .command)
         app.typeKey("z", modifierFlags: .command)
-        XCTAssertEqual(body.value as? String, "- [ ] First line.\n", "typing and each Add Subtask undo on their own")
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertEqual(body.value as? String, "- [ ] First line.\n", "typing and each ⌘L undo on their own")
     }
 
     func testCompleteSelectedTask() throws {

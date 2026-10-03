@@ -1,15 +1,18 @@
 import Testing
 @testable import TaDaCore
 
-/// Applies an insertion the way the editor does, to check the resulting line.
+/// Applies an edit the way the editor does, to check the resulting line.
 private func apply(_ line: String) -> String {
-    switch SubtaskLine.insertion(for: line[...]) {
+    var utf16 = Array(line.utf16)
+    switch SubtaskLine.edit(for: line[...]) {
     case let .convert(offset, text):
-        let utf16 = Array(line.utf16)
-        return String(decoding: utf16[..<offset] + Array(text.utf16) + utf16[offset...], as: UTF16.self)
-    case let .newSubtask(text):
-        return line + text
+        utf16.insert(contentsOf: text.utf16, at: offset)
+    case let .setMarker(offset, marker):
+        utf16.replaceSubrange(offset...offset, with: String(marker).utf16)
+    case .none:
+        break
     }
+    return String(decoding: utf16, as: UTF16.self)
 }
 
 @Test func plainLinesBecomeSubtasks() {
@@ -28,7 +31,7 @@ private func apply(_ line: String) -> String {
     #expect(apply("12. Ordered") == "12. [ ] Ordered")
     #expect(apply("1) Paren") == "1) [ ] Paren")
     #expect(apply("- ") == "- [ ] ")
-    #expect(SubtaskLine.insertion(for: "  - Item") == .convert(offset: 4, text: "[ ] "))
+    #expect(SubtaskLine.edit(for: "  - Item") == .convert(offset: 4, text: "[ ] "))
 }
 
 @Test func notQuiteListItemsArePlainLines() {
@@ -36,16 +39,24 @@ private func apply(_ line: String) -> String {
     #expect(apply("1234567890. long") == "- [ ] 1234567890. long")
 }
 
-@Test func subtasksStartANewOneBelow() {
-    #expect(apply("- [ ] One") == "- [ ] One\n- [ ] ")
-    #expect(apply("  - [x] Done") == "  - [x] Done\n  - [ ] ")
-    #expect(apply("> * [/] Doing") == "> * [/] Doing\n> * [ ] ")
-    #expect(apply("3. [ ] Third") == "3. [ ] Third\n4. [ ] ")
-    #expect(apply("- [ ]") == "- [ ]\n- [ ] ")
-    #expect(SubtaskLine.insertion(for: "- [ ] A", ending: "\r\n") == .newSubtask(text: "\r\n- [ ] "))
+@Test func subtasksCompleteAndReopenLikeAClick() {
+    #expect(apply("- [ ] One") == "- [x] One")
+    #expect(apply("  - [/] Doing") == "  - [x] Doing")
+    #expect(apply("> 3. [>] Forwarded") == "> 3. [x] Forwarded")
+    #expect(apply("- [ ]") == "- [x]")
+    #expect(apply("- [x] Done 🙂") == "- [ ] Done 🙂")
+    #expect(apply("* [X] Done") == "* [ ] Done")
+    #expect(apply("- [-] Cancelled") == "- [ ] Cancelled")
+    #expect(SubtaskLine.edit(for: "  - [ ] A") == .setMarker(offset: 5, marker: "x"))
+}
+
+@Test func iconBoxesAreLeftAlone() {
+    #expect(SubtaskLine.edit(for: "- [?] Question") == .none)
+    #expect(SubtaskLine.edit(for: "- [!] Important") == .none)
 }
 
 @Test func bracketsThatArentBoxesAreListText() {
     #expect(apply("- [link](x)") == "- [ ] [link](x)")
     #expect(apply("- [[Wiki]]") == "- [ ] [[Wiki]]")
+    #expect(apply("- [a] Not a marker") == "- [ ] [a] Not a marker")
 }

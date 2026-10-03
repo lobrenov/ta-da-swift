@@ -12,13 +12,14 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - App build: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' build`
 - App + core tests: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test`. This runs `TaDa.xctestplan`: TaDaTests, TaDaCoreTests and TaDaUITests. The UI tests need the Accessibility permission for Xcode's test runner and fail if Ta Da is already running (stop it in Xcode first). They launch with `-uiTesting`, which uses throwaway settings and a small folder in the app's container (`TaDa/UITestingLaunch.swift`). Skip them with `-skip-testing:TaDaUITests`.
 - 1,000-file test folder (to open in the app): `TADA_GENERATE_VAULT=<dir> swift test --package-path Packages/TaDaCore --filter writeGeneratedVault`. `LargeVaultTests` and `LargeVaultUITimingTests` print the scale timings.
-- Design renders (PNG per theme/domain on SampleVault, to compare with the canvas): `TEST_RUNNER_TADA_RENDER_DIR=<dir> xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test -only-testing:TaDaTests/DesignRenderTests ENABLE_APP_SANDBOX=NO`. Offscreen capture can't draw glass or the title bar, so check those in the running app.
+- Design renders (PNG per theme/domain on the DesignVault fixture, to compare with the canvas): `TEST_RUNNER_TADA_RENDER_DIR=<dir> xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test -only-testing:TaDaTests/DesignRenderTests ENABLE_APP_SANDBOX=NO`. Offscreen capture can't draw glass or the title bar, so check those in the running app.
 - Always open `TaDa.xcworkspace`, not the `.xcodeproj`. Xcode 27 only shows a local package's tests in app test plans when the package is a workspace member.
 
 ## Layout
 - `Packages/TaDaCore/`: all non-UI logic (model, parsing, surgical writes, index, queries, storage). Foundation + swift-markdown + Yams only, never SwiftUI/AppKit.
 - `TaDa/`: SwiftUI app target. Folders are synchronised, so new files join the target automatically.
-- `SampleVault/`: dev vault recreating the design's data. Point the app at it. `git diff SampleVault` audits what the app wrote; `git checkout SampleVault` resets it.
+- `SampleVault/`: dev vault, started from the design's data and edited freely in manual testing; commit its changes with the work. Point the app at it. `git diff SampleVault` audits what the app wrote since the last commit.
+- `Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/DesignVault/`: the design's data, frozen. The design-count, golden and render tests read it; don't edit it to match a test.
 - `libs/swift-markdown-engine/`: the forked editor engine (see `FORK.md` there).
 
 ## Conventions

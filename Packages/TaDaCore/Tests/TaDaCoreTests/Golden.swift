@@ -26,9 +26,10 @@ func changedLines(_ before: String, _ after: String) -> (removed: [String], adde
     return (removed, added)
 }
 
-/// SampleVault/, found from this source file.
+/// The design's tasks and projects, frozen as SampleVault was before manual testing changed it
+/// (SampleVault itself is free to edit). Found from this source file.
 let sampleVault = URL(filePath: #filePath).deletingLastPathComponent()
-    .appending(path: "../../../../SampleVault").standardized
+    .appending(path: "Fixtures/DesignVault").standardized
 
 func sampleFiles() throws -> [URL] {
     (FileManager.default.enumerator(at: sampleVault, includingPropertiesForKeys: nil)?.allObjects ?? [])
