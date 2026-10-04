@@ -2,7 +2,7 @@
 
 - Upstream: https://github.com/nodes-app/swift-markdown-engine (Apache-2.0, see `LICENSE`)
 - Forked from: `0.13.0`, commit `d1421012aeece640e2c2e47e0e573a93cbe2a420`
-- Why: the M1 spike (`docs/mvp-plan.md`) needed changes the engine has no hooks for.
+- Why: the M1 spike (`docs/archive/mvp-plan.md`) needed changes the engine has no hooks for.
 
 ## Removed
 - `MarkdownEngineCodeBlocks` and `MarkdownEngineLatex` products (and their HighlighterSwift / SwiftMath dependencies), `Demo/`, `media/`, `.github/`.

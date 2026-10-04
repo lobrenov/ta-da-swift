@@ -5,7 +5,8 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - Brief: `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Personal/Projects/Ta Da - a to-do list app.md`
 - Design: Claude Design canvas https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V (artboards: Today, Project, Upcoming, Editor·source, Themes, Project·browser+editor, Agenda·browser+editor, Slash menu)
 - Design system: `docs/design/design-framework.md`. Follow it for UI work; its In the app table names the Swift view for each component, and its As built section lists where the app differs from the guidance. Component guidelines are in `docs/design/components/`, values in `docs/design/tokens.json`. Colour changes go in both `tokens.json` and `TaDa/Theme/BundledThemes.swift`.
-- Plan and milestones: `docs/mvp-plan.md`. Schema: `docs/file-format.md` (the source of truth; update it with any format change).
+- Architecture (layers, files, runtime, window, editors, shortcuts): `docs/architecture.md`. Schema: `docs/file-format.md` (the source of truth; update it with any format change).
+- Archive: `docs/archive/` holds finished plans (`mvp-plan.md`: the MVP's decisions, milestones and post-MVP backlog).
 
 ## Commands
 - Core tests: `swift test --package-path Packages/TaDaCore`
@@ -13,8 +14,8 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - App build: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' build`
 - App + core tests: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test`. This runs `TaDa.xctestplan`: TaDaTests, TaDaCoreTests and TaDaUITests. The UI tests need the Accessibility permission for Xcode's test runner and fail if Ta Da is already running (stop it in Xcode first). They launch with `-uiTesting`, which uses throwaway settings and a small folder in the app's container (`TaDa/UITestingLaunch.swift`). Skip them with `-skip-testing:TaDaUITests`.
 - 1,000-file test folder (to open in the app): `TADA_GENERATE_VAULT=<dir> swift test --package-path Packages/TaDaCore --filter writeGeneratedVault`. `LargeVaultTests` and `LargeVaultUITimingTests` print the scale timings.
-- Design renders (PNG per theme/domain on the DesignVault fixture, to compare with the canvas): `TEST_RUNNER_TADA_RENDER_DIR=<dir> xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test -only-testing:TaDaTests/DesignRenderTests ENABLE_APP_SANDBOX=NO`. Offscreen capture can't draw glass or the title bar, so check those in the running app.
-- Always open `TaDa.xcworkspace`, not the `.xcodeproj`. Xcode 27 only shows a local package's tests in app test plans when the package is a workspace member.
+- Design renders (PNG per theme/domain on the DesignVault fixture, to compare with the canvas): `TEST_RUNNER_TADA_RENDER_DIR=<dir> xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test -only-testing:TaDaTests/DesignRenderTests ENABLE_APP_SANDBOX=NO`. Check glass and the title bar in the running app.
+- Always open `TaDa.xcworkspace`, not the `.xcodeproj`.
 
 ## Layout
 - `Packages/TaDaCore/`: all non-UI logic (model, parsing, surgical writes, index, queries, storage). Foundation + swift-markdown + Yams only, never SwiftUI/AppKit.
