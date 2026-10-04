@@ -1,0 +1,57 @@
+/* Ta Da components: plain CSS classes over tokens.css. Prefix: td- */
+body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font-family: var(--font-sans); font-size: 13px; line-height: 1.45; }
+.td-stack { display: flex; flex-direction: column; gap: 4px; }
+.td-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+/* Checkbox: 16px box, 1.5px border, radius-xs. State by modifier. */
+.td-checkbox { box-sizing: border-box; flex-shrink: 0; width: 16px; height: 16px; padding: 0; border: 1.5px solid var(--muted); border-radius: var(--radius-xs); background: transparent; display: inline-flex; align-items: center; justify-content: center; color: var(--bg); cursor: pointer; }
+.td-checkbox svg { width: 11px; height: 11px; }
+.td-checkbox.is-done { border-color: var(--done); background: var(--done); }
+.td-checkbox.is-doing { border-color: var(--doing); }
+.td-checkbox.is-doing::after { content: ""; width: 6px; height: 6px; border-radius: 1.5px; background: var(--doing); }
+.td-checkbox.is-blocked { border-color: var(--blocked); }
+.td-checkbox.is-blocked::after { content: ""; width: 8px; height: 1.5px; border-radius: 1px; background: var(--blocked); }
+.td-checkbox:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Task row */
+.td-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; border-radius: var(--radius-md); }
+.td-row.is-selected { background: var(--surface); }
+.td-row .td-checkbox { margin-top: 2px; }
+.td-row-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.td-row-title { font-size: 13.5px; color: var(--fg); }
+.td-row.is-selected .td-row-title { color: var(--strong); }
+.td-row-title.is-done { color: var(--muted); text-decoration: line-through; }
+.td-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 11.5px; color: var(--muted); }
+.td-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.td-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.td-ic-due { color: var(--due); }
+.td-ic-deadline { color: var(--deadline); }
+
+/* Sidebar item */
+.td-nav { width: 240px; box-sizing: border-box; padding: 10px; background: var(--side); border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 2px; }
+.td-nav-item { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-radius: var(--radius-md); color: var(--fg); font-weight: 500; text-decoration: none; }
+.td-nav-item.is-active { background: var(--surface); color: var(--strong); font-weight: 600; }
+.td-nav-item .td-count { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--muted); }
+.td-nav-label { margin: 16px 10px 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+/* Property row (frontmatter) */
+.td-prop { display: flex; align-items: center; gap: 12px; height: 28px; font-size: 12.5px; }
+.td-prop-key { width: 120px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.td-prop-value { display: flex; align-items: center; gap: 7px; color: var(--fg); }
+.td-prop-value.is-empty { color: var(--muted); }
+.td-prop-value.is-link { color: var(--link); }
+
+/* Chip: filter pill and tag */
+.td-chip { height: 24px; padding: 0 10px; border: 0; border-radius: var(--radius-xl); background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.td-chip.is-on { background: var(--surface); color: var(--strong); }
+.td-tag { padding: 0 7px; border: 1px solid var(--border); border-radius: 9px; font-size: 11px; color: var(--muted); }
+
+/* Buttons */
+.td-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: transparent; color: var(--fg); font: inherit; font-size: 12px; cursor: pointer; }
+.td-btn-primary { border: 0; padding: 0 16px; background: var(--accent); color: var(--bg); font-weight: 700; font-size: 12.5px; }
+.td-btn-danger { border: 0; background: var(--deadline); color: var(--bg); font-weight: 700; }
+.td-btn:disabled { background: var(--surface); color: var(--muted); cursor: default; }
+.td-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.td-seg { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--radius-md); background: var(--surface); font-size: 12px; }
+.td-seg > * { padding: 3px 12px; border-radius: 5px; color: var(--fg); }
+.td-seg > .is-on { background: var(--bg); color: var(--strong); font-weight: 600; }
