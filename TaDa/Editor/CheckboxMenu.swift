@@ -87,7 +87,8 @@ final class CheckboxMenuController {
         switch event.keyCode {
         case 125 where count > 0: model.selection = (model.selection + 1) % count
         case 126 where count > 0: model.selection = (model.selection + count - 1) % count
-        case 36, 76 where model.items.indices.contains(model.selection): model.pick(model.items[model.selection].marker)
+        case 36, 76:
+            if model.items.indices.contains(model.selection) { model.pick(model.items[model.selection].marker) }
         case 53: hide()
         default: break
         }
@@ -191,7 +192,7 @@ private struct CheckboxMenuView: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(theme.color(\.accent))
             }
-            Text("[\(item.marker)]")
+            Text(verbatim: "[\(item.marker)]")
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(theme.color(\.muted))
                 .accessibilityHidden(true)
