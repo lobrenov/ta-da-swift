@@ -151,8 +151,6 @@ Each milestone is small, ends green, and is verified before the next. Riskiest f
 
 **MVP acceptance**: all 7 artboards reproducible on SampleVault; theme switch applies everywhere incl. both editors; completing / property edits / subtask toggles never touch bytes outside the targeted lines; external edits appear without restart and nothing is lost when both sides edit; `swift test`, ⌘U and `xcodebuild` green.
 
-**Post-MVP backlog**: recurrence, `.itermcolors` import, per-file iCloud sync state, JetBrains Mono, editing UI for area/contexts/project, iOS/iPad (editor choice), upstream fix for alias display.
-
 ## Verification (every milestone)
 - `swift test --package-path Packages/TaDaCore` and `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test` — run headless after each change.
 - Manual run against `SampleVault/`; `git diff SampleVault` is the write-safety check. From M10 SampleVault is a manual-testing playground whose edits get committed; the design's data is frozen in the TaDaCore test fixture `Fixtures/DesignVault`, which the design-count, golden and render tests use.

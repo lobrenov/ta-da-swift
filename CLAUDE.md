@@ -6,7 +6,7 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - Design: Claude Design canvas https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V (artboards: Today, Project, Upcoming, Editor·source, Themes, Project·browser+editor, Agenda·browser+editor, Slash menu)
 - Design system: `docs/design/design-framework.md`. Follow it for UI work; its In the app table names the Swift view for each component, and its As built section lists where the app differs from the guidance. Component guidelines are in `docs/design/components/`, values in `docs/design/tokens.json`. Colour changes go in both `tokens.json` and `TaDa/Theme/BundledThemes.swift`.
 - Architecture (layers, files, runtime, window, editors, shortcuts): `docs/architecture.md`. Schema: `docs/file-format.md` (the source of truth; update it with any format change).
-- Archive: `docs/archive/` holds finished plans (`mvp-plan.md`: the MVP's decisions, milestones and post-MVP backlog).
+- Backlog: `docs/backlog.md`. Archive: `docs/archive/` holds finished plans (`mvp-plan.md`: the MVP's decisions and milestones).
 
 ## Commands
 - Core tests: `swift test --package-path Packages/TaDaCore`
