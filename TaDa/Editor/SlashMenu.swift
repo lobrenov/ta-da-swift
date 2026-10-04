@@ -83,7 +83,9 @@ final class SlashMenuController {
     private func installEventMonitor() {
         guard eventMonitor == nil else { return }
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .scrollWheel]) { [weak self] event in
-            if let self, event.window !== self.panel { self.onDismiss() }
+            // A two-finger click on a trackpad also sends scroll events that don't move.
+            let isStillScroll = event.type == .scrollWheel && event.scrollingDeltaX == 0 && event.scrollingDeltaY == 0
+            if let self, event.window !== self.panel, !isStillScroll { self.onDismiss() }
             return event
         }
     }

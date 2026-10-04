@@ -75,7 +75,9 @@ final class CheckboxMenuController {
                 handle(event)
                 return nil
             }
-            if event.window !== panel { hide() }
+            // A two-finger click on a trackpad also sends scroll events that don't move.
+            let isStillScroll = event.type == .scrollWheel && event.scrollingDeltaX == 0 && event.scrollingDeltaY == 0
+            if event.window !== panel, !isStillScroll { hide() }
             return event
         }
     }
