@@ -8,3 +8,5 @@ build/
 
 # Rewritten by both Xcode (workspace member) and swift test; app pins live in TaDa.xcodeproj/project.xcworkspace
 Packages/TaDaCore/Package.resolved
+
+/CLAUDE.md
