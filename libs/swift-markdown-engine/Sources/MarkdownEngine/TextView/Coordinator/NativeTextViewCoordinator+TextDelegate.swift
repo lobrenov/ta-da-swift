@@ -409,6 +409,8 @@ extension NativeTextViewCoordinator {
         // one surviving side effect (updateAutocorrectSettings + selection bookkeeping) at
         // its end.
         if isRebuildingDocument { return }
+        // Ta Da fork: keep the slash menu's query in step with the caret.
+        updateSlashCommand(in: tv)
         let selRange = tv.selectedRange()
         let currentEventType = NSApp.currentEvent?.type
         // ONE bridge of the document text — this handler fires on every
@@ -912,6 +914,8 @@ extension NativeTextViewCoordinator {
             return true
         }
         guard let parsed = preEditParsed else { return true }
+        // Ta Da fork: a typed `/` may open the slash menu.
+        noteSlashCommandEdit(affectedCharRange, replacement: replacementString, in: preNS, codeTokens: parsed.codeTokens)
         pendingPreEditActiveTokenIndices = activeTokenIndices(
             parsed: parsed,
             selection: textView.selectedRange(),
@@ -957,6 +961,8 @@ extension NativeTextViewCoordinator {
     public func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         // Raw mode: default key handling (no ⇧⇥ outdent, no preview routing).
         if configuration.rawSourceMode { return false }
+        // Ta Da fork: ↑/↓/↵/⇥/esc drive an open slash menu.
+        if handleSlashCommandKey(commandSelector) { return true }
         if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
             return handleBacktab(textView)
         }

@@ -88,6 +88,12 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     var onBuildContextMenu: ((NSMenu, NSRange) -> NSMenu)?
     var onInlineSelectionChange: ((InlineSelectionState?) -> Void)?
     var onInlinePreviewKey: ((InlinePreviewKey) -> Bool)?
+    /// Ta Da fork: slash commands (see `NativeTextViewCoordinator+SlashCommand`).
+    var onSlashCommandChange: ((SlashCommandState?) -> Void)?
+    var onSlashCommandKey: ((InlinePreviewKey) -> Bool)?
+    var slashAnchor: Int?
+    var slashCommand: SlashCommandQuery?
+    var reportedSlashCommand: SlashCommandState?
     var onCodeBlockSelectionChange: (([CodeBlockSelection]) -> Void)?
     var didInitialFormatting: Bool = false
     /// One-shot guard so `updateCodeBlockSelection` only forces a full-document layout once per document.

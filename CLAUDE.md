@@ -3,7 +3,7 @@
 Native SwiftUI task manager over a folder of markdown files (one file per task/project, YAML frontmatter). macOS MVP; iOS/iPad later on the same code.
 
 - Brief: `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Personal/Projects/Ta Da - a to-do list app.md`
-- Design: Claude Design canvas https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V (artboards: Today, Project, Upcoming, Editor·source, Themes, Project·browser+editor, Agenda·browser+editor)
+- Design: Claude Design canvas https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V (artboards: Today, Project, Upcoming, Editor·source, Themes, Project·browser+editor, Agenda·browser+editor, Slash menu)
 - Plan and milestones: `docs/mvp-plan.md`. Schema: `docs/file-format.md` (the source of truth; update it with any format change).
 
 ## Commands

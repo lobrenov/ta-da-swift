@@ -141,6 +141,15 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
     /// Return `true` to show the arrow cursor instead of the I-beam.
     public var isCursorExcluded: ((CGPoint) -> Bool)?
 
+    /// Ta Da fork: fires when a `/` typed at a line start or after whitespace opens a
+    /// slash command, as its query changes, and with `nil` when it closes.
+    public var onSlashCommandChange: ((SlashCommandState?) -> Void)?
+    /// Ta Da fork: ↑/↓ and ↵/⇥ (`.confirm`) while a slash command is open. Return `true`
+    /// to consume the key. Esc always closes it.
+    public var onSlashCommandKey: ((InlinePreviewKey) -> Bool)?
+    /// Ta Da fork: inserts the chosen format or closes the slash command.
+    public var slashCommandProxy: SlashCommandProxy?
+
     public init(
         text: Binding<String>,
         isWikiLinkActive: Binding<Bool> = .constant(false),
@@ -166,7 +175,10 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         retainedScrollDocumentIds: Set<String>? = nil,
         onPersistScrollOffset: ((String, CGFloat) -> Void)? = nil,
         restoreScrollOffset: ((String) -> CGFloat?)? = nil,
-        isCursorExcluded: ((CGPoint) -> Bool)? = nil
+        isCursorExcluded: ((CGPoint) -> Bool)? = nil,
+        onSlashCommandChange: ((SlashCommandState?) -> Void)? = nil,
+        onSlashCommandKey: ((InlinePreviewKey) -> Bool)? = nil,
+        slashCommandProxy: SlashCommandProxy? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -193,6 +205,9 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         self.onPersistScrollOffset = onPersistScrollOffset
         self.restoreScrollOffset = restoreScrollOffset
         self.isCursorExcluded = isCursorExcluded
+        self.onSlashCommandChange = onSlashCommandChange
+        self.onSlashCommandKey = onSlashCommandKey
+        self.slashCommandProxy = slashCommandProxy
     }
 
     public func sizeThatFits(
@@ -335,6 +350,9 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         context.coordinator.onInlineSelectionChange = onInlineSelectionChange
         context.coordinator.onInlinePreviewKey = onInlinePreviewKey
         context.coordinator.onCodeBlockSelectionChange = onCodeBlockSelectionChange
+        context.coordinator.onSlashCommandChange = onSlashCommandChange
+        context.coordinator.onSlashCommandKey = onSlashCommandKey
+        slashCommandProxy?.coordinator = context.coordinator
 
         textView.recalcOverscroll(for: scrollView)
         textView.setPlaceholder(placeholder)
@@ -400,6 +418,10 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
             return
         }
         context.coordinator.refresh(text: $text, isWikiLinkActive: $isWikiLinkActive, onLinkClick: onLinkClick)
+        // Ta Da fork: before the early returns below, so the slash menu sees current closures.
+        context.coordinator.onSlashCommandChange = onSlashCommandChange
+        context.coordinator.onSlashCommandKey = onSlashCommandKey
+        slashCommandProxy?.coordinator = context.coordinator
         reconcileHeader(textView: textView, context: context)
 
         let isNodeSwitch = context.coordinator.documentId != documentId
@@ -638,6 +660,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
             context.coordinator.didInitialFormatting = false
             context.coordinator.didEnsureLayoutForCurrentDocument = false
             context.coordinator.resetImageEmbedState()
+            context.coordinator.dismissSlashCommand()
             // Drop old document's wide-table overlays synchronously.
             textView.removeAllWideTableOverlays()
             // Park at top during the rebuild; the new document's own saved offset

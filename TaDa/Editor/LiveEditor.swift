@@ -2,6 +2,7 @@
 import SwiftUI
 import AppKit
 import MarkdownEngine
+import TaDaCore
 
 struct LiveEditor: View {
     @Binding var text: String
@@ -14,6 +15,9 @@ struct LiveEditor: View {
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
 
+    @State private var slashMenu = SlashMenuController()
+    @State private var slashCommand = SlashCommandProxy()
+
     var body: some View {
         NativeTextViewWrapper(
             text: $text,
@@ -22,7 +26,30 @@ struct LiveEditor: View {
             fontSize: 14,
             documentId: documentID,
             onLinkClick: onLinkClick,
-            header: header
+            header: header,
+            onSlashCommandChange: showSlashMenu,
+            onSlashCommandKey: { key in
+                switch key {
+                case .moveUp: slashMenu.handle(.up)
+                case .moveDown: slashMenu.handle(.down)
+                case .confirm: slashMenu.handle(.confirm)
+                case .confirmAndOpen, .cancel: false
+                }
+            },
+            slashCommandProxy: slashCommand
+        )
+        .onDisappear { slashMenu.hide() }
+    }
+
+    private func showSlashMenu(_ state: SlashCommandState?) {
+        guard let state else { return slashMenu.hide() }
+        slashMenu.show(
+            query: state.query, atLineStart: state.isAtLineStart, anchor: state.anchorRect, theme: theme,
+            pick: { [slashCommand] command in
+                let insertion = command.insertion(followsBlankLine: state.followsBlankLine)
+                slashCommand.insert(insertion.text, selecting: insertion.selection)
+            },
+            dismiss: { [slashCommand] in slashCommand.dismiss() }
         )
     }
 

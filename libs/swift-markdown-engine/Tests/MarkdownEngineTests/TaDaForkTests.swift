@@ -215,3 +215,117 @@ struct UndoBindingTests {
     }
 }
 
+
+@MainActor
+@Suite("Ta Da fork — slash commands")
+struct SlashCommandTests {
+
+    private final class Recorder {
+        var text = ""
+        var states: [SlashCommandState?] = []
+        var keys: [InlinePreviewKey] = []
+        var last: SlashCommandState? { states.last ?? nil }
+    }
+
+    private func makeEditor(_ text: String, _ recorder: Recorder) -> (NativeTextView, SlashCommandProxy) {
+        _ = NSApplication.shared
+        recorder.text = text
+        let textView = NativeTextView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        textView.isEditable = true
+        textView.allowsUndo = true
+        textView.configuration = .default
+        let coordinator = NativeTextViewCoordinator(
+            text: Binding(get: { recorder.text }, set: { recorder.text = $0 }), fontName: "SF Pro Text", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        coordinator.documentId = "A"
+        coordinator.textView = textView
+        coordinator.onSlashCommandChange = { recorder.states.append($0) }
+        coordinator.onSlashCommandKey = { recorder.keys.append($0); return true }
+        textView.delegate = coordinator
+        textView.string = text
+        coordinator.lastSyncedText = text
+        coordinator.lastComputedStorage = text
+        coordinator.previousDisplayLength = (text as NSString).length
+        textView.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
+        objc_setAssociatedObject(textView, &Self.coordinatorKey, coordinator, .OBJC_ASSOCIATION_RETAIN)
+        let proxy = SlashCommandProxy()
+        proxy.coordinator = coordinator
+        return (textView, proxy)
+    }
+    private static var coordinatorKey = 0
+
+    private func type(_ tv: NSTextView, _ text: String) async throws {
+        for character in text { tv.insertText(String(character), replacementRange: tv.selectedRange()) }
+        try await Task.sleep(for: .milliseconds(30))
+    }
+
+    @Test func slashAtLineStartOpensAndFollowsTheQuery() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("Intro\n", recorder)
+        try await type(tv, "/ta")
+        let state = try #require(recorder.last)
+        #expect(state.query == "ta")
+        #expect(state.range == NSRange(location: 6, length: 3))
+        #expect(state.isAtLineStart && !state.followsBlankLine)
+    }
+
+    @Test func slashAfterTextIsMidLineAndInsideAWordIsIgnored() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("Ship it ", recorder)
+        try await type(tv, "/bo")
+        #expect(recorder.last?.isAtLineStart == false)
+
+        let other = Recorder()
+        let (url, _) = makeEditor("and", other)
+        try await type(url, "/or")
+        #expect(other.states.isEmpty)
+    }
+
+    @Test func spaceOrLeavingTheQueryCloses() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("", recorder)
+        try await type(tv, "/h")
+        #expect(recorder.last?.query == "h")
+        try await type(tv, " ")
+        #expect(recorder.states.last! == nil)
+    }
+
+    @Test func keysRouteToTheMenuAndEscapeCloses() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("", recorder)
+        try await type(tv, "/")
+        tv.doCommand(by: #selector(NSResponder.moveDown(_:)))
+        tv.doCommand(by: #selector(NSResponder.insertNewline(_:)))
+        #expect(recorder.keys == [.moveDown, .confirm])
+        tv.doCommand(by: #selector(NSResponder.cancelOperation(_:)))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(recorder.states.last! == nil)
+        #expect(tv.string == "/")
+        // Closed: typing more doesn't reopen it until a new `/`.
+        try await type(tv, "h")
+        #expect(recorder.states.last! == nil)
+    }
+
+    @Test func insertReplacesTheQueryAsOneUndoStep() async throws {
+        let recorder = Recorder()
+        let (tv, proxy) = makeEditor("Intro\n", recorder)
+        try await type(tv, "/bo")
+        proxy.insert("****", selecting: NSRange(location: 2, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(tv.string == "Intro\n****")
+        #expect(tv.selectedRange() == NSRange(location: 8, length: 0))
+        #expect(recorder.text == "Intro\n****")
+        #expect(recorder.states.last! == nil)
+        tv.undoManager?.undo()
+        #expect(tv.string == "Intro\n/bo")
+    }
+
+    @Test func slashInsideCodeIsIgnored() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("```\n\n```\n", recorder)
+        tv.setSelectedRange(NSRange(location: 4, length: 0))
+        try await type(tv, "/")
+        #expect(recorder.states.isEmpty)
+    }
+}
