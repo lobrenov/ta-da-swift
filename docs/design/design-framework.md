@@ -2,6 +2,8 @@
 
 Copied on 2026-10-04 from the Claude Design System artifact https://claude.ai/artifact/GkKXeVHXv9XMGMWWacPppz (version 1791096330-444b). This folder is the copy the repo follows: `tokens.json` holds the values, `components/<Name>/README.md` the component guidelines and `components/bundle.css` their reference CSS. [In the app](#in-the-app) maps each part to its Swift code, and [As built](#as-built) lists where the app differs from the guidance.
 
+The app's screens, menus and states are mocked up on the Claude Design canvas https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V.
+
 The design system for Ta Da, a Swift-native task manager where every task and project is a plain markdown file in iCloud Drive. The interface is quiet chrome around the files: neutral panes, one accent, and colour reserved for meaning. Every colour comes from an iTerm2 colour scheme, so the whole app rethemes from one file.
 
 ## Principles
