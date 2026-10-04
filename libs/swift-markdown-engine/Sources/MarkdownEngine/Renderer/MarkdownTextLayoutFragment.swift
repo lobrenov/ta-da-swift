@@ -836,11 +836,15 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
             let boxRect = CGRect(x: alignToPixel(boxX), y: alignToPixel(boxY), width: size, height: size)
             guard !boxRect.isEmpty, !boxRect.isNull else { return }
 
+            let tint = style.tints[marker]
+                ?? (marker == " " ? configuration.theme.mutedText : configuration.theme.bodyText)
+            if let draw = style.draw {
+                draw(marker, boxRect, tint)
+                return
+            }
             let symbolName = style.symbolNames[marker] ?? "square"
             guard let baseSymbol = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)
                 ?? NSImage(systemSymbolName: "square", accessibilityDescription: nil) else { return }
-            let tint = style.tints[marker]
-                ?? (marker == " " ? configuration.theme.mutedText : configuration.theme.bodyText)
             let symbolConfig = NSImage.SymbolConfiguration(pointSize: size * 0.85, weight: .regular)
                 .applying(NSImage.SymbolConfiguration(hierarchicalColor: tint))
             let symbol = baseSymbol.withSymbolConfiguration(symbolConfig) ?? baseSymbol

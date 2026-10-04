@@ -17,6 +17,7 @@ struct LiveEditor: View {
 
     @State private var slashMenu = SlashMenuController()
     @State private var slashCommand = SlashCommandProxy()
+    @State private var checkboxMenu = CheckboxMenuController()
 
     var body: some View {
         NativeTextViewWrapper(
@@ -36,9 +37,20 @@ struct LiveEditor: View {
                 case .confirmAndOpen, .cancel: false
                 }
             },
-            slashCommandProxy: slashCommand
+            slashCommandProxy: slashCommand,
+            onTaskMarkerMenu: showCheckboxMenu
         )
-        .onDisappear { slashMenu.hide() }
+        .onDisappear {
+            slashMenu.hide()
+            checkboxMenu.hide()
+        }
+    }
+
+    private func showCheckboxMenu(_ request: TaskMarkerMenuRequest) {
+        checkboxMenu.show(
+            current: request.marker, anchor: request.anchorRect, items: TaskCheckboxStyle.referenceMenu,
+            tints: configuration.taskCheckbox.tints, theme: theme, pick: request.setMarker
+        )
     }
 
     private func showSlashMenu(_ state: SlashCommandState?) {
@@ -70,12 +82,23 @@ struct LiveEditor: View {
             highlightColor: theme.due.withAlphaComponent(0.3),
             selectionBackground: theme.surface
         )
+        let background = theme.bg
         config.taskCheckbox = TaskCheckboxStyle(
             tints: [" ": theme.muted, "x": theme.done, "X": theme.done, "/": theme.doing, "-": theme.muted,
-                    ">": theme.accent, "<": theme.due],
+                    ">": theme.accent, "<": theme.due, "?": theme.doing, "!": theme.deadline, "*": theme.due,
+                    "\"": theme.muted, "l": theme.link, "b": theme.blocked, "i": theme.accent, "S": theme.done,
+                    "I": theme.due, "p": theme.done, "c": theme.deadline, "f": theme.blocked, "k": theme.due,
+                    "w": theme.due, "u": theme.done, "d": theme.deadline],
             struckMarkers: ["x", "X", "-"],
             // Open states complete; done and cancelled reopen. Icon-only markers ignore clicks.
-            clickTransitions: [" ": "x", "/": "x", ">": "x", "<": "x", "x": " ", "X": " ", "-": " "]
+            clickTransitions: [" ": "x", "/": "x", ">": "x", "<": "x", "x": " ", "X": " ", "-": " "],
+            // A 16pt box on the 14pt body font (17pt high).
+            sizeScale: 0.96,
+            contentGap: 10,
+            draw: { marker, rect, tint in
+                guard let context = NSGraphicsContext.current?.cgContext else { return }
+                InlineCheckbox.draw(marker, in: rect, tint: tint, background: background, context: context)
+            }
         )
         config.services = MarkdownEditorServices(
             wikiLinks: TitleResolver(titles: linkTargets),

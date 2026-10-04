@@ -44,9 +44,11 @@ TaDa/
 │   └── DocumentBanner.swift   outside-change choices
 ├── Editor/
 │   ├── LiveEditor.swift       the only file that imports MarkdownEngine
+│   ├── InlineCheckbox.swift   checkbox drawing for the editor and task rows
 │   ├── SourceTextView.swift   Source mode (NSTextView, line numbers)
 │   ├── SourceHighlighter.swift
 │   ├── SlashMenu.swift
+│   ├── CheckboxMenu.swift
 │   └── AddSubtask.swift
 └── Shared/                    LocalDate display formats
 
@@ -84,9 +86,10 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 
 ## Editors
 
-- **Live**: `LiveEditor` runs the engine with `.fitsContent` height inside a SwiftUI `ScrollView`, between the title and properties above and the footer (and a project's linked-tasks table) below. The engine's binding reads and writes only the body; it is spliced back after the frontmatter block. Theme tokens map to `MarkdownEditorTheme`; `TaskCheckboxStyle` sets checkbox symbols, tints and click transitions; wikilinks resolve by title.
+- **Live**: `LiveEditor` runs the engine with `.fitsContent` height inside a SwiftUI `ScrollView`, between the title and properties above and the footer (and a project's linked-tasks table) below. The engine's binding reads and writes only the body; it is spliced back after the frontmatter block. Theme tokens map to `MarkdownEditorTheme`; `TaskCheckboxStyle` sets checkbox tints and click transitions, and `InlineCheckbox` draws the boxes; wikilinks resolve by title.
 - **Source**: `SourceTextView`, a TextKit 1 `NSTextView` with a line-number ruler and a current-line highlight. It edits the whole file, frontmatter included. `SourceHighlighter` colours it by role (key `accent`, value `fg`, string `done`, date `due`, heading `strong`, punctuation and checkbox `muted`, done checkbox `done`, link `link`) and reruns over the whole file after each edit.
 - **Slash menu**: `/` in the Live editor opens `SlashMenu`, a themed list of `SlashCommand` formats in a borderless panel.
+- **Checkbox menu**: a right-click on a Live editor checkbox opens `CheckboxMenu`, the same kind of panel listing every marker (subtasks, then icons) with its box drawn by `InlineCheckbox`. While open it takes ↑↓, ↵ and esc.
 
 ## Shortcuts
 

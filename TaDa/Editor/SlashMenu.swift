@@ -210,9 +210,9 @@ private struct SlashMenuView: View {
 
     private var footer: some View {
         HStack(spacing: 14) {
-            keyHint("↑↓", "Navigate")
-            keyHint("↵", "Insert")
-            keyHint("esc", "Close")
+            MenuKeyHint(key: "↑↓", label: "Navigate", theme: theme)
+            MenuKeyHint(key: "↵", label: "Insert", theme: theme)
+            MenuKeyHint(key: "esc", label: "Close", theme: theme)
             Spacer()
         }
         .font(.system(size: 11))
@@ -224,7 +224,15 @@ private struct SlashMenuView: View {
         .accessibilityHidden(true)
     }
 
-    private func keyHint(_ key: String, _ label: String) -> some View {
+}
+
+/// A key cap and what it does, for a menu footer.
+struct MenuKeyHint: View {
+    let key: String
+    let label: String
+    let theme: Theme
+
+    var body: some View {
         HStack(spacing: 5) {
             Text(key)
                 .font(.system(size: 10.5, design: .monospaced))
@@ -233,6 +241,8 @@ private struct SlashMenuView: View {
                 .background(theme.color(\.surface), in: .rect(cornerRadius: 4))
             Text(label)
         }
+        .lineLimit(1)
+        .fixedSize()
     }
 }
 
@@ -275,6 +285,6 @@ private struct SlashCommandIcon: View {
 }
 
 /// The panel never becomes key, so the first click must reach the menu.
-private final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }

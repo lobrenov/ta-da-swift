@@ -474,6 +474,7 @@ enum MarkdownASTStyler {
                 attrs.append((NSRange(location: NSMaxRange(box), length: NSMaxRange(item.range) - NSMaxRange(box)), [
                     .strikethroughStyle: NSUnderlineStyle.single.rawValue,
                     .strikethroughColor: ctx.theme.strikethroughColor,
+                    .foregroundColor: ctx.theme.mutedText,
                 ]))
             }
         } else if !item.ordered {

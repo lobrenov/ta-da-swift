@@ -102,26 +102,15 @@ struct StatusCheckbox: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
+        let (marker, tint): (Character, NSColor) = switch status {
+        case .notStarted: (" ", theme.muted)
+        case .doing: ("/", theme.doing)
+        case .blocked: ("B", theme.blocked)
+        case .done: ("x", theme.done)
+        }
         Button(action: action) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(status == .done ? theme.color(\.done) : .clear)
-                RoundedRectangle(cornerRadius: 4)
-                    .strokeBorder(theme.statusColor(status), lineWidth: 1.5)
-                switch status {
-                case .done:
-                    Image(systemName: "checkmark")
-                        .font(.system(size: size * 0.6, weight: .heavy))
-                        .foregroundStyle(theme.color(\.bg))
-                case .doing:
-                    RoundedRectangle(cornerRadius: 1.5).fill(theme.color(\.doing)).frame(width: 6, height: 6)
-                case .blocked:
-                    Capsule().fill(theme.color(\.blocked)).frame(width: 8, height: 1.5)
-                case .notStarted:
-                    EmptyView()
-                }
-            }
-            .frame(width: size, height: size)
+            InlineCheckboxView(marker: marker, tint: tint, background: theme.bg)
+                .frame(width: size, height: size)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

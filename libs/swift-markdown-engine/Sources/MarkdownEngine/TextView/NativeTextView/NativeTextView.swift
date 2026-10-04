@@ -69,6 +69,8 @@ final class NativeTextView: NSTextView {
     /// Called on every mouse-move with the event location in window coordinates.
     /// Return `true` to show the arrow cursor instead of the edit-mode I-beam.
     var isCursorExcluded: ((CGPoint) -> Bool)?
+    /// Ta Da fork: see ``NativeTextViewWrapper/onTaskMarkerMenu``.
+    var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
 
     // MARK: Wide-table overlay state
     /// Live NSScrollView per wide table; keyed by source-ID hash.
@@ -79,7 +81,8 @@ final class NativeTextView: NSTextView {
     /// Ta Da fork: a right-click on a task box offers its markers. Checked before super,
     /// which moves the caret to the click — onto the box's line, revealing the raw `[ ]`.
     override func menu(for event: NSEvent) -> NSMenu? {
-        taskMarkerMenu(for: event) ?? super.menu(for: event)
+        if let hit = taskCheckboxHit(for: event) { return taskMarkerMenu(for: hit) }
+        return super.menu(for: event)
     }
 
     override func viewDidChangeEffectiveAppearance() {

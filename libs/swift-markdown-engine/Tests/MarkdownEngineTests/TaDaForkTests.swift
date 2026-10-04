@@ -40,7 +40,10 @@ struct AlternativeCheckboxTests {
         #expect(!cancelled.contains { $0.attributes[.strikethroughStyle] != nil })
         let done = attrs("- [x] finished")
         #expect(done.contains { $0.attributes[.taskCheckbox] as? String == "x" })
-        #expect(done.contains { $0.attributes[.strikethroughStyle] != nil })
+        #expect(done.contains {
+            $0.attributes[.strikethroughStyle] != nil
+                && $0.attributes[.foregroundColor] as? NSColor == MarkdownEditorConfiguration.default.theme.mutedText
+        })
     }
 
     @Test func referenceStyleCoversEveryMarker() {
@@ -327,5 +330,64 @@ struct SlashCommandTests {
         tv.setSelectedRange(NSRange(location: 4, length: 0))
         try await type(tv, "/")
         #expect(recorder.states.isEmpty)
+    }
+}
+
+@MainActor
+@Suite("Ta Da fork — task marker menu hook")
+struct TaskMarkerMenuHookTests {
+
+    @Test func rightClickOnABoxGoesToTheHookAndSetsTheMarkerOnce() throws {
+        _ = NSApplication.shared
+        let text = "Intro\n\n- [ ] a\n"
+        let coordinator = NativeTextViewCoordinator(
+            text: .constant(text), fontName: "SF Pro", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        let tv = NativeTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
+        tv.isEditable = true
+        tv.delegate = coordinator
+        let scrollView = NSScrollView(frame: tv.frame)
+        scrollView.documentView = tv
+        let window = NSWindow(contentRect: tv.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = scrollView
+        let bridge = LayoutBridge(try #require(tv.textLayoutManager))
+        coordinator.layoutBridge = bridge
+        tv.layoutBridge = bridge
+        coordinator.textView = tv
+        coordinator.rebuildTextStorageAndStyle(tv, from: text)
+        coordinator.lastSyncedText = text
+        coordinator.lastComputedStorage = text
+        coordinator.previousDisplayLength = (text as NSString).length
+        tv.setSelectedRange(NSRange(location: 0, length: 0))
+
+        var requests: [TaskMarkerMenuRequest] = []
+        tv.onTaskMarkerMenu = { requests.append($0) }
+
+        let storage = try #require(tv.textStorage)
+        var box = NSRange(location: NSNotFound, length: 0)
+        storage.enumerateAttribute(.taskCheckbox, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+            if value != nil { box = range }
+        }
+        try #require(box.location != NSNotFound)
+        let anchor = try #require(tv.layoutBridge).boundingRect(forCharacterRange: box, in: try #require(tv.textContainer))
+        let size = TaskCheckboxGeometry.size(for: tv.baseFont, style: tv.configuration.taskCheckbox)
+        let containerPoint = CGPoint(x: TaskCheckboxGeometry.boxX(contentX: anchor.minX, size: size,
+                                                                  style: tv.configuration.taskCheckbox) + size / 2,
+                                     y: anchor.midY)
+        let viewPoint = CGPoint(x: containerPoint.x + tv.textContainerOrigin.x, y: containerPoint.y + tv.textContainerOrigin.y)
+        let event = try #require(NSEvent.mouseEvent(
+            with: .rightMouseDown, location: tv.convert(viewPoint, to: nil), modifierFlags: [], timestamp: 0,
+            windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+        ))
+
+        #expect(tv.menu(for: event) == nil)
+        let request = try #require(requests.first)
+        #expect(request.marker == " ")
+        request.setMarker("x")
+        #expect(tv.string == "Intro\n\n- [x] a\n")
+        // The box changed since the request, so a second pick does nothing.
+        request.setMarker("/")
+        #expect(tv.string == "Intro\n\n- [x] a\n")
     }
 }

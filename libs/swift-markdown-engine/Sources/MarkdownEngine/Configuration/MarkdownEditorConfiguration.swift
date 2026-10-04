@@ -353,7 +353,7 @@ public struct ListStyle: Sendable {
 /// `[ ]` / `[x]`. Each marker maps to an SF Symbol and an optional tint; a
 /// marker without a tint uses `MarkdownEditorTheme/mutedText` for `[ ]` and
 /// `MarkdownEditorTheme/bodyText` for everything else. A symbol name that
-/// doesn't resolve falls back to `square`.
+/// doesn't resolve falls back to `square`. A `draw` closure replaces the symbols.
 public struct TaskCheckboxStyle: Sendable {
     /// SF Symbol drawn for each marker character.
     public var symbolNames: [Character: String]
@@ -369,6 +369,9 @@ public struct TaskCheckboxStyle: Sendable {
     public var sizeScale: CGFloat
     /// Space between the box and the item text, in points.
     public var contentGap: CGFloat
+    /// Draws a marker's box into the current (flipped) graphics context, given the box rect
+    /// and the marker's tint. When set, it replaces `symbolNames` on the page and in the menu.
+    public var draw: (@Sendable (_ marker: Character, _ rect: CGRect, _ tint: NSColor) -> Void)?
 
     public init(
         symbolNames: [Character: String] = TaskCheckboxStyle.referenceSymbols,
@@ -377,7 +380,8 @@ public struct TaskCheckboxStyle: Sendable {
         clickTransitions: [Character: Character] = [" ": "x", "x": " ", "X": " "],
         menuItems: [(marker: Character, title: String)] = TaskCheckboxStyle.referenceMenu,
         sizeScale: CGFloat = 1.0,
-        contentGap: CGFloat = 6
+        contentGap: CGFloat = 6,
+        draw: (@Sendable (_ marker: Character, _ rect: CGRect, _ tint: NSColor) -> Void)? = nil
     ) {
         self.symbolNames = symbolNames
         self.tints = tints
@@ -386,6 +390,7 @@ public struct TaskCheckboxStyle: Sendable {
         self.menuItems = menuItems
         self.sizeScale = sizeScale
         self.contentGap = contentGap
+        self.draw = draw
     }
 
     /// SF Symbol equivalents of the reference set's Lucide icons.

@@ -100,13 +100,14 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 | --- | --- |
 | Colour tokens and themes | `Theme` (`TaDa/Theme/Theme.swift`), one `NSColor` property per token, read from the `\.theme` environment value. The fifteen schemes are `Theme.all` and the eight sets `ThemeSet.all` in `TaDa/Theme/BundledThemes.swift`, with the same values and order as `tokens.json`. `AppModel` picks the scheme from the set, the `Appearance` setting and the Mac's appearance; `themed(by:)` (`TaDa/Theme/Themed.swift`) applies it to a window. |
 | Type, spacing, radius, size | Literal values in each view (`.font(.system(size: 13.5))`, `cornerRadius: 7`); there are no Swift constants for them. |
-| Checkbox | `StatusCheckbox` in `TaDa/Browser/TaskRow.swift`. Inline checkboxes in the editor: `TaskCheckboxStyle` in `TaDa/Editor/LiveEditor.swift`. |
+| Checkbox | `InlineCheckbox` in `TaDa/Editor/InlineCheckbox.swift` draws every box from the artboard's paths. `StatusCheckbox` in `TaDa/Browser/TaskRow.swift` uses it for task rows; `TaskCheckboxStyle` in `TaDa/Editor/LiveEditor.swift` for the editor (tints, strikes, clicks). |
 | TaskRow | `TaskRow`, `TaskTitle`, `StatusLabel`, `Chip` and `DateChip` in `TaDa/Browser/TaskRow.swift`. |
 | SidebarItem | `SidebarRow` and `ProgressRing` in `TaDa/Sidebar/SidebarView.swift`. |
 | PropertyRow | `PropertyTable` in `TaDa/Document/PropertyTable.swift`. |
 | Chip (filter) | `ContextFilter` in `TaDa/Browser/BrowserChrome.swift`. |
 | Button | `newButton` in `TaDa/Sidebar/SidebarView.swift`; `NewLinkedTaskButton` in `TaDa/Document/ProjectDocumentView.swift`. |
 | Button (`td-seg`) | `ModeToggle` in `TaDa/Document/DocumentPane.swift`; `AppearancePicker` in `TaDa/Settings/ThemeSettingsView.swift`. |
+| Slash and checkbox menus | `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`. Both share `MenuKeyHint`. |
 | Settings window | `SettingsView` (nav, `SettingsPage`, `SettingsSectionLabel`, `SettingsButton`) in `TaDa/Settings/SettingsView.swift`; `VaultSettingsView` and `ThemeSettingsView` beside it. |
 | View title, group headers | `DomainHeader`, `ProjectGroupHeader` and `CountGroupHeader` in `TaDa/Browser/BrowserChrome.swift`. |
 
@@ -119,7 +120,7 @@ Where the app differs from the guidance above:
 - **Sidebar** order: Search, Today, Upcoming, Loose tasks, PROJECTS, then the folder line ("Watching · <folder>", its icon in `done` while the folder is watched), Settings and New task / New project. Logbook and Trash are not built. Project rows are 30pt tall. The sidebar is 200–340pt wide, 240pt by default.
 - **Panes**: the browser pane is 320–460pt wide. Upcoming with nothing selected shows the agenda beside a 300pt month calendar. Source mode takes the whole workspace, with text up to 760pt wide and a 300pt file inspector.
 - **TaskRow meta line**: Doing and Blocked show a dot and the status name; then subtasks `n/m`, the repeat rule, due and deadline chips ("Due Tue 6 Oct", "Deadline today"; icons only in a project's task list) and contexts as plain text. An overdue date's text is `deadline`. Titles wrap to two lines. There are no free-form tags (`td-tag`); the schema has no tags key.
-- **Inline checkboxes** are SF Symbols drawn by the editor engine. Tints: `[ ]` and `[-]` `muted`, `[x]` `[X]` `done`, `[/]` `doing`, `[>]` `accent`, `[<]` `due`; the other reference markers draw in `fg`. `[x]`, `[X]` and `[-]` strike their text. `[B]` is not a body marker; Blocked is a frontmatter status only.
+- **Inline checkboxes** draw the Inline markdown checkboxes artboard's glyphs with its tints, in a 16pt box (1.5pt stroke, 4pt outer radius), 10pt from the text. Task rows draw the same boxes: Blocked uses the artboard's `[B]` bar. `[X]` draws as `[x]`. `[x]`, `[X]` and `[-]` strike their text in `muted`. `[B]` is not a body marker; Blocked is a frontmatter status only.
 - **Buttons**: there are no primary or danger buttons (Log Now and Empty Trash are not built). The folder picker uses the system `.borderedProminent` style.
 - **PropertyRow**: values are 12.5pt. `status` (menu), `dueDate` and `deadline` (calendar popover) are editable; the other keys are read-only. `project` shows as `[[Title]]` in `link`, or struck through in `muted` when no project has that title.
 - **Settings ▸ Vault**: Location (Change…, Reveal in Finder), Sync (iCloud Drive or local, and whether the folder is watched), Contents (task and project counts) and the `tasks/` and `projects/` folders. There is no Open another vault or Create new vault; Change… picks the folder.

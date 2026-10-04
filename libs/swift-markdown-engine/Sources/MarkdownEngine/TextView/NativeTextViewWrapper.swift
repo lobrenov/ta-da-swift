@@ -144,6 +144,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
     /// Ta Da fork: fires when a `/` typed at a line start or after whitespace opens a
     /// slash command, as its query changes, and with `nil` when it closes.
     public var onSlashCommandChange: ((SlashCommandState?) -> Void)?
+    /// Ta Da fork: a right-click on a task box. When set, it replaces the built-in marker menu.
+    public var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
     /// Ta Da fork: ↑/↓ and ↵/⇥ (`.confirm`) while a slash command is open. Return `true`
     /// to consume the key. Esc always closes it.
     public var onSlashCommandKey: ((InlinePreviewKey) -> Bool)?
@@ -178,7 +180,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         isCursorExcluded: ((CGPoint) -> Bool)? = nil,
         onSlashCommandChange: ((SlashCommandState?) -> Void)? = nil,
         onSlashCommandKey: ((InlinePreviewKey) -> Bool)? = nil,
-        slashCommandProxy: SlashCommandProxy? = nil
+        slashCommandProxy: SlashCommandProxy? = nil,
+        onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -208,6 +211,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         self.onSlashCommandChange = onSlashCommandChange
         self.onSlashCommandKey = onSlashCommandKey
         self.slashCommandProxy = slashCommandProxy
+        self.onTaskMarkerMenu = onTaskMarkerMenu
     }
 
     public func sizeThatFits(
@@ -422,6 +426,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         context.coordinator.onSlashCommandChange = onSlashCommandChange
         context.coordinator.onSlashCommandKey = onSlashCommandKey
         slashCommandProxy?.coordinator = context.coordinator
+        textView.onTaskMarkerMenu = onTaskMarkerMenu
         reconcileHeader(textView: textView, context: context)
 
         let isNodeSwitch = context.coordinator.documentId != documentId
