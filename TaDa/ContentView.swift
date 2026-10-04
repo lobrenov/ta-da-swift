@@ -21,7 +21,7 @@ struct ContentView: View {
                 .arrowKeyMonitor(model)
             }
         }
-        .environment(\.theme, model.theme)
+        .themed(by: model)
         // No toolbar fill: each column's own colour runs up under the toolbar (proven in the M1 spike).
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .toolbar(removing: .title)
@@ -33,10 +33,6 @@ struct ContentView: View {
             Text(model.errorMessage ?? "")
         }
         .task { await model.start() }
-        .onChange(of: model.themeName, initial: true) {
-            // Light themes use the light system appearance so menus, pickers and scroll bars match.
-            NSApp.appearance = NSAppearance(named: model.theme.isDark ? .darkAqua : .aqua)
-        }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
             model.today = LocalDate(Date())
         }

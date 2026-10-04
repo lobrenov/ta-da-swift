@@ -54,10 +54,11 @@ struct AppModelTests {
         defer { cleanUp() }
         let first = AppModel(defaults: defaults)
         await first.choose(folder)
-        first.themeName = "Nord"
+        first.choose(ThemeSet.named("Nord")!)
+        first.appearance = .light
 
         let second = AppModel(defaults: defaults)
-        #expect(second.themeName == "Nord" && second.theme.name == "Nord")
+        #expect(second.themeSet.name == "Nord" && second.appearance == .light && second.theme.name == "Nord Light")
         await second.start()
         #expect(second.state == .ready)
         #expect(second.vault?.root.resolvingSymlinksInPath() == folder.resolvingSymlinksInPath())
@@ -139,10 +140,40 @@ struct AppModelTests {
         #expect(model.selection == "tasks/Due today.md")
     }
 
-    @Test func unknownThemeNamesFallBackToTheFirstScheme() {
+    @Test func unknownThemeNamesFallBackToTomorrow() {
         defer { cleanUp() }
-        defaults.set("Monokai", forKey: "themeName")
-        #expect(AppModel(defaults: defaults).theme.name == "Tomorrow Night")
+        defaults.set("Monokai", forKey: "themeSet")
+        defaults.set("Monokai Light", forKey: "lightScheme")
+        defaults.set(true, forKey: "usesSchemePerAppearance")
+        defaults.set("Light", forKey: "appearance")
+        let model = AppModel(defaults: defaults)
+        #expect(model.themeSet.name == "Tomorrow" && model.theme.name == "Tomorrow")
+    }
+
+    @Test func theSchemeFollowsTheAppearance() {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        model.choose(ThemeSet.named("Gruvbox")!)
+        model.systemIsDark = false
+        #expect(model.theme.name == "Gruvbox Light")
+        model.systemIsDark = true
+        #expect(model.theme.name == "Gruvbox Dark")
+        model.appearance = .light
+        #expect(model.theme.name == "Gruvbox Light", "a fixed appearance ignores the Mac's")
+    }
+
+    @Test func aSchemePerAppearanceStartsFromTheSetAndEndsWhenASetIsChosen() {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        model.choose(ThemeSet.named("Ayu")!)
+        model.appearance = .dark
+        model.usesSchemePerAppearance = true
+        #expect(model.lightScheme.name == "Ayu Light" && model.darkScheme.name == "Ayu Mirage")
+        model.darkScheme = Theme.named("Dracula")!
+        #expect(model.theme.name == "Dracula")
+        #expect(AppModel(defaults: defaults).theme.name == "Dracula", "survives a relaunch")
+        model.choose(ThemeSet.named("Nord")!)
+        #expect(!model.usesSchemePerAppearance && model.theme.name == "Nord")
     }
 
     @Test(arguments: [

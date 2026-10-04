@@ -1,4 +1,5 @@
-// The 15 design tokens from the Themes artboard. Schemes are in BundledThemes.swift.
+// The 15 design tokens from the Theme tokens artboard, theme sets (a light and a dark scheme) and the
+// appearance setting. Schemes and sets are in BundledThemes.swift.
 import SwiftUI
 import AppKit
 
@@ -9,8 +10,39 @@ nonisolated struct Theme: Identifiable, Hashable, Sendable {
 
     var id: String { name }
 
-    static func named(_ name: String) -> Theme {
-        all.first { $0.name == name } ?? all[0]
+    static func named(_ name: String) -> Theme? {
+        all.first { $0.name == name }
+    }
+}
+
+/// A light and a dark scheme; Ta Da shows one or the other with the appearance.
+nonisolated struct ThemeSet: Identifiable, Hashable, Sendable {
+    let name: String
+    let light: Theme
+    let dark: Theme
+
+    var id: String { name }
+
+    init(name: String, light: String, dark: String) {
+        self.name = name
+        self.light = Theme.named(light)!
+        self.dark = Theme.named(dark)!
+    }
+
+    static func named(_ name: String) -> ThemeSet? {
+        all.first { $0.name == name }
+    }
+}
+
+/// Which scheme of the pair to show: the Mac's appearance, or always light or dark.
+enum Appearance: String, CaseIterable, Identifiable {
+    case system = "System", light = "Light", dark = "Dark"
+
+    var id: Self { self }
+
+    /// The Mac's own appearance, read from the global defaults so the app's override doesn't hide it.
+    static var systemIsDark: Bool {
+        UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
     }
 }
 
@@ -37,5 +69,5 @@ nonisolated extension Theme {
 
 extension EnvironmentValues {
     /// The active theme. Every themed view reads its colours from here.
-    @Entry var theme: Theme = Theme.all[0]
+    @Entry var theme: Theme = ThemeSet.standard.dark
 }

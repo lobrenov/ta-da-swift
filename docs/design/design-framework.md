@@ -14,17 +14,17 @@ The design system for Ta Da, a Swift-native task manager where every task and pr
 
 ## Colour
 
-Fifteen semantic tokens, defined for five bundled themes. The first theme, Tomorrow Night, is the default.
+Fifteen semantic tokens, defined for fifteen bundled iTerm2 schemes (values from iterm2colorschemes.com). The schemes pair into eight theme sets, each a light and a dark scheme: Ayu (Ayu Light, Ayu Mirage), Tomorrow (Tomorrow, Tomorrow Night), Solarized (Light, Dark), Dracula (Dracula for both), Nord (Nord Light, Nord), Gruvbox (Light, Dark), TokyoNight (TokyoNight Day, TokyoNight) and Catppuccin (Latte, Mocha). Ta Da shows the set's light or dark scheme with the macOS appearance, or always one of them when the appearance is set to Light or Dark. Tomorrow is the default set.
 
 | Token | Role | iTerm2 source |
 | --- | --- | --- |
 | `bg` | Window and editor ground | Background Color |
-| `side` | Sidebar, title bars, panel headers | Background, 3% darker |
-| `surface` | Selection, active item, pressed chip | Selection Color |
-| `border` | 1px hairlines | Background + 6% Foreground |
-| `code` | Raw markdown lines, inputs | Background + 3% Foreground |
-| `fg` | Body text | Foreground Color |
-| `strong` | Headings, selected titles | Bold Color |
+| `side` | Sidebar, title bars, panel headers | Background, darker |
+| `surface` | Selection, active item, pressed chip | Selection Color, else Background + 16% Foreground |
+| `border` | 1px hairlines | Background + 10% Foreground |
+| `code` | Raw markdown lines, inputs | Background + 5% Foreground |
+| `fg` | Body text | Foreground Color, lifted to 5.5:1 |
+| `strong` | Headings, selected titles | Foreground, 45% toward black or white |
 | `muted` | Meta, keys, done titles | Ansi 8, lifted to 4.5:1 |
 | `accent` | Primary action, progress, caret | Ansi 4 Blue |
 | `due` | dueDate glyphs, Today star | Ansi 3 Yellow |
@@ -34,7 +34,7 @@ Fifteen semantic tokens, defined for five bundled themes. The first theme, Tomor
 | `blocked` | Blocked status | Red → Yellow, 50% |
 | `link` | [[wikilinks]], project values | Ansi 5 Magenta |
 
-Importing a new `.itermcolors` file fills these by the same mapping. When a scheme's Ansi 8 is too dim, `muted` is lifted until it passes 4.5:1 on `bg`.
+Importing a new `.itermcolors` file fills these by the same mapping. When a scheme's Ansi 8 is too dim, `muted` is lifted until it passes 4.5:1 on `bg`; `fg` is lifted to 5.5:1 the same way (Solarized Light, Solarized Dark, TokyoNight Day).
 
 Contrast rules: text uses only `fg`, `strong` and `muted`. `due`, `deadline`, `done`, `doing`, `blocked` are for icons, dots, borders and fills; on light themes several fall below 4.5:1 as text. `accent` and `deadline` fills carry `bg`-coloured labels at 600 weight or more.
 
@@ -50,7 +50,8 @@ Two families. `sans` is the system face (SF Pro on macOS), because Ta Da is a na
 ## Layout
 
 - **Window.** Sidebar `size-sidebar` (240px) on `side`, then the browser pane `size-browser` (460px), then the editor filling the rest. Logbook, Trash and other archive views are single-pane: sidebar plus one pane with a 760px max content width and `space-10` (64px) padding.
-- **Sidebar order.** Search, Today, Upcoming, Loose tasks, a 10px gap, Logbook, Trash, PROJECTS, then sync status and New task / New project at the bottom.
+- **Sidebar order.** Search, Today, Upcoming, Loose tasks, a 10px gap, Logbook, Trash, PROJECTS, then sync status, Settings (⌘,) and New task / New project at the bottom.
+- **Settings window.** 900×640 on `bg` with a 46px `side` title bar. A 200px `side` nav (Vault in `accent`, Themes in `link`) beside the page: a `title-dialog` title, a `muted` line under it, then label-and-control rows (labels `muted`, 84–92px wide), bordered 10px panels and uppercase section labels.
 - **Editor.** 46px toolbar (`size-titlebar`) with the file path as a mono breadcrumb and the Live/Source switch on the right. Then title, properties, a hairline, and the body.
 - **Rhythm.** Rows 32px; gaps from the spacing scale (4, 6, 8, 10, 12, 16, 20, 28, 44, 64). Groups of rows are separated by a group header with a 1px `border` underline, not by cards.
 - **Radius.** 4px checkboxes, 7px rows and controls, 10px panels, 12px windows.
@@ -97,7 +98,7 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 
 | Design | Swift |
 | --- | --- |
-| Colour tokens and themes | `Theme` (`TaDa/Theme/Theme.swift`), one `NSColor` property per token, read from the `\.theme` environment value. The five schemes are `Theme.all` in `TaDa/Theme/BundledThemes.swift`, with the same values and order as `tokens.json`. |
+| Colour tokens and themes | `Theme` (`TaDa/Theme/Theme.swift`), one `NSColor` property per token, read from the `\.theme` environment value. The fifteen schemes are `Theme.all` and the eight sets `ThemeSet.all` in `TaDa/Theme/BundledThemes.swift`, with the same values and order as `tokens.json`. `AppModel` picks the scheme from the set, the `Appearance` setting and the Mac's appearance; `themed(by:)` (`TaDa/Theme/Themed.swift`) applies it to a window. |
 | Type, spacing, radius, size | Literal values in each view (`.font(.system(size: 13.5))`, `cornerRadius: 7`); there are no Swift constants for them. |
 | Checkbox | `StatusCheckbox` in `TaDa/Browser/TaskRow.swift`. Inline checkboxes in the editor: `TaskCheckboxStyle` in `TaDa/Editor/LiveEditor.swift`. |
 | TaskRow | `TaskRow`, `TaskTitle`, `StatusLabel`, `Chip` and `DateChip` in `TaDa/Browser/TaskRow.swift`. |
@@ -105,7 +106,8 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 | PropertyRow | `PropertyTable` in `TaDa/Document/PropertyTable.swift`. |
 | Chip (filter) | `ContextFilter` in `TaDa/Browser/BrowserChrome.swift`. |
 | Button | `newButton` in `TaDa/Sidebar/SidebarView.swift`; `NewLinkedTaskButton` in `TaDa/Document/ProjectDocumentView.swift`. |
-| Button (`td-seg`) | `ModeToggle` in `TaDa/Document/DocumentPane.swift`. |
+| Button (`td-seg`) | `ModeToggle` in `TaDa/Document/DocumentPane.swift`; `AppearancePicker` in `TaDa/Settings/ThemeSettingsView.swift`. |
+| Settings window | `SettingsView` (nav, `SettingsPage`, `SettingsSectionLabel`, `SettingsButton`) in `TaDa/Settings/SettingsView.swift`; `VaultSettingsView` and `ThemeSettingsView` beside it. |
 | View title, group headers | `DomainHeader`, `ProjectGroupHeader` and `CountGroupHeader` in `TaDa/Browser/BrowserChrome.swift`. |
 
 ## As built
@@ -114,9 +116,11 @@ Where the app differs from the guidance above:
 
 - **Mono type** is the system monospaced font (SF Mono): `.monospaced` in SwiftUI, `NSFont.monospacedSystemFont` in the editors. JetBrains Mono is not bundled.
 - **Icons** are SF Symbols: Today `star.fill`, Upcoming `calendar`, Loose tasks `tray`, due `calendar`, deadline `flag`, subtasks `checklist`, repeat `repeat`. A project's icon is `ProgressRing`, a 14pt ring with a pie.
-- **Sidebar** order: Search, Today, Upcoming, Loose tasks, PROJECTS, then the folder line ("Watching · <folder>", its icon in `done` while the folder is watched) and New task / New project. Logbook and Trash are not built. Project rows are 30pt tall. The sidebar is 200–340pt wide, 240pt by default.
+- **Sidebar** order: Search, Today, Upcoming, Loose tasks, PROJECTS, then the folder line ("Watching · <folder>", its icon in `done` while the folder is watched), Settings and New task / New project. Logbook and Trash are not built. Project rows are 30pt tall. The sidebar is 200–340pt wide, 240pt by default.
 - **Panes**: the browser pane is 320–460pt wide. Upcoming with nothing selected shows the agenda beside a 300pt month calendar. Source mode takes the whole workspace, with text up to 760pt wide and a 300pt file inspector.
 - **TaskRow meta line**: Doing and Blocked show a dot and the status name; then subtasks `n/m`, the repeat rule, due and deadline chips ("Due Tue 6 Oct", "Deadline today"; icons only in a project's task list) and contexts as plain text. An overdue date's text is `deadline`. Titles wrap to two lines. There are no free-form tags (`td-tag`); the schema has no tags key.
 - **Inline checkboxes** are SF Symbols drawn by the editor engine. Tints: `[ ]` and `[-]` `muted`, `[x]` `[X]` `done`, `[/]` `doing`, `[>]` `accent`, `[<]` `due`; the other reference markers draw in `fg`. `[x]`, `[X]` and `[-]` strike their text. `[B]` is not a body marker; Blocked is a frontmatter status only.
 - **Buttons**: there are no primary or danger buttons (Log Now and Empty Trash are not built). The folder picker uses the system `.borderedProminent` style.
 - **PropertyRow**: values are 12.5pt. `status` (menu), `dueDate` and `deadline` (calendar popover) are editable; the other keys are read-only. `project` shows as `[[Title]]` in `link`, or struck through in `muted` when no project has that title.
+- **Settings ▸ Vault**: Location (Change…, Reveal in Finder), Sync (iCloud Drive or local, and whether the folder is watched), Contents (task and project counts) and the `tasks/` and `projects/` folders. There is no Open another vault or Create new vault; Change… picks the folder.
+- **Settings ▸ Themes**: no Import .itermcolors button. The theme set and scheme pickers are menus drawn as `code` fields. The window title bar is the system's, on `side`.

@@ -1,11 +1,12 @@
-// Sidebar: search, the three domains with counts, active projects with progress rings, the folder line
-// and the New buttons.
+// Sidebar: search, the three domains with counts, active projects with progress rings, the folder line,
+// Settings and the New buttons.
 import SwiftUI
 import TaDaCore
 
 struct SidebarView: View {
     @Bindable var model: AppModel
     @Environment(\.theme) private var theme
+    @Environment(\.openSettings) private var openSettings
     @FocusState private var searchFocused: Bool
 
     var body: some View {
@@ -44,6 +45,7 @@ struct SidebarView: View {
                 .padding(.vertical, 8)
             }
             folderLine
+            settingsRow
             newButtons
         }
         .background(theme.color(\.side))
@@ -125,6 +127,29 @@ struct SidebarView: View {
             : "Ta Da can’t watch this folder, so it checks for changes when you switch back to it.")
     }
 
+    private var settingsRow: some View {
+        SidebarRow(selected: false, height: 32, count: nil) {
+            openSettings()
+        } icon: {
+            Image(systemName: "gearshape")
+                .font(.system(size: 13))
+                .foregroundStyle(theme.color(\.muted))
+                .frame(width: 16)
+                .accessibilityHidden(true)
+        } label: {
+            HStack {
+                Text("Settings")
+                Spacer()
+                Text("⌘,")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(theme.color(\.muted))
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 6)
+    }
+
     private var newButtons: some View {
         HStack(spacing: 6) {
             newButton("New task") { await model.newTask() }
@@ -149,7 +174,7 @@ struct SidebarView: View {
 }
 
 /// One selectable sidebar row: icon, label, optional count; selected rows sit on the surface colour.
-private struct SidebarRow<Icon: View, Label: View>: View {
+struct SidebarRow<Icon: View, Label: View>: View {
     let selected: Bool
     let height: CGFloat
     let count: Int?

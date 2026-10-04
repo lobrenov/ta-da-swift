@@ -58,10 +58,47 @@ import TaDaCore
     /// Refreshed when the day changes, so every query uses the same `today`.
     var today = LocalDate(Date())
 
-    var themeName: String {
-        didSet { defaults.set(themeName, forKey: Keys.theme) }
+    var themeSet: ThemeSet {
+        didSet { defaults.set(themeSet.name, forKey: Keys.themeSet) }
     }
-    var theme: Theme { Theme.named(themeName) }
+    var appearance: Appearance {
+        didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
+    }
+    /// Use `lightScheme` and `darkScheme` instead of the theme set's pair. Turning it on starts from the set's pair.
+    var usesSchemePerAppearance: Bool {
+        didSet {
+            defaults.set(usesSchemePerAppearance, forKey: Keys.usesSchemePerAppearance)
+            if usesSchemePerAppearance, !oldValue {
+                lightScheme = themeSet.light
+                darkScheme = themeSet.dark
+            }
+        }
+    }
+    var lightScheme: Theme {
+        didSet { defaults.set(lightScheme.name, forKey: Keys.lightScheme) }
+    }
+    var darkScheme: Theme {
+        didSet { defaults.set(darkScheme.name, forKey: Keys.darkScheme) }
+    }
+    /// The Mac's appearance, kept current by ContentView.
+    var systemIsDark = Appearance.systemIsDark
+
+    var isDark: Bool {
+        switch appearance {
+        case .system: systemIsDark
+        case .light: false
+        case .dark: true
+        }
+    }
+    var shownLightScheme: Theme { usesSchemePerAppearance ? lightScheme : themeSet.light }
+    var shownDarkScheme: Theme { usesSchemePerAppearance ? darkScheme : themeSet.dark }
+    var theme: Theme { isDark ? shownDarkScheme : shownLightScheme }
+
+    /// Picks a bundled set and stops using separate schemes.
+    func choose(_ set: ThemeSet) {
+        themeSet = set
+        usesSchemePerAppearance = false
+    }
 
     private let defaults: UserDefaults
     private var pendingSave: Task<Void, Never>?
@@ -77,12 +114,20 @@ import TaDaCore
 
     enum Keys {
         static let bookmark = "vaultBookmark"
-        static let theme = "themeName"
+        static let themeSet = "themeSet"
+        static let appearance = "appearance"
+        static let usesSchemePerAppearance = "usesSchemePerAppearance"
+        static let lightScheme = "lightScheme"
+        static let darkScheme = "darkScheme"
     }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        themeName = defaults.string(forKey: Keys.theme) ?? Theme.all[0].name
+        themeSet = defaults.string(forKey: Keys.themeSet).flatMap(ThemeSet.named) ?? .standard
+        appearance = defaults.string(forKey: Keys.appearance).flatMap(Appearance.init) ?? .system
+        usesSchemePerAppearance = defaults.bool(forKey: Keys.usesSchemePerAppearance)
+        lightScheme = defaults.string(forKey: Keys.lightScheme).flatMap(Theme.named) ?? ThemeSet.standard.light
+        darkScheme = defaults.string(forKey: Keys.darkScheme).flatMap(Theme.named) ?? ThemeSet.standard.dark
     }
 
     // MARK: Folder

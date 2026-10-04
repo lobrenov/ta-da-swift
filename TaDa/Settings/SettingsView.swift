@@ -1,28 +1,133 @@
-// Settings window: theme and folder.
+// Settings window: a themed sidebar with the Vault and Themes pages, and the parts the pages share.
 import SwiftUI
 import TaDaCore
 
 struct SettingsView: View {
     @Bindable var model: AppModel
-    @State private var isPicking = false
 
     var body: some View {
-        Form {
-            Picker("Theme", selection: $model.themeName) {
-                ForEach(Theme.all) { Text($0.name).tag($0.name) }
+        SettingsWindow(model: model)
+            .themed(by: model)
+    }
+}
+
+private struct SettingsWindow: View {
+    @Bindable var model: AppModel
+    @State private var page = Page.vault
+    @Environment(\.theme) private var theme
+
+    enum Page { case vault, themes }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 2) {
+                row(.vault, "Vault", systemImage: "folder", tint: \.accent)
+                row(.themes, "Themes", systemImage: "paintpalette", tint: \.link)
             }
-            LabeledContent("Folder") {
-                VStack(alignment: .trailing, spacing: 6) {
-                    Text(model.vault?.root.path(percentEncoded: false) ?? "None")
-                        .textSelection(.enabled)
-                        .multilineTextAlignment(.trailing)
-                    Button("Change Folder…") { isPicking = true }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 14)
+            .frame(width: 200)
+            .frame(maxHeight: .infinity, alignment: .top)
+            .background(theme.color(\.side))
+            Hairline(axis: .vertical)
+            ScrollView {
+                switch page {
+                case .vault: VaultSettingsView(model: model)
+                case .themes: ThemeSettingsView(model: model)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(theme.color(\.bg))
         }
-        .formStyle(.grouped)
-        .frame(width: 480)
-        .folderImporter(isPresented: $isPicking, model: model)
+        .overlay(alignment: .top) { Hairline() }
+        .foregroundStyle(theme.color(\.fg))
+        .font(.system(size: 13))
+        .frame(width: 900, height: 594)
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .containerBackground(theme.color(\.side), for: .window)
+    }
+
+    private func row(_ page: Page, _ title: String, systemImage: String, tint: KeyPath<Theme, NSColor>) -> some View {
+        SidebarRow(selected: self.page == page, height: 32, count: nil) {
+            self.page = page
+        } icon: {
+            Image(systemName: systemImage)
+                .font(.system(size: 13))
+                .foregroundStyle(theme.color(tint))
+                .frame(width: 16)
+                .accessibilityHidden(true)
+        } label: {
+            Text(title)
+        }
+    }
+}
+
+/// A settings page: its title and line of explanation above its sections.
+struct SettingsPage<Content: View>: View {
+    let title: String
+    let summary: String
+    var spacing: CGFloat = 22
+    @ViewBuilder let content: Content
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: spacing) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(theme.color(\.strong))
+                    .accessibilityAddTraits(.isHeader)
+                Text(summary)
+                    .foregroundStyle(theme.color(\.muted))
+            }
+            content
+        }
+        .padding(.horizontal, 36)
+        .padding(.top, 26)
+        .padding(.bottom, 28)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// The uppercase label over a group: FOLDERS IN THE VAULT, BUNDLED THEME SETS.
+struct SettingsSectionLabel: View {
+    let title: String
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Text(title)
+            .textCase(.uppercase)
+            .font(.system(size: 11, weight: .semibold))
+            .tracking(0.66)
+            .foregroundStyle(theme.color(\.muted))
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A secondary button on `code` with a hairline border.
+struct SettingsButton: View {
+    let title: String
+    let action: () -> Void
+    @Environment(\.theme) private var theme
+    @Environment(\.isEnabled) private var isEnabled
+
+    init(_ title: String, action: @escaping () -> Void) {
+        self.title = title
+        self.action = action
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12))
+                .foregroundStyle(theme.color(isEnabled ? \.fg : \.muted))
+                .padding(.horizontal, 12)
+                .frame(height: 28)
+                .background(theme.color(\.code), in: .rect(cornerRadius: 7))
+                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)))
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
     }
 }
 

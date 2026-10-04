@@ -1,4 +1,4 @@
-// Menu commands: ⌘N/⇧⌘N new task/project; ⌥⌘F search; ⌘1–3 switch domains; ⌘E Live/Source; View ▸ Theme;
+// Menu commands: ⌘N/⇧⌘N new task/project; ⌥⌘F search; ⌘1–3 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on.
 import SwiftUI
@@ -33,8 +33,11 @@ struct AppCommands: Commands {
                 .keyboardShortcut("e")
                 .disabled(model.document == nil)
             Divider()
-            Picker("Theme", selection: $model.themeName) {
-                ForEach(Theme.all) { Text($0.name).tag($0.name) }
+            Picker("Theme Set", selection: Binding { model.themeSet } set: { model.choose($0) }) {
+                ForEach(ThemeSet.all) { Text($0.name).tag($0) }
+            }
+            Picker("Appearance", selection: $model.appearance) {
+                ForEach(Appearance.allCases) { Text($0.rawValue).tag($0) }
             }
             Divider()
         }

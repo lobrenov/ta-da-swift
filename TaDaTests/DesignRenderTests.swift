@@ -5,7 +5,7 @@ import TaDaCore
 @testable import TaDa
 
 /// Renders the main window on the design's data (TaDaCore's DesignVault fixture, frozen from SampleVault)
-/// for every theme and domain, as PNGs to compare with the design canvas. Off by default. It reads the
+/// for every scheme and domain, as PNGs to compare with the design canvas. Off by default. It reads the
 /// fixture from the repo, so run it without the sandbox:
 ///
 ///     TEST_RUNNER_TADA_RENDER_DIR=/path/to/output xcodebuild -workspace TaDa.xcworkspace -scheme TaDa \
@@ -43,9 +43,11 @@ struct DesignRenderTests {
             ("source", .today, "tasks/Update my claude.md files.md"),
             ("search", .today, "tasks/Update my claude.md files.md"),
         ]
+        model.usesSchemePerAppearance = true
         for theme in Theme.all {
-            model.themeName = theme.name
-            for (name, domain, selection) in screens where name == "today" || theme.name == Theme.all[0].name {
+            model.appearance = theme.isDark ? .dark : .light
+            if theme.isDark { model.darkScheme = theme } else { model.lightScheme = theme }
+            for (name, domain, selection) in screens where name == "today" || theme == ThemeSet.standard.dark {
                 model.domain = domain
                 model.selection = selection
                 model.isSourceMode = name == "source"

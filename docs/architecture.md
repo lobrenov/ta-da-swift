@@ -15,15 +15,16 @@ The workspace `TaDa.xcworkspace` holds the project and TaDaCore; the test plan `
 ```
 TaDa/
 ├── TaDaApp.swift              one main window plus Settings, sharing one AppModel
-├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace; applies the theme and NSApp.appearance
-├── AppModel.swift             root state: folder, index, domain, selection, open document, theme; refresh, save, outside-change handling
+├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace; applies the theme
+├── AppModel.swift             root state: folder, index, domain, selection, open document, theme set and appearance; refresh, save, outside-change handling
 ├── OpenDocument.swift         the selected file's whole text; edits reparse it
 ├── Commands.swift             menu commands and shortcuts
 ├── UITestingLaunch.swift      the `-uiTesting` launch: throwaway settings and folder
-├── Theme/                     Theme (15 colour tokens + isDark) and the five bundled schemes
+├── Theme/                     Theme (15 colour tokens + isDark), ThemeSet, Appearance, the 15 bundled schemes and 8 sets;
+│                              themed(by:) sets \.theme and NSApp.appearance and follows the Mac's appearance
 ├── Onboarding/                FolderPickerView
-├── Settings/                  SettingsView: theme and folder
-├── Sidebar/                   SidebarView: search, domains, projects, folder line, New buttons
+├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView
+├── Sidebar/                   SidebarView: search, domains, projects, folder line, Settings, New buttons
 ├── Browser/
 │   ├── WorkspaceView.swift    the area right of the sidebar, per domain
 │   ├── TaskListView.swift     Today and Loose tasks
@@ -67,9 +68,13 @@ TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtur
 - **Saving** is guarded: Ta Da writes only if the file still holds the text it last read or wrote.
 - **Outside changes**: `VaultWatcher` (FSEvents) and app activation both trigger `refresh()`, which compares modification dates with the last scan and reparses only changed files. The open document reloads if it has no unsaved edits. With unsaved edits, `DocumentBanner` offers keep mine / use the file on disk, save again / discard after a deletion, or keep this / use the other iCloud version. Leaving the file or quitting with a choice still open writes the edits to `<title> (unsaved edits).md` beside it.
 
+## Themes
+
+A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark scheme when the appearance is Dark, or System while macOS is dark (`systemIsDark`, read from the global `AppleInterfaceStyle` default and updated on `AppleInterfaceThemeChangedNotification`), otherwise its light scheme. With a scheme per appearance on, `lightScheme` and `darkScheme` replace the set's pair. `NSApp.appearance` follows the shown scheme, so a dark scheme in light mode (Dracula) still gets dark menus. All five settings persist in `UserDefaults`.
+
 ## Window
 
-`NavigationSplitView { SidebarView } detail: { WorkspaceView }`. The workspace shows:
+`NavigationSplitView { SidebarView } detail: { WorkspaceView }`. Settings (⌘, or the sidebar's Settings row) is the `Settings` scene: `SettingsView`, 900×640, with Vault and Themes pages. The workspace shows:
 
 - Today, Loose tasks and a project's tasks: the browser list beside `DocumentPane`.
 - Upcoming: the agenda beside the month calendar when nothing is selected, otherwise the agenda beside `DocumentPane`.
@@ -91,6 +96,7 @@ TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtur
 | ⌥⌘F | Search files |
 | ⌘1 / ⌘2 / ⌘3 | Today / Upcoming / Loose tasks |
 | ⌘E | Live / Source |
+| ⌘, | Settings |
 | ⌘K | Complete or reopen the selected task |
 | ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step |
 | ↑ / ↓, Escape | Move through the list, clear the selection, while no text view has the keyboard (a key monitor on the main window) |
