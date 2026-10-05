@@ -176,6 +176,40 @@ struct AppModelTests {
         #expect(!model.usesSchemePerAppearance && model.theme.name == "Nord")
     }
 
+    @Test func deletingTheSelectedTaskSelectsTheNextOne() async {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        await model.choose(folder)
+        model.show(.loose)
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: ["tasks/Due today.md", "tasks/Loose.md"])
+        model.selection = "tasks/Due today.md"
+        #expect(model.deleteKey(command: false))
+        await model.moveToTrash("tasks/Due today.md")
+        #expect(model.index["tasks/Due today.md"] == nil)
+        #expect(model.selection == "tasks/Loose.md")
+        #expect(model.trash.map(\.id) == [".trash/Due today.md"])
+        #expect(FileManager.default.fileExists(atPath: folder.appending(path: ".trash/Due today.md").path(percentEncoded: false)))
+    }
+
+    @Test func aDeletedProjectTakesItsTasksAndComesBackWithThem() async {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        await model.choose(folder)
+        model.show(.project("projects/Ta Da MVP.md"))
+        await model.moveToTrash("projects/Ta Da MVP.md")
+        #expect(model.domain == .today)
+        #expect(model.index.items.keys.sorted() == ["projects/Shipped.md", "tasks/Loose.md"])
+        #expect(Set(model.trash.map(\.id)) == [".trash/Ta Da MVP.md", ".trash/Due today.md", ".trash/Done.md"])
+
+        model.show(.trash)
+        model.trashSelection = [".trash/Ta Da MVP.md"]
+        await model.restore(model.trashSelection)
+        #expect(model.trash.isEmpty && model.trashSelection.isEmpty)
+        #expect(model.index.items.count == 5)
+        #expect(model.projects.map { "\($0.project.title) \($0.open)/\($0.total)" } == ["Ta Da MVP 1/2"])
+        #expect(model.trashNote == "3 items restored to projects/ and tasks/")
+    }
+
     @Test(arguments: [
         ("/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Ta Da", "iCloud Drive/Ta Da"),
         ("/Users/me/Library/Mobile Documents/iCloud~md~obsidian/Documents/Personal", "Obsidian/Personal"),

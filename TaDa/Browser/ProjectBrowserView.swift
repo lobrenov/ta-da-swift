@@ -66,6 +66,7 @@ struct ProjectBrowserView: View {
                             dates: .iconsOnly, showsContexts: false,
                             onToggle: { Task { await model.toggleCompletion(task) } },
                             onSelect: { model.selection = task.path })
+                    .fileMenu(model, path: task.path)
                 }
             }
         }

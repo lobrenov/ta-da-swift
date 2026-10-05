@@ -24,6 +24,26 @@ final class TaDaUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [found], timeout: 5), .completed, "title is \(expected)", file: file, line: line)
     }
 
+    func testDeletingAndRestoringFiles() throws {
+        app.buttons["Alpha"].rightClick()
+        app.buttons["Delete"].click()
+        XCTAssertTrue(app.buttons["Alpha"].waitForNonExistence(timeout: 5), "the file menu's Delete moves Alpha to the trash")
+
+        app.buttons["Beta"].click()
+        waitForTitle("Beta")
+        app.typeKey(.delete, modifierFlags: [])
+        XCTAssertTrue(app.buttons["Beta"].waitForNonExistence(timeout: 5), "⌫ moves the selected file to the trash")
+
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Trash'")).firstMatch.click()
+        let alpha = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Alpha'")).firstMatch
+        XCTAssertTrue(alpha.waitForExistence(timeout: 5))
+        alpha.rightClick()
+        app.buttons["Restore"].click()
+        XCTAssertTrue(alpha.waitForNonExistence(timeout: 5), "Restore takes Alpha out of the trash")
+        app.typeKey("1", modifierFlags: .command)
+        XCTAssertTrue(app.buttons["Alpha"].waitForExistence(timeout: 5), "and back into Today")
+    }
+
     func testArrowKeysMoveThroughTodayButNotWhileEditing() throws {
         app.typeKey(.downArrow, modifierFlags: [])
         waitForTitle("Alpha")

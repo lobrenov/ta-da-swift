@@ -4,7 +4,7 @@ import TaDaCore
 
 @Observable final class AppModel {
     enum Domain: Hashable {
-        case today, upcoming, loose
+        case today, upcoming, loose, trash
         /// A project, by vault-relative path.
         case project(String)
     }
@@ -22,7 +22,12 @@ import TaDaCore
     private(set) var vault: Vault?
     private(set) var index = VaultIndex()
     var domain = Domain.today {
-        didSet { if domain != oldValue { selection = nil } }
+        didSet {
+            guard domain != oldValue else { return }
+            selection = nil
+            trashSelection = []
+            trashNote = nil
+        }
     }
     /// The file shown in the document pane, by vault-relative path. Picking another domain clears it.
     var selection: String? {
@@ -53,6 +58,14 @@ import TaDaCore
         var paths: [String]
     }
     @ObservationIgnored var arrowKeyList: ArrowKeyList?
+    /// The Ta Da files in `.trash/`, most recently deleted first.
+    private(set) var trash: [TrashedItem] = []
+    /// The files picked in the Trash list, by path.
+    var trashSelection: Set<String> = []
+    /// What the last restore did, shown in Trash.
+    var trashNote: String?
+    /// The file whose file menu is open; its row is ringed.
+    var menuTarget: String?
     /// Whether FSEvents is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
     /// Refreshed when the day changes, so every query uses the same `today`.
@@ -180,6 +193,7 @@ import TaDaCore
         // Dates first: anything that changes while the index loads shows up as changed on the next refresh.
         fileDates = await Self.modificationDates(in: vault)
         index = await vault.loadIndex()
+        trash = await Self.trashedItems(in: vault)
         state = .ready
         watcher = VaultWatcher(root: vault.root) { [weak self] in
             Task { await self?.refresh() }
@@ -209,6 +223,8 @@ import TaDaCore
                 guard self.vault?.root == vault.root else { return }
                 fileDates = changes.dates
                 await apply(changes, from: vault)
+                trash = await Self.trashedItems(in: vault)
+                trashSelection.formIntersection(trash.map(\.id))
             } while refreshAgain
         }
         refreshing = task
@@ -314,6 +330,10 @@ import TaDaCore
 
     @concurrent nonisolated private static func changes(in vault: Vault, since known: [String: Date]) async -> VaultChanges {
         vault.changes(since: known)
+    }
+
+    @concurrent nonisolated private static func trashedItems(in vault: Vault) async -> [TrashedItem] {
+        vault.trashedItems()
     }
 
     @concurrent nonisolated private static func conflicts(of path: String, in vault: Vault) async -> [ConflictVersion] {
@@ -545,6 +565,96 @@ import TaDaCore
             ? try vault.renameProject(at: path, to: title, index: index)
             : (path: try vault.rename(path, to: title), relinked: [])
         return (result.path, try ([result.path] + result.relinked).compactMap { try vault.load($0) })
+    }
+
+    // MARK: Trash
+
+    /// Moves a file to `.trash/`; a project takes its tasks. The selection moves to the next file in the list.
+    func moveToTrash(_ path: String) async {
+        guard let vault, let item = index[path] else { return }
+        let index = index
+        let affected = [path] + (item.properties.kind == .project ? index.tasks(in: item).map(\.path) : [])
+        if let document, affected.contains(document.path) {
+            await save(document)
+            guard !document.isDirty else {
+                errorMessage = "“\(Item.title(ofPath: document.path))” changed outside Ta Da. Choose which version to keep before deleting it."
+                return
+            }
+        }
+        let next = nextSelection(skipping: affected)
+        do {
+            let moved = try await Self.run { try vault.moveToTrash(path, index: index) }
+            for path in moved { self.index.remove(path) }
+            if domain == .project(path) {
+                domain = .today
+            } else if let selection, moved.contains(selection) {
+                self.selection = next
+            }
+        } catch {
+            errorMessage = "Ta Da couldn’t move “\(item.title)” to the trash. (\(error.localizedDescription))"
+        }
+        await refresh()
+    }
+
+    /// Moves trashed files back to `tasks/` and `projects/`; a project brings its trashed tasks.
+    func restore(_ paths: Set<String>) async {
+        guard let vault else { return }
+        let paths = Array(paths)
+        do {
+            let restored = try await Self.run { try vault.restore(paths) }
+            let folders = Set(restored.map { Vault.folder(of: $0) + "/" }).sorted()
+            trashNote = "\(restored.count == 1 ? "1 item" : "\(restored.count) items") restored to \(folders.joined(separator: " and "))"
+        } catch {
+            errorMessage = "Ta Da couldn’t restore the files. (\(error.localizedDescription))"
+        }
+        trashSelection.subtract(paths)
+        await refresh()
+    }
+
+    /// Moves trashed files to the Mac’s Trash; a project takes its trashed tasks.
+    func discard(_ paths: Set<String>) async {
+        guard let vault else { return }
+        let paths = Array(paths)
+        do {
+            try await Self.run { try vault.discard(paths) }
+        } catch {
+            errorMessage = "Ta Da couldn’t move the files to the Trash. (\(error.localizedDescription))"
+        }
+        trashSelection.subtract(paths)
+        trashNote = nil
+        await refresh()
+    }
+
+    func emptyTrash() async {
+        await discard(Set(trash.map(\.id)))
+    }
+
+    /// ⌫ or ⌘⌫ while a list has the keyboard: moves the selected file to the trash. In Trash, ⌘⌫ restores
+    /// the picked files. False when there's nothing to act on.
+    func deleteKey(command: Bool) -> Bool {
+        if domain == .trash, !isSearching {
+            guard command, !trashSelection.isEmpty else { return false }
+            let paths = trashSelection
+            Task { await restore(paths) }
+            return true
+        }
+        guard let selection else { return false }
+        Task { await moveToTrash(selection) }
+        return true
+    }
+
+    /// ⌥⌘⌫ in Trash: moves the picked files to the Mac’s Trash.
+    func deleteForeverKey() -> Bool {
+        guard domain == .trash, !isSearching, !trashSelection.isEmpty else { return false }
+        let paths = trashSelection
+        Task { await discard(paths) }
+        return true
+    }
+
+    /// The file after the selection in the list on screen that isn't in `removed`, else the one before it.
+    private func nextSelection(skipping removed: [String]) -> String? {
+        guard let selection, let paths = arrowKeyList?.paths, let i = paths.firstIndex(of: selection) else { return nil }
+        return paths[(i + 1)...].first { !removed.contains($0) } ?? paths[..<i].last { !removed.contains($0) }
     }
 
     // MARK: New files

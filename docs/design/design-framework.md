@@ -111,6 +111,8 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 | Button (`td-seg`) | `ModeToggle` in `TaDa/Document/DocumentPane.swift`; `AppearancePicker` in `TaDa/Settings/ThemeSettingsView.swift`. |
 | Slash and checkbox menus | `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`. Both share `MenuKeyHint`. |
 | Settings window | `SettingsView` (nav, `SettingsPage`, `SettingsSectionLabel`, `SettingsButton`) in `TaDa/Settings/SettingsView.swift`; `VaultSettingsView` and `ThemeSettingsView` beside it. |
+| File menu | `FileMenu` in `TaDa/Shared/FileMenu.swift`; rows add it with `.fileMenu(model, path:)`. |
+| Trash | `TrashView` in `TaDa/Browser/TrashView.swift`. |
 | View title, group headers | `DomainHeader`, `ProjectGroupHeader` and `CountGroupHeader` in `TaDa/Browser/BrowserChrome.swift`. |
 
 ## As built
@@ -118,12 +120,14 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 Where the app differs from the guidance above:
 
 - **Mono type** is the system monospaced font (SF Mono): `.monospaced` in SwiftUI, `NSFont.monospacedSystemFont` in the editors. JetBrains Mono is not bundled.
-- **Icons** are SF Symbols: Today `star.fill`, Upcoming `calendar`, Loose tasks `tray`, due `calendar`, deadline `flag`, subtasks `checklist`, repeat `repeat`. A project's icon is `ProgressRing`, a 14pt ring with a pie.
-- **Sidebar** order: Search, Today, Upcoming, Loose tasks, PROJECTS, then the folder line ("Watching · <folder>", its icon in `done` while the folder is watched), Settings and New task / New project. Logbook and Trash are not built. Project rows are 30pt tall. The sidebar is 200–340pt wide, 240pt by default.
+- **Icons** are SF Symbols: Today `star.fill`, Upcoming `calendar`, Loose tasks `tray`, Trash `trash`, due `calendar`, deadline `flag`, subtasks `checklist`, repeat `repeat`. A project's icon is `ProgressRing`, a 14pt ring with a pie. The file menu uses `trash` (Delete), `arrow.counterclockwise` (Restore) and `xmark.bin` (Delete Forever).
+- **Sidebar** order: Search, Today, Upcoming, Loose tasks, an 8pt gap, Trash, PROJECTS, then the folder line ("Watching · <folder>", its icon in `done` while the folder is watched), Settings and New task / New project. Logbook is not built. Project rows are 30pt tall. The sidebar is 200–340pt wide, 240pt by default.
 - **Panes**: the browser pane is 320–460pt wide. Upcoming with nothing selected shows the agenda beside a 300pt month calendar. Source mode takes the whole workspace, with text up to 760pt wide and a 300pt file inspector.
 - **TaskRow meta line**: Doing and Blocked show a dot and the status name; then subtasks `n/m`, the repeat rule, due and deadline chips ("Due Tue 6 Oct", "Deadline today"; icons only in a project's task list) and contexts as plain text. An overdue date's text is `deadline`. Titles wrap to two lines. There are no free-form tags (`td-tag`); the schema has no tags key.
 - **Inline checkboxes** draw the Inline markdown checkboxes artboard's glyphs with its tints, in a 16pt box (1.5pt stroke, 4pt outer radius), 10pt from the text. Task rows draw the same boxes: Blocked uses the artboard's `[B]` bar. `[X]` draws as `[x]`. `[x]`, `[X]` and `[-]` strike their text in `muted`. `[B]` is not a body marker; Blocked is a frontmatter status only.
-- **Buttons**: there are no primary or danger buttons (Log Now and Empty Trash are not built). The folder picker uses the system `.borderedProminent` style.
+- **Buttons**: Empty Trash is the only primary button; its confirmation's Empty Trash is filled with `deadline`. Log Now is not built. The folder picker uses the system `.borderedProminent` style.
+- **Trash**: Restore returns files to `tasks/` and `projects/` (the artboard says their original folder). Empty Trash and Delete Forever move files to the Mac's Trash, so the confirmation asks “Move N files to the Mac’s Trash?”. Delete Forever doesn't confirm.
+- **File menu**: 196pt wide, 4pt padding, 26pt rows, 13pt text, shortcuts on the right, no group labels or key footer. Nothing is highlighted when it opens.
 - **PropertyRow**: values are 12.5pt. `status` (menu), `dueDate` and `deadline` (calendar popover) are editable; the other keys are read-only. `project` shows as `[[Title]]` in `link`, or struck through in `muted` when no project has that title.
 - **Settings ▸ Vault**: Location (Change…, Reveal in Finder), Sync (iCloud Drive or local, and whether the folder is watched), Contents (task and project counts) and the `tasks/` and `projects/` folders. There is no Open another vault or Create new vault; Change… picks the folder.
 - **Settings ▸ Themes**: no Import .itermcolors button. The theme set and scheme pickers are menus drawn as `code` fields. The window title bar is the system's, on `side`.

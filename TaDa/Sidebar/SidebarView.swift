@@ -1,4 +1,4 @@
-// Sidebar: search, the three domains with counts, active projects with progress rings, the folder line,
+// Sidebar: search, the three domains and Trash with counts, active projects with progress rings, the folder line,
 // Settings and the New buttons.
 import SwiftUI
 import TaDaCore
@@ -20,6 +20,8 @@ struct SidebarView: View {
                     row(.today, "Today", systemImage: "star.fill", tint: \.due, count: model.todayCount)
                     row(.upcoming, "Upcoming", systemImage: "calendar", tint: \.deadline, count: nil)
                     row(.loose, "Loose tasks", systemImage: "tray", tint: \.accent, count: model.looseCount)
+                    row(.trash, "Trash", systemImage: "trash", tint: \.muted, count: model.trash.count)
+                        .padding(.top, 8)
 
                     Text("Projects")
                         .textCase(.uppercase)
@@ -82,6 +84,7 @@ struct SidebarView: View {
             Text(progress.project.title)
         }
         .accessibilityValue("\(progress.done) of \(progress.total) tasks done")
+        .fileMenu(model, path: path)
     }
 
     private var searchField: some View {

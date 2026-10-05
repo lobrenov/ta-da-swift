@@ -32,6 +32,7 @@ TaDa/
 │   ├── MonthCalendarView.swift
 │   ├── ProjectBrowserView.swift
 │   ├── SearchResultsView.swift
+│   ├── TrashView.swift        the files in `.trash/`: pick, restore, empty
 │   ├── TaskRow.swift          the row, status checkbox and chips
 │   ├── BrowserChrome.swift    headers, context filter, empty states, hairline
 │   └── ArrowKeySelection.swift
@@ -50,14 +51,14 @@ TaDa/
 │   ├── SlashMenu.swift
 │   ├── CheckboxMenu.swift
 │   └── AddSubtask.swift
-└── Shared/                    LocalDate display formats
+└── Shared/                    LocalDate display formats; FileMenu (right-click on a project or task)
 
 Packages/TaDaCore/Sources/TaDaCore/
 ├── Model/      Item, Status, LocalDate, WikiLink, Checkbox
 ├── Parsing/    FrontmatterSplitter, PropertyReader, BodyScanner
 ├── Writing/    Lines, FrontmatterEditor, ChecklistEditor, Completion, NewFile, FileNaming, SubtaskLine, SlashCommand
 ├── Index/      VaultIndex, Queries
-├── Storage/    Vault, CoordinatedFileIO, VaultWatcher, Conflicts
+├── Storage/    Vault, Trash, CoordinatedFileIO, VaultWatcher, Conflicts
 └── Testing/    GeneratedVault
 ```
 
@@ -68,6 +69,7 @@ TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtur
 - **Launch**: resolve the folder's security-scoped bookmark, scan it recursively off the main actor, parse every file into a `VaultIndex`. Views are functions of the index's `Queries`, which take an injected `today`.
 - **Editing**: `OpenDocument` holds the selected file's whole text. Typing, property edits and checkbox clicks change that text, which is reparsed into the index. It saves 600 ms after the last change, and also before switching files, when the app deactivates and on quit. Quitting, including by closing the window, waits for the save: `AppDelegate.applicationShouldTerminate` returns `.terminateLater`. A checkbox click in a row whose file isn't open does a coordinated read, a surgical edit and an atomic write.
 - **Saving** is guarded: Ta Da writes only if the file still holds the text it last read or wrote.
+- **Trash**: deleting moves a file into `.trash/` in the folder (created when needed); a project takes its linked tasks. `AppModel.trash` lists the Ta Da files there, reloaded on each refresh. Restoring moves files to `tasks/` or `projects/` (a project brings its trashed tasks, relinked if its name changed); Delete Forever and Empty Trash move them to the Mac's Trash. The rules are in `docs/file-format.md`.
 - **Outside changes**: `VaultWatcher` (FSEvents) and app activation both trigger `refresh()`, which compares modification dates with the last scan and reparses only changed files. The open document reloads if it has no unsaved edits. With unsaved edits, `DocumentBanner` offers keep mine / use the file on disk, save again / discard after a deletion, or keep this / use the other iCloud version. Leaving the file or quitting with a choice still open writes the edits to `<title> (unsaved edits).md` beside it.
 
 ## Themes
@@ -82,6 +84,9 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 - Upcoming: the agenda beside the month calendar when nothing is selected, otherwise the agenda beside `DocumentPane`.
 - A project's own file: `DocumentPane` (with `ProjectDocumentView`) across the workspace.
 - Search: `SearchResultsView` beside `DocumentPane`.
+- Trash: `TrashView` across the workspace.
+
+A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Delete, or Restore and Delete Forever in Trash, where a right-click on a picked file acts on every picked file. While open it takes ↑↓, ↵ and esc.
 - Source mode: `DocumentPane` with the Source editor and `FileInspector` across the workspace, until the selection clears.
 
 ## Editors
@@ -103,3 +108,5 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 | ⌘K | Complete or reopen the selected task |
 | ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step |
 | ↑ / ↓, Escape | Move through the list, clear the selection, while no text view has the keyboard (a key monitor on the main window) |
+| ⌫ or ⌘⌫ | Move the selected file to the trash, while no text view has the keyboard |
+| ⌘⌫ / ⌥⌘⌫ in Trash | Restore / delete forever the picked files |

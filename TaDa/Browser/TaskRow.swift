@@ -102,12 +102,7 @@ struct StatusCheckbox: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let (marker, tint): (Character, NSColor) = switch status {
-        case .notStarted: (" ", theme.muted)
-        case .doing: ("/", theme.doing)
-        case .blocked: ("B", theme.blocked)
-        case .done: ("x", theme.done)
-        }
+        let (marker, tint) = Self.box(for: status, theme: theme)
         Button(action: action) {
             InlineCheckboxView(marker: marker, tint: tint, background: theme.bg)
                 .frame(width: size, height: size)
@@ -116,6 +111,16 @@ struct StatusCheckbox: View {
         .buttonStyle(.plain)
         .accessibilityLabel(status == .done ? "Mark not done: \(title)" : "Complete: \(title)")
         .help(status == .done ? "Mark not done" : "Complete")
+    }
+
+    /// The checkbox marker and tint that show a status.
+    static func box(for status: Status, theme: Theme) -> (marker: Character, tint: NSColor) {
+        switch status {
+        case .notStarted: (" ", theme.muted)
+        case .doing: ("/", theme.doing)
+        case .blocked: ("B", theme.blocked)
+        case .done: ("x", theme.done)
+        }
     }
 }
 

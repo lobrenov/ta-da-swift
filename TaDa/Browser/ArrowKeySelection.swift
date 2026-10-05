@@ -1,5 +1,6 @@
-// Arrow keys for the browser lists: ↑/↓ move the selection, Escape clears it. They act only while no
-// text view (an editor, the title or the search field) has the keyboard, so those keep their own keys.
+// Keys for the browser lists: ↑/↓ move the selection, Escape clears it, ⌫ or ⌘⌫ moves the selected file to
+// the trash (in Trash, ⌘⌫ restores and ⌥⌘⌫ deletes forever). They act only while no text view (an editor,
+// the title or the search field) has the keyboard and no file menu is open, so those keep their own keys.
 // A key monitor on the main window rather than SwiftUI focus: a focusable list never gets focus there.
 import AppKit
 import SwiftUI
@@ -65,13 +66,28 @@ private struct ArrowKeyMonitor: ViewModifier {
 
     private func handle(_ event: NSEvent) -> Bool {
         guard let window = window.value, event.window === window, !(window.firstResponder is NSTextView),
-              event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty else { return false }
+              !FileMenu.shared.isOpen else { return false }
+        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        if event.keyCode == 51 || event.keyCode == 117 {
+            switch modifiers {
+            case []: return model.deleteKey(command: false)
+            case .command: return model.deleteKey(command: true)
+            case [.command, .option]: return model.deleteForeverKey()
+            default: return false
+            }
+        }
+        guard modifiers.isEmpty else { return false }
         switch event.keyCode {
         case 125: return model.moveSelection(by: 1)
         case 126: return model.moveSelection(by: -1)
         case 53:
-            guard model.selection != nil else { return false }
-            model.selection = nil
+            if model.selection != nil {
+                model.selection = nil
+            } else if !model.trashSelection.isEmpty {
+                model.trashSelection = []
+            } else {
+                return false
+            }
             return true
         default: return false
         }

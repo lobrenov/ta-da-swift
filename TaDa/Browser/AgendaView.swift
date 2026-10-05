@@ -57,14 +57,17 @@ struct AgendaView: View {
     @ViewBuilder private func row(_ entry: AgendaEntry, dated: Bool) -> some View {
         let toggle: () -> Void = { Task { await model.toggleCompletion(entry.item) } }
         let select: () -> Void = { model.selection = entry.item.path }
-        switch style {
-        case .wide:
-            WideAgendaRow(entry: entry, place: place(of: entry.item), also: also(entry), onToggle: toggle, onSelect: select)
-        case .column:
-            ColumnAgendaRow(entry: entry, place: place(of: entry.item), also: also(entry), dated: dated,
-                            today: model.today, selected: model.selection == entry.item.path,
-                            onToggle: toggle, onSelect: select)
+        Group {
+            switch style {
+            case .wide:
+                WideAgendaRow(entry: entry, place: place(of: entry.item), also: also(entry), onToggle: toggle, onSelect: select)
+            case .column:
+                ColumnAgendaRow(entry: entry, place: place(of: entry.item), also: also(entry), dated: dated,
+                                today: model.today, selected: model.selection == entry.item.path,
+                                onToggle: toggle, onSelect: select)
+            }
         }
+        .fileMenu(model, path: entry.item.path)
     }
 
     private func place(of task: Item) -> String {

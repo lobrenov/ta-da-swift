@@ -65,6 +65,15 @@ public enum CoordinatedFileIO {
         }
     }
 
+    /// Moves a file to the system Trash, telling other coordinated clients it's going.
+    public static func moveToSystemTrash(_ url: URL) throws {
+        try coordinate { coordinator, error, body in
+            coordinator.coordinate(writingItemAt: url, options: .forDeleting, error: error) { url in
+                body { try FileManager.default.trashItem(at: url, resultingItemURL: nil) }
+            }
+        }
+    }
+
     private static func decode(_ url: URL) throws -> String {
         guard let text = String(data: try Data(contentsOf: url), encoding: .utf8) else {
             throw FileIOError.notUTF8(url.lastPathComponent)

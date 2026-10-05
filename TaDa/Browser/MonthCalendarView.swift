@@ -65,6 +65,7 @@ struct MonthCalendarView: View {
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
+                    .fileMenu(model, path: entry.item.path, cornerRadius: 0)
                 }
             }
         }

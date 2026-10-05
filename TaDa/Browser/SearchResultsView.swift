@@ -22,13 +22,16 @@ struct SearchResultsView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 1) {
                         ForEach(results) { item in
-                            if item.properties.kind == .project {
-                                projectRow(item)
-                            } else {
-                                TaskRow(item: item, selected: model.selection == item.path, today: model.today,
-                                        onToggle: { Task { await model.toggleCompletion(item) } },
-                                        onSelect: { model.selection = item.path })
+                            Group {
+                                if item.properties.kind == .project {
+                                    projectRow(item)
+                                } else {
+                                    TaskRow(item: item, selected: model.selection == item.path, today: model.today,
+                                            onToggle: { Task { await model.toggleCompletion(item) } },
+                                            onSelect: { model.selection = item.path })
+                                }
                             }
+                            .fileMenu(model, path: item.path)
                         }
                     }
                     .padding(.horizontal, 16)

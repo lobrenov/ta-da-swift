@@ -168,7 +168,7 @@ public struct Vault: Sendable {
         path.split(separator: "/").dropLast().joined(separator: "/")
     }
 
-    private func filenames(in folder: String) -> Set<String> {
+    func filenames(in folder: String) -> Set<String> {
         let names = try? FileManager.default.contentsOfDirectory(atPath: url(for: folder).path(percentEncoded: false))
         return Set(names ?? [])
     }

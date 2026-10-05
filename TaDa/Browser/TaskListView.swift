@@ -71,6 +71,7 @@ struct TaskListView: View {
                                     dates: kind == .today ? .overdueDueAndDeadline : .labelled,
                                     onToggle: { Task { await model.toggleCompletion(task) } },
                                     onSelect: { model.selection = task.path })
+                            .fileMenu(model, path: task.path)
                         }
                     }
                 }
