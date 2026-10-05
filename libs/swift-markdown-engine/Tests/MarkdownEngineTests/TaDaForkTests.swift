@@ -75,6 +75,48 @@ struct AlternativeCheckboxTests {
     }
 }
 
+@Suite("Ta Da fork — lists in blockquotes")
+struct QuotedListTests {
+
+    private func quotedItems(_ text: String) -> [ListItem] {
+        for block in DocumentAST.parse(text) { if case .blockquote(_, _, let items) = block { return items } }
+        return []
+    }
+
+    private func attrs(_ text: String) -> [StyledRange] {
+        MarkdownASTStyler.styleAttributes(text: text, fontName: NSFont.systemFont(ofSize: 14).fontName, fontSize: 14)
+    }
+
+    @Test func quoteLinesThatAreListItemsParseAsItems() {
+        let items = quotedItems("> - [ ] open\n> plain\n>> 1. [x] done\n> * bullet\n")
+        #expect(items.map(\.taskMarker) == [" ", "x", nil])
+        #expect(items.map(\.checkbox) == [NSRange(location: 4, length: 3), NSRange(location: 27, length: 3), nil])
+        #expect(items.map(\.marker) == [NSRange(location: 2, length: 1), NSRange(location: 24, length: 2), NSRange(location: 38, length: 1)])
+        #expect(quotedItems("> plain\n> -not a bullet\n").isEmpty)
+    }
+
+    @Test func quotedItemsGetTheirBoxOrBulletInsideTheQuote() {
+        let text = "Intro\n\n> - [x] done\n> - bullet\n"
+        let styled = attrs(text)
+        #expect(styled.contains { $0.attributes[.taskCheckbox] as? String == "x" })
+        #expect(styled.contains { $0.attributes[.bulletMarker] as? Bool == true })
+        #expect(styled.contains { $0.attributes[.strikethroughStyle] != nil })
+        #expect(styled.contains { $0.attributes[.blockquoteLevel] as? Int == 1 })
+        // The item sits one list level in from the quote's text, as a list does from body text.
+        let line = (text as NSString).range(of: "> - [x] done")
+        let style = styled.last { NSIntersectionRange($0.range, line).length > 0 && $0.attributes[.paragraphStyle] != nil }?
+            .attributes[.paragraphStyle] as? NSParagraphStyle
+        let quoteIndent = MarkdownTextLayoutFragment.blockquoteIndentPerLevel * 1.5
+        #expect(style?.firstLineHeadIndent == quoteIndent + MarkdownEditorConfiguration.default.lists.indentPerLevel)
+    }
+
+    @Test func caretHelpersSeeQuotedSyntax() {
+        #expect(MarkdownStyler.taskSyntaxRange(at: 2, in: "> - [ ] a\n") == NSRange(location: 2, length: 5))
+        #expect(MarkdownStyler.bulletSyntaxRange(at: 2, in: "> - a\n") == NSRange(location: 2, length: 2))
+        #expect(MarkdownStyler.bulletSyntaxRange(at: 2, in: "> text\n") == nil)
+    }
+}
+
 @MainActor
 @Suite("Ta Da fork — Tab and Shift-Tab")
 struct ListIndentTests {
@@ -356,9 +398,11 @@ struct SlashCommandTests {
 @Suite("Ta Da fork — task marker menu hook")
 struct TaskMarkerMenuHookTests {
 
-    @Test func rightClickOnABoxGoesToTheHookAndSetsTheMarkerOnce() throws {
+    /// An editor showing `text` and a mouse event of `type` on its first box. The window and
+    /// coordinator come back too, so the test keeps them alive.
+    private func editor(_ text: String, click type: NSEvent.EventType) throws
+        -> (tv: NativeTextView, event: NSEvent, window: NSWindow, coordinator: NativeTextViewCoordinator) {
         _ = NSApplication.shared
-        let text = "Intro\n\n- [ ] a\n"
         let coordinator = NativeTextViewCoordinator(
             text: .constant(text), fontName: "SF Pro", fontSize: 14,
             isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
@@ -380,13 +424,10 @@ struct TaskMarkerMenuHookTests {
         coordinator.previousDisplayLength = (text as NSString).length
         tv.setSelectedRange(NSRange(location: 0, length: 0))
 
-        var requests: [TaskMarkerMenuRequest] = []
-        tv.onTaskMarkerMenu = { requests.append($0) }
-
         let storage = try #require(tv.textStorage)
         var box = NSRange(location: NSNotFound, length: 0)
         storage.enumerateAttribute(.taskCheckbox, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
-            if value != nil { box = range }
+            if value != nil, box.location == NSNotFound { box = range }
         }
         try #require(box.location != NSNotFound)
         let anchor = try #require(tv.layoutBridge).boundingRect(forCharacterRange: box, in: try #require(tv.textContainer))
@@ -396,9 +437,16 @@ struct TaskMarkerMenuHookTests {
                                      y: anchor.midY)
         let viewPoint = CGPoint(x: containerPoint.x + tv.textContainerOrigin.x, y: containerPoint.y + tv.textContainerOrigin.y)
         let event = try #require(NSEvent.mouseEvent(
-            with: .rightMouseDown, location: tv.convert(viewPoint, to: nil), modifierFlags: [], timestamp: 0,
+            with: type, location: tv.convert(viewPoint, to: nil), modifierFlags: [], timestamp: 0,
             windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
         ))
+        return (tv, event, window, coordinator)
+    }
+
+    @Test func rightClickOnABoxGoesToTheHookAndSetsTheMarkerOnce() throws {
+        let (tv, event, window, coordinator) = try editor("Intro\n\n- [ ] a\n", click: .rightMouseDown)
+        var requests: [TaskMarkerMenuRequest] = []
+        tv.onTaskMarkerMenu = { requests.append($0) }
 
         #expect(tv.menu(for: event) == nil)
         let request = try #require(requests.first)
@@ -408,5 +456,13 @@ struct TaskMarkerMenuHookTests {
         // The box changed since the request, so a second pick does nothing.
         request.setMarker("/")
         #expect(tv.string == "Intro\n\n- [x] a\n")
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
+    @Test func aClickOnAQuotedBoxTogglesIt() throws {
+        let (tv, event, window, coordinator) = try editor("Intro\n\n> - [ ] a\n", click: .leftMouseDown)
+        #expect(tv.toggleTaskCheckboxIfHit(event: event) == true)
+        #expect(tv.string == "Intro\n\n> - [x] a\n")
+        withExtendedLifetime((window, coordinator)) {}
     }
 }

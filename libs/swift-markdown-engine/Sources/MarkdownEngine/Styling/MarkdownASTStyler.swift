@@ -106,7 +106,7 @@ enum MarkdownASTStyler {
         for block in blocks {
             switch block {
             case .codeBlock(let range): ranges.append(range)
-            case .paragraph(_, let inlines), .heading(_, _, _, let inlines), .blockquote(_, let inlines):
+            case .paragraph(_, let inlines), .heading(_, _, _, let inlines), .blockquote(_, let inlines, _):
                 walk(inlines)
             case .list(_, let items):
                 for item in items { walk(item.inlines) }
@@ -146,7 +146,7 @@ enum MarkdownASTStyler {
         }
         for block in blocks {
             switch block {
-            case .paragraph(_, let inlines), .heading(_, _, _, let inlines), .blockquote(_, let inlines):
+            case .paragraph(_, let inlines), .heading(_, _, _, let inlines), .blockquote(_, let inlines, _):
                 walk(inlines)
             case .list(_, let items):
                 for item in items { walk(item.inlines) }
@@ -364,8 +364,17 @@ enum MarkdownASTStyler {
         return result
     }
 
+    /// Ta Da fork: how a list item on a quote line sits inside the quote: indented from the quote's
+    /// text, and with the quote's spacing so its bar stays unbroken.
+    struct QuoteLayout {
+        let indent: CGFloat
+        let spacing: CGFloat
+    }
+
     /// AST list-item decoration: indent paragraph, `•` bullet, checkbox + strikethrough, all caret-aware.
-    private static func styleListItem(_ item: ListItem, displayNumber: Int?, ctx: Ctx, into attrs: inout [StyledRange]) {
+    /// Ta Da fork: `quote` places an item on a quote line inside the quote.
+    private static func styleListItem(_ item: ListItem, displayNumber: Int?, quote: QuoteLayout? = nil,
+                                      ctx: Ctx, into attrs: inout [StyledRange]) {
         guard ctx.config.lists.helpersEnabled else { return }
 
         // Line content (item line minus its trailing newline).
@@ -377,7 +386,7 @@ enum MarkdownASTStyler {
         }
 
         // 1. Indent paragraph style (hanging indent so wrapped lines align).
-        let wsRange = NSRange(location: item.range.location, length: item.marker.location - item.range.location)
+        let wsRange = NSRange(location: item.marker.location - item.indent, length: item.indent)
         let ws = ctx.ns.substring(with: wsRange)
         // Revealed while the caret edits the syntax (same test as the early
         // return below): the raw `- [ ]` stays at full advance.
@@ -429,20 +438,21 @@ enum MarkdownASTStyler {
         let depthIndent = CGFloat(MarkdownLists.indentLevel(from: ws)) * ctx.config.lists.indentPerLevel
         let ps = NSMutableParagraphStyle()
         let lineHeight = ctx.baseLineHeight + ctx.config.lists.extraLineHeight
+        let quoteIndent = quote?.indent ?? 0
         ps.minimumLineHeight = lineHeight
         ps.maximumLineHeight = lineHeight
         ps.lineSpacing = 0
-        ps.paragraphSpacing = ctx.baseParagraphSpacing
+        ps.paragraphSpacing = quote?.spacing ?? ctx.baseParagraphSpacing
         ps.paragraphSpacingBefore = 0
         ps.tabStops = []
         ps.defaultTabInterval = ctx.config.lists.indentPerLevel
-        ps.firstLineHeadIndent = ctx.config.lists.indentPerLevel
+        ps.firstLineHeadIndent = quoteIndent + ctx.config.lists.indentPerLevel
         // Wrapped lines hang under the first line's content (indent + marker
         // width). No checkbox-specific extra: the box is a drawn overlay that
         // doesn't change text advance, so adding it here (and only here, not to
         // firstLineHeadIndent) shifted an unchecked task's wrapped lines right
         // of its first line.
-        ps.headIndent = ctx.config.lists.indentPerLevel + depthIndent + markerWidth
+        ps.headIndent = quoteIndent + ctx.config.lists.indentPerLevel + depthIndent + markerWidth
             + (item.checkbox != nil && !taskRevealed ? taskSlotExtra(markerWidth: markerWidth, ctx: ctx) : 0)
         attrs.append((line, [.paragraphStyle: ps]))
 
@@ -653,8 +663,8 @@ enum MarkdownASTStyler {
             }
             styleInlines(inlines, font: headingFont, ctx: ctx, into: &attrs)
 
-        case .blockquote(let range, let inlines):
-            styleBlockquote(range: range, ctx: ctx, into: &attrs)
+        case .blockquote(let range, let inlines, let items):
+            styleBlockquote(range: range, items: items, ctx: ctx, into: &attrs)
             styleInlines(inlines, font: font, ctx: ctx, into: &attrs)
 
         case .list(_, let items):
@@ -705,8 +715,10 @@ enum MarkdownASTStyler {
     }
 
     /// Per-line blockquote: indent, mute content, hide/show `>` markers, tag first char with bar level.
-    private static func styleBlockquote(range: NSRange, ctx: Ctx, into attrs: inout [StyledRange]) {
+    /// Ta Da fork: a line in `items` is then styled as a list item inside the quote.
+    private static func styleBlockquote(range: NSRange, items: [ListItem], ctx: Ctx, into attrs: inout [StyledRange]) {
         let indentPerLevel = MarkdownTextLayoutFragment.blockquoteIndentPerLevel
+        let itemsByLine = Dictionary(uniqueKeysWithValues: items.map { ($0.range.location, $0) })
         var lineStart = range.location
         let end = NSMaxRange(range)
         while lineStart < end {
@@ -758,6 +770,11 @@ enum MarkdownASTStyler {
             }
             // Whole line, not just the first char, so each soft-wrapped visual line
             attrs.append((tokenRange, [.blockquoteLevel: level]))
+            if let item = itemsByLine[line.location] {
+                styleListItem(item, displayNumber: nil,
+                              quote: QuoteLayout(indent: textIndent, spacing: para.paragraphSpacing),
+                              ctx: ctx, into: &attrs)
+            }
         }
     }
 
@@ -931,7 +948,7 @@ enum MarkdownASTStyler {
             case .heading(_, let range, let markers, let inlines):
                 if !ctx.isActive(range) { shrink(markers, ctx: ctx, into: &attrs) }
                 shrinkInlineMarkers(inlines, ctx: ctx, into: &attrs)
-            case .paragraph(_, let inlines), .blockquote(_, let inlines):
+            case .paragraph(_, let inlines), .blockquote(_, let inlines, _):
                 shrinkInlineMarkers(inlines, ctx: ctx, into: &attrs)
             case .list(_, let items):
                 // Phase A: shrink only inline markers; the list marker is hidden by the bullet/task pass.

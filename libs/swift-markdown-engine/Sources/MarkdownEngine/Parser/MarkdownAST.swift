@@ -41,7 +41,8 @@ struct ExtensionBlockNode: Equatable {
 indirect enum BlockNode: Equatable {
     case paragraph(range: NSRange, inlines: [InlineNode])
     case heading(level: Int, range: NSRange, markers: [NSRange], inlines: [InlineNode])
-    case blockquote(range: NSRange, inlines: [InlineNode])
+    /// Ta Da fork: `items` are the list items on the quote's lines (`> - [ ] a`), read after the `>` markers.
+    case blockquote(range: NSRange, inlines: [InlineNode], items: [ListItem])
     case list(range: NSRange, items: [ListItem])
     case codeBlock(range: NSRange)
     case blockLatex(range: NSRange)
@@ -52,7 +53,7 @@ indirect enum BlockNode: Equatable {
 
     var range: NSRange {
         switch self {
-        case .paragraph(let r, _), .heading(_, let r, _, _), .blockquote(let r, _),
+        case .paragraph(let r, _), .heading(_, let r, _, _), .blockquote(let r, _, _),
              .list(let r, _), .codeBlock(let r), .blockLatex(let r), .table(let r),
              .thematicBreak(let r), .blank(let r):
             return r
@@ -171,7 +172,8 @@ enum DocumentAST {
         case .heading:
             return heading(block.range, ns, scoped: scoped, registry: registry)
         case .blockquote:
-            return .blockquote(range: block.range, inlines: scoped ? InlineParser.parse(ns, range: block.range, registry: registry) : [])
+            return .blockquote(range: block.range, inlines: scoped ? InlineParser.parse(ns, range: block.range, registry: registry) : [],
+                               items: quotedListItems(block.range, ns))
         case .list:
             return list(
                 block.range,
@@ -313,10 +315,34 @@ enum DocumentAST {
         return .list(range: range, items: items)
     }
 
+    /// Ta Da fork: the list items on a quote's lines. Each line's `>` markers (each with an optional
+    /// space or tab after it) come off first; the quote's own inlines cover the items' text.
+    private static func quotedListItems(_ range: NSRange, _ ns: NSString) -> [ListItem] {
+        var items: [ListItem] = []
+        var lineStart = range.location
+        while lineStart < NSMaxRange(range) {
+            let line = ns.lineRange(for: NSRange(location: lineStart, length: 0))
+            lineStart = NSMaxRange(line)
+            var i = line.location
+            var indent = 0
+            while i < lineStart, indent < 3, ns.character(at: i) == space || ns.character(at: i) == tab { i += 1; indent += 1 }
+            guard i < lineStart, ns.character(at: i) == 0x3E else { continue }   // >
+            while i < lineStart, ns.character(at: i) == 0x3E {
+                i += 1
+                if i < lineStart, ns.character(at: i) == space || ns.character(at: i) == tab { i += 1 }
+            }
+            guard BlockParser.isListItem(ns.substring(with: NSRange(location: i, length: lineStart - i))) else { continue }
+            items.append(listItem(line, ns, from: i, scoped: false))
+        }
+        return items
+    }
+
     /// Parse one list-item line: indent, marker, optional task checkbox, inline content.
-    private static func listItem(_ lineRange: NSRange, _ ns: NSString, scoped: Bool = true, registry: ExtensionRegistry = .empty) -> ListItem {
+    /// Ta Da fork: `start` is where the indent begins, after a quote's `>` markers.
+    private static func listItem(_ lineRange: NSRange, _ ns: NSString, from start: Int? = nil, scoped: Bool = true,
+                                 registry: ExtensionRegistry = .empty) -> ListItem {
         let end = NSMaxRange(lineRange)
-        var i = lineRange.location
+        var i = start ?? lineRange.location
         var indent = 0
         while i < end, ns.character(at: i) == space || ns.character(at: i) == tab { i += 1; indent += 1 }
         let markerStart = i

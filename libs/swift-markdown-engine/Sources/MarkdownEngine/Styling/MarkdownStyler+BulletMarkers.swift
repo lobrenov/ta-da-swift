@@ -13,9 +13,10 @@ import Foundation
 extension MarkdownStyler {
 
     /// Indented bullet marker at line start (trailing space excludes `---`/`*bold*`), not a checkbox.
-    /// Ta Da fork: a box after any spaces, with a space or tab after it, as the AST parser reads one.
+    /// Ta Da fork: a box after any spaces, with a space or tab after it, as the AST parser reads one;
+    /// the indent may follow a quote's `>` markers.
     static let bulletListRegex: NSRegularExpression = try! NSRegularExpression(
-        pattern: #"^([ \t]*)([-*+])([ \t]++)(?!"# + TaskMarker.boxPattern + #"[ \t])"#,
+        pattern: #"^((?:[ \t]*>[ \t]?)*[ \t]*)([-*+])([ \t]++)(?!"# + TaskMarker.boxPattern + #"[ \t])"#,
         options: [.anchorsMatchLines]
     )
 

@@ -88,7 +88,7 @@ public enum MarkdownHTMLRenderer {
         case .paragraph(_, let inlines):
             return "<p>\(renderInlines(inlines, ns: ns, env: env))</p>"
 
-        case .blockquote(let range, _):
+        case .blockquote(let range, _, _):
             return renderBlockquote(range: range, ns: ns, env: env)
 
         case .list(_, let items):

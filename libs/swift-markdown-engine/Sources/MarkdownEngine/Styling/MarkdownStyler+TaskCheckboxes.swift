@@ -14,8 +14,9 @@ import Foundation
 extension MarkdownStyler {
 
     /// Task-list line: indent, marker (`-`/`*`/`+`/`•`/`N.` matching the AST), spacer, `[ ]`/`[x]` box.
+    /// Ta Da fork: the indent may follow a quote's `>` markers.
     static let taskListRegex: NSRegularExpression = try! NSRegularExpression(
-        pattern: #"^([ \t]*)([-•*+]|\d+\.)([ \t]+)("# + TaskMarker.boxPattern + #")(?=[ \t])"#,
+        pattern: #"^((?:[ \t]*>[ \t]?)*[ \t]*)([-•*+]|\d+\.)([ \t]+)("# + TaskMarker.boxPattern + #")(?=[ \t])"#,
         options: [.anchorsMatchLines]
     )
 

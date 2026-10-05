@@ -725,8 +725,13 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
             let symbols = configuration.lists.bulletSymbolNames
             if !isSelected, !symbols.isEmpty {
                 let lineStart = storageString.lineRange(for: NSRange(location: attrRange.location, length: 0)).location
-                let ws = storageString.substring(with: NSRange(location: lineStart, length: attrRange.location - lineStart))
-                let name = symbols[MarkdownLists.indentLevel(from: ws) % symbols.count]
+                var ws = Substring(storageString.substring(with: NSRange(location: lineStart, length: attrRange.location - lineStart)))
+                // On a quote line the depth counts from after the last `>` and its optional space.
+                if let quote = ws.lastIndex(of: ">") {
+                    ws = ws[ws.index(after: quote)...]
+                    if ws.first == " " || ws.first == "\t" { ws = ws.dropFirst() }
+                }
+                let name = symbols[MarkdownLists.indentLevel(from: String(ws)) % symbols.count]
                 if let base = NSImage(systemSymbolName: name, accessibilityDescription: nil) {
                     let symbolConfig = NSImage.SymbolConfiguration(
                         pointSize: font.pointSize * configuration.lists.bulletSymbolScale, weight: .regular)
