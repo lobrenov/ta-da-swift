@@ -51,19 +51,20 @@ struct AgendaView: View {
             .padding(.top, 4)
             .padding(.bottom, 24)
         }
+        // One task at a time: with nothing selected Upcoming switches to the month view, and a task can be listed twice.
         .arrowKeySelection(model, paths: paths)
     }
 
     @ViewBuilder private func row(_ entry: AgendaEntry, dated: Bool) -> some View {
         let toggle: () -> Void = { Task { await model.toggleCompletion(entry.item) } }
-        let select: () -> Void = { model.selection = entry.item.path }
+        let select: () -> Void = { model.click(entry.item.path) }
         Group {
             switch style {
             case .wide:
                 WideAgendaRow(entry: entry, place: place(of: entry.item), also: also(entry), onToggle: toggle, onSelect: select)
             case .column:
                 ColumnAgendaRow(entry: entry, place: place(of: entry.item), also: also(entry), dated: dated,
-                                today: model.today, selected: model.selection == entry.item.path,
+                                today: model.today, selected: model.isSelected(entry.item.path),
                                 onToggle: toggle, onSelect: select)
             }
         }

@@ -1,4 +1,5 @@
-// Keys for the browser lists: ↑/↓ move the selection, Escape clears it, ⌫ or ⌘⌫ moves the selected file to
+// Selection in the browser lists. A click opens a file; in lists that allow it, shift-click picks a range and
+// ⌘-click adds or removes a task. Keys: ↑/↓ move the selection, Escape clears it, ⌫ or ⌘⌫ moves the selected file to
 // the trash (in Trash, ⌘⌫ restores and ⌥⌘⌫ deletes forever). They act only while no text view (an editor,
 // the title or the search field) has the keyboard and no file menu is open, so those keep their own keys.
 // A key monitor on the main window rather than SwiftUI focus: a focusable list never gets focus there.
@@ -6,9 +7,10 @@ import AppKit
 import SwiftUI
 
 extension View {
-    /// Marks the browser list on screen; `paths` are its tasks from top to bottom.
-    func arrowKeySelection(_ model: AppModel, paths: [String]) -> some View {
-        modifier(ArrowKeyList(model: model, paths: paths))
+    /// Marks the browser list on screen; `paths` are its tasks from top to bottom. Rows show
+    /// `model.isSelected(_:)` and call `model.click(_:)`.
+    func arrowKeySelection(_ model: AppModel, paths: [String], allowsMultipleSelection: Bool = false) -> some View {
+        modifier(ArrowKeyList(model: model, paths: paths, allowsMultipleSelection: allowsMultipleSelection))
     }
 
     /// Handles the arrow keys in the window this view is in.
@@ -17,15 +19,34 @@ extension View {
     }
 }
 
+extension AppModel {
+    /// A click on a row in the browser list on screen. Shift-click picks a range and ⌘-click adds or removes
+    /// the task, where the list allows several; otherwise the file opens.
+    func click(_ path: String) {
+        let modifiers = NSEvent.modifierFlags
+        if arrowKeyList?.allowsMultipleSelection == true, modifiers.contains(.shift) {
+            extendSelection(to: path)
+        } else if arrowKeyList?.allowsMultipleSelection == true, modifiers.contains(.command) {
+            toggleSelection(path)
+        } else {
+            selection = path
+        }
+    }
+}
+
 private struct ArrowKeyList: ViewModifier {
     let model: AppModel
     let paths: [String]
+    let allowsMultipleSelection: Bool
     /// Lists replace each other (Upcoming changes layout); only the one that set the order clears it.
     @State private var id = UUID()
 
     func body(content: Content) -> some View {
         content
-            .onChange(of: paths, initial: true) { model.arrowKeyList = AppModel.ArrowKeyList(id: id, paths: paths) }
+            .onChange(of: paths, initial: true) {
+                model.arrowKeyList = AppModel.ArrowKeyList(id: id, paths: paths, allowsMultipleSelection: allowsMultipleSelection)
+                model.keepPicked(in: paths)
+            }
             .onDisappear { if model.arrowKeyList?.id == id { model.arrowKeyList = nil } }
     }
 }

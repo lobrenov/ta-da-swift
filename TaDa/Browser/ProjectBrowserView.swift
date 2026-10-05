@@ -1,5 +1,4 @@
 // A project's tasks beside the document pane: the project's header, then Open and Completed groups.
-// Shift- and ⌘-click pick several tasks for the file menu and ⌫.
 import SwiftUI
 import TaDaCore
 
@@ -31,7 +30,7 @@ struct ProjectBrowserView: View {
                 .padding(.bottom, 24)
             }
         }
-        .arrowKeySelection(model, paths: (open + done).map(\.path))
+        .arrowKeySelection(model, paths: (open + done).map(\.path), allowsMultipleSelection: true)
     }
 
     private func header(done: Int, total: Int) -> some View {
@@ -58,27 +57,15 @@ struct ProjectBrowserView: View {
         .padding(.bottom, 14)
     }
 
-    /// A click opens the task; shift-click picks a range, ⌘-click adds or removes one task.
-    private func select(_ path: String) {
-        let modifiers = NSEvent.modifierFlags
-        if modifiers.contains(.shift) {
-            model.extendSelection(to: path)
-        } else if modifiers.contains(.command) {
-            model.toggleSelection(path)
-        } else {
-            model.selection = path
-        }
-    }
-
     @ViewBuilder private func group(_ title: String, _ tasks: [Item]) -> some View {
         if !tasks.isEmpty {
             VStack(alignment: .leading, spacing: 1) {
                 CountGroupHeader(title: title, count: tasks.count)
                 ForEach(tasks) { task in
-                    TaskRow(item: task, selected: model.selection == task.path || model.multiSelection.contains(task.path),
-                            today: model.today, dates: .iconsOnly, showsContexts: false,
+                    TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,
+                            dates: .iconsOnly, showsContexts: false,
                             onToggle: { Task { await model.toggleCompletion(task) } },
-                            onSelect: { select(task.path) })
+                            onSelect: { model.click(task.path) })
                     .fileMenu(model, path: task.path)
                 }
             }

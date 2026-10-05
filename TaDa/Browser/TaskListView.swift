@@ -24,7 +24,7 @@ struct TaskListView: View {
                 list(groups)
             }
         }
-        .arrowKeySelection(model, paths: groups.flatMap(\.tasks).map(\.path))
+        .arrowKeySelection(model, paths: groups.flatMap(\.tasks).map(\.path), allowsMultipleSelection: true)
         .onChange(of: contexts) { if let context, !contexts.contains(context) { self.context = nil } }
     }
 
@@ -67,10 +67,10 @@ struct TaskListView: View {
                             ProjectGroupHeader(project: project, fraction: model.index.progress(of: project))
                         }
                         ForEach(group.tasks) { task in
-                            TaskRow(item: task, selected: model.selection == task.path, today: model.today,
+                            TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,
                                     dates: kind == .today ? .overdueDueAndDeadline : .labelled,
                                     onToggle: { Task { await model.toggleCompletion(task) } },
-                                    onSelect: { model.selection = task.path })
+                                    onSelect: { model.click(task.path) })
                             .fileMenu(model, path: task.path)
                         }
                     }

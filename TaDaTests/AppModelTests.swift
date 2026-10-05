@@ -214,10 +214,13 @@ struct AppModelTests {
         let model = AppModel(defaults: defaults)
         await model.choose(folder)
         let paths = ["tasks/Due today.md", "tasks/Loose.md", "tasks/Done.md"]
-        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths)
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[0]
         model.extendSelection(to: paths[2])
         #expect(model.selection == nil && model.multiSelection == Set(paths))
+        model.keepPicked(in: [paths[0], paths[1]])
+        #expect(model.multiSelection == [paths[0], paths[1]], "tasks the list no longer shows drop out")
+        model.extendSelection(to: paths[2])
         model.toggleSelection(paths[1])
         #expect(model.multiSelection == [paths[0], paths[2]])
         model.extendSelection(to: paths[2])

@@ -62,10 +62,12 @@ import TaDaCore
     var searchText = ""
     /// Bumped by the Search Files command; the sidebar's search field takes focus.
     var searchFocusRequest = 0
-    /// The browser list on screen, top to bottom, for the arrow keys. Set by the list itself.
+    /// The browser list on screen, top to bottom, for the arrow keys and selection clicks. Set by the list itself.
     struct ArrowKeyList: Equatable {
         var id: UUID
         var paths: [String]
+        /// Shift- and ⌘-click pick several tasks.
+        var allowsMultipleSelection = false
     }
     @ObservationIgnored var arrowKeyList: ArrowKeyList?
     /// The Ta Da files in `.trash/`, most recently deleted first.
@@ -397,6 +399,16 @@ import TaDaCore
 
     func clearMultiSelection() {
         multiSelection = []
+    }
+
+    /// Drops picked tasks that the list on screen no longer shows (a filter hid them, or they moved away).
+    func keepPicked(in paths: [String]) {
+        multiSelection.formIntersection(paths)
+    }
+
+    /// Whether a row shows as selected: the open file, or one of the picked tasks.
+    func isSelected(_ path: String) -> Bool {
+        selection == path || multiSelection.contains(path)
     }
 
     /// One task opens in the document pane; several show as picked with the pane empty.

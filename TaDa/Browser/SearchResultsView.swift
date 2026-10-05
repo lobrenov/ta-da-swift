@@ -26,9 +26,9 @@ struct SearchResultsView: View {
                                 if item.properties.kind == .project {
                                     projectRow(item)
                                 } else {
-                                    TaskRow(item: item, selected: model.selection == item.path, today: model.today,
+                                    TaskRow(item: item, selected: model.isSelected(item.path), today: model.today,
                                             onToggle: { Task { await model.toggleCompletion(item) } },
-                                            onSelect: { model.selection = item.path })
+                                            onSelect: { model.click(item.path) })
                                 }
                             }
                             .fileMenu(model, path: item.path)
