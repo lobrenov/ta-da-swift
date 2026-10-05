@@ -36,6 +36,20 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
     }
 }
 
+@Test func pathsOfURLsAreTheOnesAScanLists() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile(task, "Vault/tasks/a.md", in: folder)
+        try writeFile(task, "Vault/B.MD", in: folder)
+        let vault = Vault(root: folder.appending(path: "Vault"))
+        #expect(vault.path(of: folder.appending(path: "Vault/tasks/a.md")) == "tasks/a.md")
+        // The temporary directory is under /var, a symlink to /private/var.
+        #expect(vault.path(of: URL(filePath: "/private" + folder.appending(path: "Vault/B.MD").path)) == "B.MD")
+        for outside in ["Vault/.trash/a.md", "Vault/tasks/a.txt", "Vault", "Other/a.md"] {
+            #expect(vault.path(of: folder.appending(path: outside)) == nil)
+        }
+    }
+}
+
 @Test func createNumbersTakenNames() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)

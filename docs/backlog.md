@@ -6,8 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
 
-6. **The open file has no `NSFilePresenter`** *(Apple)*: Ta Da coordinates its writes but never registers as presenter of the file being edited. iCloud and other coordinated writers therefore can't ask it to save pending edits first (`savePresentedItemChanges`). A rename made outside Ta Da shows as "deleted or renamed" instead of being followed (`presentedItemDidMove(to:)`). Also, `isInICloud` (`AppModel.swift:604`) looks for "Mobile Documents" in the path. Use `FileManager.default.isUbiquitousItem(at:)` instead; it returns true for iCloud and Obsidian folders and false for local ones.
-
 7. **Dark mode is detected through undocumented APIs** *(Apple)*: the app reads the `AppleInterfaceStyle` default (`Theme.swift:44`) and listens for `AppleInterfaceThemeChangedNotification` (`Themed.swift:23`). It needs these only because a view modifier overrides `NSApp.appearance` for the whole app. Set the appearance per window instead (`.preferredColorScheme` or `window.appearance`) and observe `NSApp.effectiveAppearance` with KVO, which then keeps following the system. Trade-off: menus in the menu bar would follow the system appearance rather than the theme.
 
 8. **List navigation bypasses the focus system** *(Apple, accessibility)*: `ArrowKeySelection.swift:37-78` installs an app-wide `keyDown` monitor that matches raw key codes (125/126/53, plus 36/76 in the menus' `PopupMenu.handleKey`). It also calls `makeFirstResponder(nil)` to take focus away from the editor.

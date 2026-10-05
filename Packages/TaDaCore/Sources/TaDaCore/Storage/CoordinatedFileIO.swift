@@ -8,8 +8,9 @@ public enum FileIOError: Error, Equatable {
 /// Synchronous: call it off the main actor.
 public enum CoordinatedFileIO {
     /// Reads UTF-8 text. A coordinated read downloads an evicted iCloud file first.
-    public static func read(_ url: URL) throws -> String {
-        try coordinate { coordinator, error, body in
+    /// `presenter` is the file's own `FilePresenter`, if it's open.
+    public static func read(_ url: URL, presenter: FilePresenter? = nil) throws -> String {
+        try coordinate(presenter: presenter) { coordinator, error, body in
             coordinator.coordinate(readingItemAt: url, options: [], error: error) { url in body { try decode(url) } }
         }
     }
@@ -25,10 +26,11 @@ public enum CoordinatedFileIO {
 
     /// Reads, transforms and writes back in one coordinated access, so no other coordinated writer
     /// can change the file in between. Writes only when the text changes. Returns the resulting text.
+    /// `presenter` is the file's own `FilePresenter`, if it's open.
     @discardableResult
-    public static func update(_ url: URL, _ transform: (String) throws -> String) throws -> String {
+    public static func update(_ url: URL, presenter: FilePresenter? = nil, _ transform: (String) throws -> String) throws -> String {
         try withoutActuallyEscaping(transform) { transform in
-            try coordinate { coordinator, error, body in
+            try coordinate(presenter: presenter) { coordinator, error, body in
                 coordinator.coordinate(writingItemAt: url, options: .forMerging, error: error) { url in
                     body {
                         let old = try decode(url)
@@ -83,11 +85,12 @@ public enum CoordinatedFileIO {
 
     /// Runs one coordination, surfacing both the coordinator's error and the accessor's.
     static func coordinate<T>(
+        presenter: FilePresenter? = nil,
         _ run: (NSFileCoordinator, NSErrorPointer, (() throws -> T) -> Void) -> Void
     ) throws -> T {
         var coordinationError: NSError?
         var result: Result<T, any Error>?
-        run(NSFileCoordinator(), &coordinationError) { work in result = Result(catching: work) }
+        run(NSFileCoordinator(filePresenter: presenter), &coordinationError) { work in result = Result(catching: work) }
         if let coordinationError { throw coordinationError }
         guard let result else { throw CocoaError(.fileReadUnknown) }
         return try result.get()

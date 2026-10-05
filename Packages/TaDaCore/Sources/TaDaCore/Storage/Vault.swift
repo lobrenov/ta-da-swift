@@ -17,6 +17,15 @@ public struct Vault: Sendable {
         root.appending(path: path, directoryHint: .notDirectory)
     }
 
+    /// The path of `url` when it's a Markdown file outside hidden folders, as `markdownPaths()` lists them.
+    public func path(of url: URL) -> String? {
+        let root = root.resolvingSymlinksInPath().pathComponents
+        let components = url.resolvingSymlinksInPath().pathComponents
+        guard components.count > root.count, components.starts(with: root), url.pathExtension.lowercased() == "md" else { return nil }
+        let relative = components.dropFirst(root.count)
+        return relative.contains { $0.hasPrefix(".") } ? nil : relative.joined(separator: "/")
+    }
+
     // MARK: Bookmarks
 
     /// A bookmark that keeps access to a user-picked folder across launches.
@@ -74,13 +83,13 @@ public struct Vault: Sendable {
 
     /// What changed on disk since `known` (from an earlier `changes` or `modificationDates()`).
     /// Changed and new files are reparsed; a file that can't be read right now keeps its old date,
-    /// so the next call tries it again.
-    public func changes(since known: [String: Date]) -> VaultChanges {
+    /// so the next call tries it again. `presenter` is the open file's `FilePresenter`, if one is open.
+    public func changes(since known: [String: Date], presenter: FilePresenter? = nil) -> VaultChanges {
         var dates = modificationDates()
         var changed: [String: Item?] = [:]
         for (path, date) in dates where known[path] != date {
             do {
-                changed[path] = .some(try load(path))
+                changed[path] = .some(try load(path, presenter: presenter))
             } catch {
                 dates[path] = known[path]
             }
@@ -89,15 +98,17 @@ public struct Vault: Sendable {
         return VaultChanges(dates: dates, changed: changed, removed: removed)
     }
 
-    /// Reads and parses one file; nil when it isn't a Ta Da file.
-    public func load(_ path: String) throws -> Item? {
-        Item(parsing: try read(path), path: path)
+    /// Reads and parses one file; nil when it isn't a Ta Da file. `presenter` is the file's own
+    /// `FilePresenter`, if it's open.
+    public func load(_ path: String, presenter: FilePresenter? = nil) throws -> Item? {
+        Item(parsing: try read(path, presenter: presenter), path: path)
     }
 
     // MARK: Reading and writing
 
-    public func read(_ path: String) throws -> String {
-        try CoordinatedFileIO.read(url(for: path))
+    /// `presenter` is the file's own `FilePresenter`, if it's open.
+    public func read(_ path: String, presenter: FilePresenter? = nil) throws -> String {
+        try CoordinatedFileIO.read(url(for: path), presenter: presenter)
     }
 
     public func write(_ text: String, to path: String) throws {
@@ -106,10 +117,12 @@ public struct Vault: Sendable {
 
     /// Writes `text` only if the file still holds `expected`, in one coordinated access, so a change made
     /// by another app since Ta Da last read the file is never overwritten.
-    /// Returns nil when it wrote, or the file's current text when it didn't.
-    public func write(_ text: String, to path: String, ifUnchangedFrom expected: String) throws -> String? {
+    /// Returns nil when it wrote, or the file's current text when it didn't. `presenter` is the file's own
+    /// `FilePresenter`, if it's open.
+    public func write(_ text: String, to path: String, ifUnchangedFrom expected: String,
+                      presenter: FilePresenter? = nil) throws -> String? {
         var found: String?
-        try CoordinatedFileIO.update(url(for: path)) { current in
+        try CoordinatedFileIO.update(url(for: path), presenter: presenter) { current in
             guard current == expected else {
                 found = current
                 return current

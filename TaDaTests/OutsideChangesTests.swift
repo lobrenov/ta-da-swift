@@ -37,6 +37,16 @@ struct OutsideChangesTests {
         try String(contentsOf: folder.appending(path: path), encoding: .utf8)
     }
 
+    /// Moves a file through file coordination, as Finder does.
+    @concurrent nonisolated private static func coordinatedMove(_ source: URL, to destination: URL) async throws {
+        try CoordinatedFileIO.move(source, to: destination)
+    }
+
+    /// Reads a file through file coordination, as iCloud Drive does before an upload.
+    @concurrent nonisolated private static func coordinatedRead(_ url: URL) async throws -> String {
+        try CoordinatedFileIO.read(url)
+    }
+
     private func model(selecting path: String? = nil) async -> AppModel {
         let model = AppModel(defaults: defaults)
         model.today = LocalDate("2026-10-03")!
@@ -164,6 +174,31 @@ struct OutsideChangesTests {
         await model.saveAgain(document)
         #expect(try read("tasks/Task.md") == Self.task + "Mine.\n")
         #expect(!document.isRemovedOnDisk)
+    }
+
+    @Test func aRenameOutsideTaDaIsFollowed() async throws {
+        defer { cleanUp() }
+        let model = await model(selecting: "tasks/Task.md")
+        let document = try #require(model.document)
+        document.body += "Mine.\n"
+        try await Self.coordinatedMove(folder.appending(path: "tasks/Task.md"), to: folder.appending(path: "tasks/Renamed.md"))
+        for _ in 0..<40 where document.path != "tasks/Renamed.md" { try await Task.sleep(for: .milliseconds(50)) }
+        await model.refresh()
+        #expect(document.path == "tasks/Renamed.md" && model.selection == "tasks/Renamed.md")
+        #expect(!document.isRemovedOnDisk)
+        #expect(model.index["tasks/Task.md"] == nil && model.index["tasks/Renamed.md"] != nil)
+        await model.save(document)
+        #expect(try read("tasks/Renamed.md") == Self.task + "Mine.\n")
+    }
+
+    @Test func anotherAppsCoordinatedReadGetsTheUnsavedEdits() async throws {
+        defer { cleanUp() }
+        let model = await model(selecting: "tasks/Task.md")
+        model.saveDelay = .seconds(60)
+        let document = try #require(model.document)
+        document.body += "Mine.\n"
+        #expect(try await Self.coordinatedRead(folder.appending(path: "tasks/Task.md")) == Self.task + "Mine.\n")
+        #expect(!document.isDirty)
     }
 
     @Test func quittingWithAConflictWritesACopy() async throws {

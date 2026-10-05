@@ -51,7 +51,9 @@ import TaDaCore
     /// It ends when nothing is selected, so picking another domain brings the lists back.
     var isSourceMode = false
     /// The selected file's text. It stays on the previous file until the new one has been read.
-    private(set) var document: OpenDocument?
+    private(set) var document: OpenDocument? {
+        didSet { if document !== oldValue { present(document) } }
+    }
     /// Why the selected file couldn't be opened.
     private(set) var documentError: String?
     /// A file whose title field should take focus when it opens (a file just created).
@@ -80,6 +82,8 @@ import TaDaCore
     var menuTarget: String?
     /// Whether FSEvents is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
+    /// Whether the folder is in iCloud Drive, or in an app's iCloud folder such as Obsidian's.
+    private(set) var isInICloud = false
     /// Refreshed when the day changes, so every query uses the same `today`.
     var today = LocalDate(Date())
 
@@ -134,6 +138,8 @@ import TaDaCore
     /// The folder whose security-scoped access is held while it's open.
     private var accessedFolder: URL?
     private var watcher: VaultWatcher?
+    /// The open document's file, presented to file coordination.
+    @ObservationIgnored private var presenter: FilePresenter?
     /// Modification dates of the folder's Markdown files as last seen, to find what changed.
     private var fileDates: [String: Date] = [:]
     private var refreshing: Task<Void, Never>?
@@ -206,6 +212,7 @@ import TaDaCore
         fileDates = await Self.modificationDates(in: vault)
         index = await vault.loadIndex()
         trash = await Self.trashedItems(in: vault)
+        isInICloud = (try? await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }) ?? false
         state = .ready
         watcher = VaultWatcher(root: vault.root) { [weak self] in
             Task { await self?.refresh() }
@@ -231,7 +238,7 @@ import TaDaCore
         let task = Task {
             repeat {
                 refreshAgain = false
-                let changes = await Self.changes(in: vault, since: fileDates)
+                let changes = await Self.changes(in: vault, since: fileDates, presenter: presenter)
                 guard self.vault?.root == vault.root else { return }
                 fileDates = changes.dates
                 await apply(changes, from: vault)
@@ -266,7 +273,7 @@ import TaDaCore
 
     /// Takes the file's new text if there are no unsaved edits; otherwise keeps them and asks.
     private func reload(_ document: OpenDocument, from vault: Vault) async {
-        guard let (disk, modified) = try? await Self.read(document.path, in: vault) else { return }
+        guard let (disk, modified) = try? await Self.read(document.path, in: vault, presenter: presenter) else { return }
         document.conflicts = await Self.conflicts(of: document.path, in: vault)
         guard disk != document.savedText else { return }
         if document.isDirty, disk != document.text {
@@ -302,6 +309,7 @@ import TaDaCore
             document.savedText = document.text
             document.isRemovedOnDisk = false
             if let item = document.item { index.update(item) }
+            present(document)
         } catch {
             errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: document.path))”. (\(error.localizedDescription))"
         }
@@ -341,8 +349,10 @@ import TaDaCore
         }
     }
 
-    @concurrent nonisolated private static func changes(in vault: Vault, since known: [String: Date]) async -> VaultChanges {
-        vault.changes(since: known)
+    @concurrent nonisolated private static func changes(
+        in vault: Vault, since known: [String: Date], presenter: FilePresenter?
+    ) async -> VaultChanges {
+        vault.changes(since: known, presenter: presenter)
     }
 
     @concurrent nonisolated private static func trashedItems(in vault: Vault) async -> [TrashedItem] {
@@ -461,7 +471,7 @@ import TaDaCore
             return
         }
         do {
-            let (text, modified) = try await Self.read(path, in: vault)
+            let (text, modified) = try await Self.read(path, in: vault, presenter: presenter)
             guard selection == path, document?.path != path else { return }
             let document = OpenDocument(path: path, text: text, modified: modified)
             document.onChange = { [weak self, weak document] in
@@ -491,6 +501,35 @@ import TaDaCore
         }
     }
 
+    /// Presents the open document's file (see `FilePresenter`): another app's coordinated read saves the
+    /// edits first, and a coordinated move or rename is followed.
+    private func present(_ document: OpenDocument?) {
+        if let presenter { NSFileCoordinator.removeFilePresenter(presenter) }
+        presenter = nil
+        guard let document, let vault else { return }
+        let presenter = FilePresenter(
+            url: vault.url(for: document.path),
+            save: { @MainActor [weak self, weak document] in
+                if let self, let document { await self.save(document) }
+            },
+            moved: { @MainActor [weak self, weak document] in
+                if let self, let document { self.documentMoved(document) }
+            }
+        )
+        NSFileCoordinator.addFilePresenter(presenter)
+        self.presenter = presenter
+    }
+
+    /// Follows the open file to where another app moved or renamed it, if that's still a Markdown file in
+    /// the folder; anywhere else `refresh()` finds it gone. Ta Da's own renames arrive here too, and following
+    /// one twice changes nothing.
+    private func documentMoved(_ document: OpenDocument) {
+        guard let vault, document === self.document, let url = presenter?.presentedItemURL,
+              let newPath = vault.path(of: url), newPath != document.path else { return }
+        follow(document.path, to: newPath, items: [Item(parsing: document.text, path: newPath)].compactMap { $0 })
+        document.isRemovedOnDisk = false
+    }
+
     /// Writes the document if it has unsaved changes. Saves run one after another.
     func save(_ document: OpenDocument) async {
         let previous = saving
@@ -508,7 +547,7 @@ import TaDaCore
         guard let vault, document.isDirty, document.diskText == nil, !document.isRemovedOnDisk else { return }
         let text = document.text, path = document.path
         do {
-            switch try await Self.write(text, to: path, ifUnchangedFrom: document.savedText, in: vault) {
+            switch try await Self.write(text, to: path, ifUnchangedFrom: document.savedText, in: vault, presenter: presenter) {
             case let .written(modified):
                 document.savedText = text
                 document.modified = modified
@@ -555,15 +594,17 @@ import TaDaCore
     }
 
     @concurrent nonisolated private static func write(
-        _ text: String, to path: String, ifUnchangedFrom expected: String, in vault: Vault
+        _ text: String, to path: String, ifUnchangedFrom expected: String, in vault: Vault, presenter: FilePresenter?
     ) async throws -> WriteResult {
         guard FileManager.default.fileExists(atPath: vault.url(for: path).path(percentEncoded: false)) else { return .missing }
-        if let disk = try vault.write(text, to: path, ifUnchangedFrom: expected) { return .changed(disk) }
+        if let disk = try vault.write(text, to: path, ifUnchangedFrom: expected, presenter: presenter) { return .changed(disk) }
         return .written(vault.modificationDate(of: path))
     }
 
-    @concurrent nonisolated private static func read(_ path: String, in vault: Vault) async throws -> (String, Date?) {
-        (try vault.read(path), vault.modificationDate(of: path))
+    @concurrent nonisolated private static func read(
+        _ path: String, in vault: Vault, presenter: FilePresenter?
+    ) async throws -> (String, Date?) {
+        (try vault.read(path, presenter: presenter), vault.modificationDate(of: path))
     }
 
     @concurrent nonisolated private static func write(_ text: String, to path: String, in vault: Vault) async throws -> Date? {
@@ -621,13 +662,9 @@ import TaDaCore
             }
         }
         do {
-            let (newPath, items, failed) = try await Self.rename(path, to: title, in: vault, index: index)
+            let (newPath, items, failed) = try await Self.rename(path, to: title, in: vault, index: index, presenter: presenter)
             guard newPath != path else { return }
-            index.remove(path)
-            for item in items { index.update(item) }
-            if let document, document.path == path { document.path = newPath }
-            if domain == .project(path) { domain = .project(newPath) }
-            if selection == path || selection == nil && domain == .project(newPath) { selection = newPath }
+            follow(path, to: newPath, items: items)
             if !failed.isEmpty {
                 let names = failed.map { "“\(Item.title(ofPath: $0))”" }.formatted()
                 errorMessage = "Ta Da renamed “\(Item.title(ofPath: path))” to “\(Item.title(ofPath: newPath))”, but the project link in \(names) still points to the old name."
@@ -640,12 +677,21 @@ import TaDaCore
     /// Returns the new path, the renamed file and any relinked tasks as they now are, and the tasks that
     /// couldn't be relinked.
     @concurrent nonisolated private static func rename(
-        _ path: String, to title: String, in vault: Vault, index: VaultIndex
+        _ path: String, to title: String, in vault: Vault, index: VaultIndex, presenter: FilePresenter?
     ) async throws -> (String, [Item], [String]) {
         let result = index[path]?.properties.kind == .project
             ? try vault.renameProject(at: path, to: title, index: index)
             : (path: try vault.rename(path, to: title), tasks: [], failed: [])
-        return (result.path, try [vault.load(result.path)].compactMap { $0 } + result.tasks, result.failed)
+        return (result.path, try [vault.load(result.path, presenter: presenter)].compactMap { $0 } + result.tasks, result.failed)
+    }
+
+    /// Points the index, the open document and the selection at a renamed file. `items` are the files as they now are.
+    private func follow(_ path: String, to newPath: String, items: [Item]) {
+        index.remove(path)
+        for item in items { index.update(item) }
+        if let document, document.path == path { document.path = newPath }
+        if domain == .project(path) { domain = .project(newPath) }
+        if selection == path || selection == nil && domain == .project(newPath) { selection = newPath }
     }
 
     // MARK: Trash
@@ -796,7 +842,6 @@ import TaDaCore
     var projects: [ProjectProgress] { index.activeProjects() }
 
     var folderDisplayName: String { vault.map { Self.displayName(for: $0.root) } ?? "" }
-    var isInICloud: Bool { vault?.root.pathComponents.contains("Mobile Documents") ?? false }
 
     /// "iCloud Drive/Ta Da" or "Obsidian/Personal" for folders in iCloud Drive, otherwise the folder's name.
     static func displayName(for root: URL) -> String {
