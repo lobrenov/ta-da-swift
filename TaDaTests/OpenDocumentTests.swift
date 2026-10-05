@@ -135,6 +135,19 @@ struct OpenDocumentTests {
         #expect(model.index.tasks(in: project).map(\.title) == ["Other", "Task"])
     }
 
+    @Test func aTaskThatCantBeRelinkedDoesntUndoTheRename() async throws {
+        defer { cleanUp() }
+        let model = await model()
+        model.open("projects/Ta Da MVP.md")
+        await model.loadSelection()
+        try Data([0xff, 0xfe]).write(to: folder.appending(path: "tasks/Other.md"))
+        await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
+        #expect(model.selection == "projects/Ta Da 1.0.md")
+        #expect(model.document?.path == "projects/Ta Da 1.0.md")
+        #expect(try read("tasks/Task.md").contains("project: \"[[Ta Da 1.0]]\"\n"))
+        #expect(model.errorMessage?.contains("“Other”") == true)
+    }
+
     @Test func newLinkedTaskIsCreatedSelectedAndReadyToName() async throws {
         defer { cleanUp() }
         let model = await model()

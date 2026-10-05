@@ -148,19 +148,34 @@ public struct Vault: Sendable {
         return newPath
     }
 
-    /// Renames a project's file and rewrites the `project:` link in each of its tasks.
-    /// Returns the project's new path and the paths of the tasks that were rewritten.
-    public func renameProject(at path: String, to title: String, index: VaultIndex) throws -> (path: String, relinked: [String]) {
-        guard let project = index[path], project.properties.kind == .project else { return (path, []) }
+    /// Renames a project's file and relinks each of its tasks; a task that can't be relinked doesn't stop the rest.
+    /// Returns the project's new path, its tasks as they now are and the paths of the tasks that couldn't be relinked.
+    public func renameProject(at path: String, to title: String, index: VaultIndex) throws
+        -> (path: String, tasks: [Item], failed: [String]) {
+        guard let project = index[path], project.properties.kind == .project else { return (path, [], []) }
         let tasks = index.tasks(in: project)
         let newPath = try rename(path, to: title)
         let newTitle = Item.title(ofPath: newPath)
-        guard newTitle != project.title else { return (newPath, []) }
+        guard newTitle != project.title else { return (newPath, [], []) }
+        var relinked: [Item] = [], failed: [String] = []
         for task in tasks {
-            let text = try read(task.path)
-            try write(FrontmatterEditor.set("project", to: .link(title: newTitle), in: text), to: task.path)
+            do {
+                if let item = try relink(task.path, from: project.title, to: newTitle) { relinked.append(item) }
+            } catch {
+                failed.append(task.path)
+            }
         }
-        return (newPath, tasks.map(\.path))
+        return (newPath, relinked, failed)
+    }
+
+    /// Points a task's `project` link at `new` if it still links to `old`, in one coordinated read and write.
+    /// Returns the task as it now is (nil when it's no longer a Ta Da file).
+    @discardableResult
+    func relink(_ path: String, from old: String, to new: String) throws -> Item? {
+        try update(path) { text in
+            guard Item(parsing: text, path: path)?.properties.project?.title.lowercased() == old.lowercased() else { return text }
+            return FrontmatterEditor.set("project", to: .link(title: new), in: text)
+        }
     }
 
     /// `tasks/Name.md` → `tasks`; `Name.md` → empty.

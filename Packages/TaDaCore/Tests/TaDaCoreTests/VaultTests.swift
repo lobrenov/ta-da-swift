@@ -74,7 +74,8 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
 
         let result = try vault.renameProject(at: "projects/Old Name.md", to: "New: Name", index: index)
         #expect(result.path == "projects/New - Name.md")
-        #expect(result.relinked == ["tasks/Linked.md", "tasks/Linked CRLF.md"])
+        #expect(result.tasks.map(\.path) == ["tasks/Linked.md", "tasks/Linked CRLF.md"])
+        #expect(result.failed.isEmpty)
         let after = try vault.read("tasks/Linked.md")
         #expect(changedLines(linked, after) == (["project: \"[[old name]]\" # keep?"], ["project: \"[[New - Name]]\""]))
         #expect(try vault.read("tasks/Linked CRLF.md").contains("project: \"[[New - Name]]\"\r\n"))
@@ -83,6 +84,38 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
         let reloaded = await vault.loadIndex()
         let project = try #require(reloaded["projects/New - Name.md"])
         #expect(reloaded.tasks(in: project).map(\.title) == ["Linked", "Linked CRLF"])
+    }
+}
+
+@Test func renamingAProjectKeepsALinkChangedSinceTheIndexWasRead() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile("---\ntype: project\nstatus: Doing\n---\n", "projects/Old.md", in: folder)
+        try writeFile("---\ntype: task\nstatus: Doing\nproject: \"[[Old]]\"\n---\n", "tasks/Moved.md", in: folder)
+        let vault = Vault(root: folder)
+        let index = await vault.loadIndex()
+        let moved = "---\ntype: task\nstatus: Doing\nproject: \"[[Elsewhere]]\"\n---\nMoved in Obsidian.\n"
+        try writeFile(moved, "tasks/Moved.md", in: folder)
+
+        _ = try vault.renameProject(at: "projects/Old.md", to: "New", index: index)
+        #expect(try vault.read("tasks/Moved.md") == moved)
+    }
+}
+
+@Test func aTaskThatCantBeRelinkedDoesntStopTheOthers() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile("---\ntype: project\nstatus: Doing\n---\n", "projects/Old.md", in: folder)
+        let linked = "---\ntype: task\nstatus: Doing\nproject: \"[[Old]]\"\n---\n"
+        try writeFile(linked, "tasks/A.md", in: folder)
+        try writeFile(linked, "tasks/B.md", in: folder)
+        let vault = Vault(root: folder)
+        let index = await vault.loadIndex()
+        try Data([0xff, 0xfe]).write(to: folder.appending(path: "tasks/A.md"))
+
+        let result = try vault.renameProject(at: "projects/Old.md", to: "New", index: index)
+        #expect(result.path == "projects/New.md")
+        #expect(result.failed == ["tasks/A.md"])
+        #expect(result.tasks.map(\.path) == ["tasks/B.md"])
+        #expect(try vault.read("tasks/B.md") == linked.replacingOccurrences(of: "[[Old]]", with: "[[New]]"))
     }
 }
 

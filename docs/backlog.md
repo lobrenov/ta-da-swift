@@ -4,12 +4,7 @@ Work not yet built.
 
 ## Code review (2026-10-05)
 
-Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Item 3 puts file contents at risk. Items 4, 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
-
-3. **Renaming a project relinks its tasks with a separate read and write** *(data integrity)*: `Vault.swift:159-162` reads each task, then writes it unconditionally. An edit that lands in between, for example from iCloud, is overwritten. `Vault.update` already does read-modify-write in one coordinated access. If one task write fails:
-   - the project stays renamed;
-   - the remaining tasks keep the old link and become loose;
-   - `AppModel.rename` reports the whole rename as failed, and the open document keeps the old path.
+Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 4, 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
 
 4. **The slash and checkbox menus are copy-pasted, and the copies differ** *(duplication, bug)*: `SlashMenu.swift` and `CheckboxMenu.swift` duplicate the panel, positioning, child-window handling, event monitor, size constants and header/row/footer layout. `SlashMenuController.hide()` (`SlashMenu.swift:45`) returns before removing its event monitor when the panel isn't visible, for example when `hidesOnDeactivate` has hidden it. The checkbox copy removes the monitor first. Extract one `PopupMenuController<Item>` and a shared view that takes a row builder.
 

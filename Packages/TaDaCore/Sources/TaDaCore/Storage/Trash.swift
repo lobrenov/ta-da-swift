@@ -74,9 +74,7 @@ extension Vault {
             let newTitle = Item.title(ofPath: newPath)
             for task in TrashedItem.tasks(of: entry.item, in: trashed) where handled.insert(task.item.path).inserted {
                 let taskPath = try moveFile(task.item.path, into: Self.taskFolder)
-                if newTitle != entry.item.title {
-                    try write(FrontmatterEditor.set("project", to: .link(title: newTitle), in: read(taskPath)), to: taskPath)
-                }
+                if newTitle != entry.item.title { try relink(taskPath, from: entry.item.title, to: newTitle) }
                 restored.append(taskPath)
             }
         }

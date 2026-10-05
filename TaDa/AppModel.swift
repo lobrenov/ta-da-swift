@@ -621,25 +621,31 @@ import TaDaCore
             }
         }
         do {
-            let (newPath, items) = try await Self.rename(path, to: title, in: vault, index: index)
+            let (newPath, items, failed) = try await Self.rename(path, to: title, in: vault, index: index)
             guard newPath != path else { return }
             index.remove(path)
             for item in items { index.update(item) }
             if let document, document.path == path { document.path = newPath }
             if domain == .project(path) { domain = .project(newPath) }
             if selection == path || selection == nil && domain == .project(newPath) { selection = newPath }
+            if !failed.isEmpty {
+                let names = failed.map { "“\(Item.title(ofPath: $0))”" }.formatted()
+                errorMessage = "Ta Da renamed “\(Item.title(ofPath: path))” to “\(Item.title(ofPath: newPath))”, but the project link in \(names) still points to the old name."
+            }
         } catch {
             errorMessage = "Ta Da couldn’t rename “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
         }
     }
 
+    /// Returns the new path, the renamed file and any relinked tasks as they now are, and the tasks that
+    /// couldn't be relinked.
     @concurrent nonisolated private static func rename(
         _ path: String, to title: String, in vault: Vault, index: VaultIndex
-    ) async throws -> (String, [Item]) {
+    ) async throws -> (String, [Item], [String]) {
         let result = index[path]?.properties.kind == .project
             ? try vault.renameProject(at: path, to: title, index: index)
-            : (path: try vault.rename(path, to: title), relinked: [])
-        return (result.path, try ([result.path] + result.relinked).compactMap { try vault.load($0) })
+            : (path: try vault.rename(path, to: title), tasks: [], failed: [])
+        return (result.path, try [vault.load(result.path)].compactMap { $0 } + result.tasks, result.failed)
     }
 
     // MARK: Trash

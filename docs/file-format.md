@@ -90,4 +90,4 @@ Bring the project instruction files in line with how I actually work now.
 - Line endings (LF or CRLF) and all other bytes are preserved.
 - Written values: dates as `YYYY-MM-DD` (unquoted); links quoted as `"[[Title]]"`; lists in block style with quoted items (`[]` when empty); text plain when it starts with a letter and YAML can't misread it (e.g. as `yes`, a comment or a mapping), otherwise double-quoted.
 - Filenames come from titles. Ta Da replaces `/ : \ * ? " < > |` and the Obsidian link-breakers `[ ] # ^ |`: a `:` becomes ` -` (so "Game Jam: Starfall" becomes `Game Jam - Starfall.md`), `/ \ |` become `-`, and the rest are dropped. Leading dots and repeated spaces are removed, names are capped at 200 bytes, and an empty name becomes `Untitled`. If the name is taken (ignoring case), it adds ` 2`, ` 3`, and so on.
-- Renaming a project rewrites the `project:` link in each of its tasks as `"[[New title]]"`. Body links aren't changed.
+- Renaming a project rewrites the `project:` link in each of its tasks as `"[[New title]]"`, in one coordinated read and write per task and only if the task still links to the project. Body links aren't changed.
