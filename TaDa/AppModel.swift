@@ -229,7 +229,8 @@ import TaDaCore
     // MARK: Changes made outside Ta Da
 
     /// Brings the index and the open document up to date with the files on disk. Runs when the folder
-    /// watcher fires and when the app becomes active. Calls during a refresh fold into one more pass.
+    /// watcher fires and when the app becomes active. Calls during a refresh fold into one more pass, so
+    /// each call returns after a pass that started after it.
     func refresh() async {
         guard let vault else { return }
         if let refreshing {
@@ -238,6 +239,8 @@ import TaDaCore
             return
         }
         let task = Task {
+            // Cleared straight after the last check of `refreshAgain`, so any later call starts a new refresh.
+            defer { refreshing = nil }
             repeat {
                 refreshAgain = false
                 let changes = await Self.changes(in: vault, since: fileDates, presenter: presenter)
@@ -251,7 +254,6 @@ import TaDaCore
         }
         refreshing = task
         await task.value
-        refreshing = nil
     }
 
     private func apply(_ changes: VaultChanges, from vault: Vault) async {

@@ -70,6 +70,21 @@ struct OutsideChangesTests {
         #expect(model.index["tasks/Other.md"] == nil)
     }
 
+    @Test func aRefreshCalledAsAnotherEndsStillScans() async throws {
+        defer { cleanUp() }
+        let model = await model()
+        let first = Task { await model.refresh() }
+        // Each pass ends by trimming the trash selection, after its last suspension, so this continues once
+        // the first refresh's pass has ended but before its caller has resumed.
+        await withCheckedContinuation { continuation in
+            withObservationTracking { _ = model.trashSelection } onChange: { continuation.resume() }
+        }
+        try write(Self.task.replacingOccurrences(of: "Doing", with: "Blocked"), "tasks/Task.md")
+        await model.refresh()
+        #expect(model.index["tasks/Task.md"]?.properties.status == .blocked)
+        await first.value
+    }
+
     @Test func theWatcherUpdatesTheIndexWithoutARefreshCall() async throws {
         defer { cleanUp() }
         let model = await model()
