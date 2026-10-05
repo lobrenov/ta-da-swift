@@ -11,10 +11,10 @@ final class CheckboxMenuController {
 
     /// Shows the menu under `anchor` (the box, in screen coordinates) with `current` highlighted.
     func show(current: Character, anchor: CGRect, items: [(marker: Character, title: String)],
-              tints: [Character: NSColor], theme: Theme, pick: @escaping (Character) -> Void) {
+              theme: Theme, pick: @escaping (Character) -> Void) {
         guard anchor != .zero, let parent = NSApp.keyWindow else { return }
         let all = items.map {
-            CheckboxMenuItem(marker: $0.marker, title: $0.title, tint: tints[$0.marker] ?? theme.fg, isCurrent: $0.marker == current)
+            CheckboxMenuItem(marker: $0.marker, title: $0.title, tint: theme.checkboxTint($0.marker), isCurrent: $0.marker == current)
         }
         let sections = [PopupMenuSection(label: "Subtasks", items: all.filter { !$0.isIcon }),
                         PopupMenuSection(label: "Icons", items: all.filter(\.isIcon))]

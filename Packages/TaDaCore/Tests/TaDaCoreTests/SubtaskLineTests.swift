@@ -43,7 +43,7 @@ private func apply(_ line: String) -> String {
     #expect(apply("- [ ] One") == "- [x] One")
     #expect(apply("  - [/] Doing") == "  - [x] Doing")
     #expect(apply("> 3. [>] Forwarded") == "> 3. [x] Forwarded")
-    #expect(apply("- [ ]") == "- [x]")
+    #expect(apply("-  [ ] Two spaces") == "-  [x] Two spaces")
     #expect(apply("- [x] Done 🙂") == "- [ ] Done 🙂")
     #expect(apply("* [X] Done") == "* [ ] Done")
     #expect(apply("- [-] Cancelled") == "- [ ] Cancelled")
@@ -59,4 +59,6 @@ private func apply(_ line: String) -> String {
     #expect(apply("- [link](x)") == "- [ ] [link](x)")
     #expect(apply("- [[Wiki]]") == "- [ ] [[Wiki]]")
     #expect(apply("- [a] Not a marker") == "- [ ] [a] Not a marker")
+    #expect(apply("- [ ]") == "- [ ] [ ]", "a box needs a space after it")
+    #expect(apply("- [x]NoSpace") == "- [ ] [x]NoSpace")
 }

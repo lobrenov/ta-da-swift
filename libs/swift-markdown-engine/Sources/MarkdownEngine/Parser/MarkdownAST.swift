@@ -336,18 +336,22 @@ enum DocumentAST {
             if i < end { i += 1 }                       // the `.` or `)`
         }
         let marker = NSRange(location: markerStart, length: i - markerStart)
-        if i < end, ns.character(at: i) == space || ns.character(at: i) == tab { i += 1 }
+        func isSpace(_ at: Int) -> Bool { at < end && (ns.character(at: at) == space || ns.character(at: at) == tab) }
+        // Ta Da fork: GFM's rule, as in Ta Da's core: one to four spaces or tabs, the box, then a space or tab.
+        var box = i
+        while box - i < 4, isSpace(box) { box += 1 }
+        if isSpace(i) { i += 1 }
         var checkbox: NSRange?
         var checked = false
         var taskMarker: Character?
-        if i + 2 < end, ns.character(at: i) == 0x5B, ns.character(at: i + 2) == 0x5D {   // [ x ]
-            let mid = ns.character(at: i + 1)
+        if box > NSMaxRange(marker), box + 3 < end, ns.character(at: box) == 0x5B, ns.character(at: box + 2) == 0x5D,
+           isSpace(box + 3) {   // [ x ]
+            let mid = ns.character(at: box + 1)
             if TaskMarker.isMarker(mid) {
-                checkbox = NSRange(location: i, length: 3)
+                checkbox = NSRange(location: box, length: 3)
                 checked = (mid == 0x78 || mid == 0x58)
                 taskMarker = Character(UnicodeScalar(mid)!)
-                i += 3
-                if i < end, ns.character(at: i) == space || ns.character(at: i) == tab { i += 1 }
+                i = box + 4
             }
         }
         var contentEnd = end

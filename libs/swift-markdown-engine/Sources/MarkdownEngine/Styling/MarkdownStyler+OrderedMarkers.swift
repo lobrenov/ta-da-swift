@@ -19,8 +19,9 @@ extension MarkdownStyler {
 
     /// Indented ordered marker at line start, excluding task items — the AST
     /// styler never overlays those, so their digits are always literal.
+    /// Ta Da fork: a box after any spaces, with a space or tab after it, as the AST parser reads one.
     static let orderedListRegex: NSRegularExpression = try! NSRegularExpression(
-        pattern: #"^([ \t]*)(\d+[.)])([ \t]+)(?!"# + TaskMarker.boxPattern + #")"#,
+        pattern: #"^([ \t]*)(\d+[.)])([ \t]++)(?!"# + TaskMarker.boxPattern + #"[ \t])"#,
         options: [.anchorsMatchLines]
     )
 }

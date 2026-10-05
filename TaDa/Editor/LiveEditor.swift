@@ -49,7 +49,7 @@ struct LiveEditor: View {
     private func showCheckboxMenu(_ request: TaskMarkerMenuRequest) {
         checkboxMenu.show(
             current: request.marker, anchor: request.anchorRect, items: TaskCheckboxStyle.referenceMenu,
-            tints: configuration.taskCheckbox.tints, theme: theme, pick: request.setMarker
+            theme: theme, pick: request.setMarker
         )
     }
 
@@ -83,15 +83,17 @@ struct LiveEditor: View {
             selectionBackground: theme.surface
         )
         let background = theme.bg
+        var struck: Set<Character> = []
+        var clicks: [Character: Character] = [:]
+        for marker in TaskMarker.all {
+            guard let state = Checkbox.State(marker: marker) else { continue }
+            if state == .done || state == .cancelled { struck.insert(marker) }
+            clicks[marker] = state.markerAfterClick
+        }
         config.taskCheckbox = TaskCheckboxStyle(
-            tints: [" ": theme.muted, "x": theme.done, "X": theme.done, "/": theme.doing, "-": theme.muted,
-                    ">": theme.accent, "<": theme.due, "?": theme.doing, "!": theme.deadline, "*": theme.due,
-                    "\"": theme.muted, "l": theme.link, "b": theme.blocked, "i": theme.accent, "S": theme.done,
-                    "I": theme.due, "p": theme.done, "c": theme.deadline, "f": theme.blocked, "k": theme.due,
-                    "w": theme.due, "u": theme.done, "d": theme.deadline],
-            struckMarkers: ["x", "X", "-"],
-            // Open states complete; done and cancelled reopen. Icon-only markers ignore clicks.
-            clickTransitions: [" ": "x", "/": "x", ">": "x", "<": "x", "x": " ", "X": " ", "-": " "],
+            tints: Dictionary(uniqueKeysWithValues: TaskMarker.all.map { ($0, theme.checkboxTint($0)) }),
+            struckMarkers: struck,
+            clickTransitions: clicks,
             // A 16pt box on the 14pt body font (17pt high).
             sizeScale: 0.96,
             contentGap: 10,

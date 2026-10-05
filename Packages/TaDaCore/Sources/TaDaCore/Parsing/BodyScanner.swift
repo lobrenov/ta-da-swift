@@ -49,29 +49,9 @@ public enum BodyScanner {
             // Five or more spaces after the marker start an indented code block, not a checkbox.
             guard let start = item.range?.lowerBound, !(item.child(at: 0) is CodeBlock) else { return nil }
             let lineStart = lineStarts[start.line - 1]
-            var i = lineStart + start.column - 1
-
-            func byte(_ offset: Int) -> UInt8? { offset < bytes.count ? bytes[offset] : nil }
-            func isSpace(_ b: UInt8?) -> Bool { b == UInt8(ascii: " ") || b == UInt8(ascii: "\t") }
-
-            switch byte(i) {
-            case UInt8(ascii: "-"), UInt8(ascii: "*"), UInt8(ascii: "+"):
-                i += 1
-            default:
-                while let b = byte(i), (UInt8(ascii: "0")...UInt8(ascii: "9")).contains(b) { i += 1 }
-                guard byte(i) == UInt8(ascii: ".") || byte(i) == UInt8(ascii: ")") else { return nil }
-                i += 1
-            }
-            guard isSpace(byte(i)) else { return nil }
-            while isSpace(byte(i)) { i += 1 }
-            guard byte(i) == UInt8(ascii: "["), let marker = byte(i + 1), marker < 0x80,
-                  byte(i + 2) == UInt8(ascii: "]"), isSpace(byte(i + 3)),
-                  Checkbox.State(marker: Character(Unicode.Scalar(marker))) != nil else { return nil }
-            return Checkbox(
-                marker: Character(Unicode.Scalar(marker)),
-                lineIndex: firstLineIndex + start.line - 1,
-                column: i + 1 - lineStart
-            )
+            guard let markerEnd = CheckboxSyntax.markerEnd(in: bytes, at: lineStart + start.column - 1),
+                  let box = CheckboxSyntax.box(in: bytes, after: markerEnd) else { return nil }
+            return Checkbox(marker: box.marker, lineIndex: firstLineIndex + start.line - 1, column: box.offset - lineStart)
         }
     }
 }

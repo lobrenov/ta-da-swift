@@ -31,6 +31,25 @@ struct AlternativeCheckboxTests {
         #expect(item("- [] thing\n")?.checkbox == nil)
     }
 
+    @Test func aBoxFollowsOneToFourSpacesOrTabsAndNeedsOneAfterIt() {
+        #expect(item("-  [ ] two spaces\n")?.checkbox == NSRange(location: 3, length: 3))
+        #expect(item("-  [ ] two spaces\n")?.contentRange == NSRange(location: 7, length: 10))
+        #expect(item("-\t[x]\ttabs\n")?.checkbox == NSRange(location: 2, length: 3))
+        #expect(item("- [ ] \n")?.checkbox == NSRange(location: 2, length: 3))
+        #expect(item("- [ ]\n")?.checkbox == nil)
+        #expect(item("- [ ]")?.checkbox == nil)
+        #expect(item("- [x]NoSpace\n")?.checkbox == nil)
+        #expect(item("-     [ ] five spaces\n")?.checkbox == nil)
+    }
+
+    @Test func caretHelpersReadBoxesTheSameWay() {
+        #expect(MarkdownStyler.bulletSyntaxRange(at: 0, in: "- [x]NoSpace\n") != nil)
+        #expect(MarkdownStyler.bulletSyntaxRange(at: 0, in: "-  [ ] two spaces\n") == nil)
+        #expect(MarkdownStyler.taskSyntaxRange(at: 0, in: "-  [ ] two spaces\n") != nil)
+        let ordered = "1. [x]NoSpace"
+        #expect(MarkdownStyler.orderedListRegex.firstMatch(in: ordered, range: NSRange(location: 0, length: 13)) != nil)
+    }
+
     @Test func checkboxAttributeCarriesTheMarkerAndOnlyDoneStrikes() {
         func attrs(_ text: String) -> [StyledRange] {
             MarkdownASTStyler.styleAttributes(text: text, fontName: NSFont.systemFont(ofSize: 14).fontName, fontSize: 14)

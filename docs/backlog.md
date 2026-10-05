@@ -4,14 +4,7 @@ Work not yet built.
 
 ## Code review (2026-10-05)
 
-Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
-
-5. **Checkbox rules live in four places and disagree** *(duplication, drift)*:
-   - `BodyScanner.swift:67` needs a space after `]`, but `SubtaskLine.swift:47` also accepts the end of the line. Tests lock in both: `- [ ]` isn't counted as a subtask (`BodyScannerTests.swift:54`), yet ⌘L toggles it (`SubtaskLineTests.swift:46`).
-   - `SourceHighlighter.swift:148` accepts any character, so `[y]` is coloured as a checkbox. `file-format.md` says it stays plain text.
-   - `LiveEditor.swift:86-94` hard-codes struck markers and click transitions that `Checkbox.State` and `ChecklistEditor.click` already define.
-
-   Fix: one `CheckboxSyntax` in TaDaCore. Derive the editor's tables from `Checkbox.State`, and keep one marker-to-colour map, shared with `CheckboxMenu` and `StatusCheckbox`.
+Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
 
 6. **The open file has no `NSFilePresenter`** *(Apple)*: Ta Da coordinates its writes but never registers as presenter of the file being edited. iCloud and other coordinated writers therefore can't ask it to save pending edits first (`savePresentedItemChanges`). A rename made outside Ta Da shows as "deleted or renamed" instead of being followed (`presentedItemDidMove(to:)`). Also, `isInICloud` (`AppModel.swift:604`) looks for "Mobile Documents" in the path. Use `FileManager.default.isUbiquitousItem(at:)` instead; it returns true for iCloud and Obsidian folders and false for local ones.
 

@@ -15,6 +15,15 @@ public struct Checkbox: Hashable, Sendable {
             default: return nil
             }
         }
+
+        /// What a click sets: `x` completes an open box, a space reopens a done or cancelled one. Icons ignore clicks.
+        public var markerAfterClick: Character? {
+            switch self {
+            case .open: "x"
+            case .done, .cancelled: " "
+            case .icon: nil
+            }
+        }
     }
 
     /// The character between the brackets.

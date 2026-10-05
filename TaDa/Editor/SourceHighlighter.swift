@@ -1,5 +1,6 @@
 // Source-mode colouring: splits a file into runs by role, from the Editor artboard's table.
 import Foundation
+import TaDaCore
 
 nonisolated enum SourceHighlighter {
     enum Role: Equatable, Sendable {
@@ -145,18 +146,21 @@ nonisolated enum SourceHighlighter {
     // MARK: Body
 
     private nonisolated(unsafe) static let heading = #/^(#{1,6}\s+)(.*)$/#
-    private nonisolated(unsafe) static let checkbox = #/^(\s*(?:[-*+]|\d+[.)])[ \t]+\[(.)\][ \t])(.*)$/#
     private nonisolated(unsafe) static let wikiLink = #/(\[\[)([^\[\]\n]+)(\]\])/#
 
     private static func bodyLine(_ line: String, at start: Int) -> [Run] {
         var runs: [Run] = []
+        let bytes = Array(line.utf8)
+        let markerStart = CheckboxSyntax.markerStart(in: bytes)
         if let match = line.wholeMatch(of: heading) {
             runs = [Run(range: range(match.1, in: line, at: start), role: .punct),
                     Run(range: range(match.2, in: line, at: start), role: .heading)]
-        } else if let match = line.wholeMatch(of: checkbox) {
-            let done = match.2 == "x" || match.2 == "X"
-            runs = [Run(range: range(match.1, in: line, at: start), role: done ? .checkDone : .check)]
-            if done { runs.append(Run(range: range(match.3, in: line, at: start), role: .doneText)) }
+        } else if let markerEnd = CheckboxSyntax.markerEnd(in: bytes, at: markerStart),
+                  let box = CheckboxSyntax.box(in: bytes, after: markerEnd) {
+            let done = Checkbox.State(marker: box.marker) == .done
+            let syntaxEnd = box.offset + 3
+            runs = [Run(range: NSRange(location: start + markerStart, length: syntaxEnd - markerStart), role: done ? .checkDone : .check)]
+            if done { runs.append(Run(range: NSRange(location: start + syntaxEnd, length: utf16(line) - syntaxEnd), role: .doneText)) }
         }
         for match in line.matches(of: wikiLink) {
             runs += [Run(range: range(match.1, in: line, at: start), role: .punct),

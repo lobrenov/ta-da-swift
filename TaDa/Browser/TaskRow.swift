@@ -115,12 +115,13 @@ struct StatusCheckbox: View {
 
     /// The checkbox marker and tint that show a status.
     static func box(for status: Status, theme: Theme) -> (marker: Character, tint: NSColor) {
-        switch status {
-        case .notStarted: (" ", theme.muted)
-        case .doing: ("/", theme.doing)
-        case .blocked: ("B", theme.blocked)
-        case .done: ("x", theme.done)
+        let marker: Character = switch status {
+        case .notStarted: " "
+        case .doing: "/"
+        case .blocked: "B"
+        case .done: "x"
         }
+        return (marker, theme.checkboxTint(marker))
     }
 }
 

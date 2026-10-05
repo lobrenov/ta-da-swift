@@ -30,10 +30,19 @@ struct SourceHighlighterTests {
         let found = roles(text)
         #expect(found.contains { $0 == ("## ", .punct) } && found.contains { $0 == ("Subtasks", .heading) })
         #expect(found.contains { $0 == ("- [x] ", .checkDone) } && found.contains { $0 == ("Done thing", .doneText) })
-        #expect(found.contains { $0 == ("  - [ ] ", .check) })
+        #expect(found.contains { $0 == ("- [ ] ", .check) })
         #expect(found.contains { $0 == ("Ta Da MVP|the MVP", .link) } && found.contains { $0 == ("[[", .punct) })
         #expect(!found.contains { $0.0.contains("in code") })
         #expect(found.contains { $0 == ("Note", .link) })
+    }
+
+    @Test func checkboxesAreColouredExactlyWhenTheyCount() {
+        for line in ["- [ ] Open", "  * [x] Done", "1) [?] Icon", "> - [-] Quoted", "-  [ ] Two spaces", "-\t[/] Tab",
+                     "- [x]\tTab after", "- [y] Unknown", "- [ ]", "- [x]NoSpace", "-[ ] No space before",
+                     "[ ] Not a list", "-     [ ] Indented code"] {
+            let coloured = SourceHighlighter.runs(in: line + "\n").contains { $0.role == .check || $0.role == .checkDone }
+            #expect(coloured == !BodyScanner.scan(line + "\n").checkboxes.isEmpty, "\(line)")
+        }
     }
 
     @Test func withoutFrontmatterEverythingIsBody() {

@@ -20,10 +20,6 @@ public enum ChecklistEditor {
     /// A click completes an open box (`[x]`) and reopens a done or cancelled one (`[ ]`).
     /// Nil for icon-only boxes, which ignore clicks, and for stale boxes.
     public static func click(_ box: Checkbox, in text: String) -> String? {
-        switch box.state {
-        case .open: setMarker("x", of: box, in: text)
-        case .done, .cancelled: setMarker(" ", of: box, in: text)
-        case .icon: nil
-        }
+        box.state.markerAfterClick.flatMap { setMarker($0, of: box, in: text) }
     }
 }

@@ -85,6 +85,23 @@ nonisolated enum InlineCheckbox {
     }()
 }
 
+nonisolated extension Theme {
+    /// The Inline markdown checkboxes artboard's tint for `marker`, Ta Da's `[B]` included.
+    func checkboxTint(_ marker: Character) -> NSColor {
+        switch marker {
+        case " ", "-", "\"": muted
+        case "x", "X", "S", "p", "u": done
+        case "/", "?": doing
+        case "B", "b", "f": blocked
+        case ">", "i": accent
+        case "<", "*", "I", "k", "w": due
+        case "!", "c", "d": deadline
+        case "l": link
+        default: fg
+        }
+    }
+}
+
 /// `InlineCheckbox` as a view, filling its frame.
 struct InlineCheckboxView: View {
     let marker: Character
