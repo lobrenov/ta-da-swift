@@ -23,11 +23,13 @@ struct FileMenuAction {
     let run: () -> Void
 
     /// Delete for a file in the folder; Restore and Delete Forever for one in `.trash/`. A right-click on a
-    /// file picked in Trash acts on every picked file.
+    /// picked file acts on every picked file.
     static func actions(for path: String, model: AppModel) -> [FileMenuAction] {
         guard path.hasPrefix(Vault.trashFolder + "/") else {
-            return [FileMenuAction(title: "Delete", systemImage: "trash", shortcut: "⌘⌫") {
-                Task { await model.moveToTrash(path) }
+            let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
+            return [FileMenuAction(title: paths.count == 1 ? "Delete" : "Delete \(paths.count) Tasks",
+                                   systemImage: "trash", shortcut: "⌘⌫") {
+                Task { await model.moveToTrash(paths) }
             }]
         }
         let paths = model.trashSelection.contains(path) ? model.trashSelection : [path]

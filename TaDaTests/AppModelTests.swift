@@ -183,8 +183,7 @@ struct AppModelTests {
         model.show(.loose)
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: ["tasks/Due today.md", "tasks/Loose.md"])
         model.selection = "tasks/Due today.md"
-        #expect(model.deleteKey(command: false))
-        await model.moveToTrash("tasks/Due today.md")
+        await model.moveToTrash(["tasks/Due today.md"])
         #expect(model.index["tasks/Due today.md"] == nil)
         #expect(model.selection == "tasks/Loose.md")
         #expect(model.trash.map(\.id) == [".trash/Due today.md"])
@@ -196,7 +195,7 @@ struct AppModelTests {
         let model = AppModel(defaults: defaults)
         await model.choose(folder)
         model.show(.project("projects/Ta Da MVP.md"))
-        await model.moveToTrash("projects/Ta Da MVP.md")
+        await model.moveToTrash(["projects/Ta Da MVP.md"])
         #expect(model.domain == .today)
         #expect(model.index.items.keys.sorted() == ["projects/Shipped.md", "tasks/Loose.md"])
         #expect(Set(model.trash.map(\.id)) == [".trash/Ta Da MVP.md", ".trash/Due today.md", ".trash/Done.md"])
@@ -208,6 +207,28 @@ struct AppModelTests {
         #expect(model.index.items.count == 5)
         #expect(model.projects.map { "\($0.project.title) \($0.open)/\($0.total)" } == ["Ta Da MVP 1/2"])
         #expect(model.trashNote == "3 items restored to projects/ and tasks/")
+    }
+
+    @Test func shiftAndCommandClicksPickSeveralTasksToDelete() async {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        await model.choose(folder)
+        let paths = ["tasks/Due today.md", "tasks/Loose.md", "tasks/Done.md"]
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths)
+        model.selection = paths[0]
+        model.extendSelection(to: paths[2])
+        #expect(model.selection == nil && model.multiSelection == Set(paths))
+        model.toggleSelection(paths[1])
+        #expect(model.multiSelection == [paths[0], paths[2]])
+        model.extendSelection(to: paths[2])
+        #expect(model.multiSelection == [paths[1], paths[2]], "a range starts at the last ⌘-clicked task")
+        model.extendSelection(to: paths[1])
+        #expect(model.selection == paths[1] && model.multiSelection.isEmpty, "a one-task range opens it")
+        model.extendSelection(to: paths[0])
+        await model.moveToTrash(model.multiSelection.sorted())
+        #expect(model.multiSelection.isEmpty && model.errorMessage == nil)
+        #expect(model.index.items.keys.sorted() == ["projects/Shipped.md", "projects/Ta Da MVP.md", "tasks/Done.md"])
+        #expect(model.trash.count == 2)
     }
 
     @Test(arguments: [

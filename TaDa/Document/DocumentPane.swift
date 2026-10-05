@@ -29,6 +29,9 @@ struct DocumentPane: View {
             }
         } else if let error = model.documentError, model.selection != nil {
             EmptyState(systemImage: "exclamationmark.triangle", title: "Couldn’t open the file", message: "\(error)")
+        } else if model.selection == nil, model.multiSelection.count > 1 {
+            EmptyState(systemImage: "doc.on.doc", title: "\(model.multiSelection.count) tasks selected",
+                       message: "Right-click or press ⌫ to delete them. Click one task to open it.")
         } else if model.selection == nil {
             EmptyState(systemImage: "doc.text", title: "No task selected", message: "Pick a task to read and edit it here.")
         } else {

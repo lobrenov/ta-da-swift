@@ -81,8 +81,9 @@ private struct ArrowKeyMonitor: ViewModifier {
         case 125: return model.moveSelection(by: 1)
         case 126: return model.moveSelection(by: -1)
         case 53:
-            if model.selection != nil {
+            if model.selection != nil || !model.multiSelection.isEmpty {
                 model.selection = nil
+                model.clearMultiSelection()
             } else if !model.trashSelection.isEmpty {
                 model.trashSelection = []
             } else {

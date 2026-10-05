@@ -86,7 +86,7 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 - Search: `SearchResultsView` beside `DocumentPane`.
 - Trash: `TrashView` across the workspace.
 
-A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Delete, or Restore and Delete Forever in Trash, where a right-click on a picked file acts on every picked file. While open it takes ↑↓, ↵ and esc.
+A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Delete, or Restore and Delete Forever in Trash. A right-click on a picked file acts on every picked file: in Trash, or in a project's task list, where shift-click picks a range and ⌘-click adds or removes a task (`AppModel.multiSelection`; the document pane then shows "N tasks selected"). While open it takes ↑↓, ↵ and esc.
 - Source mode: `DocumentPane` with the Source editor and `FileInspector` across the workspace, until the selection clears.
 
 ## Editors
@@ -108,5 +108,5 @@ A right-click (or control-click) on a sidebar project or a task row in any list 
 | ⌘K | Complete or reopen the selected task |
 | ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step |
 | ↑ / ↓, Escape | Move through the list, clear the selection, while no text view has the keyboard (a key monitor on the main window) |
-| ⌫ or ⌘⌫ | Move the selected file to the trash, while no text view has the keyboard |
+| ⌫ or ⌘⌫ | Move the selected file, or the tasks picked in a project's list, to the trash, while no text view has the keyboard |
 | ⌘⌫ / ⌥⌘⌫ in Trash | Restore / delete forever the picked files |

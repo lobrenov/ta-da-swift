@@ -25,6 +25,7 @@ import TaDaCore
         didSet {
             guard domain != oldValue else { return }
             selection = nil
+            multiSelection = []
             trashSelection = []
             trashNote = nil
         }
@@ -33,10 +34,19 @@ import TaDaCore
     var selection: String? {
         didSet {
             guard selection != oldValue else { return }
-            if selection == nil { isSourceMode = false }
+            if let selection {
+                multiSelection = []
+                selectionAnchor = selection
+            } else {
+                isSourceMode = false
+            }
             Task { await loadSelection() }
         }
     }
+    /// Two or more tasks picked with shift- or ⌘-click in a project's list. While it's set, `selection` is nil.
+    private(set) var multiSelection: Set<String> = []
+    /// Where a shift-click range starts: the last task clicked on its own or ⌘-clicked.
+    @ObservationIgnored private var selectionAnchor: String?
     /// Source mode shows the whole file, frontmatter included, full width with the file inspector.
     /// It ends when nothing is selected, so picking another domain brings the lists back.
     var isSourceMode = false
@@ -225,6 +235,7 @@ import TaDaCore
                 await apply(changes, from: vault)
                 trash = await Self.trashedItems(in: vault)
                 trashSelection.formIntersection(trash.map(\.id))
+                multiSelection = multiSelection.filter { index[$0] != nil }
             } while refreshAgain
         }
         refreshing = task
@@ -359,10 +370,43 @@ import TaDaCore
     @discardableResult
     func moveSelection(by offset: Int) -> Bool {
         guard let paths = arrowKeyList?.paths, !paths.isEmpty else { return false }
-        let next = selection.flatMap { paths.firstIndex(of: $0) }.map { $0 + offset } ?? (offset > 0 ? 0 : paths.count - 1)
+        let current = selection ?? (multiSelection.isEmpty ? nil : selectionAnchor)
+        let next = current.flatMap { paths.firstIndex(of: $0) }.map { $0 + offset } ?? (offset > 0 ? 0 : paths.count - 1)
         guard paths.indices.contains(next) else { return false }
         selection = paths[next]
         return true
+    }
+
+    /// Shift-click: picks every task in the list on screen from the anchor to `path`.
+    func extendSelection(to path: String) {
+        guard let paths = arrowKeyList?.paths, let end = paths.firstIndex(of: path),
+              let start = (selectionAnchor ?? selection).flatMap({ paths.firstIndex(of: $0) }) else {
+            selection = path
+            return
+        }
+        pick(Set(paths[min(start, end)...max(start, end)]))
+    }
+
+    /// ⌘-click: adds `path` to the picked tasks, or takes it out.
+    func toggleSelection(_ path: String) {
+        var picked = multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
+        if picked.remove(path) == nil { picked.insert(path) }
+        pick(picked)
+        selectionAnchor = path
+    }
+
+    func clearMultiSelection() {
+        multiSelection = []
+    }
+
+    /// One task opens in the document pane; several show as picked with the pane empty.
+    private func pick(_ paths: Set<String>) {
+        if paths.count == 1, let path = paths.first {
+            selection = path
+        } else {
+            selection = nil
+            multiSelection = paths
+        }
     }
 
     /// Shows a file: a project opens as its own page in its domain; a task opens beside the current list.
@@ -569,11 +613,12 @@ import TaDaCore
 
     // MARK: Trash
 
-    /// Moves a file to `.trash/`; a project takes its tasks. The selection moves to the next file in the list.
-    func moveToTrash(_ path: String) async {
-        guard let vault, let item = index[path] else { return }
+    /// Moves files to `.trash/`; a project takes its tasks. The selection moves to the next file in the list.
+    func moveToTrash(_ paths: [String]) async {
+        let items = paths.compactMap { index[$0] }
+        guard let vault, let item = items.first else { return }
         let index = index
-        let affected = [path] + (item.properties.kind == .project ? index.tasks(in: item).map(\.path) : [])
+        let affected = items.flatMap { [$0.path] + ($0.properties.kind == .project ? index.tasks(in: $0).map(\.path) : []) }
         if let document, affected.contains(document.path) {
             await save(document)
             guard !document.isDirty else {
@@ -583,15 +628,21 @@ import TaDaCore
         }
         let next = nextSelection(skipping: affected)
         do {
-            let moved = try await Self.run { try vault.moveToTrash(path, index: index) }
+            let moved = try await Self.run {
+                var moved: [String] = []
+                for item in items where !moved.contains(item.path) { moved += try vault.moveToTrash(item.path, index: index) }
+                return moved
+            }
             for path in moved { self.index.remove(path) }
-            if domain == .project(path) {
+            multiSelection.subtract(moved)
+            if case let .project(path) = domain, moved.contains(path) {
                 domain = .today
             } else if let selection, moved.contains(selection) {
                 self.selection = next
             }
         } catch {
-            errorMessage = "Ta Da couldn’t move “\(item.title)” to the trash. (\(error.localizedDescription))"
+            let name = items.count == 1 ? "“\(item.title)”" : "the files"
+            errorMessage = "Ta Da couldn’t move \(name) to the trash. (\(error.localizedDescription))"
         }
         await refresh()
     }
@@ -629,7 +680,7 @@ import TaDaCore
         await discard(Set(trash.map(\.id)))
     }
 
-    /// ⌫ or ⌘⌫ while a list has the keyboard: moves the selected file to the trash. In Trash, ⌘⌫ restores
+    /// ⌫ or ⌘⌫ while a list has the keyboard: moves the selected files to the trash. In Trash, ⌘⌫ restores
     /// the picked files. False when there's nothing to act on.
     func deleteKey(command: Bool) -> Bool {
         if domain == .trash, !isSearching {
@@ -638,8 +689,9 @@ import TaDaCore
             Task { await restore(paths) }
             return true
         }
-        guard let selection else { return false }
-        Task { await moveToTrash(selection) }
+        let paths = selection.map { [$0] } ?? Array(multiSelection)
+        guard !paths.isEmpty else { return false }
+        Task { await moveToTrash(paths) }
         return true
     }
 
