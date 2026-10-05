@@ -53,7 +53,7 @@ struct OutsideChangesTests {
         await model.choose(folder)
         if let path {
             model.selection = path
-            await model.loadSelection()
+            await model.loading?.value
         }
         return model
     }
@@ -145,7 +145,7 @@ struct OutsideChangesTests {
         await model.refresh()
 
         model.selection = "tasks/Other.md"
-        await model.loadSelection()
+        await model.loading?.value
         #expect(try read("tasks/Task.md") == Self.task + "Theirs.\n")
         #expect(try read("tasks/Task (unsaved edits).md") == Self.task + "Mine.\n")
         #expect(model.index["tasks/Task (unsaved edits).md"] != nil)

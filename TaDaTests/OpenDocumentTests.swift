@@ -42,7 +42,7 @@ struct OpenDocumentTests {
         await model.choose(folder)
         if let path {
             model.selection = path
-            await model.loadSelection()
+            await model.loading?.value
         }
         return model
     }
@@ -94,7 +94,7 @@ struct OpenDocumentTests {
 
         // Switching files saves the previous one first.
         model.selection = "tasks/Other.md"
-        await model.loadSelection()
+        await model.loading?.value
         #expect(try read("tasks/Task.md") == expected)
         #expect(model.document?.path == "tasks/Other.md")
     }
@@ -125,7 +125,7 @@ struct OpenDocumentTests {
         defer { cleanUp() }
         let model = await model()
         model.open("projects/Ta Da MVP.md")
-        await model.loadSelection()
+        await model.loading?.value
         await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
         #expect(model.domain == .project("projects/Ta Da 1.0.md"))
         #expect(model.selection == "projects/Ta Da 1.0.md")
@@ -139,7 +139,7 @@ struct OpenDocumentTests {
         defer { cleanUp() }
         let model = await model()
         model.open("projects/Ta Da MVP.md")
-        await model.loadSelection()
+        await model.loading?.value
         try Data([0xff, 0xfe]).write(to: folder.appending(path: "tasks/Other.md"))
         await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
         #expect(model.selection == "projects/Ta Da 1.0.md")
@@ -182,7 +182,7 @@ struct OpenDocumentTests {
         let model = await model()
         try FileManager.default.removeItem(at: folder.appending(path: "tasks/Other.md"))
         model.selection = "tasks/Other.md"
-        await model.loadSelection()
+        await model.loading?.value
         #expect(model.document == nil)
         #expect(model.documentError?.contains("Other") == true)
     }

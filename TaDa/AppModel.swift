@@ -40,9 +40,11 @@ import TaDaCore
             } else {
                 isSourceMode = false
             }
-            Task { await loadSelection() }
+            loading = Task { await loadSelection() }
         }
     }
+    /// The load the last selection change started.
+    @ObservationIgnored private(set) var loading: Task<Void, Never>?
     /// Two or more tasks picked with shift- or ⌘-click in a project's list. While it's set, `selection` is nil.
     private(set) var multiSelection: Set<String> = []
     /// Where a shift-click range starts: the last task clicked on its own or ⌘-clicked.
@@ -460,7 +462,7 @@ import TaDaCore
     // MARK: The open document
 
     /// Reads the selected file into `document`, saving the previous one first.
-    func loadSelection() async {
+    private func loadSelection() async {
         guard let vault, document?.path != selection else { return }
         if let previous = document {
             await save(previous)
