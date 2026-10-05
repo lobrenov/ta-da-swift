@@ -63,6 +63,23 @@ final class TaDaUITests: XCTestCase {
         XCTAssertEqual(body.value as? String, "- [ ] First line.\n", "typing and each ⌘L undo on their own")
     }
 
+    func testClosingTheWindowRightAfterTypingSavesTheEdit() throws {
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+        body.click()
+        app.typeKey(.upArrow, modifierFlags: .command)
+        app.typeText("Saved. ")
+        app.typeKey("w", modifierFlags: .command)
+        XCTAssertTrue(app.wait(for: .notRunning, timeout: 10), "closing the only window quits")
+
+        app.launchArguments = ["-uiTesting", "-uiTestingRelaunch"]
+        app.launch()
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+        XCTAssertEqual(body.value as? String, "Saved. First line.\n")
+        XCTAssertFalse(app.buttons["Alpha (unsaved edits)"].exists)
+    }
+
     func testCompleteSelectedTask() throws {
         app.buttons["Alpha"].click()
         waitForTitle("Alpha")

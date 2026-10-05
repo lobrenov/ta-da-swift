@@ -1,8 +1,5 @@
 // Root view: the folder picker until a folder is open, then sidebar + workspace. Applies the theme.
-import AppKit
-import Combine
 import SwiftUI
-import TaDaCore
 
 struct ContentView: View {
     @Bindable var model: AppModel
@@ -33,19 +30,6 @@ struct ContentView: View {
             Text(model.errorMessage ?? "")
         }
         .task { await model.start() }
-        .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
-            model.today = LocalDate(Date())
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
-            // Catches anything the folder watcher missed (or everything, if it couldn't start).
-            Task { await model.refresh() }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification)) { _ in
-            if let document = model.document { Task { await model.save(document) } }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in
-            model.saveBeforeQuitting()
-        }
     }
 }
 

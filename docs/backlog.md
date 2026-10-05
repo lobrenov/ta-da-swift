@@ -4,9 +4,7 @@ Work not yet built.
 
 ## Code review (2026-10-05)
 
-20 issues, most severe first. Items 1–3 put file contents at risk. Items 4, 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
-
-1. **Saving on quit depends on a view** *(lifecycle, Apple)*: the `willTerminate`, `didResignActive`, `didBecomeActive` and day-change observers are `onReceive`s on `ContentView.swift:36-48`. Apple's `Window` docs say an app with a single `Window` scene quits when that window closes. So if you press ⌘W within the 600 ms debounce, the edit is only saved if the observer outlives its window. `saveBeforeQuitting` (`AppModel.swift:447`) also repeats `write` and `keepUnsavedEdits` synchronously, and if a save is already in flight it can leave a spurious "(unsaved edits)" copy. Fix: use `@NSApplicationDelegateAdaptor`, return `.terminateLater` from `applicationShouldTerminate`, wait for the existing save chain, then reply.
+Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 2 and 3 put file contents at risk. Items 4, 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
 
 2. **iCloud conflict versions are removed without file coordination** *(Apple)*: `Conflicts.swift:22-35` calls `removeOtherVersionsOfItem(at:)` on its own. The SDK header says to "always remove file versions as part of a coordinated write". `adopt` also writes the file and then resolves the conflict in two separate accesses. Do the write (or `version.replaceItem(at:)`), set `isResolved` and remove the versions inside one coordinated write.
 

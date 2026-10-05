@@ -171,9 +171,32 @@ struct OutsideChangesTests {
         let model = await model(selecting: "tasks/Task.md")
         model.document?.body += "Mine.\n"
         try write(Self.task + "Theirs.\n", "tasks/Task.md")
-        model.saveBeforeQuitting()
+        await model.saveBeforeQuitting()
         #expect(try read("tasks/Task.md") == Self.task + "Theirs.\n")
         #expect(try read("tasks/Task (unsaved edits).md") == Self.task + "Mine.\n")
+    }
+
+    @Test func quittingSavesEditsNotYetSaved() async throws {
+        defer { cleanUp() }
+        let model = await model(selecting: "tasks/Task.md")
+        model.document?.body += "Mine.\n"
+        await model.saveBeforeQuitting()
+        #expect(try read("tasks/Task.md") == Self.task + "Mine.\n")
+        #expect(model.document?.isDirty == false)
+    }
+
+    @Test func quittingDuringASaveWaitsForIt() async throws {
+        defer { cleanUp() }
+        let model = await model(selecting: "tasks/Task.md")
+        let document = try #require(model.document)
+        document.body += "Mine.\n"
+        let saving = Task { await model.save(document) }
+        await Task.yield()
+        await model.saveBeforeQuitting()
+        await saving.value
+        #expect(try read("tasks/Task.md") == Self.task + "Mine.\n")
+        #expect(document.diskText == nil && !document.isDirty)
+        #expect(!FileManager.default.fileExists(atPath: folder.appending(path: "tasks/Task (unsaved edits).md").path))
     }
 
     @Test func searchShowsMatchesUntilADomainIsPicked() async throws {

@@ -100,6 +100,8 @@ import TaDaCore
         usesSchemePerAppearance = false
     }
 
+    /// How long an edit waits before it's saved.
+    @ObservationIgnored var saveDelay = Duration.milliseconds(600)
     private let defaults: UserDefaults
     private var pendingSave: Task<Void, Never>?
     /// The save in progress; each save waits for the one before, so writes land in order.
@@ -387,8 +389,8 @@ import TaDaCore
             index.remove(document.path)
         }
         pendingSave?.cancel()
-        pendingSave = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(600))
+        pendingSave = Task { [weak self, saveDelay] in
+            try? await Task.sleep(for: saveDelay)
             guard !Task.isCancelled else { return }
             await self?.save(document)
         }
@@ -442,18 +444,12 @@ import TaDaCore
         }
     }
 
-    /// Saves unsaved edits before the app quits. Synchronous, because there's no later chance.
-    /// If another app changed the file meanwhile, the edits go to a copy instead.
-    func saveBeforeQuitting() {
-        guard let vault, let document, document.isDirty else { return }
-        let path = document.path
-        if !document.isRemovedOnDisk, document.diskText == nil {
-            do {
-                if try vault.write(document.text, to: path, ifUnchangedFrom: document.savedText) == nil { return }
-            } catch {}
-        }
-        let title = document.isRemovedOnDisk ? Item.title(ofPath: path) : "\(Item.title(ofPath: path)) (unsaved edits)"
-        _ = try? vault.create(document.text, in: Vault.folder(of: path), title: title)
+    /// Saves the open document before the app quits, after any save already under way.
+    /// If another app changed or removed the file meanwhile, the edits go to a copy instead.
+    func saveBeforeQuitting() async {
+        guard let document else { return }
+        await save(document)
+        await keepUnsavedEdits(of: document)
     }
 
     private enum WriteResult: Sendable {

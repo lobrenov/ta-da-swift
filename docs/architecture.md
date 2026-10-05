@@ -14,7 +14,7 @@ The workspace `TaDa.xcworkspace` holds the project and TaDaCore; the test plan `
 
 ```
 TaDa/
-├── TaDaApp.swift              one main window plus Settings, sharing one AppModel
+├── TaDaApp.swift              one main window plus Settings, sharing one AppModel; AppDelegate owns it and handles activation, quitting and day changes
 ├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace; applies the theme
 ├── AppModel.swift             root state: folder, index, domain, selection, open document, theme set and appearance; refresh, save, outside-change handling
 ├── OpenDocument.swift         the selected file's whole text; edits reparse it
@@ -66,7 +66,7 @@ TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtur
 ## Runtime
 
 - **Launch**: resolve the folder's security-scoped bookmark, scan it recursively off the main actor, parse every file into a `VaultIndex`. Views are functions of the index's `Queries`, which take an injected `today`.
-- **Editing**: `OpenDocument` holds the selected file's whole text. Typing, property edits and checkbox clicks change that text, which is reparsed into the index. It saves 600 ms after the last change, and also before switching files, when the app deactivates and on quit. A checkbox click in a row whose file isn't open does a coordinated read, a surgical edit and an atomic write.
+- **Editing**: `OpenDocument` holds the selected file's whole text. Typing, property edits and checkbox clicks change that text, which is reparsed into the index. It saves 600 ms after the last change, and also before switching files, when the app deactivates and on quit. Quitting, including by closing the window, waits for the save: `AppDelegate.applicationShouldTerminate` returns `.terminateLater`. A checkbox click in a row whose file isn't open does a coordinated read, a surgical edit and an atomic write.
 - **Saving** is guarded: Ta Da writes only if the file still holds the text it last read or wrote.
 - **Outside changes**: `VaultWatcher` (FSEvents) and app activation both trigger `refresh()`, which compares modification dates with the last scan and reparses only changed files. The open document reloads if it has no unsaved edits. With unsaved edits, `DocumentBanner` offers keep mine / use the file on disk, save again / discard after a deletion, or keep this / use the other iCloud version. Leaving the file or quitting with a choice still open writes the edits to `<title> (unsaved edits).md` beside it.
 
