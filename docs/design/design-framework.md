@@ -1,6 +1,6 @@
 # Ta Da design framework
 
-Copied on 2026-10-04 from the Claude Design System artifact https://claude.ai/artifact/GkKXeVHXv9XMGMWWacPppz (version 1791096330-444b). This folder is the copy the repo follows: `tokens.json` holds the values, `components/<Name>/README.md` the component guidelines and `components/bundle.css` their reference CSS. [In the app](#in-the-app) maps each part to its Swift code, and [As built](#as-built) lists where the app differs from the guidance.
+Mirrored by the Claude Design System artifact https://claude.ai/artifact/GkKXeVHXv9XMGMWWacPppz (last synced 2026-10-05, version 1791177167-fca9; it shows one colour scheme per theme set). This folder is the copy the repo follows: `tokens.json` holds the values, `components/<Name>/README.md` the component guidelines and `components/bundle.css` their reference CSS. [In the app](#in-the-app) maps each part to its Swift code, and [As built](#as-built) lists where the app differs from the guidance.
 
 The app's screens, menus and states are mocked up on the Claude Design canvas https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V.
 
@@ -12,7 +12,7 @@ The design system for Ta Da, a Swift-native task manager where every task and pr
 2. **Colour means something.** Neutrals carry the layout. Hue appears only as a signal: a status, a date kind, a link. If a colour is decorative, remove it.
 3. **Signals live on glyphs, not text.** Status and date colours sit on checkboxes, dots and 12px icons; text stays `fg` or `muted`. This keeps every theme readable, light ones included.
 4. **One accent per view.** `accent` marks the primary button, the caret and project progress. Nothing else competes with it.
-5. **Calm density.** 32px rows, 13px UI text, hairline borders. No shadows inside the window, no cards for content that is already a list.
+5. **Calm density.** 32px rows, 13px UI text, hairline borders. No shadows inside the window (menus float above it and carry the only one), no cards for content that is already a list.
 
 ## Colour
 
@@ -56,7 +56,7 @@ Two families. `sans` is the system face (SF Pro on macOS), because Ta Da is a na
 - **Settings window.** 900×640 on `bg` with a 46px `side` title bar. A 200px `side` nav (Vault in `accent`, Themes in `link`) beside the page: a `title-dialog` title, a `muted` line under it, then label-and-control rows (labels `muted`, 84–92px wide), bordered 10px panels and uppercase section labels.
 - **Editor.** 46px toolbar (`size-titlebar`) with the file path as a mono breadcrumb and the Live/Source switch on the right. Then title, properties, a hairline, and the body.
 - **Rhythm.** Rows 32px; gaps from the spacing scale (4, 6, 8, 10, 12, 16, 20, 28, 44, 64). Groups of rows are separated by a group header with a 1px `border` underline, not by cards.
-- **Radius.** 4px checkboxes, 7px rows and controls, 10px panels, 12px windows.
+- **Radius.** 4px checkboxes, 7px rows and controls, 10px panels and menus, 12px windows.
 - **Scrollbars.** Thin, transparent track, `surface` thumb, `muted` on hover.
 
 ## Iconography
