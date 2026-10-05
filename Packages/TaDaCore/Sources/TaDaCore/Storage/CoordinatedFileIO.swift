@@ -74,7 +74,7 @@ public enum CoordinatedFileIO {
         }
     }
 
-    private static func decode(_ url: URL) throws -> String {
+    static func decode(_ url: URL) throws -> String {
         guard let text = String(data: try Data(contentsOf: url), encoding: .utf8) else {
             throw FileIOError.notUTF8(url.lastPathComponent)
         }
@@ -82,7 +82,7 @@ public enum CoordinatedFileIO {
     }
 
     /// Runs one coordination, surfacing both the coordinator's error and the accessor's.
-    private static func coordinate<T>(
+    static func coordinate<T>(
         _ run: (NSFileCoordinator, NSErrorPointer, (() throws -> T) -> Void) -> Void
     ) throws -> T {
         var coordinationError: NSError?

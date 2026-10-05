@@ -4,9 +4,7 @@ Work not yet built.
 
 ## Code review (2026-10-05)
 
-Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 2 and 3 put file contents at risk. Items 4, 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
-
-2. **iCloud conflict versions are removed without file coordination** *(Apple)*: `Conflicts.swift:22-35` calls `removeOtherVersionsOfItem(at:)` on its own. The SDK header says to "always remove file versions as part of a coordinated write". `adopt` also writes the file and then resolves the conflict in two separate accesses. Do the write (or `version.replaceItem(at:)`), set `isResolved` and remove the versions inside one coordinated write.
+Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Item 3 puts file contents at risk. Items 4, 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
 
 3. **Renaming a project relinks its tasks with a separate read and write** *(data integrity)*: `Vault.swift:159-162` reads each task, then writes it unconditionally. An edit that lands in between, for example from iCloud, is overwritten. `Vault.update` already does read-modify-write in one coordinated access. If one task write fails:
    - the project stays renamed;

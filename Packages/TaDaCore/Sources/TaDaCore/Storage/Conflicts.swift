@@ -18,19 +18,36 @@ public enum Conflicts {
             .sorted { ($0.modified ?? .distantPast) > ($1.modified ?? .distantPast) }
     }
 
-    /// Keeps the file as it is and discards the conflicting versions.
+    /// Keeps the file as it is and discards the conflicting versions, in one coordinated write.
     public static func keepCurrent(_ url: URL) throws {
+        try CoordinatedFileIO.coordinate { coordinator, error, body in
+            coordinator.coordinate(writingItemAt: url, options: [], error: error) { url in
+                body { try resolve(url) }
+            }
+        }
+    }
+
+    /// Replaces the file with a conflicting version's text and discards the conflicts, in one coordinated
+    /// write. Returns the text.
+    public static func adopt(_ version: ConflictVersion, at url: URL) throws -> String {
+        try CoordinatedFileIO.coordinate { coordinator, error, body in
+            coordinator.coordinate(readingItemAt: version.url, options: [],
+                                   writingItemAt: url, options: .forReplacing, error: error) { versionURL, url in
+                body {
+                    let text = try CoordinatedFileIO.decode(versionURL)
+                    try Data(text.utf8).write(to: url, options: .atomic)
+                    try resolve(url)
+                    return text
+                }
+            }
+        }
+    }
+
+    /// Marks the conflicts resolved and removes the other versions. Runs inside a coordinated write to the file.
+    private static func resolve(_ url: URL) throws {
         for version in NSFileVersion.unresolvedConflictVersionsOfItem(at: url) ?? [] {
             version.isResolved = true
         }
         try NSFileVersion.removeOtherVersionsOfItem(at: url)
-    }
-
-    /// Replaces the file with a conflicting version's text, then discards the conflicts. Returns the text.
-    public static func adopt(_ version: ConflictVersion, at url: URL) throws -> String {
-        let text = try CoordinatedFileIO.read(version.url)
-        try CoordinatedFileIO.write(text, to: url)
-        try keepCurrent(url)
-        return text
     }
 }
