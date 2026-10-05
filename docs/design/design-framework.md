@@ -109,7 +109,7 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 | Chip (filter) | `ContextFilter` in `TaDa/Browser/BrowserChrome.swift`. |
 | Button | `newButton` in `TaDa/Sidebar/SidebarView.swift`; `NewLinkedTaskButton` in `TaDa/Document/ProjectDocumentView.swift`. |
 | Button (`td-seg`) | `ModeToggle` in `TaDa/Document/DocumentPane.swift`; `AppearancePicker` in `TaDa/Settings/ThemeSettingsView.swift`. |
-| Menu | `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`. Both share `MenuKeyHint`. The compact menu is `FileMenu` in `TaDa/Shared/FileMenu.swift`; rows add it with `.fileMenu(model, path:)`. |
+| Menu | `PopupMenu` in `TaDa/Shared/PopupMenu.swift` draws both densities (`PopupMenuStyle.full` and `.compact`): the panel, labels, dividers, highlight, footer key hints. Each menu supplies its rows: `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`; the compact `FileMenu` in `TaDa/Shared/FileMenu.swift`, which rows add with `.fileMenu(model, path:)`. |
 | Settings window | `SettingsView` (nav, `SettingsPage`, `SettingsSectionLabel`, `SettingsButton`) in `TaDa/Settings/SettingsView.swift`; `VaultSettingsView` and `ThemeSettingsView` beside it. |
 | Trash | `TrashView` in `TaDa/Browser/TrashView.swift`. |
 | View title, group headers | `DomainHeader`, `ProjectGroupHeader` and `CountGroupHeader` in `TaDa/Browser/BrowserChrome.swift`. |

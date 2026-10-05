@@ -13,7 +13,7 @@ extension View {
 }
 
 /// One row of the file menu.
-struct FileMenuAction {
+struct FileMenuAction: PopupMenuItem {
     let title: String
     let systemImage: String
     let shortcut: String
@@ -49,14 +49,13 @@ struct FileMenuAction {
 final class FileMenu {
     static let shared = FileMenu()
 
-    private let menu = FileMenuModel()
-    private var panel: NSPanel?
-    private var eventMonitor: Any?
+    private let menu = PopupMenu(style: .compact, takesKeys: true, row: FileMenuRow.init)
     private weak var model: AppModel?
 
-    var isOpen: Bool { panel?.isVisible == true }
+    var isOpen: Bool { menu.isOpen }
 
     private init() {
+        menu.onDismiss = { [weak self] in self?.hide() }
         NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { FileMenu.shared.hide() }
         }
@@ -67,168 +66,47 @@ final class FileMenu {
         hide()
         self.model = model
         model.menuTarget = path
-        menu.actions = FileMenuAction.actions(for: path, model: model)
-        menu.selection = nil
-        menu.theme = model.theme
-        menu.run = { [weak self] action in
+        var sections: [PopupMenuSection<FileMenuAction>] = []
+        for action in FileMenuAction.actions(for: path, model: model) {
+            if action.startsGroup || sections.isEmpty {
+                sections.append(PopupMenuSection(items: [action]))
+            } else {
+                sections[sections.count - 1].items.append(action)
+            }
+        }
+        menu.show(sections, highlight: nil, theme: model.theme, below: CGRect(origin: point, size: .zero),
+                  inset: 0, gap: 0, in: window) { [weak self] action in
             self?.hide()
             action.run()
         }
-
-        let panel = panel ?? makePanel()
-        let size = menu.size
-        var origin = CGPoint(x: point.x, y: point.y - size.height)
-        if let visible = window.screen?.visibleFrame {
-            if origin.y < visible.minY { origin.y = point.y }
-            origin.x = min(max(origin.x, visible.minX + 4), visible.maxX - size.width - 4)
-        }
-        panel.setFrame(CGRect(origin: origin, size: size), display: true)
-        if panel.parent !== window {
-            panel.parent?.removeChildWindow(panel)
-            window.addChildWindow(panel, ordered: .above)
-        }
-        panel.orderFront(nil)
-        panel.invalidateShadow()
-        installEventMonitor()
     }
 
     func hide() {
-        if let eventMonitor { NSEvent.removeMonitor(eventMonitor) }
-        eventMonitor = nil
+        menu.hide()
         model?.menuTarget = nil
-        guard let panel, panel.isVisible else { return }
-        panel.parent?.removeChildWindow(panel)
-        panel.orderOut(nil)
-    }
-
-    private func makePanel() -> NSPanel {
-        let panel = NSPanel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
-                            backing: .buffered, defer: true)
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = true
-        panel.isReleasedWhenClosed = false
-        panel.hidesOnDeactivate = true
-        panel.contentView = FirstMouseHostingView(rootView: FileMenuView(menu: menu))
-        self.panel = panel
-        return panel
-    }
-
-    /// While open, the menu takes every key: ↑↓ move, ↵ runs, esc closes. A click elsewhere or a scroll closes it.
-    private func installEventMonitor() {
-        guard eventMonitor == nil else { return }
-        let mask: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel, .keyDown]
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
-            guard let self else { return event }
-            if event.type == .keyDown {
-                handle(event)
-                return nil
-            }
-            // A two-finger click on a trackpad also sends scroll events that don't move.
-            let isStillScroll = event.type == .scrollWheel && event.scrollingDeltaX == 0 && event.scrollingDeltaY == 0
-            if event.window !== panel, !isStillScroll { hide() }
-            return event
-        }
-    }
-
-    private func handle(_ event: NSEvent) {
-        let count = menu.actions.count
-        switch event.keyCode {
-        case 125 where count > 0: menu.selection = menu.selection.map { ($0 + 1) % count } ?? 0
-        case 126 where count > 0: menu.selection = menu.selection.map { ($0 + count - 1) % count } ?? count - 1
-        case 36, 76:
-            if let selection = menu.selection, menu.actions.indices.contains(selection) { menu.run(menu.actions[selection]) }
-        case 53: hide()
-        default: break
-        }
     }
 }
 
-@Observable
-private final class FileMenuModel {
-    var actions: [FileMenuAction] = []
-    /// The highlighted row; nothing is highlighted when the menu opens.
-    var selection: Int?
-    var theme = Theme.all[0]
-    @ObservationIgnored var run: (FileMenuAction) -> Void = { _ in }
-
-    static let width: CGFloat = 196
-    static let rowHeight: CGFloat = 26
-    static let dividerHeight: CGFloat = 7
-
-    /// The rows and dividers 1pt apart, with a 4pt pad all round.
-    var size: CGSize {
-        let dividers = CGFloat(actions.count { $0.startsGroup })
-        let rows = CGFloat(actions.count)
-        return CGSize(width: Self.width, height: 8 + rows * Self.rowHeight + dividers * Self.dividerHeight + rows + dividers - 1)
-    }
-}
-
-private struct FileMenuView: View {
-    let menu: FileMenuModel
-
-    private var theme: Theme { menu.theme }
+private struct FileMenuRow: View {
+    let action: FileMenuAction
+    let isHighlighted: Bool
+    let theme: Theme
 
     var body: some View {
-        VStack(spacing: 1) {
-            ForEach(Array(menu.actions.enumerated()), id: \.offset) { index, action in
-                if action.startsGroup {
-                    Rectangle()
-                        .fill(theme.color(\.border))
-                        .frame(height: 1)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .accessibilityHidden(true)
-                }
-                row(action, index: index)
-            }
-        }
-        .padding(4)
-        .frame(width: FileMenuModel.width)
-        .background(theme.color(theme.isDark ? \.side : \.bg), in: .rect(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.surface)))
-        .font(.system(size: 13))
-        .environment(\.colorScheme, theme.isDark ? .dark : .light)
-    }
-
-    private func row(_ action: FileMenuAction, index: Int) -> some View {
-        let isSelected = menu.selection == index
-        let background: Color = switch (isSelected, action.isDestructive) {
-        case (false, _): .clear
-        case (true, false): theme.color(\.surface)
-        case (true, true): theme.color(\.deadline).opacity(theme.isDark ? 0.22 : 0.14)
-        }
-        return HStack(spacing: 8) {
+        HStack(spacing: 8) {
             Image(systemName: action.systemImage)
                 .font(.system(size: 12))
                 .frame(width: 14)
-                .foregroundStyle(theme.color(action.isDestructive ? \.deadline : isSelected ? \.accent : \.muted))
+                .foregroundStyle(theme.color(action.isDestructive ? \.deadline : isHighlighted ? \.accent : \.muted))
             Text(action.title)
-                .foregroundStyle(theme.color(action.isDestructive ? \.deadline : isSelected ? \.strong : \.fg))
+                .foregroundStyle(theme.color(action.isDestructive ? \.deadline : isHighlighted ? \.strong : \.fg))
                 .lineLimit(1)
             Spacer(minLength: 8)
             Text(action.shortcut)
                 .font(.system(size: 11.5))
                 .tracking(0.5)
                 .foregroundStyle(theme.color(\.muted))
-                .accessibilityHidden(true)
         }
-        .padding(.horizontal, 8)
-        .frame(height: FileMenuModel.rowHeight)
-        .background(background, in: .rect(cornerRadius: 6))
-        .contentShape(.rect)
-        .onHover { inside in
-            if inside {
-                menu.selection = index
-            } else if menu.selection == index {
-                menu.selection = nil
-            }
-        }
-        .onTapGesture { menu.run(action) }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(action.title)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .accessibilityAction { menu.run(action) }
     }
 }
 

@@ -4,9 +4,7 @@ Work not yet built.
 
 ## Code review (2026-10-05)
 
-Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 4, 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
-
-4. **The slash and checkbox menus are copy-pasted, and the copies differ** *(duplication, bug)*: `SlashMenu.swift` and `CheckboxMenu.swift` duplicate the panel, positioning, child-window handling, event monitor, size constants and header/row/footer layout. `SlashMenuController.hide()` (`SlashMenu.swift:45`) returns before removing its event monitor when the panel isn't visible, for example when `hidesOnDeactivate` has hidden it. The checkbox copy removes the monitor first. Extract one `PopupMenuController<Item>` and a shared view that takes a row builder.
+Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 5, 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
 
 5. **Checkbox rules live in four places and disagree** *(duplication, drift)*:
    - `BodyScanner.swift:67` needs a space after `]`, but `SubtaskLine.swift:47` also accepts the end of the line. Tests lock in both: `- [ ]` isn't counted as a subtask (`BodyScannerTests.swift:54`), yet ⌘L toggles it (`SubtaskLineTests.swift:46`).
@@ -19,7 +17,7 @@ Issues from the review, most severe first. Fixed ones are removed; the rest keep
 
 7. **Dark mode is detected through undocumented APIs** *(Apple)*: the app reads the `AppleInterfaceStyle` default (`Theme.swift:44`) and listens for `AppleInterfaceThemeChangedNotification` (`Themed.swift:23`). It needs these only because a view modifier overrides `NSApp.appearance` for the whole app. Set the appearance per window instead (`.preferredColorScheme` or `window.appearance`) and observe `NSApp.effectiveAppearance` with KVO, which then keeps following the system. Trade-off: menus in the menu bar would follow the system appearance rather than the theme.
 
-8. **List navigation bypasses the focus system** *(Apple, accessibility)*: `ArrowKeySelection.swift:37-78` installs an app-wide `keyDown` monitor that matches raw key codes (125/126/53, plus 36/76 in `CheckboxMenu.swift:87`). It also calls `makeFirstResponder(nil)` to take focus away from the editor.
+8. **List navigation bypasses the focus system** *(Apple, accessibility)*: `ArrowKeySelection.swift:37-78` installs an app-wide `keyDown` monitor that matches raw key codes (125/126/53, plus 36/76 in the menus' `PopupMenu.handleKey`). It also calls `makeFirstResponder(nil)` to take focus away from the editor.
    - Preferred: `List(selection:)`, styled with `.listRowBackground`, `.listRowInsets` and `.scrollContentBackground(.hidden)`. It provides arrow keys, type-to-select and VoiceOver row semantics.
    - Otherwise: `focusable(interactions:)` with `onMoveCommand` and `onExitCommand`, and `NSEvent.specialKey` instead of raw key codes.
 

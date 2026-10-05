@@ -51,7 +51,7 @@ TaDa/
 │   ├── SlashMenu.swift
 │   ├── CheckboxMenu.swift
 │   └── AddSubtask.swift
-└── Shared/                    LocalDate display formats; FileMenu (right-click on a project or task)
+└── Shared/                    LocalDate display formats; PopupMenu (the panel all three menus share); FileMenu (right-click on a project or task)
 
 Packages/TaDaCore/Sources/TaDaCore/
 ├── Model/      Item, Status, LocalDate, WikiLink, Checkbox
@@ -95,7 +95,7 @@ Browser lists share their selection: each registers its rows with `.arrowKeySele
 
 - **Live**: `LiveEditor` runs the engine with `.fitsContent` height inside a SwiftUI `ScrollView`, between the title and properties above and the footer (and a project's linked-tasks table) below. The engine's binding reads and writes only the body; it is spliced back after the frontmatter block. Theme tokens map to `MarkdownEditorTheme`; `TaskCheckboxStyle` sets checkbox tints and click transitions, and `InlineCheckbox` draws the boxes; wikilinks resolve by title.
 - **Source**: `SourceTextView`, a TextKit 1 `NSTextView` with a line-number ruler and a current-line highlight. It edits the whole file, frontmatter included. `SourceHighlighter` colours it by role (key `accent`, value `fg`, string `done`, date `due`, heading `strong`, punctuation and checkbox `muted`, done checkbox `done`, link `link`) and reruns over the whole file after each edit.
-- **Slash menu**: `/` in the Live editor opens `SlashMenu`, a themed list of `SlashCommand` formats in a borderless panel.
+- **Slash menu**: `/` in the Live editor opens `SlashMenu`, a themed list of `SlashCommand` formats in a `PopupMenu`: a borderless panel that places itself under its anchor and closes on a click elsewhere or a scroll. The checkbox and file menus use it too.
 - **Checkbox menu**: a right-click on a Live editor checkbox opens `CheckboxMenu`, the same kind of panel listing every marker (subtasks, then icons) with its box drawn by `InlineCheckbox`. While open it takes ↑↓, ↵ and esc.
 
 ## Shortcuts
