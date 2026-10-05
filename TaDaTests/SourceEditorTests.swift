@@ -100,13 +100,13 @@ struct SourceModeTests {
         window.orderFrontRegardless()
         model.selection = "tasks/Task.md"
         model.isSourceMode = true
-        try await Task.sleep(for: .milliseconds(600))
 
         func sourceView(in view: NSView) -> SourceTextView? {
             if let textView = view as? SourceTextView { return textView }
             return view.subviews.lazy.compactMap(sourceView(in:)).first
         }
-        let editor = try #require(sourceView(in: window.contentView!))
+        for _ in 0..<50 where sourceView(in: window.contentView!) == nil { try await Task.sleep(for: .milliseconds(100)) }
+        let editor = try #require(sourceView(in: window.contentView!), "within 5 s")
         let document = try #require(model.document)
         #expect(editor.string == Self.task)
 

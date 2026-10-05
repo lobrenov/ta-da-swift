@@ -271,14 +271,17 @@ struct OutsideChangesTests {
         window.contentView = NSHostingView(rootView: ContentView(model: model))
         window.orderFrontRegardless()
         model.selection = "tasks/Task.md"
-        try await Task.sleep(for: .milliseconds(600))
-
-        try write(Self.task + "From TextEdit.\n", "tasks/Task.md")
-        await model.refresh()
-        try await Task.sleep(for: .milliseconds(400))
         func textView(in view: NSView) -> NSTextView? {
             if let textView = view as? NSTextView, textView.isEditable { return textView }
             return view.subviews.lazy.compactMap(textView(in:)).first
+        }
+        for _ in 0..<50 where textView(in: window.contentView!) == nil { try await Task.sleep(for: .milliseconds(100)) }
+        try #require(textView(in: window.contentView!) != nil, "the editor shows the file first, within 5 s")
+
+        try write(Self.task + "From TextEdit.\n", "tasks/Task.md")
+        await model.refresh()
+        for _ in 0..<50 where textView(in: window.contentView!)?.string.contains("From TextEdit.") != true {
+            try await Task.sleep(for: .milliseconds(100))
         }
         let editor = try #require(textView(in: window.contentView!))
         #expect(editor.string.contains("From TextEdit."))

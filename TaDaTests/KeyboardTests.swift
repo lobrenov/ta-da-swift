@@ -5,7 +5,9 @@ import TaDaCore
 @testable import TaDa
 
 /// Arrow keys in the lists and Add Subtask (⌘L), in a real window with key events sent to it.
+/// One test at a time: a key the list doesn't take goes to the key window, which could be another test's.
 @MainActor
+@Suite(.serialized)
 struct KeyboardTests {
     let defaults: UserDefaults
     let suite = "TaDaTests-\(UUID().uuidString)"

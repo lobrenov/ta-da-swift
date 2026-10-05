@@ -76,8 +76,10 @@ struct OpenDocumentTests {
         let document = try #require(model.document)
         document.body += "More.\n"
         #expect(try read("tasks/Task.md") == Self.task, "not yet")
-        try await Task.sleep(for: .milliseconds(1200))
-        #expect(try read("tasks/Task.md") == Self.task + "More.\n")
+        for _ in 0..<50 where try read("tasks/Task.md") != Self.task + "More.\n" {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        #expect(try read("tasks/Task.md") == Self.task + "More.\n", "within 5 s")
     }
 
     @Test func propertyEditsOnTheOpenFileGoThroughItsText() async throws {
@@ -197,13 +199,13 @@ struct OpenDocumentTests {
         window.contentView = NSHostingView(rootView: ContentView(model: model))
         window.orderFrontRegardless()
         model.selection = "tasks/Task.md"
-        try await Task.sleep(for: .milliseconds(800))
 
         func textView(in view: NSView) -> NSTextView? {
             if let textView = view as? NSTextView, textView.isEditable { return textView }
             return view.subviews.lazy.compactMap(textView(in:)).first
         }
-        let editor = try #require(textView(in: window.contentView!))
+        for _ in 0..<50 where textView(in: window.contentView!) == nil { try await Task.sleep(for: .milliseconds(100)) }
+        let editor = try #require(textView(in: window.contentView!), "within 5 s")
         let document = try #require(model.document)
         #expect(!document.isDirty, "opening doesn't rewrite the file")
 
