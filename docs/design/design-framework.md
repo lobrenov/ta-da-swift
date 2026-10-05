@@ -94,7 +94,7 @@ Only Done and Important are filled boxes. Done and Cancelled strike their text t
 
 ## Components
 
-Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tokens: Checkbox, TaskRow, SidebarItem, PropertyRow, Chip, Button. Each has guidelines in `components/<Name>/README.md`. In the Swift app they map to SwiftUI views; the classes here are the reference for spacing, states and colour roles.
+Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tokens: Checkbox, TaskRow, SidebarItem, PropertyRow, Chip, Button, Menu. Each has guidelines in `components/<Name>/README.md`. In the Swift app they map to SwiftUI views; the classes here are the reference for spacing, states and colour roles.
 
 ## In the app
 
@@ -103,15 +103,14 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 | Colour tokens and themes | `Theme` (`TaDa/Theme/Theme.swift`), one `NSColor` property per token, read from the `\.theme` environment value. The fifteen schemes are `Theme.all` and the eight sets `ThemeSet.all` in `TaDa/Theme/BundledThemes.swift`, with the same values and order as `tokens.json`. `AppModel` picks the scheme from the set, the `Appearance` setting and the Mac's appearance; `themed(by:)` (`TaDa/Theme/Themed.swift`) applies it to a window. |
 | Type, spacing, radius, size | Literal values in each view (`.font(.system(size: 13.5))`, `cornerRadius: 7`); there are no Swift constants for them. |
 | Checkbox | `InlineCheckbox` in `TaDa/Editor/InlineCheckbox.swift` draws every box from the artboard's paths. `StatusCheckbox` in `TaDa/Browser/TaskRow.swift` uses it for task rows; `TaskCheckboxStyle` in `TaDa/Editor/LiveEditor.swift` for the editor (tints, strikes, clicks). |
-| TaskRow | `TaskRow`, `TaskTitle`, `StatusLabel`, `Chip` and `DateChip` in `TaDa/Browser/TaskRow.swift`. |
+| TaskRow | `TaskRow`, `TaskTitle`, `StatusLabel`, `Chip` and `DateChip` in `TaDa/Browser/TaskRow.swift`. Selection (click, shift- and ⌘-click, `is-selected`) is shared by every list through `model.click(_:)` and `model.isSelected(_:)` in `TaDa/Browser/ArrowKeySelection.swift` and `TaDa/AppModel.swift`. |
 | SidebarItem | `SidebarRow` and `ProgressRing` in `TaDa/Sidebar/SidebarView.swift`. |
 | PropertyRow | `PropertyTable` in `TaDa/Document/PropertyTable.swift`. |
 | Chip (filter) | `ContextFilter` in `TaDa/Browser/BrowserChrome.swift`. |
 | Button | `newButton` in `TaDa/Sidebar/SidebarView.swift`; `NewLinkedTaskButton` in `TaDa/Document/ProjectDocumentView.swift`. |
 | Button (`td-seg`) | `ModeToggle` in `TaDa/Document/DocumentPane.swift`; `AppearancePicker` in `TaDa/Settings/ThemeSettingsView.swift`. |
-| Slash and checkbox menus | `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`. Both share `MenuKeyHint`. |
+| Menu | `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`. Both share `MenuKeyHint`. The compact menu is `FileMenu` in `TaDa/Shared/FileMenu.swift`; rows add it with `.fileMenu(model, path:)`. |
 | Settings window | `SettingsView` (nav, `SettingsPage`, `SettingsSectionLabel`, `SettingsButton`) in `TaDa/Settings/SettingsView.swift`; `VaultSettingsView` and `ThemeSettingsView` beside it. |
-| File menu | `FileMenu` in `TaDa/Shared/FileMenu.swift`; rows add it with `.fileMenu(model, path:)`. |
 | Trash | `TrashView` in `TaDa/Browser/TrashView.swift`. |
 | View title, group headers | `DomainHeader`, `ProjectGroupHeader` and `CountGroupHeader` in `TaDa/Browser/BrowserChrome.swift`. |
 
@@ -127,7 +126,7 @@ Where the app differs from the guidance above:
 - **Inline checkboxes** draw the Inline markdown checkboxes artboard's glyphs with its tints, in a 16pt box (1.5pt stroke, 4pt outer radius), 10pt from the text. Task rows draw the same boxes: Blocked uses the artboard's `[B]` bar. `[X]` draws as `[x]`. `[x]`, `[X]` and `[-]` strike their text in `muted`. `[B]` is not a body marker; Blocked is a frontmatter status only.
 - **Buttons**: Empty Trash is the only primary button; its confirmation's Empty Trash is filled with `deadline`. Log Now is not built. The folder picker uses the system `.borderedProminent` style.
 - **Trash**: Restore returns files to `tasks/` and `projects/` (the artboard says their original folder). Empty Trash and Delete Forever move files to the Mac's Trash, so the confirmation asks “Move N files to the Mac’s Trash?”. Delete Forever doesn't confirm.
-- **File menu**: 196pt wide, 4pt padding, 26pt rows, 13pt text, shortcuts on the right, no group labels or key footer. Nothing is highlighted when it opens.
+- **File menu** items are in title case, as macOS menu commands are: Delete Forever, Delete 3 Tasks.
 - **PropertyRow**: values are 12.5pt. `status` (menu), `dueDate` and `deadline` (calendar popover) are editable; the other keys are read-only. `project` shows as `[[Title]]` in `link`, or struck through in `muted` when no project has that title.
 - **Settings ▸ Vault**: Location (Change…, Reveal in Finder), Sync (iCloud Drive or local, and whether the folder is watched), Contents (task and project counts) and the `tasks/` and `projects/` folders. There is no Open another vault or Create new vault; Change… picks the folder.
 - **Settings ▸ Themes**: no Import .itermcolors button. The theme set and scheme pickers are menus drawn as `code` fields. The window title bar is the system's, on `side`.

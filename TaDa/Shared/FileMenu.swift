@@ -185,8 +185,8 @@ private struct FileMenuView: View {
         }
         .padding(4)
         .frame(width: FileMenuModel.width)
-        .background(theme.color(theme.isDark ? \.side : \.bg), in: .rect(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(theme.color(\.surface)))
+        .background(theme.color(theme.isDark ? \.side : \.bg), in: .rect(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.surface)))
         .font(.system(size: 13))
         .environment(\.colorScheme, theme.isDark ? .dark : .light)
     }
@@ -215,7 +215,7 @@ private struct FileMenuView: View {
         }
         .padding(.horizontal, 8)
         .frame(height: FileMenuModel.rowHeight)
-        .background(background, in: .rect(cornerRadius: 5))
+        .background(background, in: .rect(cornerRadius: 6))
         .contentShape(.rect)
         .onHover { inside in
             if inside {
