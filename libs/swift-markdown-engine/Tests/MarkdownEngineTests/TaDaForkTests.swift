@@ -115,6 +115,22 @@ struct QuotedListTests {
         #expect(MarkdownStyler.bulletSyntaxRange(at: 2, in: "> - a\n") == NSRange(location: 2, length: 2))
         #expect(MarkdownStyler.bulletSyntaxRange(at: 2, in: "> text\n") == nil)
     }
+
+    @MainActor
+    @Test func returnContinuesAQuotedItemAndAnEmptyOneLeavesOnlyTheQuote() {
+        func enter(_ text: String) -> String {
+            let tv = NSTextView()
+            tv.string = text
+            let end = NSRange(location: (text as NSString).length, length: 0)
+            #expect(!MarkdownLists.handleInsertion(textView: tv, affectedCharRange: end, replacementString: "\n",
+                                                   isInsideCodeBlock: false))
+            return tv.string
+        }
+        #expect(enter("> - [x] a") == "> - [x] a\n> - [ ] ")
+        #expect(enter(">>   1. a") == ">>   1. a\n>>   2. ")
+        #expect(enter("> - [ ] ") == "> ")
+        #expect(enter("> plain") == "> plain\n> ")
+    }
 }
 
 @MainActor

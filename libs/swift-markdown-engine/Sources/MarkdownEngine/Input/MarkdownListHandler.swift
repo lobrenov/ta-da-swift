@@ -55,10 +55,12 @@ struct MarkdownLists {
         return tabCount + (spaceCount / 2)
     }
 
-    /// Remove the current line's leading marker and put the caret at line start (exit empty block on Enter).
+    /// Remove the current line's leading marker from `start` and put the caret there (exit empty block on Enter).
+    /// Ta Da fork: `start` keeps a quote marker before a list marker.
     private static func removeLinePrefixAndExit(
         textView: NSTextView,
         currentLineRange: NSRange,
+        from start: Int = 0,
         prefixLength: Int
     ) -> Bool {
         let lineEnd = currentLineRange.location + currentLineRange.length
@@ -66,10 +68,10 @@ struct MarkdownLists {
             && (textView.string as NSString)
                 .substring(with: NSRange(location: lineEnd - 1, length: 1)) == "\n"
         let maxBodyLen = hasNewline ? currentLineRange.length - 1 : currentLineRange.length
-        let removalLength = min(prefixLength, maxBodyLen)
-        let removalRange = NSRange(location: currentLineRange.location, length: removalLength)
+        let removalLength = min(prefixLength, maxBodyLen) - start
+        let removalRange = NSRange(location: currentLineRange.location + start, length: removalLength)
         performEdit(textView, replace: removalRange, with: "")
-        textView.setSelectedRange(NSRange(location: currentLineRange.location, length: 0))
+        textView.setSelectedRange(NSRange(location: currentLineRange.location + start, length: 0))
         return false
     }
 
@@ -247,6 +249,10 @@ struct MarkdownLists {
             guard listsEnabled && !isInCodeBlock else { return true }
 
             // Blockquote continuation: `> foo` → `\n> `, `>>>` stays `>>>`, empty marker → exit.
+            // Ta Da fork: a list item in the quote goes to the list branch, which reads the line from
+            // `listStart` and repeats `quotePrefix` (`> - a` → `\n> - `, empty `> - ` → `> `).
+            var quotePrefix = ""
+            var listStart = 0
             let quoteLine = nsText.substring(with: currentLineRange)
             if let quoteMatch = MarkdownLists.blockquoteRegex.firstMatch(
                 in: quoteLine,
@@ -260,20 +266,30 @@ struct MarkdownLists {
                 let contentText = (quoteLine as NSString)
                     .substring(with: NSRange(location: contentStart, length: contentLength))
                     .trimmingCharacters(in: .whitespacesAndNewlines)
+                // The quote's text starts after the last `>` and one space or tab.
+                let quotedStart = min(NSMaxRange(quoteMatch.range(at: 2)) + 1, contentStart)
 
-                if contentText.isEmpty {
+                if MarkdownLists.listRegex.firstMatch(
+                    in: quoteLine,
+                    range: NSRange(location: quotedStart, length: quoteLine.utf16.count - quotedStart)
+                ) != nil {
+                    quotePrefix = ws + markers + " "
+                    listStart = quotedStart
+                } else if contentText.isEmpty {
                     return removeLinePrefixAndExit(
                         textView: textView,
                         currentLineRange: currentLineRange,
                         prefixLength: prefixLength
                     )
+                } else {
+                    MarkdownLists.performEdit(textView, replace: affectedCharRange, with: "\n" + ws + markers + " ")
+                    return false
                 }
-                MarkdownLists.performEdit(textView, replace: affectedCharRange, with: "\n" + ws + markers + " ")
-                return false
             }
 
             let listLine = nsText.substring(with: currentLineRange)
-            if let match = MarkdownLists.listRegex.firstMatch(in: listLine, range: NSRange(location: 0, length: listLine.utf16.count)) {
+            let listRange = NSRange(location: listStart, length: listLine.utf16.count - listStart)
+            if let match = MarkdownLists.listRegex.firstMatch(in: listLine, range: listRange) {
                 let contentStart = match.range.location + match.range.length
                 let contentLength = listLine.utf16.count - contentStart
                 let contentRangeLocal = NSRange(location: contentStart, length: contentLength)
@@ -282,11 +298,12 @@ struct MarkdownLists {
                     return removeLinePrefixAndExit(
                         textView: textView,
                         currentLineRange: currentLineRange,
+                        from: listStart,
                         prefixLength: match.range.location + match.range.length
                     )
                 }
                 let leadingWhitespace: String
-                if let wsMatch = MarkdownLists.leadingWhitespaceRegex.firstMatch(in: listLine, range: NSRange(location: 0, length: listLine.utf16.count)) {
+                if let wsMatch = MarkdownLists.leadingWhitespaceRegex.firstMatch(in: listLine, range: listRange) {
                     leadingWhitespace = (listLine as NSString).substring(with: wsMatch.range)
                 } else {
                     leadingWhitespace = ""
@@ -298,17 +315,17 @@ struct MarkdownLists {
                 if match.range(at: 2).location != NSNotFound,
                    let number = Int((listLine as NSString).substring(with: match.range(at: 2))) {
                     if hasCheckbox {
-                        newListItem = "\n" + leadingWhitespace + "\(number + 1). [ ] "
+                        newListItem = "\n" + quotePrefix + leadingWhitespace + "\(number + 1). [ ] "
                     } else {
-                        newListItem = "\n" + leadingWhitespace + "\(number + 1). "
+                        newListItem = "\n" + quotePrefix + leadingWhitespace + "\(number + 1). "
                     }
                 } else {
                     // Continue with the user's marker char (legacy `•` → `-`), keeping leading whitespace.
                     let bulletChar = (marker.first == "•") ? "-" : String(marker.prefix(1))
                     if hasCheckbox {
-                        newListItem = "\n" + leadingWhitespace + bulletChar + " [ ] "
+                        newListItem = "\n" + quotePrefix + leadingWhitespace + bulletChar + " [ ] "
                     } else {
-                        newListItem = "\n" + leadingWhitespace + bulletChar + " "
+                        newListItem = "\n" + quotePrefix + leadingWhitespace + bulletChar + " "
                     }
                 }
                 MarkdownLists.performEdit(textView, replace: affectedCharRange, with: newListItem)
