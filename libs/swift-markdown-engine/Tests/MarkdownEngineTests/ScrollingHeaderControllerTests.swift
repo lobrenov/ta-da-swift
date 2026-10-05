@@ -11,8 +11,10 @@ import SwiftUI
 import Testing
 @testable import MarkdownEngine
 
+// Ta Da fork: serialized. The animation tests spin the main run loop, and run in
+// parallel they miss their targets.
 @MainActor
-@Suite("ScrollingHeaderController")
+@Suite("ScrollingHeaderController", .serialized)
 struct ScrollingHeaderControllerTests {
 
     struct Stack {

@@ -21,9 +21,10 @@ Every change is marked `Ta Da fork` in the source. Tests: `Tests/MarkdownEngineT
 9. **Undo and redo reach the binding.** On macOS 27 a TextKit 2 `NSTextView` doesn't post `NSTextDidChangeNotification` for undo or redo (TextKit 1 does), so an undone edit stayed in the bound text and was saved. The coordinator observes each per-document undo manager and runs `textDidChange` after an undo or redo that didn't trigger it.
 10. **Slash commands** (`TextView/Coordinator/NativeTextViewCoordinator+SlashCommand.swift`). A `/` typed at a line start or after whitespace, outside code, opens a query. `onSlashCommandChange` reports it (`SlashCommandState`: the `/query` range, the query, whether it starts the line, and the `/`'s screen rect) as it changes, and `nil` when a space, `/` or caret move ends it. While it's open, `onSlashCommandKey` gets ↑/↓ and ↵/⇥, and esc closes it. `SlashCommandProxy.insert` replaces the `/query` in one undo step and sets the selection. The embedder draws the menu.
 11. **Compiler warnings.** `BlockScopedTokenizer` (`let first`), `ContextMenu` (`#selector` for the font panel) and `NativeTextViewCoordinator+TextDelegate` (two unused `blockLatexTokens` locals removed). Not marked in the source.
+12. **Serial header tests.** `ScrollingHeaderControllerTests` is `.serialized`: its animation tests spin the main run loop, and run in parallel they miss their targets.
 
 ## Known upstream test failure
-`MarkdownHTMLRendererTests` "bare URLs and emails autolink" fails on macOS 27 before any fork change (`www.example.com` isn't autolinked). The editor doesn't use the HTML renderer.
+`MarkdownHTMLRendererTests` "bare URLs and emails autolink" fails on macOS 27 before any fork change (`www.example.com` isn't autolinked); it passes on macOS 26. The editor doesn't use the HTML renderer.
 
 ## Updating from upstream
 Diff this folder against a clean checkout of the base commit to get the fork's patch. Apply it to the new upstream version, then run `swift test --package-path libs/swift-markdown-engine`.
