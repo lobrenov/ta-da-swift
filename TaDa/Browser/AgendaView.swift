@@ -51,8 +51,7 @@ struct AgendaView: View {
             .padding(.top, 4)
             .padding(.bottom, 24)
         }
-        // One task at a time: with nothing selected Upcoming switches to the month view, and a task can be listed twice.
-        .arrowKeySelection(model, paths: paths)
+        .arrowKeySelection(model, paths: paths, allowsMultipleSelection: true)
     }
 
     @ViewBuilder private func row(_ entry: AgendaEntry, dated: Bool) -> some View {

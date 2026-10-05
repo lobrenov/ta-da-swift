@@ -372,10 +372,10 @@ import TaDaCore
     @discardableResult
     func moveSelection(by offset: Int) -> Bool {
         guard let paths = arrowKeyList?.paths, !paths.isEmpty else { return false }
-        let current = selection ?? (multiSelection.isEmpty ? nil : selectionAnchor)
+        let current = selection ?? (picked.isEmpty ? nil : selectionAnchor)
         let next = current.flatMap { paths.firstIndex(of: $0) }.map { $0 + offset } ?? (offset > 0 ? 0 : paths.count - 1)
         guard paths.indices.contains(next) else { return false }
-        selection = paths[next]
+        selectOnly(paths[next])
         return true
     }
 
@@ -383,7 +383,7 @@ import TaDaCore
     func extendSelection(to path: String) {
         guard let paths = arrowKeyList?.paths, let end = paths.firstIndex(of: path),
               let start = (selectionAnchor ?? selection).flatMap({ paths.firstIndex(of: $0) }) else {
-            selection = path
+            selectOnly(path)
             return
         }
         pick(Set(paths[min(start, end)...max(start, end)]))
@@ -391,10 +391,20 @@ import TaDaCore
 
     /// ⌘-click: adds `path` to the picked tasks, or takes it out.
     func toggleSelection(_ path: String) {
-        var picked = multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
+        var picked = picked
         if picked.remove(path) == nil { picked.insert(path) }
         pick(picked)
         selectionAnchor = path
+    }
+
+    /// A plain click: opens the file, or in Trash picks just this one.
+    func selectOnly(_ path: String) {
+        if domain == .trash {
+            trashSelection = [path]
+            selectionAnchor = path
+        } else {
+            selection = path
+        }
     }
 
     func clearMultiSelection() {
@@ -406,14 +416,23 @@ import TaDaCore
         multiSelection.formIntersection(paths)
     }
 
-    /// Whether a row shows as selected: the open file, or one of the picked tasks.
+    /// Whether a row shows as selected: the open file, or one of the picked tasks or trashed files.
     func isSelected(_ path: String) -> Bool {
-        selection == path || multiSelection.contains(path)
+        selection == path || multiSelection.contains(path) || trashSelection.contains(path)
     }
 
-    /// One task opens in the document pane; several show as picked with the pane empty.
+    /// The rows a click starts from: the picked trashed files in Trash, else the picked tasks or the open one.
+    private var picked: Set<String> {
+        if domain == .trash { return trashSelection }
+        return multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
+    }
+
+    /// In Trash, the picked files. Elsewhere one task opens in the document pane; several show as picked
+    /// with the pane empty.
     private func pick(_ paths: Set<String>) {
-        if paths.count == 1, let path = paths.first {
+        if domain == .trash {
+            trashSelection = paths
+        } else if paths.count == 1, let path = paths.first {
             selection = path
         } else {
             selection = nil

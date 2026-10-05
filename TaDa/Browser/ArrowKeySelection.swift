@@ -21,7 +21,7 @@ extension View {
 
 extension AppModel {
     /// A click on a row in the browser list on screen. Shift-click picks a range and ⌘-click adds or removes
-    /// the task, where the list allows several; otherwise the file opens.
+    /// the row, where the list allows several; otherwise the file opens (in Trash, only it is picked).
     func click(_ path: String) {
         let modifiers = NSEvent.modifierFlags
         if arrowKeyList?.allowsMultipleSelection == true, modifiers.contains(.shift) {
@@ -29,7 +29,7 @@ extension AppModel {
         } else if arrowKeyList?.allowsMultipleSelection == true, modifiers.contains(.command) {
             toggleSelection(path)
         } else {
-            selection = path
+            selectOnly(path)
         }
     }
 }

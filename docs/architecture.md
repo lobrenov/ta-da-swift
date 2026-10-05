@@ -88,7 +88,7 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 
 A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Delete, or Restore and Delete Forever in Trash. A right-click on a picked file acts on every picked file: in Trash, or in a list that allows several.
 
-Browser lists share their selection: each registers its rows with `.arrowKeySelection(model, paths:, allowsMultipleSelection:)`, and rows show `model.isSelected(_:)`, call `model.click(_:)` and add `.fileMenu`. Today, Loose tasks and a project's task list allow several: shift-click picks a range, ⌘-click adds or removes a task (`AppModel.multiSelection`), and the document pane shows "N tasks selected". Upcoming and Search select one task at a time. While open it takes ↑↓, ↵ and esc.
+Browser lists share their selection: each registers its rows with `.arrowKeySelection(model, paths:, allowsMultipleSelection:)`, and rows show `model.isSelected(_:)`, call `model.click(_:)` and add `.fileMenu`. Today, Loose tasks, Upcoming, a project's task list and Trash allow several: shift-click picks a range and ⌘-click adds or removes a row (`AppModel.multiSelection`, or `trashSelection` in Trash). The document pane shows "N tasks selected", and Upcoming keeps its agenda column while tasks are picked. In Trash a plain click picks one file. Search selects one task at a time. While open it takes ↑↓, ↵ and esc.
 - Source mode: `DocumentPane` with the Source editor and `FileInspector` across the workspace, until the selection clears.
 
 ## Editors

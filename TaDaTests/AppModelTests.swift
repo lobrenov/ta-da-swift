@@ -234,6 +234,25 @@ struct AppModelTests {
         #expect(model.trash.count == 2)
     }
 
+    @Test func clicksInTrashPickFilesWithoutOpeningThem() async {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        await model.choose(folder)
+        for path in ["tasks/Due today.md", "tasks/Loose.md", "tasks/Done.md"] { await model.moveToTrash([path]) }
+        model.show(.trash)
+        let paths = model.trash.map(\.id)
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
+        model.selectOnly(paths[0])
+        #expect(model.trashSelection == [paths[0]] && model.selection == nil)
+        model.extendSelection(to: paths[2])
+        #expect(model.trashSelection == Set(paths))
+        model.toggleSelection(paths[1])
+        #expect(model.trashSelection == [paths[0], paths[2]])
+        #expect(model.moveSelection(by: -1))
+        #expect(model.trashSelection == [paths[0]], "the arrow keys pick the row before the last ⌘-clicked one")
+        #expect(model.selection == nil && model.multiSelection.isEmpty)
+    }
+
     @Test(arguments: [
         ("/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Ta Da", "iCloud Drive/Ta Da"),
         ("/Users/me/Library/Mobile Documents/iCloud~md~obsidian/Documents/Personal", "Obsidian/Personal"),

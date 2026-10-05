@@ -1,5 +1,6 @@
-// Trash: the Ta Da files in `.trash/`. Clicking a row picks it; picked files are restored to `tasks/` and
-// `projects/`, and Empty Trash moves everything to the Mac's Trash. A single pane, like the other archive views.
+// Trash: the Ta Da files in `.trash/`. A click picks a row; shift- and ⌘-click pick several. Picked files are
+// restored to `tasks/` and `projects/`, and Empty Trash moves everything to the Mac's Trash. A single pane, like
+// the other archive views.
 import SwiftUI
 import TaDaCore
 
@@ -37,6 +38,7 @@ struct TrashView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .arrowKeySelection(model, paths: model.trash.map(\.id), allowsMultipleSelection: true)
         .onChange(of: model.trash.isEmpty) { if model.trash.isEmpty { isConfirmingEmpty = false } }
     }
 
@@ -155,10 +157,10 @@ struct TrashView: View {
     private func row(_ entry: TrashedItem) -> some View {
         let item = entry.item
         let isProject = item.properties.kind == .project
-        let isPicked = model.trashSelection.contains(entry.id)
+        let isPicked = model.isSelected(entry.id)
         let tasks = isProject ? TrashedItem.tasks(of: item, in: model.trash) : []
         return Button {
-            if isPicked { model.trashSelection.remove(entry.id) } else { model.trashSelection.insert(entry.id) }
+            model.click(entry.id)
             model.trashNote = nil
         } label: {
             HStack(alignment: .top, spacing: 12) {

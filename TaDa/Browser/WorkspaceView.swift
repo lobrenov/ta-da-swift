@@ -44,7 +44,7 @@ struct WorkspaceView: View {
         case .trash:
             TrashView(model: model)
         case .upcoming:
-            if model.selection == nil {
+            if model.selection == nil, model.multiSelection.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
                     upcomingHeader(showsLegend: true).padding(.horizontal, 40)
                     HStack(alignment: .top, spacing: 40) {
@@ -83,7 +83,11 @@ struct WorkspaceView: View {
                     Chip(systemImage: AgendaEntry.Kind.deadline.systemImage, tint: \.deadline, text: "deadline")
                 }
             } else {
-                Button("Month view") { model.selection = nil }.buttonStyle(.plain)
+                Button("Month view") {
+                    model.selection = nil
+                    model.clearMultiSelection()
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.top, 12)
