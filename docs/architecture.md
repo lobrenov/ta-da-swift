@@ -102,7 +102,7 @@ A right-click (or control-click) on a sidebar project or a task row in any list 
 | --- | --- |
 | ⌘N / ⇧⌘N | New task / New project |
 | ⌥⌘F | Search files |
-| ⌘1 / ⌘2 / ⌘3 | Today / Upcoming / Loose tasks |
+| ⌘1 / ⌘2 / ⌘3 / ⌘4 | Today / Upcoming / Loose tasks / Trash |
 | ⌘E | Live / Source |
 | ⌘, | Settings |
 | ⌘K | Complete or reopen the selected task |

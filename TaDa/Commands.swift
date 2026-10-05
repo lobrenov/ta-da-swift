@@ -1,4 +1,4 @@
-// Menu commands: ⌘N/⇧⌘N new task/project; ⌥⌘F search; ⌘1–3 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
+// Menu commands: ⌘N/⇧⌘N new task/project; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on.
 import SwiftUI
@@ -28,6 +28,8 @@ struct AppCommands: Commands {
                 .keyboardShortcut("2")
             Button("Loose Tasks") { model.show(.loose) }
                 .keyboardShortcut("3")
+            Button("Trash") { model.show(.trash) }
+                .keyboardShortcut("4")
             Divider()
             Button(model.isSourceMode ? "Show Live Preview" : "Show Source") { model.isSourceMode.toggle() }
                 .keyboardShortcut("e")

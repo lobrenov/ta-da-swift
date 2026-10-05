@@ -38,11 +38,13 @@ private func task(in project: String) -> String { "---\ntype: task\nproject: \"[
     }
 }
 
-@Test func trashedItemsLeaveOutOtherNotes() async throws {
+@Test func trashedItemsLeaveOutOtherNotesAndHiddenFiles() async throws {
     try await withTemporaryFolder { folder in
         try writeFile(task, ".trash/Task.md", in: folder)
         try writeFile("An Obsidian note\n", ".trash/Note.md", in: folder)
         try writeFile(task, ".trash/sub/Nested.md", in: folder)
+        try writeFile(task, ".trash/.hidden.md", in: folder)
+        try writeFile(task, ".trash/.git/Inside.md", in: folder)
         #expect(Set(Vault(root: folder).trashedItems().map(\.id)) == [".trash/Task.md", ".trash/sub/Nested.md"])
     }
 }

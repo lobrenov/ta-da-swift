@@ -34,18 +34,20 @@ extension Vault {
         return paths
     }
 
-    /// The Ta Da files in `.trash/`, most recently deleted first. Other notes there are left out.
+    /// The Ta Da files in `.trash/`, most recently deleted first. Other notes and hidden files are left out.
     public func trashedItems() -> [TrashedItem] {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .addedToDirectoryDateKey]
+        // Not `.skipsHiddenFiles`: in iCloud Drive it finds nothing inside `.trash`. Hidden files are skipped below.
         guard let files = FileManager.default.enumerator(
-            at: url(for: Self.trashFolder), includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            at: url(for: Self.trashFolder), includingPropertiesForKeys: Array(keys), options: [.skipsPackageDescendants]
         ) else { return [] }
         let rootComponents = root.pathComponents.count
         var trashed: [TrashedItem] = []
         for case let url as URL in files where url.pathExtension.lowercased() == "md" {
-            guard let values = try? url.resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
-            let path = url.standardizedFileURL.pathComponents.dropFirst(rootComponents).joined(separator: "/")
-            guard let item = try? load(path) else { continue }
+            let path = url.standardizedFileURL.pathComponents.dropFirst(rootComponents)
+            guard !path.dropFirst().contains(where: { $0.hasPrefix(".") }) else { continue }
+            guard let values = try? url.resourceValues(forKeys: keys), values.isRegularFile == true,
+                  let item = try? load(path.joined(separator: "/")) else { continue }
             trashed.append(TrashedItem(item: item, deleted: values.addedToDirectoryDate))
         }
         return trashed.sorted { a, b in
