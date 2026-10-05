@@ -74,7 +74,7 @@ TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtur
 
 ## Themes
 
-A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark scheme when the appearance is Dark, or System while macOS is dark (`systemIsDark`, read from the global `AppleInterfaceStyle` default and updated on `AppleInterfaceThemeChangedNotification`), otherwise its light scheme. With a scheme per appearance on, `lightScheme` and `darkScheme` replace the set's pair. `NSApp.appearance` follows the shown scheme, so a dark scheme in light mode (Dracula) still gets dark menus. All five settings persist in `UserDefaults`.
+A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark scheme when the appearance is Dark, or System while macOS is dark (`systemIsDark`, from `NSApp.effectiveAppearance`, observed with KVO), otherwise its light scheme. With a scheme per appearance on, `lightScheme` and `darkScheme` replace the set's pair. Each window's appearance follows the shown scheme (`preferredColorScheme`), so a dark scheme in light mode (Dracula) still gets dark controls, context menus, alerts and popup menus; menus in the menu bar follow macOS. All five settings persist in `UserDefaults`.
 
 ## Window
 

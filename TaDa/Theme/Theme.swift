@@ -40,9 +40,9 @@ enum Appearance: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    /// The Mac's own appearance, read from the global defaults so the app's override doesn't hide it.
+    /// The Mac's own appearance: themes set each window's appearance, never the app's.
     static var systemIsDark: Bool {
-        UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark"
+        NSApplication.shared.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
     }
 }
 

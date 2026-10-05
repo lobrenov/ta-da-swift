@@ -1,5 +1,5 @@
 // Applies the model's theme to a window: the `\.theme` environment value and the matching system
-// appearance, following the Mac's appearance as it changes.
+// appearance for the window, following the Mac's appearance as it changes.
 import AppKit
 import Combine
 import SwiftUI
@@ -16,12 +16,9 @@ private struct Themed: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(\.theme, model.theme)
-            .onChange(of: model.theme.isDark, initial: true) {
-                // Light schemes use the light system appearance so menus, pickers and scroll bars match.
-                NSApp.appearance = NSAppearance(named: model.theme.isDark ? .darkAqua : .aqua)
-            }
-            .onReceive(DistributedNotificationCenter.default().publisher(for: .init("AppleInterfaceThemeChangedNotification"))
-                .receive(on: RunLoop.main)) { _ in
+            // Light schemes use the light system appearance so pickers, context menus and scroll bars match.
+            .preferredColorScheme(model.theme.isDark ? .dark : .light)
+            .onReceive(NSApp.publisher(for: \.effectiveAppearance)) { _ in
                 model.systemIsDark = Appearance.systemIsDark
             }
     }

@@ -101,6 +101,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         if panel.parent !== parent {
             panel.parent?.removeChildWindow(panel)
             parent.addChildWindow(panel, ordered: .above)
+            panel.appearanceSource = parent
         }
         panel.orderFront(nil)
         panel.invalidateShadow()

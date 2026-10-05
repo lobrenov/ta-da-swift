@@ -1,4 +1,6 @@
+import AppKit
 import Foundation
+import SwiftUI
 import Testing
 import TaDaCore
 @testable import TaDa
@@ -160,6 +162,28 @@ struct AppModelTests {
         #expect(model.theme.name == "Gruvbox Dark")
         model.appearance = .light
         #expect(model.theme.name == "Gruvbox Light", "a fixed appearance ignores the Mac's")
+    }
+
+    @Test func aWindowTakesItsSchemesAppearanceAndTheModelFollowsTheMacs() async throws {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        let macIsDark = Appearance.systemIsDark
+        model.appearance = macIsDark ? .light : .dark
+        let window = NSWindow(contentRect: NSRect(x: -5000, y: -5000, width: 900, height: 600),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        window.contentView = NSHostingView(rootView: ContentView(model: model))
+        window.orderFrontRegardless()
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(window.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == (macIsDark ? .aqua : .darkAqua))
+        #expect(NSApp.appearance == nil && model.systemIsDark == macIsDark)
+
+        // As if the Mac switched.
+        NSApp.appearance = NSAppearance(named: macIsDark ? .aqua : .darkAqua)
+        defer { NSApp.appearance = nil }
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(model.systemIsDark == !macIsDark)
     }
 
     @Test func aSchemePerAppearanceStartsFromTheSetAndEndsWhenASetIsChosen() {
