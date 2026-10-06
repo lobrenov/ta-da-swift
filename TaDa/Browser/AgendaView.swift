@@ -19,7 +19,7 @@ struct AgendaView: View {
 
     var body: some View {
         let today = model.today
-        let entries = model.index.upcoming(after: today)
+        let entries = model.upcoming
         let lastDay = today.adding(days: Self.days)
         let later = Dictionary(grouping: entries.filter { $0.date > lastDay }) { $0.date.startOfMonth }
         // A task can have two entries (due and deadline); the arrow keys stop at its first.

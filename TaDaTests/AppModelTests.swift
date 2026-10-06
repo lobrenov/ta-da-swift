@@ -52,6 +52,27 @@ struct AppModelTests {
         #expect(model.folderDisplayName == folder.lastPathComponent)
     }
 
+    @Test func theListsFollowTheDateTypingAndOutsideChanges() async throws {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        model.today = LocalDate("2026-10-01")!
+        await model.choose(folder)
+        #expect(model.todayTasks.map(\.title) == ["Loose"] && model.upcoming.map(\.item.title) == ["Due today"])
+
+        model.today = LocalDate("2026-10-02")!
+        #expect(model.todayTasks.map(\.title) == ["Loose", "Done", "Due today"] && model.upcoming.isEmpty)
+
+        model.selection = "tasks/Loose.md"
+        await model.loading?.value
+        let document = try #require(model.document)
+        document.text = document.text.replacingOccurrences(of: "status: Not Started", with: "status: Not Started\nproject: \"[[Ta Da MVP]]\"")
+        #expect(model.looseTasks.isEmpty && model.projects.map(\.total) == [3])
+
+        try Data("---\ntype: task\nstatus: Doing\n---\n".utf8).write(to: folder.appending(path: "tasks/New.md"))
+        await model.refresh()
+        #expect(model.looseTasks.map(\.title) == ["New"])
+    }
+
     @Test func theFolderAndThemeSurviveARelaunch() async {
         defer { cleanUp() }
         let first = AppModel(defaults: defaults)

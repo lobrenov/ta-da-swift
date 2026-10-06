@@ -11,7 +11,7 @@ struct TaskListView: View {
     @State private var context: String?
 
     var body: some View {
-        let all = kind == .today ? model.index.today(model.today) : model.index.loose()
+        let all = kind == .today ? model.todayTasks : model.looseTasks
         let contexts = Set(all.flatMap(\.properties.contexts)).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
         let shown = all.filter { task in context.map { task.properties.contexts.contains($0) } ?? true }
         let groups = model.index.grouped(shown)

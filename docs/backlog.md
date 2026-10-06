@@ -6,9 +6,7 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
 
-9. **Every change rebuilds the whole index, and views re-run their queries** *(performance)*: `update` and `remove` re-sort all paths and re-resolve every task's project (`VaultIndex.swift:68`). This runs on each keystroke that changes the item (`AppModel.swift:384`) and once per changed file in `refresh`. Each change also makes view bodies re-run `today()`, `loose()`, `activeProjects()` and `backlinks()`, and rebuild a set of every title (`LiveDocumentView.swift:49`). Fix: update the title and membership maps incrementally, batch the updates in `refresh`, and cache derived lists in the model.
-
-10. **The editor re-implements wikilink resolution and disagrees with the core** *(duplication, drift)*: `TitleResolver.title(of:)` (`LiveEditor.swift:123`) strips `#heading` and folders but not `.md`, unlike `WikiLink.title`. So `[[Note.md]]` is drawn as unresolved, yet clicking it (`LiveDocumentView.swift:58`) opens the note. Resolve links with `WikiLink(inner:)` against the index's existing title map, made public.
+10. **The editor re-implements wikilink resolution and disagrees with the core** *(duplication, drift)*: `TitleResolver.title(of:)` (`LiveEditor.swift:123`) strips `#heading` and folders but not `.md`, unlike `WikiLink.title`. So `[[Note.md]]` is drawn as unresolved, yet clicking it (`LiveDocumentView.swift:58`) opens the note. Resolve links with `WikiLink(inner:)` against the index's `titles`.
 
 11. **`SourceHighlighter` duplicates core parsing in the app target** *(duplication, layering)*: it re-implements frontmatter and code fences, YAML keys, dates and wikilinks (`SourceHighlighter.swift:40-65`), and the copies differ from the core:
     - a `---` with no closing fence colours the whole file as YAML, while `FrontmatterSplitter` treats it as body;

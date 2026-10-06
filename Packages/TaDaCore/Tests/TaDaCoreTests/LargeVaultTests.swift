@@ -61,6 +61,9 @@ struct LargeVaultTests {
             let edited = try #require(Item(parsing: try vault.read(task.path) + "\nMore.\n", path: task.path))
             let (_, updateTime) = await time("index update (one keystroke)") { patched.update(edited) }
             #expect(updateTime < 0.1)
+            let all = Array(index.items.values)
+            let (_, batchTime) = await time("index update (every file changed)") { for item in all { patched.update(item) } }
+            #expect(batchTime < 0.5)
         }
     }
 

@@ -46,3 +46,44 @@ private let missing = makeItem("tasks/Missing.md", "type: task\nstatus: Doing\np
     index.remove(project.path)
     #expect(index[project.path] == nil && index.items.count == 1)
 }
+
+@Test func patchingKeepsLookupsInStepWithTheItems() {
+    let earlier = makeItem("archive/Ta Da MVP.md", "type: project\nstatus: Done")
+    let nowhere = makeItem("projects/Nowhere.md", "type: project\nstatus: Doing")
+    var index = VaultIndex([member, missing])
+    expectInStep(index)
+    index.update(project)
+    expectInStep(index)
+    #expect(index.tasks(in: project).map(\.title) == ["Member"] && index.backlinks(to: project).map(\.title) == ["Member"])
+    index.update(earlier)
+    expectInStep(index)
+    #expect(index.tasks(in: earlier).map(\.title) == ["Member"] && index.tasks(in: project).isEmpty, "the first path takes over")
+    index.update(makeItem(member.path, "type: task\nstatus: Doing\nproject: \"[[Nowhere]]\""))
+    index.update(nowhere)
+    expectInStep(index)
+    #expect(index.tasks(in: nowhere).map(\.title) == ["Member", "Missing"] && index.backlinks(to: project).isEmpty)
+    index.update(makeItem(nowhere.path, "type: task\nstatus: Doing"))
+    expectInStep(index)
+    #expect(index.tasks(in: nowhere).isEmpty && index.project(of: missing) == nil, "a project turned into a task")
+    index.remove(earlier.path)
+    index.remove(member.path)
+    expectInStep(index)
+    #expect(index.titles == ["ta da mvp", "missing", "nowhere"])
+    for path in Array(index.items.keys) { index.remove(path) }
+    #expect(index.titles.isEmpty)
+}
+
+/// Checks the lookups against answers worked out from every item, as a full rebuild would.
+private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = #_sourceLocation) {
+    let all = Array(index.items.values)
+    #expect(index.titles == Set(all.map { $0.title.lowercased() }), sourceLocation: sourceLocation)
+    for item in all {
+        let title = item.title.lowercased()
+        #expect(index.items(titled: title).map(\.path) == all.filter { $0.title.lowercased() == title }.map(\.path).sorted(),
+                sourceLocation: sourceLocation)
+        #expect(index.tasks(in: item) == index.tasks.filter { index.project(of: $0)?.path == item.path }.sorted(by: VaultIndex.byTitle),
+                sourceLocation: sourceLocation)
+        #expect(index.backlinks(to: item) == all.filter { $0.path != item.path && $0.links.contains { $0.title.lowercased() == title } }
+                    .sorted(by: VaultIndex.byTitle), sourceLocation: sourceLocation)
+    }
+}

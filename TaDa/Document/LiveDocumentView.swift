@@ -46,7 +46,7 @@ struct BodyEditor: View {
             text: Binding { document.body } set: { document.body = $0 },
             theme: theme,
             documentID: document.path,
-            linkTargets: Set(model.index.items.values.map { $0.title.lowercased() }),
+            linkTargets: model.index.titles,
             fitsContent: true,
             onLinkClick: openLink
         )

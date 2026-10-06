@@ -15,7 +15,7 @@ struct MonthCalendarView: View {
         let due = Set(open.compactMap(\.properties.dueDate))
         let deadlines = Set(open.compactMap(\.properties.deadline))
         let lastAgendaDay = today.adding(days: AgendaView.days)
-        let later = model.index.upcoming(after: lastAgendaDay).filter { $0.date.startOfMonth == month }
+        let later = model.upcoming.filter { $0.date > lastAgendaDay && $0.date.startOfMonth == month }
 
         VStack(alignment: .leading, spacing: 22) {
             VStack(alignment: .leading, spacing: 10) {

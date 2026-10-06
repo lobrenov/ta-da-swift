@@ -87,7 +87,9 @@ import TaDaCore
     /// Whether the folder is in iCloud Drive, or in an app's iCloud folder such as Obsidian's.
     private(set) var isInICloud = false
     /// Refreshed when the day changes, so every query uses the same `today`.
-    var today = LocalDate(Date())
+    var today = LocalDate(Date()) {
+        didSet { if today != oldValue { updateLists() } }
+    }
 
     var themeSet: ThemeSet {
         didSet { defaults.set(themeSet.name, forKey: Keys.themeSet) }
@@ -212,7 +214,8 @@ import TaDaCore
         state = .loading
         // Dates first: anything that changes while the index loads shows up as changed on the next refresh.
         fileDates = await Self.modificationDates(in: vault)
-        index = await vault.loadIndex()
+        let loaded = await vault.loadIndex()
+        updateIndex { $0 = loaded }
         trash = await Self.trashedItems(in: vault)
         isInICloud = (try? await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }) ?? false
         state = .ready
@@ -257,17 +260,20 @@ import TaDaCore
     }
 
     private func apply(_ changes: VaultChanges, from vault: Vault) async {
+        guard !changes.isEmpty else { return }
         let open = document
-        for path in changes.removed where path != open?.path { index.remove(path) }
-        for (path, item) in changes.changed where path != open?.path {
-            if let item { index.update(item) } else { index.remove(path) }
+        updateIndex { index in
+            for path in changes.removed where path != open?.path { index.remove(path) }
+            for (path, item) in changes.changed where path != open?.path {
+                if let item { index.update(item) } else { index.remove(path) }
+            }
         }
         guard let open else { return }
         if changes.removed.contains(open.path) {
             if open.isDirty {
                 open.isRemovedOnDisk = true
             } else {
-                index.remove(open.path)
+                updateIndex { $0.remove(open.path) }
                 if selection == open.path { selection = nil }
             }
         } else if changes.changed.keys.contains(open.path) {
@@ -312,7 +318,7 @@ import TaDaCore
             document.modified = try await Self.write(document.text, to: document.path, in: vault)
             document.savedText = document.text
             document.isRemovedOnDisk = false
-            if let item = document.item { index.update(item) }
+            if let item = document.item { updateIndex { $0.update(item) } }
             present(document)
         } catch {
             errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: document.path))”. (\(error.localizedDescription))"
@@ -322,7 +328,7 @@ import TaDaCore
     /// Lets a file that was deleted outside Ta Da go, with its unsaved edits.
     func discardRemoved(_ document: OpenDocument) {
         document.savedText = document.text
-        index.remove(document.path)
+        updateIndex { $0.remove(document.path) }
         if selection == document.path { selection = nil }
     }
 
@@ -493,9 +499,9 @@ import TaDaCore
 
     private func documentChanged(_ document: OpenDocument) {
         if let item = document.item {
-            if index[item.path] != item { index.update(item) }
-        } else {
-            index.remove(document.path)
+            if index[item.path] != item { updateIndex { $0.update(item) } }
+        } else if index[document.path] != nil {
+            updateIndex { $0.remove(document.path) }
         }
         pendingSave?.cancel()
         pendingSave = Task { [weak self, saveDelay] in
@@ -574,7 +580,7 @@ import TaDaCore
         let title = document.isRemovedOnDisk ? Item.title(ofPath: path) : "\(Item.title(ofPath: path)) (unsaved edits)"
         do {
             let copy = try await Self.create(text, in: Vault.folder(of: path), title: title, vault: vault)
-            if let item = Item(parsing: text, path: copy) { index.update(item) }
+            if let item = Item(parsing: text, path: copy) { updateIndex { $0.update(item) } }
             document.savedText = text
             errorMessage = "“\(Item.title(ofPath: path))” changed outside Ta Da while you were editing it, so your edits were saved as “\(Item.title(ofPath: copy))”."
         } catch {
@@ -636,7 +642,7 @@ import TaDaCore
         guard let vault else { return }
         do {
             let item = try await Self.update(path, in: vault, transform)
-            if let item { index.update(item) } else { index.remove(path) }
+            updateIndex { if let item { $0.update(item) } else { $0.remove(path) } }
         } catch {
             errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
         }
@@ -691,8 +697,10 @@ import TaDaCore
 
     /// Points the index, the open document and the selection at a renamed file. `items` are the files as they now are.
     private func follow(_ path: String, to newPath: String, items: [Item]) {
-        index.remove(path)
-        for item in items { index.update(item) }
+        updateIndex { index in
+            index.remove(path)
+            for item in items { index.update(item) }
+        }
         if let document, document.path == path { document.path = newPath }
         if domain == .project(path) { domain = .project(newPath) }
         if selection == path || selection == nil && domain == .project(newPath) { selection = newPath }
@@ -720,7 +728,7 @@ import TaDaCore
                 for item in items where !moved.contains(item.path) { moved += try vault.moveToTrash(item.path, index: index) }
                 return moved
             }
-            for path in moved { self.index.remove(path) }
+            updateIndex { for path in moved { $0.remove(path) } }
             multiSelection.subtract(moved)
             if case let .project(path) = domain, moved.contains(path) {
                 domain = .today
@@ -820,7 +828,7 @@ import TaDaCore
         guard let vault else { return nil }
         do {
             let path = try await Self.create(text, in: folder, title: "Untitled", vault: vault)
-            if let item = Item(parsing: text, path: path) { index.update(item) }
+            if let item = Item(parsing: text, path: path) { updateIndex { $0.update(item) } }
             titleFocus = path
             return path
         } catch {
@@ -839,11 +847,31 @@ import TaDaCore
         try vault.update(path, transform)
     }
 
-    // MARK: Queries for the sidebar
+    // MARK: Lists
 
-    var todayCount: Int { index.today(today).count { $0.properties.status != .done } }
-    var looseCount: Int { index.loose().count }
-    var projects: [ProjectProgress] { index.activeProjects() }
+    /// The lists the sidebar and browser show, worked out once per change to the index or the date.
+    private(set) var todayTasks: [Item] = []
+    private(set) var looseTasks: [Item] = []
+    private(set) var upcoming: [AgendaEntry] = []
+    /// Active projects with their progress.
+    private(set) var projects: [ProjectProgress] = []
+
+    var todayCount: Int { todayTasks.count { $0.properties.status != .done } }
+    var looseCount: Int { looseTasks.count }
+
+    /// Changes the index, then the lists. Several changes in one call update the lists once.
+    private func updateIndex(_ change: (inout VaultIndex) -> Void) {
+        change(&index)
+        updateLists()
+    }
+
+    /// Assigning a list equal to the old one doesn't notify the views that show it.
+    private func updateLists() {
+        todayTasks = index.today(today)
+        looseTasks = index.loose()
+        upcoming = index.upcoming(after: today)
+        projects = index.activeProjects()
+    }
 
     var folderDisplayName: String { vault.map { Self.displayName(for: $0.root) } ?? "" }
 
