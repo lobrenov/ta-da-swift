@@ -6,8 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
-17. **Each view rebuilds its own rows and list layout** *(duplication)*: `TaskRow`, `ColumnAgendaRow` (nearly identical to it), `WideAgendaRow` and the search view's `projectRow` each assemble the checkbox, plain button, selection background and `.isSelected` trait (`TaskRow.swift:27-45`, `AgendaView.swift:147-216`, `SearchResultsView.swift:43-69`). The list views also repeat the same header and list padding and the `arrowKeySelection` call. A shared `SelectableRow(meta:)` and `BrowserColumn(header:content:)` would cover both.
-
 18. **Existing shared styles are re-implemented instead of reused** *(duplication)*:
     - `SettingsSectionLabel` is copied inline in `SidebarView.swift:24-32` and `FileInspector.swift:88-98`.
     - `Hairline` is redrawn as `Rectangle().fill(border)` four times, twice in its own file (`BrowserChrome.swift:57`).

@@ -19,19 +19,61 @@ struct TaskRow: View {
     var showsContexts = true
     let onToggle: () -> Void
     let onSelect: () -> Void
-    @Environment(\.theme) private var theme
 
     private var p: Properties { item.properties }
     private var isDone: Bool { p.status == .done }
 
     var body: some View {
+        SelectableRow(item: item, selected: selected, onToggle: onToggle, onSelect: onSelect) { chips }
+    }
+
+    @ViewBuilder private var chips: some View {
+        let subtasks = item.subtasks
+        if p.status == .doing || p.status == .blocked {
+            StatusLabel(status: p.status)
+        }
+        if subtasks.total > 0 {
+            Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                 spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
+        }
+        if let rule = p.repeatRule {
+            Chip(systemImage: "repeat", text: rule, spoken: "Repeats \(rule)")
+        }
+        if !isDone {
+            if let due = p.dueDate, dates != .overdueDueAndDeadline || due < today {
+                DateChip(kind: .due, date: due, today: today, labelled: dates != .iconsOnly)
+            }
+            if let deadline = p.deadline {
+                DateChip(kind: .deadline, date: deadline, today: today, labelled: dates != .iconsOnly)
+            }
+        }
+        if showsContexts, !p.contexts.isEmpty {
+            Text(p.contexts.joined(separator: " "))
+        }
+    }
+}
+
+/// A task's row in a browser list: its status checkbox, then a button holding its title over a line of `meta`, which
+/// opens it. A selected row fills with `surface`.
+struct SelectableRow<Meta: View>: View {
+    let item: Item
+    let selected: Bool
+    let onToggle: () -> Void
+    let onSelect: () -> Void
+    @ViewBuilder var meta: Meta
+    @Environment(\.theme) private var theme
+
+    var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            StatusCheckbox(status: p.status, title: item.title, action: onToggle)
+            StatusCheckbox(status: item.properties.status, title: item.title, action: onToggle)
                 .padding(.top, 2)
             Button(action: onSelect) {
                 VStack(alignment: .leading, spacing: 3) {
                     TaskTitle(item: item, selected: selected)
-                    chips
+                    HStack(spacing: 12) { meta }
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(theme.color(\.muted))
+                        .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(.rect)
@@ -42,36 +84,6 @@ struct TaskRow: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background(selected ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
-    }
-
-    @ViewBuilder private var chips: some View {
-        let subtasks = item.subtasks
-        HStack(spacing: 12) {
-            if p.status == .doing || p.status == .blocked {
-                StatusLabel(status: p.status)
-            }
-            if subtasks.total > 0 {
-                Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
-                     spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
-            }
-            if let rule = p.repeatRule {
-                Chip(systemImage: "repeat", text: rule, spoken: "Repeats \(rule)")
-            }
-            if !isDone {
-                if let due = p.dueDate, dates != .overdueDueAndDeadline || due < today {
-                    DateChip(kind: .due, date: due, today: today, labelled: dates != .iconsOnly)
-                }
-                if let deadline = p.deadline {
-                    DateChip(kind: .deadline, date: deadline, today: today, labelled: dates != .iconsOnly)
-                }
-            }
-            if showsContexts, !p.contexts.isEmpty {
-                Text(p.contexts.joined(separator: " "))
-            }
-        }
-        .font(.system(size: 11.5))
-        .foregroundStyle(theme.color(\.muted))
-        .lineLimit(1)
     }
 }
 

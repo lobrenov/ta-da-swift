@@ -46,7 +46,7 @@ struct WorkspaceView: View {
         case .upcoming:
             if model.selection == nil, model.multiSelection.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
-                    upcomingHeader(showsLegend: true).padding(.horizontal, 40)
+                    upcomingHeader.padding(.horizontal, 40)
                     HStack(alignment: .top, spacing: 40) {
                         AgendaView(model: model, style: .wide)
                         ScrollView { MonthCalendarView(model: model) }.scrollIndicators(.never).frame(width: 300)
@@ -54,12 +54,7 @@ struct WorkspaceView: View {
                     .padding(.horizontal, 40)
                 }
             } else {
-                split {
-                    VStack(alignment: .leading, spacing: 0) {
-                        upcomingHeader(showsLegend: false).padding(.horizontal, 28)
-                        AgendaView(model: model, style: .column)
-                    }
-                }
+                split { AgendaView(model: model, style: .column) }
             }
         case let .project(path):
             if let project = model.index[path] {
@@ -75,20 +70,13 @@ struct WorkspaceView: View {
         }
     }
 
-    private func upcomingHeader(showsLegend: Bool) -> some View {
+    /// Upcoming's header over the agenda and month calendar, with the dates' legend.
+    private var upcomingHeader: some View {
         DomainHeader(.upcoming) {
-            if showsLegend {
-                HStack(spacing: 16) {
-                    ForEach([AgendaEntry.Kind.due, .deadline], id: \.self) { kind in
-                        Chip(systemImage: kind.systemImage, tint: kind.tint, text: kind.key)
-                    }
+            HStack(spacing: 16) {
+                ForEach([AgendaEntry.Kind.due, .deadline], id: \.self) { kind in
+                    Chip(systemImage: kind.systemImage, tint: kind.tint, text: kind.key)
                 }
-            } else {
-                Button("Month view") {
-                    model.selection = nil
-                    model.clearMultiSelection()
-                }
-                .buttonStyle(.plain)
             }
         }
         .padding(.top, 12)

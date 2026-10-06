@@ -12,25 +12,18 @@ struct ProjectBrowserView: View {
         let open = tasks.filter { $0.properties.status != .done }
         let done = tasks.filter { $0.properties.status == .done }
 
-        VStack(alignment: .leading, spacing: 0) {
+        BrowserColumn(model: model, paths: (open + done).map(\.path), spacing: 18) {
             header(model.index.progress(of: project))
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 18) {
-                    group("Open", open)
-                    if !done.isEmpty { group("Completed", done) }
-                    if tasks.isEmpty {
-                        Text("No tasks link to this project yet.")
-                            .foregroundStyle(theme.color(\.muted))
-                            .padding(.horizontal, 10)
-                    }
-                    NewLinkedTaskButton(model: model).padding(.leading, 6)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                .padding(.bottom, 24)
+        } content: {
+            group("Open", open)
+            if !done.isEmpty { group("Completed", done) }
+            if tasks.isEmpty {
+                Text("No tasks link to this project yet.")
+                    .foregroundStyle(theme.color(\.muted))
+                    .padding(.horizontal, 10)
             }
+            NewLinkedTaskButton(model: model).padding(.leading, 6)
         }
-        .arrowKeySelection(model, paths: (open + done).map(\.path), allowsMultipleSelection: true)
     }
 
     private func header(_ progress: ProjectProgress) -> some View {
@@ -52,9 +45,6 @@ struct ProjectBrowserView: View {
                 Text(summary).font(.system(size: 13)).foregroundStyle(theme.color(\.fg)).lineLimit(4)
             }
         }
-        .padding(.horizontal, 28)
-        .padding(.top, 12)
-        .padding(.bottom, 14)
     }
 
     @ViewBuilder private func group(_ title: String, _ tasks: [Item]) -> some View {

@@ -1,6 +1,38 @@
-// Pieces shared by the browser lists: the domain header, group headers, context filter and empty states.
+// Pieces shared by the browser lists: the column layout, domain header, group headers, context filter and empty states.
 import SwiftUI
 import TaDaCore
+
+/// A browser list beside the document pane: its header, then its content scrolling below. `paths` are the files of its
+/// rows from top to bottom, for the arrow keys; `empty`, when set, takes the content's place.
+struct BrowserColumn<Header: View, Content: View>: View {
+    let model: AppModel
+    let paths: [String]
+    /// Between the content's groups, days or rows.
+    let spacing: CGFloat
+    var empty: EmptyState? = nil
+    @ViewBuilder var header: Header
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header
+                .padding(.horizontal, 28)
+                .padding(.top, 12)
+                .padding(.bottom, 14)
+            if let empty {
+                empty
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: spacing) { content }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                        .padding(.bottom, 24)
+                }
+            }
+        }
+        .arrowKeySelection(model, paths: paths, allowsMultipleSelection: true)
+    }
+}
 
 /// A domain's title row: an icon (or a project's progress ring), a large title and optional trailing content.
 struct DomainHeader<Trailing: View>: View {

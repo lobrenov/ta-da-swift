@@ -16,15 +16,11 @@ struct TaskListView: View {
         let shown = all.filter { task in context.map { task.properties.contexts.contains($0) } ?? true }
         let groups = model.index.grouped(shown)
 
-        VStack(alignment: .leading, spacing: 0) {
+        BrowserColumn(model: model, paths: groups.flatMap(\.tasks).map(\.path), spacing: 22, empty: shown.isEmpty ? empty : nil) {
             header(contexts: contexts)
-            if shown.isEmpty {
-                empty
-            } else {
-                list(groups)
-            }
+        } content: {
+            list(groups)
         }
-        .arrowKeySelection(model, paths: groups.flatMap(\.tasks).map(\.path), allowsMultipleSelection: true)
         .onChange(of: contexts) { if let context, !contexts.contains(context) { self.context = nil } }
     }
 
@@ -42,12 +38,9 @@ struct TaskListView: View {
                 ContextFilter(contexts: contexts, selection: $context)
             }
         }
-        .padding(.horizontal, 28)
-        .padding(.top, 12)
-        .padding(.bottom, 14)
     }
 
-    @ViewBuilder private var empty: some View {
+    private var empty: EmptyState {
         switch kind {
         case .today:
             EmptyState(systemImage: "star", title: "Nothing due today",
@@ -59,26 +52,19 @@ struct TaskListView: View {
     }
 
     private func list(_ groups: [TaskGroup]) -> some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 22) {
-                ForEach(groups) { group in
-                    VStack(alignment: .leading, spacing: 1) {
-                        if let project = group.project {
-                            ProjectGroupHeader(project: project, fraction: model.index.progress(of: project).fraction)
-                        }
-                        ForEach(group.tasks) { task in
-                            TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,
-                                    dates: kind == .today ? .overdueDueAndDeadline : .labelled,
-                                    onToggle: { Task { await model.toggleCompletion(task) } },
-                                    onSelect: { model.click(task.path) })
-                            .fileMenu(model, path: task.path)
-                        }
-                    }
+        ForEach(groups) { group in
+            VStack(alignment: .leading, spacing: 1) {
+                if let project = group.project {
+                    ProjectGroupHeader(project: project, fraction: model.index.progress(of: project).fraction)
+                }
+                ForEach(group.tasks) { task in
+                    TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,
+                            dates: kind == .today ? .overdueDueAndDeadline : .labelled,
+                            onToggle: { Task { await model.toggleCompletion(task) } },
+                            onSelect: { model.click(task.path) })
+                    .fileMenu(model, path: task.path)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 4)
-            .padding(.bottom, 24)
         }
     }
 }

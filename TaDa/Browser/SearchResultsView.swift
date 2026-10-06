@@ -8,39 +8,31 @@ struct SearchResultsView: View {
 
     var body: some View {
         let results = model.index.search(model.searchText)
-        VStack(alignment: .leading, spacing: 0) {
+        // Tasks only: picking a project leaves the search for its page.
+        BrowserColumn(model: model, paths: results.filter { $0.properties.kind == .task }.map(\.path), spacing: 1,
+                      empty: results.isEmpty ? noMatches : nil) {
             DomainHeader(title: "Search", systemImage: "magnifyingglass", tint: \.muted) {
                 Text("\(results.count) match\(results.count == 1 ? "" : "es")")
             }
-            .padding(.horizontal, 28)
-            .padding(.top, 12)
-            .padding(.bottom, 14)
-            if results.isEmpty {
-                EmptyState(systemImage: "magnifyingglass", title: "No matches",
-                           message: "No task or project has every word of “\(model.searchText)” in its title, summary, area or contexts.")
-            } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 1) {
-                        ForEach(results) { item in
-                            Group {
-                                if item.properties.kind == .project {
-                                    projectRow(item)
-                                } else {
-                                    TaskRow(item: item, selected: model.isSelected(item.path), today: model.today,
-                                            onToggle: { Task { await model.toggleCompletion(item) } },
-                                            onSelect: { model.click(item.path) })
-                                }
-                            }
-                            .fileMenu(model, path: item.path)
-                        }
+        } content: {
+            ForEach(results) { item in
+                Group {
+                    if item.properties.kind == .project {
+                        projectRow(item)
+                    } else {
+                        TaskRow(item: item, selected: model.isSelected(item.path), today: model.today,
+                                onToggle: { Task { await model.toggleCompletion(item) } },
+                                onSelect: { model.click(item.path) })
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
                 }
+                .fileMenu(model, path: item.path)
             }
         }
-        // Tasks only: picking a project leaves the search for its page.
-        .arrowKeySelection(model, paths: results.filter { $0.properties.kind == .task }.map(\.path), allowsMultipleSelection: true)
+    }
+
+    private var noMatches: EmptyState {
+        EmptyState(systemImage: "magnifyingglass", title: "No matches",
+                   message: "No task or project has every word of “\(model.searchText)” in its title, summary, area or contexts.")
     }
 
     private func projectRow(_ project: Item) -> some View {
