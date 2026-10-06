@@ -13,7 +13,8 @@ struct ThemeSettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
                     label("Appearance")
-                    AppearancePicker(selection: $model.appearance)
+                    SegmentedControl(label: "Appearance", options: Appearance.allCases.map { ($0, $0.rawValue) },
+                                     selection: $model.appearance, height: 26, unselectedWeight: .medium)
                     Text(model.appearance == .system
                          ? "Following macOS · currently \(model.systemIsDark ? "Dark" : "Light")"
                          : "Ignores the macOS setting")
@@ -55,7 +56,7 @@ struct ThemeSettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                SettingsSectionLabel(title: "Bundled theme sets")
+                SectionLabel(title: "Bundled theme sets")
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 8), spacing: 8) {
                     ForEach(ThemeSet.all) { set in
                         ThemeSetButton(set: set, selected: !model.usesSchemePerAppearance && set == model.themeSet) {
@@ -71,36 +72,6 @@ struct ThemeSettingsView: View {
         Text(title)
             .foregroundStyle(theme.color(\.muted))
             .frame(width: 92, alignment: .leading)
-    }
-}
-
-/// System, Light, Dark as a segmented control.
-private struct AppearancePicker: View {
-    @Binding var selection: Appearance
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(Appearance.allCases) { appearance in
-                let selected = appearance == selection
-                Button { selection = appearance } label: {
-                    Text(appearance.rawValue)
-                        .font(.system(size: 12, weight: selected ? .semibold : .medium))
-                        .foregroundStyle(theme.color(selected ? \.strong : \.fg))
-                        .padding(.horizontal, 12)
-                        .frame(height: 26)
-                        .background(selected ? theme.color(\.bg) : .clear, in: .rect(cornerRadius: 5))
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
-        }
-        .padding(2)
-        .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
-        .fixedSize()
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Appearance")
     }
 }
 

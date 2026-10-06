@@ -89,8 +89,8 @@ struct SettingsPage<Content: View>: View {
     }
 }
 
-/// The uppercase label over a group: FOLDERS IN THE VAULT, BUNDLED THEME SETS.
-struct SettingsSectionLabel: View {
+/// The uppercase label over a group: PROJECTS in the sidebar, the file inspector's sections, FOLDERS IN THE VAULT.
+struct SectionLabel: View {
     let title: String
     @Environment(\.theme) private var theme
 
@@ -108,8 +108,6 @@ struct SettingsSectionLabel: View {
 struct SettingsButton: View {
     let title: String
     let action: () -> Void
-    @Environment(\.theme) private var theme
-    @Environment(\.isEnabled) private var isEnabled
 
     init(_ title: String, action: @escaping () -> Void) {
         self.title = title
@@ -117,17 +115,8 @@ struct SettingsButton: View {
     }
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12))
-                .foregroundStyle(theme.color(isEnabled ? \.fg : \.muted))
-                .padding(.horizontal, 12)
-                .frame(height: 28)
-                .background(theme.color(\.code), in: .rect(cornerRadius: 7))
-                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)))
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
+        Button(title, action: action)
+            .buttonStyle(ActionButtonStyle(height: 28, fill: \.code))
     }
 }
 

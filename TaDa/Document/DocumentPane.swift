@@ -68,45 +68,13 @@ private struct DocumentBar: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel(document.path)
             Spacer(minLength: 12)
-            ModeToggle(isSource: Binding { model.isSourceMode } set: { model.isSourceMode = $0 })
+            SegmentedControl(label: "Editor mode", options: [(false, "Live"), (true, "Source")],
+                             selection: Binding { model.isSourceMode } set: { model.isSourceMode = $0 }, shortcut: "⌘E")
         }
         .font(.system(size: 11.5, design: .monospaced))
         .foregroundStyle(theme.color(\.muted))
         .lineLimit(1)
         .padding(.horizontal, 20)
         .frame(height: 46)
-    }
-}
-
-/// Live | Source, as a two-segment pill.
-private struct ModeToggle: View {
-    @Binding var isSource: Bool
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        HStack(spacing: 2) {
-            segment("Live", selected: !isSource) { isSource = false }
-            segment("Source", selected: isSource) { isSource = true }
-        }
-        .padding(2)
-        .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
-        .fixedSize()
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Editor mode")
-    }
-
-    private func segment(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: selected ? .semibold : .regular))
-                .foregroundStyle(theme.color(selected ? \.strong : \.fg))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 3)
-                .background(selected ? theme.color(\.bg) : .clear, in: .rect(cornerRadius: 5))
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .help("\(title) (⌘E)")
     }
 }

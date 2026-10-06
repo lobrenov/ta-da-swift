@@ -87,12 +87,7 @@ struct FileInspector: View {
 
     private func section(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .textCase(.uppercase)
-                .font(.system(size: 11, weight: .semibold))
-                .tracking(0.66)
-                .foregroundStyle(theme.color(\.muted))
-                .accessibilityAddTraits(.isHeader)
+            SectionLabel(title: title)
             content()
         }
     }

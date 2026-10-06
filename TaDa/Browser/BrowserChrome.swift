@@ -130,7 +130,7 @@ struct ProjectGroupHeader: View {
                 Text(project.title).fontWeight(.semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
             }
             .padding(.horizontal, 10)
-            Rectangle().fill(theme.color(\.border)).frame(height: 1)
+            Hairline()
         }
         .padding(.bottom, 4)
         .accessibilityElement(children: .combine)
@@ -154,7 +154,7 @@ struct CountGroupHeader: View {
             .font(.system(size: 12))
             .foregroundStyle(theme.color(\.muted))
             .padding(.horizontal, 10)
-            Rectangle().fill(theme.color(\.border)).frame(height: 1)
+            Hairline()
         }
         .padding(.bottom, 4)
         .accessibilityElement(children: .combine)

@@ -54,7 +54,7 @@ struct VaultSettingsView: View {
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
 
             VStack(alignment: .leading, spacing: 8) {
-                SettingsSectionLabel(title: "Folders in the vault")
+                SectionLabel(title: "Folders in the vault")
                 VStack(spacing: 0) {
                     folder("tasks/", "New tasks, one markdown file each")
                     folder("projects/", "New projects, one markdown file each")

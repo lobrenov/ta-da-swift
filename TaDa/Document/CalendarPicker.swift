@@ -175,7 +175,6 @@ private struct CalendarPickerView: View {
                 .padding(.top, CalendarMetrics.footerGap)
         }
         .popupChrome(theme: theme, width: CalendarMetrics.width, padding: CalendarMetrics.padding)
-        .environment(\.theme, theme)
     }
 
     private var header: some View {

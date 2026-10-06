@@ -64,32 +64,19 @@ struct TrashView: View {
         let picked = model.trashSelection.count
         let isEmpty = model.trash.isEmpty
         return HStack(spacing: 10) {
-            Button {
+            Button("Empty Trash") {
                 isConfirmingEmpty = true
                 model.trashNote = nil
-            } label: {
-                Text("Empty Trash")
-                    .font(.system(size: 12.5, weight: .bold))
-                    .foregroundStyle(theme.color(isEmpty ? \.muted : \.bg))
-                    .padding(.horizontal, 16)
-                    .frame(height: 30)
-                    .background(theme.color(isEmpty ? \.surface : \.accent), in: .rect(cornerRadius: 7))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(ActionButtonStyle(kind: .primary))
             .disabled(isEmpty)
             Button {
                 Task { await model.restore(model.trashSelection) }
             } label: {
                 Label(picked == 0 ? "Restore Items" : picked == 1 ? "Restore 1 Item" : "Restore \(picked) Items",
                       systemImage: "arrow.counterclockwise")
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(theme.color(picked == 0 ? \.muted : \.strong))
-                    .padding(.horizontal, 14)
-                    .frame(height: 30)
-                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)))
-                    .contentShape(.rect)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(ActionButtonStyle(kind: .outlinedStrong))
             .disabled(picked == 0)
             .help("Restore (⌘⌫)")
             if !isEmpty {
@@ -109,29 +96,14 @@ struct TrashView: View {
             Text("Move \(count) \(count == 1 ? "file" : "files") to the Mac’s Trash?")
                 .foregroundStyle(theme.color(\.fg))
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Button { isConfirmingEmpty = false } label: {
-                Text("Cancel")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.color(\.fg))
-                    .padding(.horizontal, 12)
-                    .frame(height: 28)
-                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)))
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .keyboardShortcut(.cancelAction)
-            Button {
+            Button("Cancel") { isConfirmingEmpty = false }
+                .buttonStyle(ActionButtonStyle(height: 28))
+                .keyboardShortcut(.cancelAction)
+            Button("Empty Trash") {
                 isConfirmingEmpty = false
                 Task { await model.emptyTrash() }
-            } label: {
-                Text("Empty Trash")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(theme.color(\.bg))
-                    .padding(.horizontal, 12)
-                    .frame(height: 28)
-                    .background(theme.color(\.deadline), in: .rect(cornerRadius: 7))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(ActionButtonStyle(kind: .danger, height: 28))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

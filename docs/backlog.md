@@ -6,13 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
-18. **Existing shared styles are re-implemented instead of reused** *(duplication)*:
-    - `SettingsSectionLabel` is copied inline in `SidebarView.swift:24-32` and `FileInspector.swift:88-98`.
-    - `Hairline` is redrawn as `Rectangle().fill(border)` four times, twice in its own file (`BrowserChrome.swift:57`).
-    - `ModeToggle` (`DocumentPane.swift:79`) and `AppearancePicker` (`ThemeSettingsView.swift:78`) are the same segmented control.
-    - Three bordered-button variants style their labels by hand inside `.buttonStyle(.plain)`. Make them a `ButtonStyle`, as `PropertyChipStyle` already is.
-    - There are 101 `.font(.system(size:))` literals in 12 sizes, against 13 named type tokens. A `Font` extension would stop them drifting; the design doc currently chooses literals on purpose.
-
 19. **AppModel's async plumbing repeats itself** *(duplication, concurrency)*:
     - Nine one-off `@concurrent nonisolated static` wrappers (`AppModel.swift:313`, plus lines 188, 466-481, 545, 587 and 591) sit next to a generic `run` that could replace them.
     - About a dozen "Ta Da couldn’t …" messages are formatted by hand.

@@ -151,18 +151,23 @@ struct NewLinkedTaskButton: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        Button { Task { await model.newTask() } } label: {
-            Label("New linked task", systemImage: "plus")
-                .font(.system(size: 12))
-                .foregroundStyle(theme.color(bordered ? \.fg : \.muted))
-                .padding(.horizontal, bordered ? 12 : 10)
-                .frame(height: bordered ? 28 : 30)
-                .background(bordered ? theme.color(\.bg) : .clear, in: .rect(cornerRadius: 7))
-                .overlay {
-                    if bordered { RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)) }
-                }
-                .contentShape(.rect)
+        if bordered {
+            Button(action: create) { Label("New linked task", systemImage: "plus") }
+                .buttonStyle(ActionButtonStyle(height: 28, fill: \.bg))
+        } else {
+            Button(action: create) {
+                Label("New linked task", systemImage: "plus")
+                    .font(.system(size: 12))
+                    .foregroundStyle(theme.color(\.muted))
+                    .padding(.horizontal, 10)
+                    .frame(height: 30)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+    }
+
+    private func create() {
+        Task { await model.newTask() }
     }
 }

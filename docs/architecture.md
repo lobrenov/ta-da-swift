@@ -52,7 +52,7 @@ TaDa/
 │   ├── SlashMenu.swift
 │   ├── CheckboxMenu.swift
 │   └── AddSubtask.swift
-└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, file and property menus share); FileMenu (right-click on a project or task)
+└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, file and property menus share); FileMenu (right-click on a project or task); Buttons (the text button style and segmented control)
 
 Packages/TaDaCore/Sources/TaDaCore/
 ├── Model/      Item, Status, LocalDate, WikiLink, Checkbox

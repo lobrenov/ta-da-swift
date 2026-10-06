@@ -370,9 +370,7 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
                         .accessibilityAddTraits(.isHeader)
                         .id(LabelID(section: index))
                 } else if index > 0 {
-                    Rectangle()
-                        .fill(theme.color(\.border))
-                        .frame(height: 1)
+                    Hairline()
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
                         .accessibilityHidden(true)
@@ -462,13 +460,14 @@ private struct LabelID: Hashable {
 
 extension View {
     /// A popup's panel as the Menu component draws it: `side` in dark schemes and `bg` in light ones, inside a
-    /// `surface` border.
+    /// `surface` border. Its content gets `theme` as the `\.theme` environment value.
     func popupChrome(theme: Theme, width: CGFloat, padding: CGFloat) -> some View {
         self.padding(padding)
             .frame(width: width)
             .background(theme.color(theme.isDark ? \.side : \.bg), in: .rect(cornerRadius: 10))
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.surface)))
             .environment(\.colorScheme, theme.isDark ? .dark : .light)
+            .environment(\.theme, theme)
     }
 }
 
@@ -489,7 +488,7 @@ struct PopupFooter: View {
         .padding(.horizontal, 8)
         .padding(.top, 8)
         .frame(height: PopupMenuStyle.footerHeight, alignment: .top)
-        .overlay(alignment: .top) { Rectangle().fill(theme.color(\.border)).frame(height: 1) }
+        .overlay(alignment: .top) { Hairline() }
         .accessibilityHidden(true)
     }
 }

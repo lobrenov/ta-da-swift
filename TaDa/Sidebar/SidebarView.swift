@@ -23,15 +23,10 @@ struct SidebarView: View {
                     row(.trash, count: model.trash.count)
                         .padding(.top, 8)
 
-                    Text("Projects")
-                        .textCase(.uppercase)
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(0.66)
-                        .foregroundStyle(theme.color(\.muted))
+                    SectionLabel(title: "Projects")
                         .padding(.horizontal, 10)
                         .padding(.top, 20)
                         .padding(.bottom, 6)
-                        .accessibilityAddTraits(.isHeader)
 
                     if model.projects.isEmpty {
                         Text("No active projects")
@@ -164,14 +159,8 @@ struct SidebarView: View {
     private func newButton(_ title: String, action: @escaping () async -> Void) -> some View {
         Button { Task { await action() } } label: {
             Label(title, systemImage: "plus")
-                .font(.system(size: 12))
-                .foregroundStyle(theme.color(\.fg))
-                .frame(maxWidth: .infinity)
-                .frame(height: 32)
-                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)))
-                .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ActionButtonStyle(height: 32, fullWidth: true))
     }
 }
 
