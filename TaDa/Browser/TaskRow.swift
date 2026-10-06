@@ -170,15 +170,34 @@ struct DateChip: View {
     var body: some View {
         let day = date.relativeLabel(today: today)
         Chip(systemImage: kind.systemImage, tint: kind.tint,
-             text: labelled ? "\(kind == .due ? "Due" : "Deadline") \(day)" : day.capitalizedFirst)
+             text: labelled ? "\(kind.label) \(day)" : day.capitalizedFirst)
             .foregroundStyle(date < today ? theme.color(\.deadline) : theme.color(\.muted))
-            .accessibilityLabel("\(kind == .due ? "Due" : "Deadline") \(day)\(date < today ? ", overdue" : "")")
+            .accessibilityLabel("\(kind.label) \(day)\(date < today ? ", overdue" : "")")
+    }
+}
+
+/// The calendar or flag for a date's kind.
+struct KindIcon: View {
+    let kind: AgendaEntry.Kind
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Image(systemName: kind.systemImage)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(theme.color(kind.tint))
+            .accessibilityLabel(kind.label)
     }
 }
 
 extension AgendaEntry.Kind {
     var systemImage: String { self == .due ? "calendar" : "flag" }
     var tint: KeyPath<Theme, NSColor> { self == .due ? \.due : \.deadline }
+    /// "Due" or "Deadline", before a day.
+    var label: String { self == .due ? "Due" : "Deadline" }
+    /// "Due date" or "Deadline", on a missing date's chip and atop its calendar.
+    var name: String { self == .due ? "Due date" : "Deadline" }
+    /// The frontmatter key: `dueDate` or `deadline`.
+    var key: String { self == .due ? "dueDate" : "deadline" }
 }
 
 extension Theme {

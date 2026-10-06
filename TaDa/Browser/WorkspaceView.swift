@@ -76,11 +76,12 @@ struct WorkspaceView: View {
     }
 
     private func upcomingHeader(showsLegend: Bool) -> some View {
-        DomainHeader(title: "Upcoming", systemImage: "calendar", tint: \.deadline) {
+        DomainHeader(.upcoming) {
             if showsLegend {
                 HStack(spacing: 16) {
-                    Chip(systemImage: AgendaEntry.Kind.due.systemImage, tint: \.due, text: "dueDate")
-                    Chip(systemImage: AgendaEntry.Kind.deadline.systemImage, tint: \.deadline, text: "deadline")
+                    ForEach([AgendaEntry.Kind.due, .deadline], id: \.self) { kind in
+                        Chip(systemImage: kind.systemImage, tint: kind.tint, text: kind.key)
+                    }
                 }
             } else {
                 Button("Month view") {

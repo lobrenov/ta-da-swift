@@ -16,13 +16,14 @@ struct TrashView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     VStack(alignment: .leading, spacing: 14) {
-                        DomainHeader(title: "Trash", systemImage: "trash", tint: \.muted) { EmptyView() }
+                        DomainHeader(.trash)
                         buttons
                         if isConfirmingEmpty, !model.trash.isEmpty { confirmation }
                         if let note = model.trashNote { toast(note) }
                     }
                     if model.trash.isEmpty {
-                        EmptyState(systemImage: "trash", title: "Trash is empty", message: "Deleted tasks and projects wait here.")
+                        EmptyState(systemImage: AppModel.Domain.trash.systemImage, title: "Trash is empty",
+                                   message: "Deleted tasks and projects wait here.")
                             .padding(.top, 40)
                     } else {
                         VStack(alignment: .leading, spacing: 2) {

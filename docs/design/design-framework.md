@@ -147,7 +147,7 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 | Markdown | `LiveEditor` in `TaDa/Editor/LiveEditor.swift` maps the colour tokens onto the engine's `MarkdownEditorTheme`; its `CodeBlockStyle` sets the code font and fill. |
 | Settings window | `SettingsView` (nav, `SettingsPage`, `SettingsSectionLabel`, `SettingsButton`) in `TaDa/Settings/SettingsView.swift`; `VaultSettingsView` and `ThemeSettingsView` beside it. |
 | Trash | `TrashView` in `TaDa/Browser/TrashView.swift`. |
-| View title, group headers | `DomainHeader`, `ProjectGroupHeader` and `CountGroupHeader` in `TaDa/Browser/BrowserChrome.swift`. |
+| View title, group headers | `DomainHeader`, `ProjectGroupHeader` and `CountGroupHeader` in `TaDa/Browser/BrowserChrome.swift`. Each domain's title, symbol and tint come from `AppModel.Domain` there, and each date kind's label, symbol and tint from `AgendaEntry.Kind` in `TaDa/Browser/TaskRow.swift`, beside `KindIcon`. |
 
 ## As built
 

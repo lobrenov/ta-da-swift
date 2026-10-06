@@ -77,8 +77,8 @@ struct AgendaView: View {
     /// The task's other date, so a deadline entry still says when it's due and vice versa.
     private func also(_ entry: AgendaEntry) -> String? {
         let p = entry.item.properties
-        let other = entry.kind == .due ? p.deadline.map { ("Deadline", $0) } : p.dueDate.map { ("Due", $0) }
-        return other.map { "\($0.0) \($0.1.relativeLabel(today: model.today))" }
+        let (kind, date): (AgendaEntry.Kind, LocalDate?) = entry.kind == .due ? (.deadline, p.deadline) : (.due, p.dueDate)
+        return date.map { "\(kind.label) \($0.relativeLabel(today: model.today))" }
     }
 
     /// "Later in October" for the rest of this month, then "November", or "January 2027" in another year.
@@ -116,19 +116,6 @@ private struct DayHeader: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
-    }
-}
-
-/// The calendar or flag for an entry's kind.
-private struct KindIcon: View {
-    let kind: AgendaEntry.Kind
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        Image(systemName: kind.systemImage)
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(theme.color(kind.tint))
-            .accessibilityLabel(kind == .due ? "Due" : "Deadline")
     }
 }
 
@@ -198,7 +185,7 @@ private struct ColumnAgendaRow: View {
                     HStack(spacing: 12) {
                         HStack(spacing: 4) {
                             KindIcon(kind: entry.kind)
-                            Text((entry.kind == .due ? "Due" : "Deadline") + (dated ? " \(entry.date.relativeLabel(today: today))" : ""))
+                            Text(entry.kind.label + (dated ? " \(entry.date.relativeLabel(today: today))" : ""))
                         }
                         Text(place).lineLimit(1)
                         if let also { Pill(text: also) }

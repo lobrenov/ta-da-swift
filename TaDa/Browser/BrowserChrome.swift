@@ -35,9 +35,53 @@ struct DomainHeader<Trailing: View>: View {
     }
 }
 
+extension DomainHeader {
+    /// A domain's header, with its title, symbol and tint.
+    init(_ domain: AppModel.Domain, @ViewBuilder trailing: () -> Trailing) {
+        self.init(title: domain.title, systemImage: domain.systemImage, tint: domain.tint, trailing: trailing)
+    }
+}
+
 extension DomainHeader where Trailing == EmptyView {
     init(title: String, systemImage: String? = nil, tint: KeyPath<Theme, NSColor> = \.accent, ring: Double? = nil, size: CGFloat = 26) {
         self.init(title: title, systemImage: systemImage, tint: tint, ring: ring, size: size) { EmptyView() }
+    }
+
+    init(_ domain: AppModel.Domain) {
+        self.init(domain) { EmptyView() }
+    }
+}
+
+extension AppModel.Domain {
+    /// The sidebar's name for the domain, or the project's title.
+    var title: String {
+        switch self {
+        case .today: "Today"
+        case .upcoming: "Upcoming"
+        case .loose: "Loose tasks"
+        case .trash: "Trash"
+        case .project(let path): Item.title(ofPath: path)
+        }
+    }
+
+    /// A project's symbol stands in for its progress ring where the ring doesn't fit, as in the file inspector.
+    var systemImage: String {
+        switch self {
+        case .today: "star.fill"
+        case .upcoming: "calendar"
+        case .loose: "tray"
+        case .trash: "trash"
+        case .project: "circle.dotted"
+        }
+    }
+
+    var tint: KeyPath<Theme, NSColor> {
+        switch self {
+        case .today: \.due
+        case .upcoming: \.deadline
+        case .loose, .project: \.accent
+        case .trash: \.muted
+        }
     }
 }
 

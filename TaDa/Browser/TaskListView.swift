@@ -32,11 +32,11 @@ struct TaskListView: View {
         VStack(alignment: .leading, spacing: 14) {
             switch kind {
             case .today:
-                DomainHeader(title: "Today", systemImage: "star.fill", tint: \.due) {
+                DomainHeader(.today) {
                     Text(model.today.formatted(.weekdayDayMonth)).font(.system(size: 13))
                 }
             case .loose:
-                DomainHeader(title: "Loose tasks", systemImage: "tray", tint: \.accent)
+                DomainHeader(.loose)
             }
             if !contexts.isEmpty {
                 ContextFilter(contexts: contexts, selection: $context)
@@ -53,7 +53,7 @@ struct TaskListView: View {
             EmptyState(systemImage: "star", title: "Nothing due today",
                        message: "Tasks due or at their deadline today, or overdue, show here.")
         case .loose:
-            EmptyState(systemImage: "tray", title: "No loose tasks",
+            EmptyState(systemImage: AppModel.Domain.loose.systemImage, title: "No loose tasks",
                        message: "Open tasks that don’t belong to a project show here.")
         }
     }

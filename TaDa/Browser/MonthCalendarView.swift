@@ -52,10 +52,7 @@ struct MonthCalendarView: View {
                                 .font(.system(size: 11.5, weight: .semibold))
                                 .foregroundStyle(theme.color(\.muted))
                             HStack(spacing: 8) {
-                                Image(systemName: entry.kind.systemImage)
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundStyle(theme.color(entry.kind.tint))
-                                    .accessibilityLabel(entry.kind == .due ? "Due" : "Deadline")
+                                KindIcon(kind: entry.kind)
                                 Text(entry.item.title).lineLimit(1).foregroundStyle(theme.color(\.fg))
                             }
                         }

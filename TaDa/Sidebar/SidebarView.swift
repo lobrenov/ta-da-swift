@@ -17,10 +17,10 @@ struct SidebarView: View {
                 .padding(.bottom, 4)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
-                    row(.today, "Today", systemImage: "star.fill", tint: \.due, count: model.todayCount)
-                    row(.upcoming, "Upcoming", systemImage: "calendar", tint: \.deadline, count: nil)
-                    row(.loose, "Loose tasks", systemImage: "tray", tint: \.accent, count: model.looseCount)
-                    row(.trash, "Trash", systemImage: "trash", tint: \.muted, count: model.trash.count)
+                    row(.today, count: model.todayCount)
+                    row(.upcoming, count: nil)
+                    row(.loose, count: model.looseCount)
+                    row(.trash, count: model.trash.count)
                         .padding(.top, 8)
 
                     Text("Projects")
@@ -55,18 +55,17 @@ struct SidebarView: View {
         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
     }
 
-    private func row(_ domain: AppModel.Domain, _ title: String, systemImage: String,
-                     tint: KeyPath<Theme, NSColor>, count: Int?) -> some View {
+    private func row(_ domain: AppModel.Domain, count: Int?) -> some View {
         SidebarRow(selected: model.domain == domain && !model.isSearching, height: 32, count: count) {
             model.show(domain)
         } icon: {
-            Image(systemName: systemImage)
+            Image(systemName: domain.systemImage)
                 .font(.system(size: 13))
-                .foregroundStyle(theme.color(tint))
+                .foregroundStyle(theme.color(domain.tint))
                 .frame(width: 16)
                 .accessibilityHidden(true)
         } label: {
-            Text(title)
+            Text(domain.title)
         }
     }
 

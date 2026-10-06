@@ -110,9 +110,7 @@ private struct LinkedTasksTable: View {
                 .foregroundStyle(theme.color(p.dueDate != nil && !done ? \.fg : \.muted))
                 .column("dueDate", due ?? "none"),
             HStack(spacing: 5) {
-                if p.deadline != nil {
-                    Image(systemName: "flag").font(.system(size: 10, weight: .semibold)).foregroundStyle(theme.color(\.deadline))
-                }
+                if p.deadline != nil { KindIcon(kind: .deadline) }
                 Text(deadline?.capitalizedFirst ?? "—")
                     .foregroundStyle(theme.color(p.deadline != nil ? \.fg : \.muted))
             }

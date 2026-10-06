@@ -23,14 +23,10 @@ struct AppCommands: Commands {
                 .disabled(model.state != .ready)
         }
         CommandGroup(before: .sidebar) {
-            Button("Today") { model.show(.today) }
-                .keyboardShortcut("1")
-            Button("Upcoming") { model.show(.upcoming) }
-                .keyboardShortcut("2")
-            Button("Loose Tasks") { model.show(.loose) }
-                .keyboardShortcut("3")
-            Button("Trash") { model.show(.trash) }
-                .keyboardShortcut("4")
+            show(.today, key: "1")
+            show(.upcoming, key: "2")
+            show(.loose, key: "3")
+            show(.trash, key: "4")
             Divider()
             Button(model.isSourceMode ? "Show Live Preview" : "Show Source") { model.isSourceMode.toggle() }
                 .keyboardShortcut("e")
@@ -57,5 +53,11 @@ struct AppCommands: Commands {
             .keyboardShortcut("l")
             .disabled(editor == nil)
         }
+    }
+
+    /// Shows a domain, under its name in title case as macOS menu commands are.
+    private func show(_ domain: AppModel.Domain, key: KeyEquivalent) -> some View {
+        Button(domain.title.capitalized) { model.show(domain) }
+            .keyboardShortcut(key)
     }
 }

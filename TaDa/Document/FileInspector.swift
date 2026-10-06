@@ -105,34 +105,41 @@ struct FileInspector: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// A sidebar list, under its own name unless `title` says otherwise.
     private struct Place {
         var title: String
         var reason: String
         var systemImage: String
         var tint: KeyPath<Theme, NSColor>
+
+        init(_ domain: AppModel.Domain, title: String? = nil, reason: String) {
+            self.title = title ?? domain.title
+            self.reason = reason
+            systemImage = domain.systemImage
+            tint = domain.tint
+        }
     }
 
     /// The sidebar lists this file shows in, and why.
     private func appearances(of item: Item) -> [Place] {
         let index = model.index, today = model.today, p = item.properties
         guard p.kind == .task else {
-            return p.status == .done ? [] : [Place(title: "Projects", reason: "not done", systemImage: "circle.dotted", tint: \.accent)]
+            return p.status == .done ? [] : [Place(.project(item.path), title: "Projects", reason: "not done")]
         }
         var places: [Place] = []
         if index.isInToday(item, today: today) {
             let reason = p.status == .done ? "completed today"
                 : index.isOverdue(item, today: today) ? "overdue"
                 : p.dueDate.map { $0 <= today } == true ? "dueDate" : "deadline"
-            places.append(Place(title: "Today", reason: reason, systemImage: "star.fill", tint: \.due))
+            places.append(Place(.today, reason: reason))
         }
         for entry in index.upcomingEntries(of: item, after: today) {
-            places.append(Place(title: "Upcoming · \(entry.date.formatted(.weekdayDayMonth))",
-                                reason: entry.kind == .due ? "dueDate" : "deadline", systemImage: "calendar", tint: \.deadline))
+            places.append(Place(.upcoming, title: "Upcoming · \(entry.date.formatted(.weekdayDayMonth))", reason: entry.kind.key))
         }
         if let project = index.project(of: item) {
-            places.append(Place(title: project.title, reason: "project", systemImage: "circle.dotted", tint: \.accent))
+            places.append(Place(.project(project.path), reason: "project"))
         } else if index.isLoose(item) {
-            places.append(Place(title: "Loose tasks", reason: "no project", systemImage: "tray", tint: \.accent))
+            places.append(Place(.loose, reason: "no project"))
         }
         return places
     }

@@ -6,13 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
-16. **Names, icons and colours for domains and date kinds are repeated** *(duplication)*:
-    - The titles, SF Symbols and tints for Today, Upcoming and Loose appear in `SidebarView.swift:20-22`, `TaskListView.swift:35-39`, `WorkspaceView.swift:77`, `FileInspector.swift:126-135` and `Commands.swift:25-30`.
-    - `kind == .due ? "Due" : "Deadline"` appears six times.
-    - `AgendaView`'s private `KindIcon` is copied inline in `MonthCalendarView.swift:55` and `ProjectDocumentView.swift:123`.
-
-    Give `AppModel.Domain` a title, symbol and tint, add a `label` next to `AgendaEntry.Kind.systemImage`, and share `KindIcon`.
-
 17. **Each view rebuilds its own rows and list layout** *(duplication)*: `TaskRow`, `ColumnAgendaRow` (nearly identical to it), `WideAgendaRow` and the search view's `projectRow` each assemble the checkbox, plain button, selection background and `.isSelected` trait (`TaskRow.swift:27-45`, `AgendaView.swift:147-216`, `SearchResultsView.swift:43-69`). The list views also repeat the same header and list padding and the `arrowKeySelection` call. A shared `SelectableRow(meta:)` and `BrowserColumn(header:content:)` would cover both.
 
 18. **Existing shared styles are re-implemented instead of reused** *(duplication)*:

@@ -29,13 +29,6 @@ struct PropertyChips: View {
     }
 }
 
-extension AgendaEntry.Kind {
-    /// The frontmatter key: `dueDate` or `deadline`.
-    var key: String { self == .due ? "dueDate" : "deadline" }
-    /// "Due date" or "Deadline", on a missing date's chip and atop its calendar.
-    var name: String { self == .due ? "Due date" : "Deadline" }
-}
-
 /// The status's dot and name, and a chevron.
 private struct StatusPropertyChip: View {
     let model: AppModel
@@ -139,7 +132,7 @@ private struct DatePropertyChip: View {
                     Image(systemName: kind.systemImage)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(theme.color(isDone ? \.muted : kind.tint))
-                    Text("\(kind == .due ? "Due" : "Deadline") \(date.relativeLabel(today: model.today))")
+                    Text("\(kind.label) \(date.relativeLabel(today: model.today))")
                 }
             } else {
                 MissingKeyLabel(name: kind.name)
