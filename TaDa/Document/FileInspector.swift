@@ -119,19 +119,19 @@ struct FileInspector: View {
             return p.status == .done ? [] : [Place(title: "Projects", reason: "not done", systemImage: "circle.dotted", tint: \.accent)]
         }
         var places: [Place] = []
-        if index.today(today).contains(where: { $0.path == item.path }) {
+        if index.isInToday(item, today: today) {
             let reason = p.status == .done ? "completed today"
                 : index.isOverdue(item, today: today) ? "overdue"
                 : p.dueDate.map { $0 <= today } == true ? "dueDate" : "deadline"
             places.append(Place(title: "Today", reason: reason, systemImage: "star.fill", tint: \.due))
         }
-        for entry in index.upcoming(after: today) where entry.item.path == item.path {
+        for entry in index.upcomingEntries(of: item, after: today) {
             places.append(Place(title: "Upcoming · \(entry.date.formatted(.weekdayDayMonth))",
                                 reason: entry.kind == .due ? "dueDate" : "deadline", systemImage: "calendar", tint: \.deadline))
         }
         if let project = index.project(of: item) {
             places.append(Place(title: project.title, reason: "project", systemImage: "circle.dotted", tint: \.accent))
-        } else if p.status != .done {
+        } else if index.isLoose(item) {
             places.append(Place(title: "Loose tasks", reason: "no project", systemImage: "tray", tint: \.accent))
         }
         return places

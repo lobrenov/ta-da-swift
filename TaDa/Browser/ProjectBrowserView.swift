@@ -13,7 +13,7 @@ struct ProjectBrowserView: View {
         let done = tasks.filter { $0.properties.status == .done }
 
         VStack(alignment: .leading, spacing: 0) {
-            header(done: done.count, total: tasks.count)
+            header(model.index.progress(of: project))
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 18) {
                     group("Open", open)
@@ -33,10 +33,10 @@ struct ProjectBrowserView: View {
         .arrowKeySelection(model, paths: (open + done).map(\.path), allowsMultipleSelection: true)
     }
 
-    private func header(done: Int, total: Int) -> some View {
+    private func header(_ progress: ProjectProgress) -> some View {
         let p = project.properties
         return VStack(alignment: .leading, spacing: 12) {
-            DomainHeader(title: project.title, ring: model.index.progress(of: project), size: 24) {
+            DomainHeader(title: project.title, ring: progress.fraction, size: 24) {
                 Button("Open project file") { model.selection = project.path }
                     .buttonStyle(.plain)
             }
@@ -44,7 +44,7 @@ struct ProjectBrowserView: View {
                 StatusLabel(status: p.status, dotSize: 7)
                 if let due = p.dueDate { DateChip(kind: .due, date: due, today: model.today) }
                 if let deadline = p.deadline { DateChip(kind: .deadline, date: deadline, today: model.today) }
-                Text("\(done) of \(total) done")
+                Text("\(progress.done) of \(progress.total) done")
             }
             .font(.system(size: 12))
             .foregroundStyle(theme.color(\.muted))

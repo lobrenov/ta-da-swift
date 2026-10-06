@@ -32,17 +32,21 @@ public struct TaskGroup: Hashable, Sendable, Identifiable {
 }
 
 /// The saved queries behind the sidebar domains. `today` is always passed in. Today, Upcoming and
-/// Loose list tasks; projects show their dates on their own page.
+/// Loose list tasks; projects show their dates on their own page. Each list applies a per-item test to
+/// every task, and the tests answer for one file too.
 extension VaultIndex {
     /// Open tasks due or at their deadline today or earlier, plus tasks completed today.
     /// Sorted by their earliest date, then title.
     public func today(_ today: LocalDate) -> [Item] {
-        tasks.filter { task in
-            let p = task.properties
-            if p.status == .done { return p.completedDate == today }
-            return [p.dueDate, p.deadline].contains { $0.map { $0 <= today } ?? false }
-        }
-        .sorted { Self.byDate($0, $1) }
+        tasks.filter { isInToday($0, today: today) }.sorted { Self.byDate($0, $1) }
+    }
+
+    /// Whether a task is in Today: open and due or at its deadline today or earlier, or completed today.
+    public func isInToday(_ item: Item, today: LocalDate) -> Bool {
+        let p = item.properties
+        guard p.kind == .task else { return false }
+        if p.status == .done { return p.completedDate == today }
+        return [p.dueDate, p.deadline].contains { $0.map { $0 <= today } ?? false }
     }
 
     /// An open item whose due date or deadline has passed.
@@ -53,34 +57,40 @@ extension VaultIndex {
 
     /// Entries for open tasks dated after today, by date, due before deadline, then title.
     public func upcoming(after today: LocalDate) -> [AgendaEntry] {
-        tasks.filter { $0.properties.status != .done }
-            .flatMap { task -> [AgendaEntry] in
-                let p = task.properties
-                return [p.dueDate.map { AgendaEntry(item: task, date: $0, kind: .due) },
-                        p.deadline.map { AgendaEntry(item: task, date: $0, kind: .deadline) }]
-                    .compactMap { $0 }
-            }
+        tasks.flatMap { upcomingEntries(of: $0, after: today) }.sorted(by: Self.byAgendaOrder)
+    }
+
+    /// A task's entries in Upcoming, in its order: one on its due date and one on its deadline, when the task is
+    /// open and they're after today.
+    public func upcomingEntries(of item: Item, after today: LocalDate) -> [AgendaEntry] {
+        let p = item.properties
+        guard p.kind == .task, p.status != .done else { return [] }
+        return [p.dueDate.map { AgendaEntry(item: item, date: $0, kind: .due) },
+                p.deadline.map { AgendaEntry(item: item, date: $0, kind: .deadline) }]
+            .compactMap { $0 }
             .filter { $0.date > today }
-            .sorted { a, b in
-                if a.date != b.date { return a.date < b.date }
-                if a.kind != b.kind { return a.kind == .due }
-                return Self.byTitle(a.item, b.item)
-            }
+            .sorted(by: Self.byAgendaOrder)
     }
 
     /// Open tasks without a resolvable project, sorted by title.
     public func loose() -> [Item] {
-        tasks.filter { $0.properties.status != .done && project(of: $0) == nil }.sorted(by: Self.byTitle)
+        tasks.filter { isLoose($0) }.sorted(by: Self.byTitle)
+    }
+
+    /// Whether a task is in Loose tasks: open, with a `project` that doesn't resolve or none.
+    public func isLoose(_ item: Item) -> Bool {
+        item.properties.kind == .task && item.properties.status != .done && project(of: item) == nil
     }
 
     /// Projects that aren't Done, with progress over all their linked tasks, sorted by title.
     public func activeProjects() -> [ProjectProgress] {
-        projects.filter { $0.properties.status != .done }
-            .sorted(by: Self.byTitle)
-            .map { project in
-                let tasks = tasks(in: project)
-                return ProjectProgress(project: project, done: tasks.count { $0.properties.status == .done }, total: tasks.count)
-            }
+        projects.filter { $0.properties.status != .done }.sorted(by: Self.byTitle).map { progress(of: $0) }
+    }
+
+    /// Done/total of the tasks whose `project` resolves to this project.
+    public func progress(of project: Item) -> ProjectProgress {
+        let tasks = tasks(in: project)
+        return ProjectProgress(project: project, done: tasks.count { $0.properties.status == .done }, total: tasks.count)
     }
 
     /// Splits tasks into the loose group first, then one group per project by title. Order within a group is kept.
@@ -111,6 +121,13 @@ extension VaultIndex {
             let (ta, tb) = (matches(a.title), matches(b.title))
             return ta != tb ? ta : Self.byTitle(a, b)
         }
+    }
+
+    /// Upcoming's order: by date, due before deadline, then title.
+    private static func byAgendaOrder(_ a: AgendaEntry, _ b: AgendaEntry) -> Bool {
+        if a.date != b.date { return a.date < b.date }
+        if a.kind != b.kind { return a.kind == .due }
+        return byTitle(a.item, b.item)
     }
 
     private static func byDate(_ a: Item, _ b: Item) -> Bool {

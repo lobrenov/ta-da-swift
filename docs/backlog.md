@@ -6,8 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
-12. **Views recompute list membership and project progress** *(duplication)*: `FileInspector.swift:116-138` re-derives why a task appears in Today, Upcoming or Loose, running the full `today()` and `upcoming()` queries to test one item. Progress is computed four ways: `ProjectProgress`, `VaultIndex.progress(of:)` in the app (`BrowserChrome.swift:158`), and inline counts in `ProjectBrowserView.swift:11-16` and `ProjectDocumentView.swift:22`. Add per-item predicates and a `progress(of:) -> ProjectProgress` to `Queries`.
-
 13. **A custom popover stands in for a menu, and a stack of rows for a table** *(Apple, accessibility)*: `StatusMenu` (`PropertyTable.swift:84-126`) has no arrow keys, type-to-select or menu semantics; a `Menu` or `Picker` would, as `ThemeMenu` already shows. `LinkedTasksTable` (`ProjectDocumentView.swift:52-148`) has fixed column widths and hides its header row from VoiceOver (line 87). SwiftUI `Table` gives resizable, sortable, selectable columns with proper headers.
 
 14. **Beta builds aren't Developer ID–signed or notarised** *(Apple distribution)*: `scripts/make-beta-dmg.sh` ships the app as signed in the archive, with the Apple Development certificate, and tells testers to remove `com.apple.quarantine`. Either export with `-exportArchive` for Developer ID and then run `notarytool submit --wait` and `stapler staple`, or use TestFlight for Mac. Both keep the same signing identity across builds, and both need the paid developer program. The Read Me also says macOS 27, but the deployment target is 26.0.

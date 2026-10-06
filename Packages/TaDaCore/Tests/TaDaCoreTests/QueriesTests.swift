@@ -51,6 +51,22 @@ private let index = VaultIndex(items)
     #expect(VaultIndex([items[1]]).activeProjects()[0].fraction == 0)
 }
 
+@Test func progressCountsTheTasksOfAnyProject() {
+    #expect(index.progress(of: items[0]) == index.activeProjects()[0])
+    let shipped = index.progress(of: items[2])
+    #expect((shipped.done, shipped.total) == (0, 1), "a done project isn't active but has progress")
+}
+
+@Test func perItemTestsAgreeWithTheLists() {
+    for item in items {
+        #expect(index.isInToday(item, today: today) == index.today(today).contains(item), "\(item.title)")
+        #expect(index.upcomingEntries(of: item, after: today) == index.upcoming(after: today).filter { $0.item == item }, "\(item.title)")
+        #expect(index.isLoose(item) == index.loose().contains(item), "\(item.title)")
+    }
+    let deadlineFirst = makeItem("tasks/Late.md", "type: task\nstatus: Doing\ndueDate: 2026-10-20\ndeadline: 2026-10-15")
+    #expect(index.upcomingEntries(of: deadlineFirst, after: today).map(\.kind) == [.deadline, .due])
+}
+
 @Test func groupingPutsLooseFirstThenProjectsByTitle() {
     let groups = index.grouped(index.today(today))
     #expect(groups.map { $0.project?.title ?? "Loose" } == ["Loose", "Alpha", "Beta"])

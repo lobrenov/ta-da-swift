@@ -64,7 +64,7 @@ struct TaskListView: View {
                 ForEach(groups) { group in
                     VStack(alignment: .leading, spacing: 1) {
                         if let project = group.project {
-                            ProjectGroupHeader(project: project, fraction: model.index.progress(of: project))
+                            ProjectGroupHeader(project: project, fraction: model.index.progress(of: project).fraction)
                         }
                         ForEach(group.tasks) { task in
                             TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,

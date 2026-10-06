@@ -11,15 +11,16 @@ struct ProjectDocumentView: View {
 
     var body: some View {
         let tasks = model.index.tasks(in: project)
+        let progress = model.index.progress(of: project)
         GeometryReader { viewport in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     HStack(spacing: 12) {
-                        ProgressRing(fraction: model.index.progress(of: project))
+                        ProgressRing(fraction: progress.fraction)
                             .scaleEffect(1.7).frame(width: 24, height: 24)
                             .foregroundStyle(theme.color(\.accent))
                         TitleField(model: model, document: document, size: 28)
-                        Text("\(tasks.count { $0.properties.status == .done }) of \(tasks.count) tasks done")
+                        Text("\(progress.done) of \(progress.total) tasks done")
                             .font(.system(size: 12))
                             .foregroundStyle(theme.color(\.muted))
                             .fixedSize()

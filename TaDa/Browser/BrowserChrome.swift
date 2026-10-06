@@ -154,11 +154,3 @@ struct Hairline: View {
             .frame(width: axis == .vertical ? 1 : nil, height: axis == .horizontal ? 1 : nil)
     }
 }
-
-extension VaultIndex {
-    /// Done/total of a project's linked tasks; 0 when it has none.
-    func progress(of project: Item) -> Double {
-        let tasks = tasks(in: project)
-        return tasks.isEmpty ? 0 : Double(tasks.count { $0.properties.status == .done }) / Double(tasks.count)
-    }
-}
