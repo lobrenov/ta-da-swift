@@ -4,10 +4,8 @@ import Testing
 import TaDaCore
 @testable import TaDa
 
-/// Arrow keys in the lists and Add Subtask (⌘L), in a real window with key events sent to it.
-/// One test at a time: a key the list doesn't take goes to the key window, which could be another test's.
+/// The list keys and Add Subtask (⌘L), in a real window with key events sent to it.
 @MainActor
-@Suite(.serialized)
 struct KeyboardTests {
     let defaults: UserDefaults
     let suite = "TaDaTests-\(UUID().uuidString)"
@@ -42,16 +40,22 @@ struct KeyboardTests {
 
     private func settle() async throws { try await Task.sleep(for: .milliseconds(400)) }
 
-    private func press(_ key: Int, code: UInt16, in window: NSWindow) async throws {
+    private func press(_ key: Int, code: UInt16, modifiers: NSEvent.ModifierFlags = [], in window: NSWindow) async throws {
         let characters = String(Character(Unicode.Scalar(UInt16(key))!))
-        // Through the event queue, as a real key press, so the window's key monitor sees it.
+        // Straight to the window, which hands it to its first responder. AppKit would send it to the key
+        // window, which can be another test's.
         for type in [NSEvent.EventType.keyDown, .keyUp] {
-            let event = try #require(NSEvent.keyEvent(with: type, location: .zero, modifierFlags: [], timestamp: 0,
+            let event = try #require(NSEvent.keyEvent(with: type, location: .zero, modifierFlags: modifiers, timestamp: 0,
                                                       windowNumber: window.windowNumber, context: nil, characters: characters,
                                                       charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code))
-            NSApp.postEvent(event, atStart: false)
+            window.sendEvent(event)
         }
         try await settle()
+    }
+
+    /// Waits up to 5 s for a list to have the keyboard.
+    private func listHasKeyboard(in window: NSWindow) async throws {
+        for _ in 0..<50 where !(window.firstResponder is ListKeyView) { try await Task.sleep(for: .milliseconds(100)) }
     }
 
     private func down(_ window: NSWindow) async throws { try await press(NSDownArrowFunctionKey, code: 125, in: window) }
@@ -79,6 +83,7 @@ struct KeyboardTests {
         let window = try await window(for: model)
         defer { window.orderOut(nil) }
 
+        try await listHasKeyboard(in: window)
         try await down(window)
         #expect(model.selection == "tasks/A.md")
         try await down(window)
@@ -101,6 +106,31 @@ struct KeyboardTests {
         #expect(model.selection == "tasks/B.md")
         try await press(0x1B, code: 53, in: window)
         #expect(model.selection == nil, "Escape clears the selection")
+    }
+
+    @Test func commandDeleteTrashesTheTaskAndRestoresItInTrash() async throws {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        model.today = LocalDate("2026-10-03")!
+        await model.choose(folder)
+        let window = try await window(for: model)
+        defer { window.orderOut(nil) }
+
+        try await listHasKeyboard(in: window)
+        try await down(window)
+        try await press(NSDeleteCharacter, code: 51, modifiers: .command, in: window)
+        for _ in 0..<50 where model.trash.isEmpty { try await Task.sleep(for: .milliseconds(100)) }
+        #expect(model.trash.map(\.id) == [".trash/A.md"], "within 5 s")
+
+        // Trash takes the keyboard when it replaces the editor.
+        window.makeFirstResponder(try await loadedEditor(in: window))
+        model.show(.trash)
+        try await listHasKeyboard(in: window)
+        try await down(window)
+        #expect(model.trashSelection == [".trash/A.md"])
+        try await press(NSDeleteCharacter, code: 51, modifiers: .command, in: window)
+        for _ in 0..<50 where !model.trash.isEmpty { try await Task.sleep(for: .milliseconds(100)) }
+        #expect(model.trash.isEmpty && model.index["tasks/A.md"] != nil, "within 5 s")
     }
 
     @Test func addSubtaskEditsTheLineInTheLiveEditor() async throws {

@@ -1,8 +1,8 @@
 // Selection in the browser lists. A click opens a file; in lists that allow it, shift-click picks a range and
 // ⌘-click adds or removes a task. Keys: ↑/↓ move the selection, Escape clears it, ⌫ or ⌘⌫ moves the selected file to
-// the trash (in Trash, ⌘⌫ restores and ⌥⌘⌫ deletes forever). They act only while no text view (an editor,
-// the title or the search field) has the keyboard and no file menu is open, so those keep their own keys.
-// A key monitor on the main window rather than SwiftUI focus: a focusable list never gets focus there.
+// the trash (in Trash, ⌘⌫ restores and ⌥⌘⌫ deletes forever). A key view behind each list takes the keyboard when the
+// list appears, when nothing has it and when a row is picked. Keys reach it through the responder chain, so a text
+// view (an editor, the title or the search field) with the keyboard keeps its own keys.
 import AppKit
 import SwiftUI
 
@@ -11,11 +11,6 @@ extension View {
     /// `model.isSelected(_:)` and call `model.click(_:)`.
     func arrowKeySelection(_ model: AppModel, paths: [String], allowsMultipleSelection: Bool = false) -> some View {
         modifier(ArrowKeyList(model: model, paths: paths, allowsMultipleSelection: allowsMultipleSelection))
-    }
-
-    /// Handles the arrow keys in the window this view is in.
-    func arrowKeyMonitor(_ model: AppModel) -> some View {
-        modifier(ArrowKeyMonitor(model: model))
     }
 }
 
@@ -40,100 +35,103 @@ private struct ArrowKeyList: ViewModifier {
     let allowsMultipleSelection: Bool
     /// Lists replace each other (Upcoming changes layout); only the one that set the order clears it.
     @State private var id = UUID()
+    @State private var keys = WeakKeyView()
 
     func body(content: Content) -> some View {
         content
+            .background(ListKeys(model: model, keys: keys).accessibilityHidden(true))
             .onChange(of: paths, initial: true) {
                 model.arrowKeyList = AppModel.ArrowKeyList(id: id, paths: paths, allowsMultipleSelection: allowsMultipleSelection)
                 model.keepPicked(in: paths)
+            }
+            // Picking a row gives the list the keyboard, from an editor too. Not for a new file, whose title is
+            // about to take it.
+            .onChange(of: model.selection) { _, selection in
+                guard let selection, paths.contains(selection), model.titleFocus != selection else { return }
+                keys.view?.takeKeyboard()
             }
             .onDisappear { if model.arrowKeyList?.id == id { model.arrowKeyList = nil } }
     }
 }
 
-private struct ArrowKeyMonitor: ViewModifier {
+private final class WeakKeyView {
+    weak var view: ListKeyView?
+}
+
+/// Puts the list's key view behind it.
+private struct ListKeys: NSViewRepresentable {
     let model: AppModel
-    @State private var window = WeakWindow()
-    @State private var monitor: Any?
+    let keys: WeakKeyView
 
-    func body(content: Content) -> some View {
-        content
-            .background(WindowReader(window: window))
-            .onAppear {
-                monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                    handle(event) ? nil : event
-                }
-                // The window gives the search field the keyboard when it opens; the arrow keys come first.
-                Task { if !model.isSearching { releaseKeyboard(fieldEditorsOnly: true) } }
-            }
-            // Picking a row in the list hands it the arrow keys: the editor lets go of the keyboard.
-            // Not for a new file, whose title is about to take it.
-            .onChange(of: model.selection) { _, selection in
-                guard let selection, model.arrowKeyList?.paths.contains(selection) == true,
-                      model.titleFocus != selection else { return }
-                releaseKeyboard(fieldEditorsOnly: false)
-            }
-            .onDisappear {
-                if let monitor { NSEvent.removeMonitor(monitor) }
-                monitor = nil
-            }
+    func makeNSView(context: Context) -> ListKeyView {
+        let view = ListKeyView(model: model)
+        keys.view = view
+        return view
     }
 
-    private func releaseKeyboard(fieldEditorsOnly: Bool) {
-        guard let window = window.value, let text = window.firstResponder as? NSTextView,
-              text.isFieldEditor || !fieldEditorsOnly else { return }
-        window.makeFirstResponder(nil)
-    }
-
-    private func handle(_ event: NSEvent) -> Bool {
-        guard let window = window.value, event.window === window, !(window.firstResponder is NSTextView),
-              !FileMenu.shared.isOpen else { return false }
-        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
-        if event.keyCode == 51 || event.keyCode == 117 {
-            switch modifiers {
-            case []: return model.deleteKey(command: false)
-            case .command: return model.deleteKey(command: true)
-            case [.command, .option]: return model.deleteForeverKey()
-            default: return false
-            }
-        }
-        guard modifiers.isEmpty else { return false }
-        switch event.keyCode {
-        case 125: return model.moveSelection(by: 1)
-        case 126: return model.moveSelection(by: -1)
-        case 53:
-            if model.selection != nil || !model.multiSelection.isEmpty {
-                model.selection = nil
-                model.clearMultiSelection()
-            } else if !model.trashSelection.isEmpty {
-                model.trashSelection = []
-            } else {
-                return false
-            }
-            return true
-        default: return false
-        }
-    }
+    func updateNSView(_ view: ListKeyView, context: Context) {}
 }
 
-private final class WeakWindow {
-    weak var value: NSWindow?
-}
+/// The list's responder: ↑/↓ and Escape arrive as move and cancel commands, ⌫ and ⌦ as key presses.
+final class ListKeyView: NSView {
+    let model: AppModel
+    private var responders: NSKeyValueObservation?
 
-/// Reports the window it's placed in.
-private struct WindowReader: NSViewRepresentable {
-    let window: WeakWindow
+    init(model: AppModel) {
+        self.model = model
+        super.init(frame: .zero)
+    }
 
-    func makeNSView(context: Context) -> NSView { Reader(window: window) }
-    func updateNSView(_ view: NSView, context: Context) {}
+    required init?(coder: NSCoder) { fatalError() }
 
-    private final class Reader: NSView {
-        let box: WeakWindow
-        init(window: WeakWindow) {
-            box = window
-            super.init(frame: .zero)
+    override var acceptsFirstResponder: Bool { true }
+
+    /// Takes the keyboard when the list appears, and whenever nothing has it, as after an editor closes.
+    /// Not from a text view, or for a new file, whose title is about to take it.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        responders = window?.observe(\.firstResponder) { [weak self] window, _ in
+            MainActor.assumeIsolated {
+                if window.firstResponder === window { Task { self?.takeKeyboardIfFree() } }
+            }
         }
-        required init?(coder: NSCoder) { fatalError() }
-        override func viewDidMoveToWindow() { box.value = window }
+        Task { [weak self] in self?.takeKeyboardIfFree() }
+    }
+
+    private func takeKeyboardIfFree() {
+        guard let window, !(window.firstResponder is NSTextView), model.titleFocus == nil else { return }
+        takeKeyboard()
+    }
+
+    func takeKeyboard() {
+        window?.makeFirstResponder(self)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        if event.specialKey == .delete || event.specialKey == .deleteForward, delete(event.modifierFlags) { return }
+        interpretKeyEvents([event])
+    }
+
+    override func moveUp(_ sender: Any?) {
+        model.moveSelection(by: -1)
+    }
+
+    override func moveDown(_ sender: Any?) {
+        model.moveSelection(by: 1)
+    }
+
+    override func cancelOperation(_ sender: Any?) {
+        model.selection = nil
+        model.clearMultiSelection()
+        model.trashSelection = []
+    }
+
+    private func delete(_ flags: NSEvent.ModifierFlags) -> Bool {
+        switch flags.intersection([.command, .option, .control, .shift]) {
+        case []: model.deleteKey(command: false)
+        case .command: model.deleteKey(command: true)
+        case [.command, .option]: model.deleteForeverKey()
+        default: false
+        }
     }
 }

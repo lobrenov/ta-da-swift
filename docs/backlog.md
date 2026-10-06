@@ -6,10 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
 
-8. **List navigation bypasses the focus system** *(Apple, accessibility)*: `ArrowKeySelection.swift:37-78` installs an app-wide `keyDown` monitor that matches raw key codes (125/126/53, plus 36/76 in the menus' `PopupMenu.handleKey`). It also calls `makeFirstResponder(nil)` to take focus away from the editor.
-   - Preferred: `List(selection:)`, styled with `.listRowBackground`, `.listRowInsets` and `.scrollContentBackground(.hidden)`. It provides arrow keys, type-to-select and VoiceOver row semantics.
-   - Otherwise: `focusable(interactions:)` with `onMoveCommand` and `onExitCommand`, and `NSEvent.specialKey` instead of raw key codes.
-
 9. **Every change rebuilds the whole index, and views re-run their queries** *(performance)*: `update` and `remove` re-sort all paths and re-resolve every task's project (`VaultIndex.swift:68`). This runs on each keystroke that changes the item (`AppModel.swift:384`) and once per changed file in `refresh`. Each change also makes view bodies re-run `today()`, `loose()`, `activeProjects()` and `backlinks()`, and rebuild a set of every title (`LiveDocumentView.swift:49`). Fix: update the title and membership maps incrementally, batch the updates in `refresh`, and cache derived lists in the model.
 
 10. **The editor re-implements wikilink resolution and disagrees with the core** *(duplication, drift)*: `TitleResolver.title(of:)` (`LiveEditor.swift:123`) strips `#heading` and folders but not `.md`, unlike `WikiLink.title`. So `[[Note.md]]` is drawn as unresolved, yet clicking it (`LiveDocumentView.swift:58`) opens the note. Resolve links with `WikiLink(inner:)` against the index's existing title map, made public.
@@ -35,7 +31,7 @@ Issues from the review, most severe first. Fixed ones are removed; the rest keep
 
     Give `AppModel.Domain` a title, symbol and tint, add a `label` next to `AgendaEntry.Kind.systemImage`, and share `KindIcon`.
 
-17. **Each view rebuilds its own rows and list layout** *(duplication)*: `TaskRow`, `ColumnAgendaRow` (nearly identical to it), `WideAgendaRow` and the search view's `projectRow` each assemble the checkbox, plain button, selection background and `.isSelected` trait (`TaskRow.swift:27-45`, `AgendaView.swift:147-216`, `SearchResultsView.swift:43-69`). The list views also repeat the same header and list padding and the `arrowKeySelection` call. A shared `SelectableRow(meta:)` and `BrowserColumn(header:content:)` would cover both, or `List` if you take up item 8.
+17. **Each view rebuilds its own rows and list layout** *(duplication)*: `TaskRow`, `ColumnAgendaRow` (nearly identical to it), `WideAgendaRow` and the search view's `projectRow` each assemble the checkbox, plain button, selection background and `.isSelected` trait (`TaskRow.swift:27-45`, `AgendaView.swift:147-216`, `SearchResultsView.swift:43-69`). The list views also repeat the same header and list padding and the `arrowKeySelection` call. A shared `SelectableRow(meta:)` and `BrowserColumn(header:content:)` would cover both.
 
 18. **Existing shared styles are re-implemented instead of reused** *(duplication)*:
     - `SettingsSectionLabel` is copied inline in `SidebarView.swift:24-32` and `FileInspector.swift:88-98`.

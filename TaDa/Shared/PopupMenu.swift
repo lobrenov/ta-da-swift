@@ -164,12 +164,11 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
     }
 
     private func handleKey(_ event: NSEvent) {
-        switch event.keyCode {
-        case 125: move(by: 1)
-        case 126: move(by: -1)
-        case 36, 76: pickHighlighted()
-        case 53: dismiss()
-        default: break
+        switch event.specialKey {
+        case .downArrow: move(by: 1)
+        case .upArrow: move(by: -1)
+        case .carriageReturn, .enter: pickHighlighted()
+        default: if event.charactersIgnoringModifiers == String(KeyEquivalent.escape.character) { dismiss() }
         }
     }
 

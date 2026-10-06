@@ -15,7 +15,6 @@ struct ContentView: View {
                 } detail: {
                     WorkspaceView(model: model)
                 }
-                .arrowKeyMonitor(model)
             }
         }
         .themed(by: model)

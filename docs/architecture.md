@@ -89,7 +89,7 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 
 A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Delete, or Restore and Delete Forever in Trash. A right-click on a picked file acts on every picked file. While open it takes ↑↓, ↵ and esc.
 
-Browser lists share their selection: each registers its rows with `.arrowKeySelection(model, paths:, allowsMultipleSelection:)`, and rows show `model.isSelected(_:)`, call `model.click(_:)` and add `.fileMenu`. Every list allows several (Search picks tasks only, since a project opens its page): shift-click picks a range and ⌘-click adds or removes a row (`AppModel.multiSelection`, or `trashSelection` in Trash). The document pane shows "N tasks selected", and Upcoming keeps its agenda column while tasks are picked. In Trash a plain click picks one file.
+Browser lists share their selection: each registers its rows with `.arrowKeySelection(model, paths:, allowsMultipleSelection:)`, and rows show `model.isSelected(_:)`, call `model.click(_:)` and add `.fileMenu`. Every list allows several (Search picks tasks only, since a project opens its page): shift-click picks a range and ⌘-click adds or removes a row (`AppModel.multiSelection`, or `trashSelection` in Trash). The document pane shows "N tasks selected", and Upcoming keeps its agenda column while tasks are picked. In Trash a plain click picks one file. The list keys go to a `ListKeyView` behind each list, an AppKit responder that takes the keyboard when the list appears, when nothing has it and when a row is picked, but never from a text view, or for a new file whose title is about to take it.
 
 ## Editors
 
@@ -109,6 +109,6 @@ Browser lists share their selection: each registers its rows with `.arrowKeySele
 | ⌘, | Settings |
 | ⌘K | Complete or reopen the selected task |
 | ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step |
-| ↑ / ↓, Escape | Move through the list, clear the selection, while no text view has the keyboard (a key monitor on the main window) |
-| ⌫ or ⌘⌫ | Move the selected file, or the picked tasks, to the trash, while no text view has the keyboard |
+| ↑ / ↓, Escape | Move through the list, clear the selection, while the list has the keyboard |
+| ⌫ or ⌘⌫ | Move the selected file, or the picked tasks, to the trash, while the list has the keyboard |
 | ⌘⌫ / ⌥⌘⌫ in Trash | Restore / delete forever the picked files |
