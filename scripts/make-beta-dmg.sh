@@ -34,7 +34,7 @@ README
 
 codesign --verify --deep --strict "$STAGING/Ta Da.app"
 rm -f "$DMG"
-diskutil image create from --format UDZO --volumeName "Ta Da" "$STAGING" "$DMG"
+hdiutil create -volname "Ta Da" -srcfolder "$STAGING" -format UDZO "$DMG"
 
 echo "$PWD/$DMG"
 open -R "$DMG"
