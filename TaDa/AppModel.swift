@@ -499,7 +499,7 @@ import TaDaCore
 
     private func documentChanged(_ document: OpenDocument) {
         if let item = document.item {
-            if index[item.path] != item { updateIndex { $0.update(item) } }
+            if index[item.path] != item { updateIndex(replacing: item) }
         } else if index[document.path] != nil {
             updateIndex { $0.remove(document.path) }
         }
@@ -863,6 +863,17 @@ import TaDaCore
     private func updateIndex(_ change: (inout VaultIndex) -> Void) {
         change(&index)
         updateLists()
+    }
+
+    /// Puts an edited item in the index. When its properties are unchanged, as when typing in its body,
+    /// the lists keep their order and take the new item in place of the old.
+    private func updateIndex(replacing item: Item) {
+        guard index[item.path]?.properties == item.properties else { return updateIndex { $0.update(item) } }
+        index.update(item)
+        if let i = todayTasks.firstIndex(where: { $0.path == item.path }) { todayTasks[i] = item }
+        if let i = looseTasks.firstIndex(where: { $0.path == item.path }) { looseTasks[i] = item }
+        for i in upcoming.indices where upcoming[i].item.path == item.path { upcoming[i].item = item }
+        if let i = projects.firstIndex(where: { $0.project.path == item.path }) { projects[i].project = item }
     }
 
     /// Assigning a list equal to the old one doesn't notify the views that show it.

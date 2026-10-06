@@ -65,6 +65,9 @@ struct AppModelTests {
         model.selection = "tasks/Loose.md"
         await model.loading?.value
         let document = try #require(model.document)
+        document.text += "- [ ] Step\n"
+        #expect(model.todayTasks.map(\.title) == ["Loose", "Done", "Due today"] && model.todayTasks.first?.subtasks.total == 1)
+        #expect(model.looseTasks.first?.subtasks.total == 1)
         document.text = document.text.replacingOccurrences(of: "status: Not Started", with: "status: Not Started\nproject: \"[[Ta Da MVP]]\"")
         #expect(model.looseTasks.isEmpty && model.projects.map(\.total) == [3])
 
