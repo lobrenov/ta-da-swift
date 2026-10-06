@@ -175,15 +175,18 @@ struct AppModelTests {
         defer { window.close() }
         window.contentView = NSHostingView(rootView: ContentView(model: model))
         window.orderFrontRegardless()
-        try await Task.sleep(for: .milliseconds(300))
-        #expect(window.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == (macIsDark ? .aqua : .darkAqua))
+        let schemes: NSAppearance.Name = macIsDark ? .aqua : .darkAqua
+        for _ in 0..<50 where window.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) != schemes {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        #expect(window.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == schemes, "within 5 s")
         #expect(NSApp.appearance == nil && model.systemIsDark == macIsDark)
 
         // As if the Mac switched.
         NSApp.appearance = NSAppearance(named: macIsDark ? .aqua : .darkAqua)
         defer { NSApp.appearance = nil }
-        try await Task.sleep(for: .milliseconds(100))
-        #expect(model.systemIsDark == !macIsDark)
+        for _ in 0..<50 where model.systemIsDark == macIsDark { try await Task.sleep(for: .milliseconds(100)) }
+        #expect(model.systemIsDark == !macIsDark, "within 5 s")
     }
 
     @Test func aSchemePerAppearanceStartsFromTheSetAndEndsWhenASetIsChosen() {
