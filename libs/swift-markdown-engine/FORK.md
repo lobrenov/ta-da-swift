@@ -23,6 +23,7 @@ Every change is marked `Ta Da fork` in the source. Tests: `Tests/MarkdownEngineT
 11. **Compiler warnings.** `BlockScopedTokenizer` (`let first`), `ContextMenu` (`#selector` for the font panel) and `NativeTextViewCoordinator+TextDelegate` (two unused `blockLatexTokens` locals removed). Not marked in the source.
 12. **Serial header tests.** `ScrollingHeaderControllerTests` is `.serialized`: its animation tests spin the main run loop, and run in parallel they miss their targets.
 13. **Lists in blockquotes.** A quote line whose content is a list item (`> - [ ] a`, `> 1. b`) is also parsed as one, in `BlockNode.blockquote`'s `items`, and styled as a list item inside the quote: bullet or checkbox, hanging indent and strike, one list level in from the quote's text. The items take the list line height and the quote's line spacing, so the bar stays unbroken. The task and bullet caret helpers accept the `>` prefix, and bullet depth counts from after it. Quoted ordered items keep their source numbers. Return continues a quoted item inside the quote (`> - [ ] `); on an empty one it leaves `> `.
+14. **The embedder reaches the text view.** `SlashCommandProxy.textView` is the editor's `NSTextView`, for edits the embedder makes itself (Ta Da's Add Subtask).
 
 ## Known upstream test failure
 `MarkdownHTMLRendererTests` "bare URLs and emails autolink" fails on macOS 27 before any fork change (`www.example.com` isn't autolinked); it passes on macOS 26. The editor doesn't use the HTML renderer.

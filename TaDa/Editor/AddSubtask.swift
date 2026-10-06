@@ -1,16 +1,20 @@
 // Add Subtask (⌘L): makes the caret's line in the focused editor a subtask, or completes (or reopens) it.
 // Works through NSTextView, so the live editor and Source mode both get it with their own undo.
 import AppKit
+import SwiftUI
 import TaDaCore
 
-enum AddSubtask {
-    /// The live editor or Source mode, when it has keyboard focus. Text fields (title, search) don't count.
-    static var focusedEditor: NSTextView? {
-        guard let textView = NSApp.keyWindow?.firstResponder as? NSTextView,
-              !textView.isFieldEditor, textView.isEditable else { return nil }
-        return textView
-    }
+/// Holds an editor's text view. Each editor publishes its holder as a focused value while it has the keyboard.
+protocol TextViewHolder: AnyObject {
+    var textView: NSTextView? { get }
+}
 
+extension FocusedValues {
+    /// The live or Source editor that has the keyboard. Add Subtask edits it, and is off while there's none.
+    @Entry var editor: (any TextViewHolder)?
+}
+
+enum AddSubtask {
     static func perform(in textView: NSTextView) {
         let string = textView.string as NSString
         let caret = textView.selectedRange().location

@@ -40,6 +40,7 @@ struct LiveEditor: View {
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: showCheckboxMenu
         )
+        .focusedValue(\.editor, slashCommand)
         .onDisappear {
             slashMenu.hide()
             checkboxMenu.hide()
@@ -111,6 +112,8 @@ struct LiveEditor: View {
         return config
     }
 }
+
+extension SlashCommandProxy: TextViewHolder {}
 
 /// Resolves a link by its title, as `WikiLink` reads it, against the lowercased titles of the folder's files.
 nonisolated struct TitleResolver: WikiLinkResolver {

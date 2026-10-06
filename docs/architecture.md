@@ -110,7 +110,7 @@ Browser lists share their selection: each registers its rows with `.arrowKeySele
 | ⌘E | Live / Source |
 | ⌘, | Settings |
 | ⌘K | Complete or reopen the selected task |
-| ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step |
+| ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step. Off unless the Live or Source editor has the keyboard (its `editor` focused value) |
 | ↑ / ↓, Escape | Move through the list, clear the selection, while the list has the keyboard |
 | ⌫ or ⌘⌫ | Move the selected file, or the picked tasks, to the trash, while the list has the keyboard |
 | ⌘⌫ / ⌥⌘⌫ in Trash | Restore / delete forever the picked files |

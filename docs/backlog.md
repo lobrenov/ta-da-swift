@@ -6,8 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
-15. **⌘L finds its editor through `NSApp.keyWindow?.firstResponder`** *(Apple)*: see `AddSubtask.swift:8-12` and `Commands.swift:51-55`. The menu item stays enabled whenever a document is open, and beeps when no editor has focus. Pass editor focus to the command, for example with `@FocusedValue`, so the item disables itself; the HIG asks for unavailable commands to be disabled.
-
 16. **Names, icons and colours for domains and date kinds are repeated** *(duplication)*:
     - The titles, SF Symbols and tints for Today, Upcoming and Loose appear in `SidebarView.swift:20-22`, `TaskListView.swift:35-39`, `WorkspaceView.swift:77`, `FileInspector.swift:126-135` and `Commands.swift:25-30`.
     - `kind == .due ? "Due" : "Deadline"` appears six times.

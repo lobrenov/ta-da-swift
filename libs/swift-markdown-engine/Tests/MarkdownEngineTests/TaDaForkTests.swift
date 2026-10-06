@@ -340,6 +340,11 @@ struct SlashCommandTests {
         try await Task.sleep(for: .milliseconds(30))
     }
 
+    @Test func theProxyReachesTheTextView() {
+        let (tv, proxy) = makeEditor("Intro\n", Recorder())
+        #expect(proxy.textView === tv)
+    }
+
     @Test func slashAtLineStartOpensAndFollowsTheQuery() async throws {
         let recorder = Recorder()
         let (tv, _) = makeEditor("Intro\n", recorder)

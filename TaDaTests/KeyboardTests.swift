@@ -29,10 +29,10 @@ struct KeyboardTests {
         try? FileManager.default.removeItem(at: folder)
     }
 
-    private func window(for model: AppModel) async throws -> NSWindow {
+    private func window(for model: AppModel, focus: FocusedEditorProbe.Box = .init()) async throws -> NSWindow {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 800),
                               styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        window.contentView = NSHostingView(rootView: ContentView(model: model))
+        window.contentView = NSHostingView(rootView: ContentView(model: model).background(FocusedEditorProbe(box: focus)))
         window.makeKeyAndOrderFront(nil)
         try await settle()
         return window
@@ -163,6 +163,48 @@ struct KeyboardTests {
         try await settle()
         #expect(textView.string == "First line.\n")
         #expect(model.document?.body == "First line.\n")
+    }
+
+    @Test func addSubtaskFollowsTheEditorThatHasTheKeyboard() async throws {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        model.today = LocalDate("2026-10-03")!
+        await model.choose(folder)
+        model.selection = "tasks/A.md"
+        let focus = FocusedEditorProbe.Box()
+        let window = try await window(for: model, focus: focus)
+        defer { window.orderOut(nil) }
+
+        let live = try await loadedEditor(in: window)
+        window.makeFirstResponder(live)
+        try await settle()
+        #expect(focus.editor?.textView === live)
+
+        // Picking a row gives the list the keyboard.
+        model.selection = "tasks/B.md"
+        try await settle()
+        #expect(focus.editor == nil, "no editor has the keyboard, so Add Subtask is off")
+
+        model.isSourceMode = true
+        try await settle()
+        let source = try #require(window.contentView.flatMap { editor(in: $0) } as? SourceTextView)
+        window.makeFirstResponder(source)
+        try await settle()
+        #expect(focus.editor?.textView === source)
+    }
+}
+
+/// Reads the focused editor in its window, as the Task menu does.
+struct FocusedEditorProbe: View {
+    final class Box {
+        var editor: (any TextViewHolder)?
+    }
+
+    let box: Box
+    @FocusedValue(\.editor) private var editor
+
+    var body: some View {
+        Color.clear.onChange(of: editor.map { ObjectIdentifier($0) }, initial: true) { box.editor = editor }
     }
 }
 

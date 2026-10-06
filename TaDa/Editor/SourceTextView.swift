@@ -4,11 +4,28 @@ import AppKit
 import SwiftUI
 import TaDaCore
 
-struct SourceEditor: NSViewRepresentable {
+struct SourceEditor: View {
     @Binding var text: String
     let theme: Theme
     /// A new document replaces the text and its undo history.
     let documentID: String
+    @State private var reference = TextViewReference()
+
+    var body: some View {
+        SourceTextEditor(text: $text, theme: theme, documentID: documentID, reference: reference)
+            .focusedValue(\.editor, reference)
+    }
+}
+
+private final class TextViewReference: TextViewHolder {
+    weak var textView: NSTextView?
+}
+
+private struct SourceTextEditor: NSViewRepresentable {
+    @Binding var text: String
+    let theme: Theme
+    let documentID: String
+    let reference: TextViewReference
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -48,6 +65,7 @@ struct SourceEditor: NSViewRepresentable {
         scrollView.drawsBackground = false
 
         context.coordinator.textView = textView
+        reference.textView = textView
         textView.apply(theme)
         textView.string = text
         textView.rehighlight()

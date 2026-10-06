@@ -134,6 +134,20 @@ final class TaDaUITests: XCTestCase {
         waitForValue(deadline, "value != 'None'")
     }
 
+    func testAddSubtaskIsOffUnlessAnEditorHasTheKeyboard() throws {
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+        let taskMenu = app.menuBars.menuBarItems["Task"]
+        taskMenu.click()
+        XCTAssertFalse(app.menuItems["Add Subtask"].isEnabled, "the list has the keyboard")
+        app.typeKey(.escape, modifierFlags: [])
+
+        body.click()
+        taskMenu.click()
+        XCTAssertTrue(app.menuItems["Add Subtask"].isEnabled, "the editor has the keyboard")
+        app.typeKey(.escape, modifierFlags: [])
+    }
+
     func testCompleteSelectedTask() throws {
         app.buttons["Alpha"].click()
         waitForTitle("Alpha")

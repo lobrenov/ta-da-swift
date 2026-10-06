@@ -32,6 +32,9 @@ public final class SlashCommandProxy {
 
     public init() {}
 
+    /// Ta Da fork: the editor's text view, for edits the embedder makes itself.
+    public var textView: NSTextView? { coordinator?.textView }
+
     /// Replaces the `/query` with `text` (one undo step) and selects `selection`, which is relative to `text`.
     public func insert(_ text: String, selecting selection: NSRange) {
         coordinator?.insertSlashCommand(text, selecting: selection)

@@ -6,6 +6,7 @@ import TaDaCore
 
 struct AppCommands: Commands {
     @Bindable var model: AppModel
+    @FocusedValue(\.editor) private var editor
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -51,10 +52,10 @@ struct AppCommands: Commands {
             .keyboardShortcut("k")
             .disabled(selected == nil)
             Button("Add Subtask") {
-                if let editor = AddSubtask.focusedEditor { AddSubtask.perform(in: editor) } else { NSSound.beep() }
+                if let textView = editor?.textView { AddSubtask.perform(in: textView) }
             }
             .keyboardShortcut("l")
-            .disabled(model.document == nil)
+            .disabled(editor == nil)
         }
     }
 }
