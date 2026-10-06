@@ -2,6 +2,7 @@
 // a current-line highlight and colouring by role (SourceHighlighter).
 import AppKit
 import SwiftUI
+import TaDaCore
 
 struct SourceEditor: NSViewRepresentable {
     @Binding var text: String

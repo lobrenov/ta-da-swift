@@ -4,13 +4,7 @@ Work not yet built.
 
 ## Code review (2026-10-05)
 
-Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Item 11 is a copy of core logic that has already drifted from it. Line references are to commit `136b4c6`.
-
-11. **`SourceHighlighter` duplicates core parsing in the app target** *(duplication, layering)*: it re-implements frontmatter and code fences, YAML keys, dates and wikilinks (`SourceHighlighter.swift:40-65`), and the copies differ from the core:
-    - a `---` with no closing fence colours the whole file as YAML, while `FrontmatterSplitter` treats it as body;
-    - its fence check trims leading whitespace, which the splitter doesn't.
-
-    It uses only Foundation, so by the CLAUDE.md layering it belongs in TaDaCore, built on `FrontmatterSplitter`, `WikiLink` and `LocalDate`.
+Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
 12. **Views recompute list membership and project progress** *(duplication)*: `FileInspector.swift:116-138` re-derives why a task appears in Today, Upcoming or Loose, running the full `today()` and `upcoming()` queries to test one item. Progress is computed four ways: `ProjectProgress`, `VaultIndex.progress(of:)` in the app (`BrowserChrome.swift:158`), and inline counts in `ProjectBrowserView.swift:11-16` and `ProjectDocumentView.swift:22`. Add per-item predicates and a `progress(of:) -> ProjectProgress` to `Queries`.
 

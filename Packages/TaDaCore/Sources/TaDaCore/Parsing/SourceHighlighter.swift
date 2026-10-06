@@ -1,9 +1,8 @@
-// Source-mode colouring: splits a file into runs by role, from the Editor artboard's table.
 import Foundation
-import TaDaCore
 
-nonisolated enum SourceHighlighter {
-    enum Role: Equatable, Sendable {
+/// Source-mode colouring: splits a file into runs by role, from the Editor artboard's table.
+public enum SourceHighlighter {
+    public enum Role: Equatable, Sendable {
         /// Fences, `:`, list dashes, brackets, `#` and `[[`/`]]`.
         case punct
         /// A frontmatter key.
@@ -25,32 +24,25 @@ nonisolated enum SourceHighlighter {
         case link
     }
 
-    struct Run: Equatable, Sendable {
-        var range: NSRange
-        var role: Role
+    public struct Run: Equatable, Sendable {
+        public var range: NSRange
+        public var role: Role
     }
 
     /// Runs in document order; later runs override earlier ones where they overlap. Text not covered is body text.
-    static func runs(in text: String) -> [Run] {
+    /// The frontmatter is the block `FrontmatterSplitter` finds.
+    public static func runs(in text: String) -> [Run] {
         let ns = text as NSString
+        let frontmatterEnd = (FrontmatterSplitter.split(text).block as NSString).length
         var runs: [Run] = []
-        var lineIndex = 0
-        var inFrontmatter = false
         var inCode = false
 
-        ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length), options: [.byLines, .substringNotRequired]) { _, line, _, _ in
-            defer { lineIndex += 1 }
+        ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length), options: [.byLines, .substringNotRequired]) { _, line, enclosing, _ in
             let content = ns.substring(with: line)
-            if lineIndex == 0, isFence(content) {
-                inFrontmatter = true
-                runs.append(Run(range: line, role: .punct))
-            } else if inFrontmatter {
-                if isFence(content) {
-                    inFrontmatter = false
-                    runs.append(Run(range: line, role: .punct))
-                } else {
-                    runs += yamlLine(content, at: line.location)
-                }
+            if line.location < frontmatterEnd {
+                // The block's first and last lines are its fences.
+                let isFence = line.location == 0 || NSMaxRange(enclosing) == frontmatterEnd
+                runs += isFence ? [Run(range: line, role: .punct)] : yamlLine(content, at: line.location)
             } else if content.trimmingCharacters(in: .whitespaces).hasPrefix("```") || content.trimmingCharacters(in: .whitespaces).hasPrefix("~~~") {
                 inCode.toggle()
                 runs.append(Run(range: line, role: .punct))
@@ -61,15 +53,10 @@ nonisolated enum SourceHighlighter {
         return runs
     }
 
-    private static func isFence(_ line: String) -> Bool {
-        line.trimmingCharacters(in: CharacterSet(charactersIn: " \t\r")) == "---"
-    }
-
     // MARK: Frontmatter
 
     private nonisolated(unsafe) static let keyLine = #/^([^\s:#][^:]*)(:)(.*)$/#
     private nonisolated(unsafe) static let listItem = #/^(\s*-)(\s+)(.*)$/#
-    private nonisolated(unsafe) static let datePattern = #/\d{4}-\d{2}-\d{2}/#
 
     private static func yamlLine(_ line: String, at start: Int) -> [Run] {
         if line.trimmingCharacters(in: .whitespaces).hasPrefix("#") {
@@ -139,14 +126,13 @@ nonisolated enum SourceHighlighter {
         let trimmed = scalar.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
         let role: Role = trimmed.hasPrefix("\"") || trimmed.hasPrefix("'") ? .string
-            : trimmed.wholeMatch(of: datePattern) != nil ? .date : .value
+            : LocalDate(trimmed) != nil ? .date : .value
         return Run(range: range(scalar, in: line, at: start), role: role)
     }
 
     // MARK: Body
 
     private nonisolated(unsafe) static let heading = #/^(#{1,6}\s+)(.*)$/#
-    private nonisolated(unsafe) static let wikiLink = #/(\[\[)([^\[\]\n]+)(\]\])/#
 
     private static func bodyLine(_ line: String, at start: Int) -> [Run] {
         var runs: [Run] = []
@@ -162,10 +148,10 @@ nonisolated enum SourceHighlighter {
             runs = [Run(range: NSRange(location: start + markerStart, length: syntaxEnd - markerStart), role: done ? .checkDone : .check)]
             if done { runs.append(Run(range: NSRange(location: start + syntaxEnd, length: utf16(line) - syntaxEnd), role: .doneText)) }
         }
-        for match in line.matches(of: wikiLink) {
-            runs += [Run(range: range(match.1, in: line, at: start), role: .punct),
-                     Run(range: range(match.2, in: line, at: start), role: .link),
-                     Run(range: range(match.3, in: line, at: start), role: .punct)]
+        for match in line.matches(of: WikiLink.pattern) where WikiLink(inner: String(match.1)) != nil {
+            runs += [Run(range: range(match.0.prefix(2), in: line, at: start), role: .punct),
+                     Run(range: range(match.1, in: line, at: start), role: .link),
+                     Run(range: range(match.0.suffix(2), in: line, at: start), role: .punct)]
         }
         return runs
     }

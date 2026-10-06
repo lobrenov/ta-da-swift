@@ -37,5 +37,5 @@ public struct WikiLink: Hashable, Sendable {
         text.matches(of: pattern).compactMap { WikiLink(inner: String($0.1)) }
     }
 
-    private nonisolated(unsafe) static let pattern = #/\[\[([^\[\]\n]+)\]\]/#
+    nonisolated(unsafe) static let pattern = #/\[\[([^\[\]\n]+)\]\]/#
 }
