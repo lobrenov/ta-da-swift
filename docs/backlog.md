@@ -6,13 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
-19. **AppModel's async plumbing repeats itself** *(duplication, concurrency)*:
-    - Nine one-off `@concurrent nonisolated static` wrappers (`AppModel.swift:313`, plus lines 188, 466-481, 545, 587 and 591) sit next to a generic `run` that could replace them.
-    - About a dozen "Ta Da couldn’t …" messages are formatted by hand.
-    - `selection.didSet` starts a new unstructured `Task` on every change (`AppModel.swift:28-34`), so overlapping loads can each call `keepUnsavedEdits` on the same document.
-
-    Fix: use `Self.run`, or give `Vault` async APIs; add one error-reporting helper; and use a single load task that each new selection cancels.
-
 20. **Test fixtures are copy-pasted** *(duplication, tests)*: six TaDaTests suites each rebuild the UserDefaults suite, temp folder, file seeding, `cleanUp()` and `model(selecting:)` (for example `OpenDocumentTests.swift:10-48` and `OutsideChangesTests.swift:10-49`). Every test needs `defer { cleanUp() }`, and fixed sleeps of up to 1.2 s wait out the hard-coded 600 ms debounce. Use one shared fixture (a `final class` with `deinit`, or a `TestScoping` trait) and make the debounce injectable. `GeneratedVault` (`Packages/TaDaCore/Sources/TaDaCore/Testing/GeneratedVault.swift`), test-data code, also ships in the production TaDaCore target; move it to a test-support target.
 
 ## Features

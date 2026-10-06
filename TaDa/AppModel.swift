@@ -40,10 +40,17 @@ import TaDaCore
             } else {
                 isSourceMode = false
             }
-            loading = Task { await loadSelection() }
+            let previous = loading
+            previous?.cancel()
+            loading = Task {
+                await previous?.value
+                guard !Task.isCancelled else { return }
+                await loadSelection()
+            }
         }
     }
-    /// The load the last selection change started.
+    /// The load the last selection change started. Each cancels the one before, which then doesn't start, and
+    /// waits for it, so loads never overlap.
     @ObservationIgnored private(set) var loading: Task<Void, Never>?
     /// Two or more tasks picked with shift- or ⌘-click in a project's list. While it's set, `selection` is nil.
     private(set) var multiSelection: Set<String> = []
@@ -185,7 +192,7 @@ import TaDaCore
             if let refreshed = resolved.refreshed { defaults.set(refreshed, forKey: Keys.bookmark) }
             await open(resolved.folder)
         } catch {
-            state = .failed("Ta Da couldn’t open the saved folder. It may have been moved or deleted. (\(error.localizedDescription))")
+            state = .failed(Self.couldNot("open the saved folder. It may have been moved or deleted", error))
         }
     }
 
@@ -196,7 +203,7 @@ import TaDaCore
         do {
             defaults.set(try Vault.bookmark(for: folder), forKey: Keys.bookmark)
         } catch {
-            state = .failed("Ta Da couldn’t keep access to “\(folder.lastPathComponent)”. (\(error.localizedDescription))")
+            state = .failed(Self.couldNot("keep access to “\(folder.lastPathComponent)”", error))
             return
         }
         domain = .today
@@ -213,20 +220,16 @@ import TaDaCore
         watcher = nil
         state = .loading
         // Dates first: anything that changes while the index loads shows up as changed on the next refresh.
-        fileDates = await Self.modificationDates(in: vault)
+        fileDates = await Self.run { vault.modificationDates() }
         let loaded = await vault.loadIndex()
         updateIndex { $0 = loaded }
-        trash = await Self.trashedItems(in: vault)
-        isInICloud = (try? await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }) ?? false
+        trash = await Self.run { vault.trashedItems() }
+        isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         state = .ready
         watcher = VaultWatcher(root: vault.root) { [weak self] in
             Task { await self?.refresh() }
         }
         isWatching = watcher != nil
-    }
-
-    @concurrent nonisolated private static func modificationDates(in vault: Vault) async -> [String: Date] {
-        vault.modificationDates()
     }
 
     // MARK: Changes made outside Ta Da
@@ -246,11 +249,12 @@ import TaDaCore
             defer { refreshing = nil }
             repeat {
                 refreshAgain = false
-                let changes = await Self.changes(in: vault, since: fileDates, presenter: presenter)
+                let known = fileDates, presenter = presenter
+                let changes = await Self.run { vault.changes(since: known, presenter: presenter) }
                 guard self.vault?.root == vault.root else { return }
                 fileDates = changes.dates
                 await apply(changes, from: vault)
-                trash = await Self.trashedItems(in: vault)
+                trash = await Self.run { vault.trashedItems() }
                 trashSelection.formIntersection(trash.map(\.id))
                 multiSelection = multiSelection.filter { index[$0] != nil }
             } while refreshAgain
@@ -283,8 +287,10 @@ import TaDaCore
 
     /// Takes the file's new text if there are no unsaved edits; otherwise keeps them and asks.
     private func reload(_ document: OpenDocument, from vault: Vault) async {
-        guard let (disk, modified) = try? await Self.read(document.path, in: vault, presenter: presenter) else { return }
-        document.conflicts = await Self.conflicts(of: document.path, in: vault)
+        let path = document.path, presenter = presenter
+        let loaded = try? await Self.run { (try vault.read(path, presenter: presenter), vault.modificationDate(of: path)) }
+        guard let (disk, modified) = loaded else { return }
+        document.conflicts = await Self.run { Conflicts.versions(of: vault.url(for: path)) }
         guard disk != document.savedText else { return }
         if document.isDirty, disk != document.text {
             document.diskText = disk
@@ -315,13 +321,17 @@ import TaDaCore
     func saveAgain(_ document: OpenDocument) async {
         guard let vault else { return }
         do {
-            document.modified = try await Self.write(document.text, to: document.path, in: vault)
+            let text = document.text, path = document.path
+            document.modified = try await Self.run {
+                try vault.write(text, to: path)
+                return vault.modificationDate(of: path)
+            }
             document.savedText = document.text
             document.isRemovedOnDisk = false
             if let item = document.item { updateIndex { $0.update(item) } }
             present(document)
         } catch {
-            errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: document.path))”. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("save “\(Item.title(ofPath: document.path))”", error)
         }
     }
 
@@ -340,7 +350,7 @@ import TaDaCore
             try await Self.run { try Conflicts.keepCurrent(url) }
             document.conflicts = []
         } catch {
-            errorMessage = "Ta Da couldn’t resolve the conflict. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("resolve the conflict", error)
         }
     }
 
@@ -355,26 +365,18 @@ import TaDaCore
             document.savedText = text
             document.text = text
         } catch {
-            errorMessage = "Ta Da couldn’t use the other version. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("use the other version", error)
         }
     }
 
-    @concurrent nonisolated private static func changes(
-        in vault: Vault, since known: [String: Date], presenter: FilePresenter?
-    ) async -> VaultChanges {
-        vault.changes(since: known, presenter: presenter)
-    }
-
-    @concurrent nonisolated private static func trashedItems(in vault: Vault) async -> [TrashedItem] {
-        vault.trashedItems()
-    }
-
-    @concurrent nonisolated private static func conflicts(of path: String, in vault: Vault) async -> [ConflictVersion] {
-        Conflicts.versions(of: vault.url(for: path))
-    }
-
-    @concurrent nonisolated private static func run<T: Sendable>(_ work: @Sendable () throws -> T) async throws -> T {
+    /// Does file work off the main actor.
+    @concurrent nonisolated private static func run<T: Sendable>(_ work: @Sendable () throws -> T) async rethrows -> T {
         try work()
+    }
+
+    /// "Ta Da couldn’t <action>. (<the error>)"
+    private static func couldNot(_ action: String, _ error: any Error) -> String {
+        "Ta Da couldn’t \(action). (\(error.localizedDescription))"
     }
 
     // MARK: Navigation
@@ -481,7 +483,8 @@ import TaDaCore
             return
         }
         do {
-            let (text, modified) = try await Self.read(path, in: vault, presenter: presenter)
+            let presenter = presenter
+            let (text, modified) = try await Self.run { (try vault.read(path, presenter: presenter), vault.modificationDate(of: path)) }
             guard selection == path, document?.path != path else { return }
             let document = OpenDocument(path: path, text: text, modified: modified)
             document.onChange = { [weak self, weak document] in
@@ -489,11 +492,11 @@ import TaDaCore
             }
             self.document = document
             documentError = nil
-            document.conflicts = await Self.conflicts(of: path, in: vault)
+            document.conflicts = await Self.run { Conflicts.versions(of: vault.url(for: path)) }
         } catch {
             guard selection == path else { return }
             document = nil
-            documentError = "Ta Da couldn’t open “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
+            documentError = Self.couldNot("open “\(Item.title(ofPath: path))”", error)
         }
     }
 
@@ -555,9 +558,14 @@ import TaDaCore
     /// then nothing is written and the document asks what to keep.
     private func write(_ document: OpenDocument) async {
         guard let vault, document.isDirty, document.diskText == nil, !document.isRemovedOnDisk else { return }
-        let text = document.text, path = document.path
+        let text = document.text, path = document.path, expected = document.savedText, presenter = presenter
         do {
-            switch try await Self.write(text, to: path, ifUnchangedFrom: document.savedText, in: vault, presenter: presenter) {
+            let result = try await Self.run { () throws -> WriteResult in
+                guard FileManager.default.fileExists(atPath: vault.url(for: path).path(percentEncoded: false)) else { return .missing }
+                if let disk = try vault.write(text, to: path, ifUnchangedFrom: expected, presenter: presenter) { return .changed(disk) }
+                return .written(vault.modificationDate(of: path))
+            }
+            switch result {
             case let .written(modified):
                 document.savedText = text
                 document.modified = modified
@@ -568,7 +576,7 @@ import TaDaCore
                 document.isRemovedOnDisk = true
             }
         } catch {
-            errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("save “\(Item.title(ofPath: path))”", error)
         }
     }
 
@@ -579,12 +587,12 @@ import TaDaCore
         let path = document.path, text = document.text
         let title = document.isRemovedOnDisk ? Item.title(ofPath: path) : "\(Item.title(ofPath: path)) (unsaved edits)"
         do {
-            let copy = try await Self.create(text, in: Vault.folder(of: path), title: title, vault: vault)
+            let copy = try await Self.run { try vault.create(text, in: Vault.folder(of: path), title: title) }
             if let item = Item(parsing: text, path: copy) { updateIndex { $0.update(item) } }
             document.savedText = text
             errorMessage = "“\(Item.title(ofPath: path))” changed outside Ta Da while you were editing it, so your edits were saved as “\(Item.title(ofPath: copy))”."
         } catch {
-            errorMessage = "Ta Da couldn’t keep your edits to “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("keep your edits to “\(Item.title(ofPath: path))”", error)
         }
     }
 
@@ -601,25 +609,6 @@ import TaDaCore
         /// Another app changed the file; this is its text.
         case changed(String)
         case missing
-    }
-
-    @concurrent nonisolated private static func write(
-        _ text: String, to path: String, ifUnchangedFrom expected: String, in vault: Vault, presenter: FilePresenter?
-    ) async throws -> WriteResult {
-        guard FileManager.default.fileExists(atPath: vault.url(for: path).path(percentEncoded: false)) else { return .missing }
-        if let disk = try vault.write(text, to: path, ifUnchangedFrom: expected, presenter: presenter) { return .changed(disk) }
-        return .written(vault.modificationDate(of: path))
-    }
-
-    @concurrent nonisolated private static func read(
-        _ path: String, in vault: Vault, presenter: FilePresenter?
-    ) async throws -> (String, Date?) {
-        (try vault.read(path, presenter: presenter), vault.modificationDate(of: path))
-    }
-
-    @concurrent nonisolated private static func write(_ text: String, to path: String, in vault: Vault) async throws -> Date? {
-        try vault.write(text, to: path)
-        return vault.modificationDate(of: path)
     }
 
     // MARK: Editing files
@@ -641,10 +630,10 @@ import TaDaCore
         }
         guard let vault else { return }
         do {
-            let item = try await Self.update(path, in: vault, transform)
+            let item = try await Self.run { try vault.update(path, transform) }
             updateIndex { if let item { $0.update(item) } else { $0.remove(path) } }
         } catch {
-            errorMessage = "Ta Da couldn’t save “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("save “\(Item.title(ofPath: path))”", error)
         }
     }
 
@@ -672,7 +661,14 @@ import TaDaCore
             }
         }
         do {
-            let (newPath, items, failed) = try await Self.rename(path, to: title, in: vault, index: index, presenter: presenter)
+            let index = index, presenter = presenter
+            // The new path, the renamed file and its relinked tasks as they now are, and the tasks that couldn't be relinked.
+            let (newPath, items, failed) = try await Self.run { () throws -> (String, [Item], [String]) in
+                let result = index[path]?.properties.kind == .project
+                    ? try vault.renameProject(at: path, to: title, index: index)
+                    : (path: try vault.rename(path, to: title), tasks: [], failed: [])
+                return (result.path, try [vault.load(result.path, presenter: presenter)].compactMap { $0 } + result.tasks, result.failed)
+            }
             guard newPath != path else { return }
             follow(path, to: newPath, items: items)
             if !failed.isEmpty {
@@ -680,19 +676,8 @@ import TaDaCore
                 errorMessage = "Ta Da renamed “\(Item.title(ofPath: path))” to “\(Item.title(ofPath: newPath))”, but the project link in \(names) still points to the old name."
             }
         } catch {
-            errorMessage = "Ta Da couldn’t rename “\(Item.title(ofPath: path))”. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("rename “\(Item.title(ofPath: path))”", error)
         }
-    }
-
-    /// Returns the new path, the renamed file and any relinked tasks as they now are, and the tasks that
-    /// couldn't be relinked.
-    @concurrent nonisolated private static func rename(
-        _ path: String, to title: String, in vault: Vault, index: VaultIndex, presenter: FilePresenter?
-    ) async throws -> (String, [Item], [String]) {
-        let result = index[path]?.properties.kind == .project
-            ? try vault.renameProject(at: path, to: title, index: index)
-            : (path: try vault.rename(path, to: title), tasks: [], failed: [])
-        return (result.path, try [vault.load(result.path, presenter: presenter)].compactMap { $0 } + result.tasks, result.failed)
     }
 
     /// Points the index, the open document and the selection at a renamed file. `items` are the files as they now are.
@@ -737,7 +722,7 @@ import TaDaCore
             }
         } catch {
             let name = items.count == 1 ? "“\(item.title)”" : "the files"
-            errorMessage = "Ta Da couldn’t move \(name) to the trash. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("move \(name) to the trash", error)
         }
         await refresh()
     }
@@ -751,7 +736,7 @@ import TaDaCore
             let folders = Set(restored.map { Vault.folder(of: $0) + "/" }).sorted()
             trashNote = "\(restored.count == 1 ? "1 item" : "\(restored.count) items") restored to \(folders.joined(separator: " and "))"
         } catch {
-            errorMessage = "Ta Da couldn’t restore the files. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("restore the files", error)
         }
         trashSelection.subtract(paths)
         await refresh()
@@ -764,7 +749,7 @@ import TaDaCore
         do {
             try await Self.run { try vault.discard(paths) }
         } catch {
-            errorMessage = "Ta Da couldn’t move the files to the Trash. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("move the files to the Trash", error)
         }
         trashSelection.subtract(paths)
         trashNote = nil
@@ -835,23 +820,13 @@ import TaDaCore
     private func create(_ text: String, in folder: String, title: String = "Untitled") async -> String? {
         guard let vault else { return nil }
         do {
-            let path = try await Self.create(text, in: folder, title: title, vault: vault)
+            let path = try await Self.run { try vault.create(text, in: folder, title: title) }
             if let item = Item(parsing: text, path: path) { updateIndex { $0.update(item) } }
             return path
         } catch {
-            errorMessage = "Ta Da couldn’t create a file in “\(folder)”. (\(error.localizedDescription))"
+            errorMessage = Self.couldNot("create a file in “\(folder)”", error)
             return nil
         }
-    }
-
-    @concurrent nonisolated private static func create(_ text: String, in folder: String, title: String, vault: Vault) async throws -> String {
-        try vault.create(text, in: folder, title: title)
-    }
-
-    @concurrent nonisolated private static func update(
-        _ path: String, in vault: Vault, _ transform: @Sendable (String) -> String
-    ) async throws -> Item? {
-        try vault.update(path, transform)
     }
 
     // MARK: Lists

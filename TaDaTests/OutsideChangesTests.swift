@@ -167,6 +167,25 @@ struct OutsideChangesTests {
         #expect(model.errorMessage?.contains("Task (unsaved edits)") == true)
     }
 
+    @Test func leavingAConflictedFileTwiceQuicklyKeepsOneCopy() async throws {
+        defer { cleanUp() }
+        try write("---\ntype: task\nstatus: Not Started\n---\n", "tasks/Third.md")
+        let model = await model(selecting: "tasks/Task.md")
+        let document = try #require(model.document)
+        document.body += "Mine.\n"
+        try write(Self.task + "Theirs.\n", "tasks/Task.md")
+        await model.refresh()
+
+        model.selection = "tasks/Other.md"
+        model.selection = "tasks/Third.md"
+        await model.loading?.value
+        let copies = try FileManager.default.contentsOfDirectory(atPath: folder.appending(path: "tasks").path)
+            .filter { $0.hasPrefix("Task (unsaved edits)") }
+        #expect(copies == ["Task (unsaved edits).md"])
+        #expect(model.errorMessage == "“Task” changed outside Ta Da while you were editing it, so your edits were saved as “Task (unsaved edits)”.")
+        #expect(model.document?.path == "tasks/Third.md")
+    }
+
     @Test func aDeletedCleanFileCloses() async throws {
         defer { cleanUp() }
         let model = await model(selecting: "tasks/Task.md")
