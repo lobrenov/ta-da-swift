@@ -1,6 +1,6 @@
 # Ta Da design framework
 
-Mirrored by the Claude Design System artifact https://claude.ai/artifact/GkKXeVHXv9XMGMWWacPppz (last synced 2026-10-05, version 1791177167-fca9; it shows one colour scheme per theme set). This folder is the copy the repo follows: `tokens.json` holds the values, `components/<Name>/README.md` the component guidelines and `components/bundle.css` their reference CSS. [In the app](#in-the-app) maps each part to its Swift code, and [As built](#as-built) lists where the app differs from the guidance.
+Mirrored by the Claude Design System artifact https://claude.ai/artifact/GkKXeVHXv9XMGMWWacPppz (last synced 2026-10-06, version 1791244624-f6d1; it shows one colour scheme per theme set). This folder is the copy the repo follows: `tokens.json` holds the values, `components/<Name>/README.md` the component guidelines and `components/bundle.css` their reference CSS. [In the app](#in-the-app) maps each part to its Swift code, and [As built](#as-built) lists where the app differs from the guidance.
 
 The app's screens, menus and states are mocked up on the Claude Design canvas https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V.
 
@@ -85,6 +85,40 @@ All checkbox states share the 16px box. 23 states follow the Alternative Checkbo
 
 Only Done and Important are filled boxes. Done and Cancelled strike their text through in `muted`.
 
+## Editor markdown
+
+The Live editor draws the file's markdown at `body-editor` (14/23) and keeps every marker in the file. The canvas's Live editor · markdown row shows each format beside the markdown that makes it, in every theme. Guidelines: `components/Markdown/README.md` and `components/Callout/README.md`.
+
+- **Headings** step down from `heading-1` (20/28) to `heading-6` (13/20, `muted`); all sit below the file title (`title-file`, 23px).
+- **Bubbles.** Inline code and highlights are rounded spans: `radius-sm` corners, 2px above and below, rounded again on each line they wrap onto, text in `strong`. Code sits on `code` with a 1px `border` ring, in `code-text` (12.5px mono). A highlight is `due` at 30% (26% on dark schemes), the one place `due` fills behind text.
+- **Blocks** use `radius-lg`: code blocks (`code` with a `border` ring and the language top right in `muted`), tables (a `border` frame, header row on `code`), images and callouts.
+- **Links**: `[[wikilinks]]` in `link`; markdown links in `link` with a 45% underline; unresolved wikilinks in `muted` with a dashed underline.
+- **Lists** indent 27.5px a level, with `muted` bullets that change by depth (filled circle, circle, filled square, diamond) and `muted` numbers. Task lines draw the inline checkboxes above.
+- **Quotes** are `muted` text beside a 3px rounded `surface` bar.
+- **The caret's line** shows its markdown in mono 13px on `code`, `radius-sm`, markers in `muted`; every other line stays drawn.
+
+### Callouts
+
+Obsidian's callouts: `> [!type] Title` opens one, and the following `>` lines are its body. The icon carries the type's colour; the panel is that colour at 9% (14% on dark schemes) with a 24% ring (30%), so text keeps `strong` titles and `fg` bodies. `+` or `-` after `]` makes it foldable, open or folded, with a `muted` chevron on the right. A right-click on the title line opens the callout menu.
+
+| Type | Aliases | Token | Icon |
+| --- | --- | --- | --- |
+| `note` | | `accent` | pencil |
+| `abstract` | `summary`, `tldr` | `doing` | clipboard |
+| `info` | | `accent` | info circle |
+| `todo` | | `accent` | tick circle |
+| `tip` | `hint`, `important` | `doing` | flame |
+| `success` | `check`, `done` | `done` | tick |
+| `question` | `help`, `faq` | `due` | question circle |
+| `warning` | `caution`, `attention` | `blocked` | triangle |
+| `failure` | `fail`, `missing` | `deadline` | cross |
+| `danger` | `error` | `deadline` | bolt |
+| `bug` | | `deadline` | bug |
+| `example` | | `link` | list |
+| `quote` | `cite` | `muted` | quote marks (filled) |
+
+Types are read case-insensitively. An unknown type draws as `note`. Without a title, the type's name is the title.
+
 ## Writing
 
 - Sentence case for labels and menus; title case only on buttons, as macOS does ("Log Now", "Empty Trash").
@@ -94,7 +128,7 @@ Only Done and Important are filled boxes. Done and Cancelled strike their text t
 
 ## Components
 
-Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tokens: Checkbox, TaskRow, SidebarItem, PropertyRow, Chip, Button, Menu. Each has guidelines in `components/<Name>/README.md`. In the Swift app they map to SwiftUI views; the classes here are the reference for spacing, states and colour roles.
+Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tokens: Checkbox, TaskRow, SidebarItem, PropertyRow, Chip, Button, Menu, Markdown, Callout. Each has guidelines in `components/<Name>/README.md`. In the Swift app they map to SwiftUI views; the classes here are the reference for spacing, states and colour roles.
 
 ## In the app
 
@@ -110,6 +144,7 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 | Button | `newButton` in `TaDa/Sidebar/SidebarView.swift`; `NewLinkedTaskButton` in `TaDa/Document/ProjectDocumentView.swift`. |
 | Button (`td-seg`) | `ModeToggle` in `TaDa/Document/DocumentPane.swift`; `AppearancePicker` in `TaDa/Settings/ThemeSettingsView.swift`. |
 | Menu | `PopupMenu` in `TaDa/Shared/PopupMenu.swift` draws both densities (`PopupMenuStyle.full` and `.compact`): the panel, labels, dividers, highlight, footer key hints. Each menu supplies its rows: `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`; the compact `FileMenu` in `TaDa/Shared/FileMenu.swift`, which rows add with `.fileMenu(model, path:)`. |
+| Markdown | `LiveEditor` in `TaDa/Editor/LiveEditor.swift` maps the colour tokens onto the engine's `MarkdownEditorTheme`; its `CodeBlockStyle` sets the code font and fill. |
 | Settings window | `SettingsView` (nav, `SettingsPage`, `SettingsSectionLabel`, `SettingsButton`) in `TaDa/Settings/SettingsView.swift`; `VaultSettingsView` and `ThemeSettingsView` beside it. |
 | Trash | `TrashView` in `TaDa/Browser/TrashView.swift`. |
 | View title, group headers | `DomainHeader`, `ProjectGroupHeader` and `CountGroupHeader` in `TaDa/Browser/BrowserChrome.swift`. |
@@ -129,4 +164,6 @@ Where the app differs from the guidance above:
 - **File menu** items are in title case, as macOS menu commands are: Delete Forever, Delete 3 Tasks.
 - **PropertyRow**: values are 12.5pt. `status` (menu), `dueDate` and `deadline` (calendar popover) are editable; the other keys are read-only. `project` shows as `[[Title]]` in `link`, or struck through in `muted` when no project has that title.
 - **Settings ▸ Vault**: Location (Change…, Reveal in Finder), Sync (iCloud Drive or local, and whether the folder is watched), Contents (task and project counts) and the `tasks/` and `projects/` folders. There is no Open another vault or Create new vault; Change… picks the folder.
+- **Editor markdown** uses the engine's drawing: headings scale 2, 1.5, 1.17, 1, 0.83 and 0.67 times the 14pt body; inline code (SF Mono at 0.85×) and highlights (`due` at 30%) are flat fills with no corners, padding or ring; code blocks are `code` line fills.
+- **Callouts and the callout menu** are not built: a `> [!type]` line draws as a plain quote.
 - **Settings ▸ Themes**: no Import .itermcolors button. The theme set and scheme pickers are menus drawn as `code` fields. The window title bar is the system's, on `side`.

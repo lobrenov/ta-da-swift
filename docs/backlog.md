@@ -73,3 +73,4 @@ Issues from the review, most severe first. Fixed ones are removed; the rest keep
 - Editing UI for `area`, `contexts` and `project`.
 - iOS/iPad, including the choice of editor.
 - Upstream fix for alias display: `[[Target|Alias]]` shows the target name.
+- Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, rounded inline code, highlights and code blocks, and Obsidian callouts with folding and the callout menu.
