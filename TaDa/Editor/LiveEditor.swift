@@ -112,21 +112,16 @@ struct LiveEditor: View {
     }
 }
 
-nonisolated private struct TitleResolver: WikiLinkResolver {
+/// Resolves a link by its title, as `WikiLink` reads it, against the lowercased titles of the folder's files.
+nonisolated struct TitleResolver: WikiLinkResolver {
     let titles: Set<String>
 
     func resolve(displayName: String, range: NSRange) -> WikiLinkResolution? {
-        guard titles.contains(Self.title(of: displayName).lowercased()) else { return nil }
+        guard let link = WikiLink(inner: displayName), titles.contains(link.title.lowercased()) else { return nil }
         return WikiLinkResolution(id: displayName, exists: true)
     }
 
     func fingerprint() -> AnyHashable { titles }
-
-    /// `folder/Title#heading` → `Title`.
-    static func title(of target: String) -> String {
-        let withoutHeading = target.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
-        return String(withoutHeading.split(separator: "/").last ?? "")
-    }
 }
 
 nonisolated private struct CodeBlockStyle: SyntaxHighlighter {

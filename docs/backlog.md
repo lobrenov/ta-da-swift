@@ -4,9 +4,7 @@ Work not yet built.
 
 ## Code review (2026-10-05)
 
-Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Items 10 and 11 are copies of the same logic that have already drifted apart. Line references are to commit `136b4c6`.
-
-10. **The editor re-implements wikilink resolution and disagrees with the core** *(duplication, drift)*: `TitleResolver.title(of:)` (`LiveEditor.swift:123`) strips `#heading` and folders but not `.md`, unlike `WikiLink.title`. So `[[Note.md]]` is drawn as unresolved, yet clicking it (`LiveDocumentView.swift:58`) opens the note. Resolve links with `WikiLink(inner:)` against the index's `titles`.
+Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Item 11 is a copy of core logic that has already drifted from it. Line references are to commit `136b4c6`.
 
 11. **`SourceHighlighter` duplicates core parsing in the app target** *(duplication, layering)*: it re-implements frontmatter and code fences, YAML keys, dates and wikilinks (`SourceHighlighter.swift:40-65`), and the copies differ from the core:
     - a `---` with no closing fence colours the whole file as YAML, while `FrontmatterSplitter` treats it as body;
