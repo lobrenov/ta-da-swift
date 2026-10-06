@@ -100,6 +100,40 @@ final class TaDaUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Alpha (unsaved edits)"].exists)
     }
 
+    private func waitForValue(_ element: XCUIElement, _ format: String, file: StaticString = #filePath, line: UInt = #line) {
+        let found = XCTNSPredicateExpectation(predicate: NSPredicate(format: format), object: element)
+        XCTAssertEqual(XCTWaiter.wait(for: [found], timeout: 5), .completed, "\(element.label): \(format)", file: file, line: line)
+    }
+
+    func testPropertyChipsPickFromTheirMenusWithTheKeyboard() throws {
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+
+        let status = app.buttons["Status"]
+        status.click()
+        XCTAssertTrue(app.buttons["Doing"].waitForExistence(timeout: 5), "the status menu lists the statuses")
+        app.typeKey(.downArrow, modifierFlags: [])
+        app.typeKey(.return, modifierFlags: [])
+        waitForValue(status, "value == 'Doing'")
+        status.click()
+        app.typeKey("b", modifierFlags: [])
+        app.typeKey(.return, modifierFlags: [])
+        waitForValue(status, "value == 'Blocked'")
+
+        let project = app.buttons["Project"]
+        project.click()
+        app.typeText("Launch")
+        XCTAssertTrue(app.buttons["New project “Launch”"].waitForExistence(timeout: 5), "typing offers a project by that name")
+        app.typeKey(.return, modifierFlags: [])
+        waitForValue(project, "value == 'Launch'")
+
+        let deadline = app.buttons["Deadline"]
+        deadline.click()
+        app.typeKey(.rightArrow, modifierFlags: [])
+        app.typeKey(.return, modifierFlags: [])
+        waitForValue(deadline, "value != 'None'")
+    }
+
     func testCompleteSelectedTask() throws {
         app.buttons["Alpha"].click()
         waitForTitle("Alpha")

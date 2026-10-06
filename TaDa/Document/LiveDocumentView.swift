@@ -10,10 +10,10 @@ struct LiveDocumentView: View {
     var body: some View {
         GeometryReader { viewport in
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 14) {
                     TitleField(model: model, document: document, size: 23)
                     if let item = document.item {
-                        PropertyTable(model: model, item: item, keys: PropertyTable.taskKeys)
+                        PropertyChips(model: model, item: item)
                     }
                     WarningList(warnings: warnings)
                     Hairline()

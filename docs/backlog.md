@@ -6,8 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
-13. **A custom popover stands in for a menu, and a stack of rows for a table** *(Apple, accessibility)*: `StatusMenu` (`PropertyTable.swift:84-126`) has no arrow keys, type-to-select or menu semantics; a `Menu` or `Picker` would, as `ThemeMenu` already shows. `LinkedTasksTable` (`ProjectDocumentView.swift:52-148`) has fixed column widths and hides its header row from VoiceOver (line 87). SwiftUI `Table` gives resizable, sortable, selectable columns with proper headers.
-
 14. **Beta builds aren't Developer ID–signed or notarised** *(Apple distribution)*: `scripts/make-beta-dmg.sh` ships the app as signed in the archive, with the Apple Development certificate, and tells testers to remove `com.apple.quarantine`. Either export with `-exportArchive` for Developer ID and then run `notarytool submit --wait` and `stapler staple`, or use TestFlight for Mac. Both keep the same signing identity across builds, and both need the paid developer program. The Read Me also says macOS 27, but the deployment target is 26.0.
 
 15. **⌘L finds its editor through `NSApp.keyWindow?.firstResponder`** *(Apple)*: see `AddSubtask.swift:8-12` and `Commands.swift:51-55`. The menu item stays enabled whenever a document is open, and beeps when no editor has focus. Pass editor focus to the command, for example with `@FocusedValue`, so the item disables itself; the HIG asks for unavailable commands to be disabled.
@@ -25,7 +23,7 @@ Issues from the review, most severe first. Fixed ones are removed; the rest keep
     - `SettingsSectionLabel` is copied inline in `SidebarView.swift:24-32` and `FileInspector.swift:88-98`.
     - `Hairline` is redrawn as `Rectangle().fill(border)` four times, twice in its own file (`BrowserChrome.swift:57`).
     - `ModeToggle` (`DocumentPane.swift:79`) and `AppearancePicker` (`ThemeSettingsView.swift:78`) are the same segmented control.
-    - Three bordered-button variants style their labels by hand inside `.buttonStyle(.plain)`. Make them a `ButtonStyle`, as `PropertyButtonStyle` already is.
+    - Three bordered-button variants style their labels by hand inside `.buttonStyle(.plain)`. Make them a `ButtonStyle`, as `PropertyChipStyle` already is.
     - There are 101 `.font(.system(size:))` literals in 12 sizes, against 13 named type tokens. A `Font` extension would stop them drifting; the design doc currently chooses literals on purpose.
 
 19. **AppModel's async plumbing repeats itself** *(duplication, concurrency)*:
@@ -39,11 +37,12 @@ Issues from the review, most severe first. Fixed ones are removed; the rest keep
 
 ## Features
 
-- Recurrence: acting on `repeat` (it is parsed and displayed only).
+- Recurrence: acting on `repeat` (it is parsed and shown in task rows only), and showing it in Live mode.
 - `.itermcolors` import into a theme.
 - Per-file iCloud sync state.
 - JetBrains Mono as the mono font.
-- Editing UI for `area`, `contexts` and `project`.
+- Areas in Live mode: the property chips leave `area` out until it's reconsidered.
+- A better design for a project's linked-tasks table (its columns have fixed widths).
 - iOS/iPad, including the choice of editor.
 - Upstream fix for alias display: `[[Target|Alias]]` shows the target name.
 - Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, rounded inline code, highlights and code blocks, and Obsidian callouts with folding and the callout menu.

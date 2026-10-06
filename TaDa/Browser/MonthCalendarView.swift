@@ -25,8 +25,8 @@ struct MonthCalendarView: View {
                         .foregroundStyle(theme.color(\.strong))
                         .accessibilityAddTraits(.isHeader)
                     Spacer()
-                    monthButton("chevron.left", "Previous month") { shownMonth = month.addingMonths(-1) }
-                    monthButton("chevron.right", "Next month") { shownMonth = month.addingMonths(1) }
+                    MonthStepButton(forward: false) { shownMonth = month.addingMonths(-1) }
+                    MonthStepButton(forward: true) { shownMonth = month.addingMonths(1) }
                 }
                 grid(month: month, today: today, due: due, deadlines: deadlines)
             }
@@ -73,38 +73,20 @@ struct MonthCalendarView: View {
         .onChange(of: today) { shownMonth = nil }
     }
 
-    private func monthButton(_ systemImage: String, _ label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(theme.color(\.muted))
-                .frame(width: 22, height: 22)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
-    }
-
     private func grid(month: LocalDate, today: LocalDate, due: Set<LocalDate>, deadlines: Set<LocalDate>) -> some View {
-        let calendar = Calendar.current
-        // Weekday symbols start on Sunday; rotate them to the locale's first weekday.
-        let first = calendar.firstWeekday - 1
-        let symbols = Array(calendar.veryShortStandaloneWeekdaySymbols[first...] + calendar.veryShortStandaloneWeekdaySymbols[..<first])
-        let leading = (month.weekday - calendar.firstWeekday + 7) % 7
-        let daysInMonth = month.days(to: month.addingMonths(1))
-        let cells: [LocalDate?] = Array(repeating: nil, count: leading) + (0..<daysInMonth).map { month.adding(days: $0) }
+        let grid = MonthGrid(month)
         let columns = Array(repeating: GridItem(.flexible(minimum: 0), spacing: 0), count: 7)
 
         return VStack(spacing: 4) {
             LazyVGrid(columns: columns, spacing: 0) {
-                ForEach(symbols.indices, id: \.self) { i in
-                    Text(symbols[i]).font(.system(size: 10.5, weight: .semibold)).foregroundStyle(theme.color(\.muted))
+                ForEach(grid.weekdaySymbols.indices, id: \.self) { i in
+                    Text(grid.weekdaySymbols[i]).font(.system(size: 10.5, weight: .semibold)).foregroundStyle(theme.color(\.muted))
                 }
             }
             .accessibilityHidden(true)
             LazyVGrid(columns: columns, spacing: 2) {
-                ForEach(cells.indices, id: \.self) { i in
-                    if let day = cells[i] {
+                ForEach(grid.days.indices, id: \.self) { i in
+                    if let day = grid.days[i] {
                         DayCell(day: day, today: today, hasDue: due.contains(day), hasDeadline: deadlines.contains(day))
                     } else {
                         Color.clear.frame(height: 34)
@@ -149,5 +131,24 @@ private struct DayCell: View {
         if hasDue { parts.append("tasks due") }
         if hasDeadline { parts.append("deadlines") }
         return parts.joined(separator: ", ")
+    }
+}
+
+/// The chevron that shows the previous or next month.
+struct MonthStepButton: View {
+    let forward: Bool
+    let action: () -> Void
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: forward ? "chevron.right" : "chevron.left")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(theme.color(\.muted))
+                .frame(width: 22, height: 22)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(forward ? "Next month" : "Previous month")
     }
 }

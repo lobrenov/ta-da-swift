@@ -123,7 +123,7 @@ Types are read case-insensitively. An unknown type draws as `note`. Without a ti
 
 - Sentence case for labels and menus; title case only on buttons, as macOS does ("Log Now", "Empty Trash").
 - Name things by what people see: "Loose tasks", "Logbook", "Trash", never "orphan files" or "archive directory". Folder names (`logbook/`, `.trash/`) appear in mono where the file location matters.
-- Dates: "Today", "Tomorrow", "Tue 6 Oct" in rows; ISO `2026-10-06` in properties and source.
+- Dates: "Today", "Tomorrow", "Tue 6 Oct" in rows and property chips; ISO `2026-10-06` in source.
 - Buttons state the result and counts update live: "Restore 2 Items". Confirmations say what is permanent and where: "Permanently delete 4 files from iCloud Drive?"
 
 ## Components
@@ -139,11 +139,11 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 | Checkbox | `InlineCheckbox` in `TaDa/Editor/InlineCheckbox.swift` draws every box from the artboard's paths, and `Theme.checkboxTint` there gives each marker's tint. `StatusCheckbox` in `TaDa/Browser/TaskRow.swift` uses them for task rows, `CheckboxMenu` for its rows and `TaskCheckboxStyle` in `TaDa/Editor/LiveEditor.swift` for the editor. |
 | TaskRow | `TaskRow`, `TaskTitle`, `StatusLabel`, `Chip` and `DateChip` in `TaDa/Browser/TaskRow.swift`. Selection (click, shift- and ⌘-click, `is-selected`) is shared by every list through `model.click(_:)` and `model.isSelected(_:)` in `TaDa/Browser/ArrowKeySelection.swift` and `TaDa/AppModel.swift`. |
 | SidebarItem | `SidebarRow` and `ProgressRing` in `TaDa/Sidebar/SidebarView.swift`. |
-| PropertyRow | `PropertyTable` in `TaDa/Document/PropertyTable.swift`. |
+| PropertyRow | Replaced by the canvas's Properties page: `PropertyChips` in `TaDa/Document/PropertyChips.swift`, with the pickers of `PropertyPicker` in `PropertyPickers.swift` and `CalendarPicker` in `CalendarPicker.swift` beside it. |
 | Chip (filter) | `ContextFilter` in `TaDa/Browser/BrowserChrome.swift`. |
 | Button | `newButton` in `TaDa/Sidebar/SidebarView.swift`; `NewLinkedTaskButton` in `TaDa/Document/ProjectDocumentView.swift`. |
 | Button (`td-seg`) | `ModeToggle` in `TaDa/Document/DocumentPane.swift`; `AppearancePicker` in `TaDa/Settings/ThemeSettingsView.swift`. |
-| Menu | `PopupMenu` in `TaDa/Shared/PopupMenu.swift` draws both densities (`PopupMenuStyle.full` and `.compact`): the panel, labels, dividers, highlight, footer key hints. Each menu supplies its rows: `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`; the compact `FileMenu` in `TaDa/Shared/FileMenu.swift`, which rows add with `.fileMenu(model, path:)`. |
+| Menu | `PopupMenu` in `TaDa/Shared/PopupMenu.swift` draws both densities (`PopupMenuStyle.full` and `.compact`): the panel, labels, dividers, highlight, footer key hints. Each menu supplies its rows: `SlashMenu` in `TaDa/Editor/SlashMenu.swift`; `CheckboxMenu` (right-click on an inline checkbox) in `TaDa/Editor/CheckboxMenu.swift`; the compact `FileMenu` in `TaDa/Shared/FileMenu.swift`, which rows add with `.fileMenu(model, path:)`; the status and project menus of the property chips (the project menu with a search field). `PopupPanel` there is the panel alone, which `CalendarPicker` fills with a month. |
 | Markdown | `LiveEditor` in `TaDa/Editor/LiveEditor.swift` maps the colour tokens onto the engine's `MarkdownEditorTheme`; its `CodeBlockStyle` sets the code font and fill. |
 | Settings window | `SettingsView` (nav, `SettingsPage`, `SettingsSectionLabel`, `SettingsButton`) in `TaDa/Settings/SettingsView.swift`; `VaultSettingsView` and `ThemeSettingsView` beside it. |
 | Trash | `TrashView` in `TaDa/Browser/TrashView.swift`. |
@@ -154,7 +154,7 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 Where the app differs from the guidance above:
 
 - **Mono type** is the system monospaced font (SF Mono): `.monospaced` in SwiftUI, `NSFont.monospacedSystemFont` in the editors. JetBrains Mono is not bundled.
-- **Icons** are SF Symbols: Today `star.fill`, Upcoming `calendar`, Loose tasks `tray`, Trash `trash`, due `calendar`, deadline `flag`, subtasks `checklist`, repeat `repeat`. A project's icon is `ProgressRing`, a 14pt ring with a pie. The file menu uses `trash` (Delete), `arrow.counterclockwise` (Restore) and `xmark.bin` (Delete Forever).
+- **Icons** are SF Symbols: Today `star.fill`, Upcoming `calendar`, Loose tasks `tray`, Trash `trash`, due `calendar`, deadline `flag`, subtasks `checklist`, repeat `repeat`. A project's icon is `ProgressRing`, a 14pt ring with a pie. The file menu uses `trash` (Delete), `arrow.counterclockwise` (Restore) and `xmark.bin` (Delete Forever). The property chips use `chevron.down` (status) and `plus` (a missing key), and the project menu `magnifyingglass`, `tray` (No project) and `plus` (New project).
 - **Sidebar** order: Search, Today, Upcoming, Loose tasks, an 8pt gap, Trash, PROJECTS, then the folder line ("Watching · <folder>", its icon in `done` while the folder is watched), Settings and New task / New project. Logbook is not built. Project rows are 30pt tall. The sidebar is 200–340pt wide, 240pt by default.
 - **Panes**: the browser pane is 320–460pt wide. Upcoming with nothing selected shows the agenda beside a 300pt month calendar. Source mode takes the whole workspace, with text up to 760pt wide and a 300pt file inspector.
 - **TaskRow meta line**: Doing and Blocked show a dot and the status name; then subtasks `n/m`, the repeat rule, due and deadline chips ("Due Tue 6 Oct", "Deadline today"; icons only in a project's task list) and contexts as plain text. An overdue date's text is `deadline`. Titles wrap to two lines. There are no free-form tags (`td-tag`); the schema has no tags key.
@@ -162,7 +162,7 @@ Where the app differs from the guidance above:
 - **Buttons**: Empty Trash is the only primary button; its confirmation's Empty Trash is filled with `deadline`. Log Now is not built. The folder picker uses the system `.borderedProminent` style.
 - **Trash**: Restore returns files to `tasks/` and `projects/` (the artboard says their original folder). Empty Trash and Delete Forever move files to the Mac's Trash, so the confirmation asks “Move N files to the Mac’s Trash?”. Delete Forever doesn't confirm.
 - **File menu** items are in title case, as macOS menu commands are: Delete Forever, Delete 3 Tasks.
-- **PropertyRow**: values are 12.5pt. `status` (menu), `dueDate` and `deadline` (calendar popover) are editable; the other keys are read-only. `project` shows as `[[Title]]` in `link`, or struck through in `muted` when no project has that title.
+- **Properties** follow the canvas's Properties page (Properties · A · Chips and Pickers) instead of PropertyRow. Status, project (tasks only), due date and deadline are 26pt chips, 12.5pt; a missing key is a dashed chip. An unresolved project is struck through in `muted`. The type, createdDate and completedDate sit in an 11.5pt `muted` line below, with a project's ring and task count, so the project page's title has no ring. `area`, `contexts` and `repeat` aren't shown. Clear and No project empty the key (`key:`) rather than remove it.
 - **Settings ▸ Vault**: Location (Change…, Reveal in Finder), Sync (iCloud Drive or local, and whether the folder is watched), Contents (task and project counts) and the `tasks/` and `projects/` folders. There is no Open another vault or Create new vault; Change… picks the folder.
 - **Editor markdown** uses the engine's drawing: headings scale 2, 1.5, 1.17, 1, 0.83 and 0.67 times the 14pt body; inline code (SF Mono at 0.85×) and highlights (`due` at 30%) are flat fills with no corners, padding or ring; code blocks are `code` line fills.
 - **Callouts and the callout menu** are not built: a `> [!type]` line draws as a plain quote.

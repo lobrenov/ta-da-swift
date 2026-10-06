@@ -40,7 +40,9 @@ TaDa/
 │   ├── DocumentPane.swift     breadcrumb bar and Live/Source toggle over the document
 │   ├── LiveDocumentView.swift a task in Live mode: title, properties, body, footer
 │   ├── ProjectDocumentView.swift  a project's page with its linked-tasks table
-│   ├── PropertyTable.swift
+│   ├── PropertyChips.swift    the properties as chips, and the line under them
+│   ├── PropertyPickers.swift  the status and project menus the chips open
+│   ├── CalendarPicker.swift   the date chips' calendar
 │   ├── FileInspector.swift    beside the Source editor
 │   └── DocumentBanner.swift   outside-change choices
 ├── Editor/
@@ -50,7 +52,7 @@ TaDa/
 │   ├── SlashMenu.swift
 │   ├── CheckboxMenu.swift
 │   └── AddSubtask.swift
-└── Shared/                    LocalDate display formats; PopupMenu (the panel all three menus share); FileMenu (right-click on a project or task)
+└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, file and property menus share); FileMenu (right-click on a project or task)
 
 Packages/TaDaCore/Sources/TaDaCore/
 ├── Model/      Item, Status, LocalDate, WikiLink, Checkbox
@@ -94,8 +96,9 @@ Browser lists share their selection: each registers its rows with `.arrowKeySele
 
 - **Live**: `LiveEditor` runs the engine with `.fitsContent` height inside a SwiftUI `ScrollView`, between the title and properties above and the footer (and a project's linked-tasks table) below. The engine's binding reads and writes only the body; it is spliced back after the frontmatter block. Theme tokens map to `MarkdownEditorTheme`; `TaskCheckboxStyle` takes its strikes and click transitions from `Checkbox.State` and its tints from `Theme.checkboxTint`, and `InlineCheckbox` draws the boxes; wikilinks resolve by `WikiLink.title` against the index's `titles`.
 - **Source**: `SourceTextView`, a TextKit 1 `NSTextView` with a line-number ruler and a current-line highlight. It edits the whole file, frontmatter included. `SourceHighlighter` (in TaDaCore, on `FrontmatterSplitter`, `WikiLink` and `LocalDate`) colours it by role (key `accent`, value `fg`, string `done`, date `due`, heading `strong`, punctuation and checkbox `muted`, done checkbox `done`, link `link`) and reruns over the whole file after each edit.
-- **Slash menu**: `/` in the Live editor opens `SlashMenu`, a themed list of `SlashCommand` formats in a `PopupMenu`: a borderless panel that places itself under its anchor and closes on a click elsewhere or a scroll. The checkbox and file menus use it too.
+- **Slash menu**: `/` in the Live editor opens `SlashMenu`, a themed list of `SlashCommand` formats in a `PopupMenu`: a borderless panel that places itself under its anchor and closes on a click elsewhere or a scroll. The checkbox, file and property menus use it too.
 - **Checkbox menu**: a right-click on a Live editor checkbox opens `CheckboxMenu`, the same kind of panel listing every marker (subtasks, then icons) with its box drawn by `InlineCheckbox`. While open it takes ↑↓, ↵ and esc.
+- **Properties**: `PropertyChips` shows status, project (tasks only), dueDate and deadline as chips under the title, and the type, createdDate and completedDate in a line below. A chip opens its picker under it through `PropertyPicker`. Status and project are `PopupMenu`s: they take ↑↓, ↵, esc and typed letters, and the project menu's search field takes the keyboard. New project creates the file and links the task with `AppModel.newProject(named:linking:)`. A date opens `CalendarPicker`, a month in a `PopupPanel` that takes ←↑↓→, ↵ and esc. VoiceOver gets each chip's choices as actions on the chip.
 
 ## Shortcuts
 

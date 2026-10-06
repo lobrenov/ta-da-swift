@@ -814,6 +814,7 @@ import TaDaCore
         var text = NewFile.task(project: project?.title, today: today)
         if project == nil, domain == .today { text = FrontmatterEditor.set("dueDate", to: .date(today), in: text) }
         guard let path = await create(text, in: Vault.taskFolder) else { return }
+        titleFocus = path
         if project == nil, domain != .today { domain = .loose }
         selection = path
     }
@@ -821,15 +822,21 @@ import TaDaCore
     /// Creates an untitled project and opens its page with its title ready to type.
     func newProject() async {
         guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder) else { return }
+        titleFocus = path
         open(path)
     }
 
-    private func create(_ text: String, in folder: String) async -> String? {
+    /// Creates a project called `title` and links the task at `path` to it.
+    func newProject(named title: String, linking path: String) async {
+        guard let project = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title) else { return }
+        await setProperty("project", to: .link(title: Item.title(ofPath: project)), in: path)
+    }
+
+    private func create(_ text: String, in folder: String, title: String = "Untitled") async -> String? {
         guard let vault else { return nil }
         do {
-            let path = try await Self.create(text, in: folder, title: "Untitled", vault: vault)
+            let path = try await Self.create(text, in: folder, title: title, vault: vault)
             if let item = Item(parsing: text, path: path) { updateIndex { $0.update(item) } }
-            titleFocus = path
             return path
         } catch {
             errorMessage = "Ta Da couldn’t create a file in “\(folder)”. (\(error.localizedDescription))"

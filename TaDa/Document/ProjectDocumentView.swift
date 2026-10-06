@@ -1,5 +1,4 @@
-// A project's own page: title, two columns of properties, the description in the live editor,
-// and the tasks that link to it.
+// A project's own page: title, properties, the description in the live editor, and the tasks that link to it.
 import SwiftUI
 import TaDaCore
 
@@ -7,30 +6,14 @@ struct ProjectDocumentView: View {
     let model: AppModel
     let document: OpenDocument
     let project: Item
-    @Environment(\.theme) private var theme
 
     var body: some View {
         let tasks = model.index.tasks(in: project)
-        let progress = model.index.progress(of: project)
         GeometryReader { viewport in
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    HStack(spacing: 12) {
-                        ProgressRing(fraction: progress.fraction)
-                            .scaleEffect(1.7).frame(width: 24, height: 24)
-                            .foregroundStyle(theme.color(\.accent))
-                        TitleField(model: model, document: document, size: 28)
-                        Text("\(progress.done) of \(progress.total) tasks done")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.color(\.muted))
-                            .fixedSize()
-                    }
-                    HStack(alignment: .top, spacing: 40) {
-                        PropertyTable(model: model, item: project, keys: ["type", "status", "area"], keyWidth: 116)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        PropertyTable(model: model, item: project, keys: ["createdDate", "dueDate", "deadline"], keyWidth: 116)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                VStack(alignment: .leading, spacing: 14) {
+                    TitleField(model: model, document: document, size: 28)
+                    PropertyChips(model: model, item: project)
                     WarningList(warnings: model.index.warnings(for: project))
                     Hairline()
                     BodyEditor(model: model, document: document)
@@ -85,7 +68,8 @@ private struct LinkedTasksTable: View {
             .font(.system(size: 11, design: .monospaced))
             .foregroundStyle(theme.color(\.muted))
             .frame(height: 30)
-            .accessibilityHidden(true)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
             ForEach(sorted) { task in
                 Hairline()
                 Button { model.selection = task.path } label: { taskRow(task).contentShape(.rect) }
@@ -109,26 +93,32 @@ private struct LinkedTasksTable: View {
         let p = task.properties
         let done = p.status == .done
         let subtasks = task.subtasks
+        let due = p.dueDate?.relativeLabel(today: model.today)
+        let deadline = p.deadline?.relativeLabel(today: model.today)
+        let contexts = p.contexts.joined(separator: " ")
         return columns(
-            StatusLabel(status: p.status, dotSize: 7),
+            StatusLabel(status: p.status, dotSize: 7)
+                .column("status", p.status.rawValue),
             HStack(spacing: 10) {
                 TaskTitle(item: task, size: 13).lineLimit(1)
                 if subtasks.total > 0 {
-                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
-                         spoken: "\(subtasks.done) of \(subtasks.total) subtasks done").font(.system(size: 11.5))
+                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)").font(.system(size: 11.5))
                 }
-            },
-            Text(p.dueDate?.relativeLabel(today: model.today).capitalizedFirst ?? "—")
-                .foregroundStyle(theme.color(p.dueDate != nil && !done ? \.fg : \.muted)),
+            }
+            .column("title", task.title + (subtasks.total > 0 ? ", \(subtasks.done) of \(subtasks.total) subtasks done" : "")),
+            Text(due?.capitalizedFirst ?? "—")
+                .foregroundStyle(theme.color(p.dueDate != nil && !done ? \.fg : \.muted))
+                .column("dueDate", due ?? "none"),
             HStack(spacing: 5) {
                 if p.deadline != nil {
                     Image(systemName: "flag").font(.system(size: 10, weight: .semibold)).foregroundStyle(theme.color(\.deadline))
-                        .accessibilityLabel("Deadline")
                 }
-                Text(p.deadline?.relativeLabel(today: model.today).capitalizedFirst ?? "—")
+                Text(deadline?.capitalizedFirst ?? "—")
                     .foregroundStyle(theme.color(p.deadline != nil ? \.fg : \.muted))
-            },
-            Text(p.contexts.joined(separator: " ")).foregroundStyle(theme.color(\.muted))
+            }
+            .column("deadline", deadline ?? "none"),
+            Text(contexts).foregroundStyle(theme.color(\.muted))
+                .column("contexts", contexts.isEmpty ? "none" : contexts)
         )
         .font(.system(size: 12))
         .frame(height: 36)
@@ -146,6 +136,13 @@ private struct LinkedTasksTable: View {
         }
         .lineLimit(1)
         .padding(.horizontal, 16)
+    }
+}
+
+private extension View {
+    /// One element that VoiceOver reads as its column's name and the cell's value.
+    func column(_ name: String, _ value: String) -> some View {
+        accessibilityElement(children: .ignore).accessibilityLabel("\(name): \(value)")
     }
 }
 

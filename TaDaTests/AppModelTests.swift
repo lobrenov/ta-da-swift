@@ -138,6 +138,20 @@ struct AppModelTests {
         #expect(model.index["tasks/Loose.md"]?.properties.status == .notStarted)
     }
 
+    @Test func aProjectMadeFromTheProjectMenuIsLinkedToTheTask() async throws {
+        defer { cleanUp() }
+        let model = AppModel(defaults: defaults)
+        model.today = LocalDate("2026-10-06")!
+        await model.choose(folder)
+        await model.newProject(named: "Q4: Launch", linking: "tasks/Loose.md")
+        #expect(try String(contentsOf: folder.appending(path: "projects/Q4 - Launch.md"), encoding: .utf8)
+                == "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-06\n---\n")
+        #expect(try String(contentsOf: folder.appending(path: "tasks/Loose.md"), encoding: .utf8)
+                == "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\nproject: \"[[Q4 - Launch]]\"\n---\n")
+        #expect(model.index.project(of: try #require(model.index["tasks/Loose.md"]))?.path == "projects/Q4 - Launch.md")
+        #expect(model.titleFocus == nil, "the new project's title isn't focused; the task stays open")
+    }
+
     @Test func savingToAMissingFileReportsAnError() async throws {
         defer { cleanUp() }
         let model = AppModel(defaults: defaults)
