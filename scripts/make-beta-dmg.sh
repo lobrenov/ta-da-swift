@@ -12,14 +12,15 @@ xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -configuration Release \
 APP="$ARCHIVE/Products/Applications/TaDa.app"
 VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")
 BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist")
+MINIMUM=$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")
 DMG="build/TaDa-$VERSION-$BUILD.dmg"
 
 rm -rf "$STAGING"
 mkdir -p "$STAGING"
 ditto "$APP" "$STAGING/Ta Da.app"
 ln -s /Applications "$STAGING/Applications"
-cat > "$STAGING/Read Me First.txt" <<'README'
-Ta Da beta (requires macOS 27 or later)
+cat > "$STAGING/Read Me First.txt" <<README
+Ta Da beta (requires macOS ${MINIMUM%.0} or later)
 
 1. Drag Ta Da onto the Applications folder in this window.
 2. Ta Da isn't notarised, so macOS blocks it the first time. Unblock it once, either way:

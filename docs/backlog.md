@@ -6,8 +6,6 @@ Work not yet built.
 
 Issues from the review, most severe first. Fixed ones are removed; the rest keep their numbers. Line references are to commit `136b4c6`.
 
-14. **Beta builds aren't Developer ID–signed or notarised** *(Apple distribution)*: `scripts/make-beta-dmg.sh` ships the app as signed in the archive, with the Apple Development certificate, and tells testers to remove `com.apple.quarantine`. Either export with `-exportArchive` for Developer ID and then run `notarytool submit --wait` and `stapler staple`, or use TestFlight for Mac. Both keep the same signing identity across builds, and both need the paid developer program. The Read Me also says macOS 27, but the deployment target is 26.0.
-
 15. **⌘L finds its editor through `NSApp.keyWindow?.firstResponder`** *(Apple)*: see `AddSubtask.swift:8-12` and `Commands.swift:51-55`. The menu item stays enabled whenever a document is open, and beeps when no editor has focus. Pass editor focus to the command, for example with `@FocusedValue`, so the item disables itself; the HIG asks for unavailable commands to be disabled.
 
 16. **Names, icons and colours for domains and date kinds are repeated** *(duplication)*:
@@ -39,6 +37,7 @@ Issues from the review, most severe first. Fixed ones are removed; the rest keep
 
 - Recurrence: acting on `repeat` (it is parsed and shown in task rows only), and showing it in Live mode.
 - `.itermcolors` import into a theme.
+- Developer ID signing and notarisation, or TestFlight for Mac, if Ta Da joins the paid Apple Developer Program: testers would no longer unblock each beta build (`docs/beta-builds.md`).
 - Per-file iCloud sync state.
 - JetBrains Mono as the mono font.
 - Areas in Live mode: the property chips leave `area` out until it's reconsidered.

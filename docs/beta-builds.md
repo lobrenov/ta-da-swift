@@ -1,6 +1,6 @@
 # Beta builds
 
-Beta testers get a `.dmg` that holds the app, an Applications shortcut and `Read Me First.txt`. The app is signed with the Apple Development certificate and isn't notarised. That signature keeps the same identity from build to build, so testers keep their chosen folder across updates.
+Beta testers get a `.dmg` that holds the app, an Applications shortcut and `Read Me First.txt`. The app is signed with the Apple Development certificate of a free Apple Developer account, with no provisioning profile, so builds don't expire. It isn't notarised: Developer ID signing and notarisation need the paid Apple Developer Program. The signature keeps the same identity from build to build, so testers keep their chosen folder across updates.
 
 ## Building
 1. Bump the build number in Xcode: TaDa project › TaDa target › General › Identity › Build. Bump Version for larger releases.
@@ -14,7 +14,7 @@ Beta testers get a `.dmg` that holds the app, an Applications shortcut and `Read
 Send the DMG through an iCloud Drive link (right-click › Share › Copy Link), AirDrop or any file-sharing link. Downloading it adds the quarantine flag, which testers clear once per build.
 
 ## Tester steps
-Requires macOS 27 or later.
+Requires macOS 26 or later.
 1. Double-click the `.dmg`, drag **Ta Da** onto **Applications**, then eject the disk image.
 2. Unblock it, either way:
    - Terminal: `xattr -dr com.apple.quarantine "/Applications/Ta Da.app"`
