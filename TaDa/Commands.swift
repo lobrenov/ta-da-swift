@@ -1,6 +1,6 @@
 // Menu commands: ⌘N/⇧⌘N new task/project; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
-// the caret is on.
+// the caret is on, ⇧⌘M move the selected or picked tasks to a project.
 import SwiftUI
 import TaDaCore
 
@@ -52,6 +52,9 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut("l")
             .disabled(editor == nil)
+            Button("Move to Project…") { model.showMoveMenu() }
+                .keyboardShortcut("m", modifiers: [.command, .shift])
+                .disabled(model.isSourceMode || model.moveTargets().isEmpty)
         }
     }
 

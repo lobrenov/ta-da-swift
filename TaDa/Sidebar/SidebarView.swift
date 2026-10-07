@@ -1,5 +1,5 @@
 // Sidebar: search, the three domains and Trash with counts, active projects with progress rings, the folder line,
-// Settings and the New buttons.
+// Settings and the New buttons. Task rows drop onto Today, Loose tasks and the projects.
 import SwiftUI
 import TaDaCore
 
@@ -18,8 +18,10 @@ struct SidebarView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
                     row(.today, count: model.todayCount)
+                        .taskDrop(model, onto: .today)
                     row(.upcoming, count: nil)
                     row(.loose, count: model.looseCount)
+                        .taskDrop(model, onto: .loose)
                     row(.trash, count: model.trash.count)
                         .padding(.top, 8)
 
@@ -79,6 +81,7 @@ struct SidebarView: View {
         }
         .accessibilityValue("\(progress.done) of \(progress.total) tasks done")
         .fileMenu(model, path: path)
+        .taskDrop(model, onto: .project(progress.project))
     }
 
     private var searchField: some View {

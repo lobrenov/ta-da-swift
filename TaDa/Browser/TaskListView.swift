@@ -63,6 +63,7 @@ struct TaskListView: View {
                             onToggle: { Task { await model.toggleCompletion(task) } },
                             onSelect: { model.click(task.path) })
                     .fileMenu(model, path: task.path)
+                    .taskDrag(model, path: task.path)
                 }
             }
         }

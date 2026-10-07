@@ -63,6 +63,7 @@ struct MonthCalendarView: View {
                     }
                     .buttonStyle(.plain)
                     .fileMenu(model, path: entry.item.path, cornerRadius: 0)
+                    .taskDrag(model, path: entry.item.path)
                 }
             }
         }

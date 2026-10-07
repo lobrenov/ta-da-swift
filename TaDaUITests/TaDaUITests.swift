@@ -134,6 +134,44 @@ final class TaDaUITests: XCTestCase {
         waitForValue(deadline, "value != 'None'")
     }
 
+    func testMovingTasksFromTheFileMenuAndWithTheShortcut() throws {
+        let project = app.buttons["Project"]
+        app.buttons["Alpha"].rightClick()
+        app.buttons["Move"].click()
+        app.buttons.matching(NSPredicate(format: "label == 'Website' AND value CONTAINS 'open'")).firstMatch.click()
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+        waitForValue(project, "value == 'Website'")
+
+        app.typeKey("m", modifierFlags: [.command, .shift])
+        XCTAssertTrue(app.buttons["No project"].waitForExistence(timeout: 5), "⇧⌘M opens the project menu")
+        app.buttons["No project"].click()
+        waitForValue(project, "value == 'None'")
+
+        XCUIElement.perform(withKeyModifiers: .shift) { app.buttons["Beta"].click() }
+        XCTAssertTrue(app.staticTexts["2 tasks selected"].waitForExistence(timeout: 5))
+        app.typeKey("m", modifierFlags: [.command, .shift])
+        app.typeText("Web")
+        app.typeKey(.return, modifierFlags: [])
+        for name in ["Beta", "Alpha"] {
+            app.buttons[name].click()
+            waitForTitle(name)
+            waitForValue(project, "value == 'Website'")
+        }
+    }
+
+    func testDraggingATaskOntoASidebarProject() throws {
+        let website = app.buttons.matching(NSPredicate(format: "label == 'Website'")).firstMatch
+        app.buttons["Alpha"].press(forDuration: 0.5, thenDragTo: website)
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+        waitForValue(app.buttons["Project"], "value == 'Website'")
+
+        app.buttons["Alpha"].press(forDuration: 0.5,
+                                   thenDragTo: app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Loose tasks'")).firstMatch)
+        waitForValue(app.buttons["Project"], "value == 'None'")
+    }
+
     func testAddSubtaskIsOffUnlessAnEditorHasTheKeyboard() throws {
         app.buttons["Alpha"].click()
         waitForTitle("Alpha")

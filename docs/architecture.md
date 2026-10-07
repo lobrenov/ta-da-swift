@@ -54,7 +54,7 @@ TaDa/
 │   ├── CalloutMenu.swift
 │   ├── CalloutIcon.swift      callout icons and tints
 │   └── AddSubtask.swift
-└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, callout, file and property menus share); FileMenu (right-click on a project or task); Buttons (the text button style and segmented control)
+└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, callout, file and property menus share); FileMenu (right-click on a project or task); TaskDrag (task rows dragged onto the sidebar, and ⇧⌘M's menu under a row); Buttons (the text button style and segmented control)
 
 Packages/TaDaCore/Sources/TaDaCore/
 ├── Model/      Item, Status, LocalDate, WikiLink, Checkbox, CalloutType
@@ -91,7 +91,9 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 - Trash: `TrashView` across the workspace.
 - Source mode: `DocumentPane` with the Source editor and `FileInspector` across the workspace, until the selection clears.
 
-A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Delete, or Restore and Delete Forever in Trash. A right-click on a picked file acts on every picked file. While open it takes ↑↓, ↵ and esc.
+A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Move (tasks) and Delete, or Restore and Delete Forever in Trash. A right-click on a picked file acts on every picked file. Move opens the project menu at the pointer in its place, with the row still ringed. While open it takes ↑↓, ↵ and esc.
+
+Moving tasks to a project: the file menu's Move, ⇧⌘M and dragging all act on `AppModel.moveTargets(for:)`, the right-clicked or dragged row (every picked task when it's one of them) or, for ⇧⌘M, the picked tasks or the open one, in list order and without projects. ⇧⌘M sets `AppModel.moveMenuRequest`, and the open task's project chip, or else the first picked row (`.taskDrag`), opens the project menu under itself. Task rows in every list but Trash are draggable (`.taskDrag`); the sidebar's projects, Loose tasks and Today take them (`.taskDrop`), linking them to the project with `AppModel.setProject(_:of:)`, emptying their project, or making them due today with `AppModel.makeDueToday(_:)`. Tasks already there aren't written.
 
 Browser lists share their selection: each registers its rows with `.arrowKeySelection(model, paths:, allowsMultipleSelection:)` (the lists beside the document through `BrowserColumn`, which also sets their header and padding), and rows show `model.isSelected(_:)`, call `model.click(_:)` and add `.fileMenu`. Every list allows several (Search picks tasks only, since a project opens its page): shift-click picks a range and ⌘-click adds or removes a row (`AppModel.multiSelection`, or `trashSelection` in Trash). The document pane shows "N tasks selected", and Upcoming keeps its agenda column while tasks are picked. In Trash a plain click picks one file. The list keys go to a `ListKeyView` behind each list, an AppKit responder that takes the keyboard when the list appears, when nothing has it and when a row is picked, but never from a text view, or for a new file whose title is about to take it.
 
@@ -102,7 +104,7 @@ Browser lists share their selection: each registers its rows with `.arrowKeySele
 - **Slash menu**: `/` in the Live editor opens `SlashMenu`, a themed list of `SlashCommand` formats in a `PopupMenu`: a borderless panel that places itself under its anchor and closes on a click elsewhere or a scroll. The checkbox, file and property menus use it too.
 - **Checkbox menu**: a right-click on a Live editor checkbox opens `CheckboxMenu`, the same kind of panel listing every marker (subtasks, then icons) with its box drawn by `InlineCheckbox`. While open it takes ↑↓, ↵ and esc.
 - **Callouts**: `LiveEditor` gives the engine a `CalloutStyle`, so `> [!type]` quotes draw as panels (types and aliases from `CalloutType`, icons from `CalloutIcon`). A click on a foldable callout's icon, chevron or the row past its title folds or opens it on screen only; the file keeps its `+` or `-`, and a folded body shows while the caret is in it. A right-click on a title line opens `CalloutMenu` under the icon, with the callout ringed: picking a type or fold edits only the text between `[!` and `]` or the character after it, as one undo step. While open it takes ↑↓, ↵ and esc.
-- **Properties**: `PropertyChips` shows status, project (tasks only), dueDate and deadline as chips under the title, and the type, createdDate and completedDate in a line below. A chip opens its picker under it through `PropertyPicker`. Status and project are `PopupMenu`s: they take ↑↓, ↵, esc and typed letters, and the project menu's search field takes the keyboard. New project creates the file and links the task with `AppModel.newProject(named:linking:)`. A date opens `CalendarPicker`, a month in a `PopupPanel` that takes ←↑↓→, ↵ and esc. VoiceOver gets each chip's choices as actions on the chip.
+- **Properties**: `PropertyChips` shows status, project (tasks only), dueDate and deadline as chips under the title, and the type, createdDate and completedDate in a line below. A chip opens its picker under it through `PropertyPicker`. Status and project are `PopupMenu`s: they take ↑↓, ↵, esc and typed letters, and the project menu's search field takes the keyboard. For several tasks the project menu ticks a row only when they all agree. New project creates the file and links the tasks with `AppModel.newProject(named:linking:)`. A date opens `CalendarPicker`, a month in a `PopupPanel` that takes ←↑↓→, ↵ and esc. VoiceOver gets each chip's choices as actions on the chip.
 
 ## Shortcuts
 
@@ -114,6 +116,7 @@ Browser lists share their selection: each registers its rows with `.arrowKeySele
 | ⌘E | Live / Source |
 | ⌘, | Settings |
 | ⌘K | Complete or reopen the selected task |
+| ⇧⌘M | Move the open task (project menu under its project chip) or the picked tasks (under the first) to a project. Off in Source mode |
 | ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step. Off unless the Live or Source editor has the keyboard (its `editor` focused value) |
 | ↑ / ↓, Escape | Move through the list, clear the selection, while the list has the keyboard |
 | ⌫ or ⌘⌫ | Move the selected file, or the picked tasks, to the trash, while the list has the keyboard |

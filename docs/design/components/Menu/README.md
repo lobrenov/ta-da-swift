@@ -21,8 +21,9 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 ## File menu
 
 - Opens at the pointer on a right-click or control-click; the right-clicked row gets a 2px `accent` inset ring (`td-row.is-target`, `td-nav-item.is-target`) while it's open.
-- Items: Delete (⌘⌫) for a file in the folder; Restore (⌘⌫) and, after a separator, Delete Forever (⌥⌘⌫) in Trash.
-- A right-click on a picked row acts on every picked row, and Delete names the count: "Delete 3 Tasks". A right-click on any other row acts on that row only.
+- Items: Move (⇧⌘M, tasks only) and Delete (⌘⌫) for a file in the folder; Restore (⌘⌫) and, after a separator, Delete Forever (⌥⌘⌫) in Trash.
+- A right-click on a picked row acts on every picked row, and Move and Delete name the count: "Move 3 Tasks", "Delete 3 Tasks". A right-click on any other row acts on that row only.
+- Move opens the project menu at the pointer in the file menu's place; the row stays ringed until it closes.
 
 ## Callout menu
 

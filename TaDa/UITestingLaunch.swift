@@ -28,6 +28,7 @@ extension AppModel {
         for (path, text) in [
             ("tasks/Alpha.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\nFirst line.\n"),
             ("tasks/Beta.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\n"),
+            ("projects/Website.md", "---\ntype: project\nstatus: Doing\n---\n"),
         ] {
             let url = folder.appending(path: path)
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

@@ -61,7 +61,7 @@ private struct StatusPropertyChip: View {
 }
 
 /// A task's project with its ring, in `link`; struck through in `muted` when no project has that title.
-/// Clicking picks another; ⌘-click opens the project.
+/// Clicking or ⇧⌘M picks another; ⌘-click opens the project.
 private struct ProjectPropertyChip: View {
     let model: AppModel
     let task: Item
@@ -75,7 +75,7 @@ private struct ProjectPropertyChip: View {
             if let project, NSApp.currentEvent?.modifierFlags.contains(.command) == true {
                 model.open(project.path)
             } else {
-                PropertyPicker.shared.pickProject(of: task, model: model, anchor: anchor)
+                PropertyPicker.shared.pickProject(of: [task], model: model, anchor: anchor)
             }
         } label: {
             if let project {
@@ -93,6 +93,11 @@ private struct ProjectPropertyChip: View {
         .buttonStyle(PropertyChipStyle(text: project != nil ? \.link : \.muted, isMissing: link == nil,
                                        isOpen: PropertyPicker.shared.isOpen(task.path, "project")))
         .background(ScreenAnchorReader(anchor: anchor))
+        .onChange(of: model.moveMenuRequest) { _, request in
+            guard let request, request.onChip, request.anchor == task.path else { return }
+            model.moveMenuRequest = nil
+            PropertyPicker.shared.pickProject(of: [task], model: model, anchor: anchor)
+        }
         .help(project.map { "⌘-click to open \($0.title)" } ?? link.map { "No project is called “\($0.title)”" } ?? "")
         .accessibilityLabel("Project")
         .accessibilityValue(project?.title ?? link.map { "\($0.title), not found" } ?? "None")

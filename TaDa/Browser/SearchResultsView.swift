@@ -23,6 +23,7 @@ struct SearchResultsView: View {
                         TaskRow(item: item, selected: model.isSelected(item.path), today: model.today,
                                 onToggle: { Task { await model.toggleCompletion(item) } },
                                 onSelect: { model.click(item.path) })
+                        .taskDrag(model, path: item.path)
                     }
                 }
                 .fileMenu(model, path: item.path)

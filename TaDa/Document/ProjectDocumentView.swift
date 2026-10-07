@@ -77,6 +77,7 @@ private struct LinkedTasksTable: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityHint("Opens the task")
                     .fileMenu(model, path: task.path, cornerRadius: 0)
+                    .taskDrag(model, path: task.path)
             }
             if tasks.isEmpty {
                 Hairline()

@@ -83,6 +83,7 @@ struct AgendaView: View {
             }
         }
         .fileMenu(model, path: entry.item.path)
+        .taskDrag(model, path: entry.item.path)
     }
 
     private func place(of task: Item) -> String {

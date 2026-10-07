@@ -1,6 +1,6 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on a
-// project or task. Rows add it with `.fileMenu(model, path:)`. Delete everywhere; Restore and Delete Forever
-// in Trash.
+// project or task. Rows add it with `.fileMenu(model, path:)`. Move (tasks) and Delete everywhere; Restore and
+// Delete Forever in Trash.
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -22,15 +22,28 @@ struct FileMenuAction: PopupMenuItem {
     var startsGroup = false
     let run: () -> Void
 
-    /// Delete for a file in the folder; Restore and Delete Forever for one in `.trash/`. A right-click on a
-    /// picked file acts on every picked file.
-    static func actions(for path: String, model: AppModel) -> [FileMenuAction] {
+    /// Move for tasks and Delete for a file in the folder; Restore and Delete Forever for one in `.trash/`. A
+    /// right-click on a picked file acts on every picked file. Move opens the project menu at `point` (screen
+    /// coordinates) in `window`, else under the row.
+    static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
         guard path.hasPrefix(Vault.trashFolder + "/") else {
             let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
-            return [FileMenuAction(title: paths.count == 1 ? "Delete" : "Delete \(paths.count) Tasks",
-                                   systemImage: "trash", shortcut: "⌘⌫") {
+            let tasks = model.moveTargets(for: path)
+            let move = FileMenuAction(title: tasks.count == 1 ? "Move" : "Move \(tasks.count) Tasks",
+                                      systemImage: "folder", shortcut: "⇧⌘M") {
+                if let point, let window {
+                    PropertyPicker.shared.pickProject(of: tasks.compactMap { model.index[$0] }, model: model,
+                                                      below: CGRect(origin: point, size: .zero), gap: 0, in: window,
+                                                      ringing: path)
+                } else {
+                    model.moveMenuRequest = AppModel.MoveMenuRequest(paths: tasks, anchor: path, onChip: false)
+                }
+            }
+            let delete = FileMenuAction(title: paths.count == 1 ? "Delete" : "Delete \(paths.count) Tasks",
+                                        systemImage: "trash", shortcut: "⌘⌫") {
                 Task { await model.moveToTrash(paths) }
-            }]
+            }
+            return (tasks.isEmpty ? [] : [move]) + [delete]
         }
         let paths = model.trashSelection.contains(path) ? model.trashSelection : [path]
         return [
@@ -67,7 +80,7 @@ final class FileMenu {
         self.model = model
         model.menuTarget = path
         var sections: [PopupMenuSection<FileMenuAction>] = []
-        for action in FileMenuAction.actions(for: path, model: model) {
+        for action in FileMenuAction.actions(for: path, model: model, at: point, in: window) {
             if action.startsGroup || sections.isEmpty {
                 sections.append(PopupMenuSection(items: [action]))
             } else {

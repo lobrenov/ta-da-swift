@@ -30,10 +30,13 @@ final class PropertyPicker {
     @ObservationIgnored private var projectMenuContext: ProjectMenuContext?
 
     private struct ProjectMenuContext {
-        let task: Item
+        let tasks: [Item]
         let model: AppModel
         let anchor: CGRect
+        let gap: CGFloat
         let window: NSWindow
+        /// The row the file menu's Move came from, ringed while the menu is open.
+        let ringed: String?
         /// New project… was picked with nothing typed, so the search field takes the name.
         var naming = false
     }
@@ -52,7 +55,7 @@ final class PropertyPicker {
 
     /// Opens the status menu under `anchor`, or closes it when it's open.
     func pickStatus(of item: Item, model: AppModel, anchor: ScreenAnchor) {
-        guard let window = anchor.window, toggle(item.path, "status", anchor: anchor) else { return }
+        guard let window = anchor.window, toggle(item.path, "status", anchor: anchor.rect) else { return }
         let current = item.properties.status
         let choices = StatusChoice.order.map { StatusChoice(status: $0, isCurrent: $0 == current) }
         statusMenu.show([PopupMenuSection(label: "Status", items: choices)], highlight: choices.firstIndex(where: \.isCurrent),
@@ -62,10 +65,19 @@ final class PropertyPicker {
         }
     }
 
-    /// Opens the project menu under `anchor`, or closes it when it's open.
-    func pickProject(of task: Item, model: AppModel, anchor: ScreenAnchor) {
-        guard let window = anchor.window, toggle(task.path, "project", anchor: anchor) else { return }
-        projectMenuContext = ProjectMenuContext(task: task, model: model, anchor: anchor.rect, window: window)
+    /// Opens the project menu for `tasks` under `anchor`, or closes it when it's open.
+    func pickProject(of tasks: [Item], model: AppModel, anchor: ScreenAnchor, gap: CGFloat = 6) {
+        guard let window = anchor.window else { return }
+        pickProject(of: tasks, model: model, below: anchor.rect, gap: gap, in: window)
+    }
+
+    /// Opens the project menu for `tasks` below `rect` (screen coordinates), or closes it when it's open. `ringed`
+    /// is a row to ring while it's open.
+    func pickProject(of tasks: [Item], model: AppModel, below rect: CGRect, gap: CGFloat = 6, in window: NSWindow,
+                     ringing ringed: String? = nil) {
+        guard let first = tasks.first, toggle(first.path, "project", anchor: rect) else { return }
+        projectMenuContext = ProjectMenuContext(tasks: tasks, model: model, anchor: rect, gap: gap, window: window, ringed: ringed)
+        if let ringed { model.menuTarget = ringed }
         projectMenu.query = ""
         projectMenu.searchPrompt = ProjectChoice.findPrompt
         showProjects()
@@ -73,7 +85,7 @@ final class PropertyPicker {
 
     /// Opens `kind`'s calendar under `anchor`, or closes it when it's open.
     func pickDate(_ kind: AgendaEntry.Kind, of item: Item, model: AppModel, anchor: ScreenAnchor) {
-        guard let window = anchor.window, toggle(item.path, kind.key, anchor: anchor) else { return }
+        guard let window = anchor.window, toggle(item.path, kind.key, anchor: anchor.rect) else { return }
         let p = item.properties
         let current = kind == .due ? p.dueDate : p.deadline
         calendar.show(kind, selected: current, other: kind == .due ? p.deadline : p.dueDate, today: model.today,
@@ -92,13 +104,16 @@ final class PropertyPicker {
         statusMenu.hide()
         projectMenu.hide()
         calendar.hide()
+        if let context = projectMenuContext, let ringed = context.ringed, context.model.menuTarget == ringed {
+            context.model.menuTarget = nil
+        }
         projectMenuContext = nil
         open = nil
     }
 
     /// Closes the open picker. True when `key`'s picker is to open under `anchor`; false when it was the one
     /// open, or a mouse-down on its chip has just closed it.
-    private func toggle(_ path: String, _ key: String, anchor: ScreenAnchor) -> Bool {
+    private func toggle(_ path: String, _ key: String, anchor: CGRect) -> Bool {
         let target = Target(path: path, key: key)
         let closedByThisClick = closedByClick.map { closed in
             closed.target == target && (NSApp.currentEvent?.timestamp ?? .infinity) - closed.time < NSEvent.doubleClickInterval
@@ -108,7 +123,7 @@ final class PropertyPicker {
         close()
         guard !wasOpen, !closedByThisClick else { return false }
         open = target
-        self.anchor = anchor.rect
+        self.anchor = anchor
         return true
     }
 
@@ -124,13 +139,15 @@ final class PropertyPicker {
     private func showProjects() {
         guard let context = projectMenuContext else { return }
         let index = context.model.index
-        let current = index.project(of: context.task).map { index.progress(of: $0) }
+        // Several tasks have a current project, or are loose, only when they all agree.
+        let projects = Set(context.tasks.map { index.project(of: $0)?.path })
+        let current = projects.count == 1 ? context.tasks.first.flatMap { index.project(of: $0) }.map { index.progress(of: $0) } : nil
         let existing = Set(index.projects.map { String($0.path.split(separator: "/").last ?? "") })
         let menu = ProjectChoice.menu(projects: context.model.projects, current: current,
-                                      isLoose: context.task.properties.project == nil, query: projectMenu.query,
+                                      isLoose: context.tasks.allSatisfy { $0.properties.project == nil }, query: projectMenu.query,
                                       naming: context.naming, existing: existing)
         projectMenu.show(menu.sections, highlight: menu.highlight, theme: context.model.theme, below: context.anchor,
-                         inset: 0, gap: 6, in: context.window) { [weak self] choice in
+                         inset: 0, gap: context.gap, in: context.window) { [weak self] choice in
             self?.pick(choice)
         }
     }
@@ -144,14 +161,14 @@ final class PropertyPicker {
             return
         }
         close()
-        let model = context.model, path = context.task.path
+        let model = context.model, paths = context.tasks.map(\.path)
         switch choice {
         case .project(let progress, let isCurrent):
-            if !isCurrent { Task { await model.setProperty("project", to: .link(title: progress.project.title), in: path) } }
+            if !isCurrent { Task { await model.setProject(progress.project, of: paths) } }
         case .loose(let isCurrent):
-            if !isCurrent { Task { await model.setProperty("project", to: nil, in: path) } }
+            if !isCurrent { Task { await model.setProject(nil, of: paths) } }
         case .new(let name, _):
-            Task { await model.newProject(named: name, linking: path) }
+            Task { await model.newProject(named: name, linking: paths) }
         }
     }
 }

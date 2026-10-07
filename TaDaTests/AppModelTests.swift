@@ -114,7 +114,7 @@ struct AppModelTests {
 
     @Test func aProjectMadeFromTheProjectMenuIsLinkedToTheTask() async throws {
         let model = await folder.model(today: LocalDate("2026-10-06")!)
-        await model.newProject(named: "Q4: Launch", linking: "tasks/Loose.md")
+        await model.newProject(named: "Q4: Launch", linking: ["tasks/Loose.md"])
         #expect(try String(contentsOf: folder.url.appending(path: "projects/Q4 - Launch.md"), encoding: .utf8)
                 == "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-06\n---\n")
         #expect(try String(contentsOf: folder.url.appending(path: "tasks/Loose.md"), encoding: .utf8)
@@ -271,6 +271,62 @@ struct AppModelTests {
         #expect(model.moveSelection(by: -1))
         #expect(model.trashSelection == [paths[0]], "the arrow keys pick the row before the last ⌘-clicked one")
         #expect(model.selection == nil && model.multiSelection.isEmpty)
+    }
+
+    @Test func movesActOnTheRowOrEveryPickedTaskInListOrder() async {
+        let model = await folder.model()
+        let paths = ["projects/Ta Da MVP.md", "tasks/Loose.md", "tasks/Due today.md", "tasks/Done.md"]
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
+        model.selection = paths[2]
+        #expect(model.moveTargets() == [paths[2]], "the open task")
+        #expect(model.moveTargets(for: paths[1]) == [paths[1]], "a row that isn't picked")
+        model.selection = paths[0]
+        #expect(model.moveTargets().isEmpty, "projects don't move")
+
+        model.extendSelection(to: paths[3])
+        #expect(model.moveTargets() == [paths[1], paths[2], paths[3]], "picked tasks, in list order, without the project")
+        #expect(model.moveTargets(for: paths[3]) == [paths[1], paths[2], paths[3]], "a picked row takes the others")
+    }
+
+    @Test func showMoveMenuAsksTheChipOrTheFirstPickedRow() async {
+        let model = await folder.model()
+        let paths = ["tasks/Loose.md", "tasks/Due today.md"]
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
+        model.selection = paths[1]
+        model.showMoveMenu()
+        #expect(model.moveMenuRequest?.paths == [paths[1]] && model.moveMenuRequest?.anchor == paths[1])
+        #expect(model.moveMenuRequest?.onChip == true)
+
+        model.extendSelection(to: paths[0])
+        model.showMoveMenu()
+        #expect(model.moveMenuRequest?.paths == paths && model.moveMenuRequest?.anchor == paths[0])
+        #expect(model.moveMenuRequest?.onChip == false)
+    }
+
+    @Test func movingSeveralTasksWritesOnlyTheOnesThatChange() async throws {
+        let model = await folder.model()
+        let tasks = ["tasks/Due today.md", "tasks/Loose.md"]
+        let before = try folder.read(tasks[0])
+        let project = try #require(model.index["projects/Ta Da MVP.md"])
+
+        await model.setProject(project, of: tasks)
+        #expect(try folder.read(tasks[0]) == before, "already in the project")
+        #expect(try folder.read(tasks[1]) == "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\nproject: \"[[Ta Da MVP]]\"\n---\n")
+
+        await model.setProject(nil, of: tasks)
+        #expect(try folder.read(tasks[0]) == before.replacingOccurrences(of: "project: \"[[Ta Da MVP]]\"", with: "project:"))
+        #expect(model.looseTasks.map(\.path).sorted() == tasks.sorted())
+
+        await model.makeDueToday(tasks)
+        #expect(try folder.read(tasks[1]) == "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\nproject:\ndueDate: 2026-10-03\n---\n")
+        #expect(model.index[tasks[0]]?.properties.dueDate == LocalDate("2026-10-03"))
+    }
+
+    @Test func aNewProjectFromTheMenuTakesEveryTask() async throws {
+        let model = await folder.model()
+        await model.newProject(named: "Launch", linking: ["tasks/Due today.md", "tasks/Loose.md"])
+        #expect(model.index.tasks(in: try #require(model.index["projects/Launch.md"])).map(\.path).sorted()
+                == ["tasks/Due today.md", "tasks/Loose.md"])
     }
 
     @Test(arguments: [

@@ -89,6 +89,16 @@ import TaDaCore
     var trashNote: String?
     /// The file whose file menu is open; its row is ringed.
     var menuTarget: String?
+    /// ⇧⌘M's request for the project menu. The view it names opens the menu and sets this back to nil.
+    var moveMenuRequest: MoveMenuRequest?
+    struct MoveMenuRequest: Equatable {
+        let id = UUID()
+        /// The tasks to move.
+        let paths: [String]
+        /// The task whose project chip (`onChip`) or list row the menu opens under.
+        let anchor: String
+        let onChip: Bool
+    }
     /// Whether FSEvents is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
     /// Whether the folder is in iCloud Drive, or in an app's iCloud folder such as Obsidian's.
@@ -789,6 +799,53 @@ import TaDaCore
         return paths[(i + 1)...].first { !removed.contains($0) } ?? paths[..<i].last { !removed.contains($0) }
     }
 
+    // MARK: Move
+
+    /// The tasks a move acts on, in list order. With `path` (a right-clicked or dragged row): the picked tasks when
+    /// it's one of them, else just it. Without: the picked tasks, else the open one. Projects are left out.
+    func moveTargets(for path: String? = nil) -> [String] {
+        let paths: Set<String>
+        if let path {
+            paths = multiSelection.contains(path) ? multiSelection : [path]
+        } else {
+            paths = multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
+        }
+        let order = arrowKeyList?.paths ?? []
+        return paths.filter { index[$0]?.properties.kind == .task }
+            .sorted { (order.firstIndex(of: $0) ?? .max, $0) < (order.firstIndex(of: $1) ?? .max, $1) }
+    }
+
+    /// ⇧⌘M: asks for the project menu for the move targets, under the open task's project chip or the first
+    /// picked row.
+    func showMoveMenu() {
+        let paths = moveTargets()
+        guard let first = paths.first else { return }
+        moveMenuRequest = MoveMenuRequest(paths: paths, anchor: first, onChip: selection == first)
+    }
+
+    /// Links the tasks at `paths` to `project`, or empties their `project:` when it's nil. Tasks already there
+    /// aren't written.
+    func setProject(_ project: Item?, of paths: [String]) async {
+        for path in paths {
+            guard let task = index[path] else { continue }
+            if let project {
+                if index.project(of: task)?.path != project.path {
+                    await setProperty("project", to: .link(title: project.title), in: path)
+                }
+            } else if task.properties.project != nil {
+                await setProperty("project", to: nil, in: path)
+            }
+        }
+    }
+
+    /// Makes the tasks at `paths` due today. Tasks already due today aren't written.
+    func makeDueToday(_ paths: [String]) async {
+        let today = today
+        for path in paths where index[path]?.properties.dueDate != today {
+            await setProperty("dueDate", to: .date(today), in: path)
+        }
+    }
+
     // MARK: New files
 
     /// Creates an untitled task and selects it with its title ready to type. In a project it's linked to the
@@ -811,10 +868,11 @@ import TaDaCore
         open(path)
     }
 
-    /// Creates a project called `title` and links the task at `path` to it.
-    func newProject(named title: String, linking path: String) async {
-        guard let project = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title) else { return }
-        await setProperty("project", to: .link(title: Item.title(ofPath: project)), in: path)
+    /// Creates a project called `title` and links the tasks at `paths` to it.
+    func newProject(named title: String, linking paths: [String]) async {
+        guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title),
+              let project = index[path] else { return }
+        await setProject(project, of: paths)
     }
 
     private func create(_ text: String, in folder: String, title: String = "Untitled") async -> String? {
