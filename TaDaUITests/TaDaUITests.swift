@@ -163,6 +163,7 @@ final class TaDaUITests: XCTestCase {
     func testDraggingATaskOntoASidebarProject() throws {
         let website = app.buttons.matching(NSPredicate(format: "label == 'Website'")).firstMatch
         app.buttons["Alpha"].press(forDuration: 0.5, thenDragTo: website)
+        XCTAssertTrue(app.buttons["Website, 1"].waitForExistence(timeout: 5), "the drop links Alpha to Website")
         app.buttons["Alpha"].click()
         waitForTitle("Alpha")
         waitForValue(app.buttons["Project"], "value == 'Website'")
