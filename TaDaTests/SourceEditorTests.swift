@@ -7,27 +7,15 @@ import TaDaCore
 
 @MainActor
 struct SourceModeTests {
-    let defaults: UserDefaults
-    let suite = "TaDaTests-\(UUID().uuidString)"
-    let folder = FileManager.default.temporaryDirectory.appending(path: "TaDaVault-\(UUID().uuidString)", directoryHint: .isDirectory)
+    let folder: TestFolder
     static let task = "---\ntype: task\nstatus: Doing\n---\nBody.\n"
 
     init() throws {
-        defaults = UserDefaults(suiteName: suite)!
-        let url = folder.appending(path: "tasks/Task.md")
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try Data(Self.task.utf8).write(to: url)
-    }
-
-    private func cleanUp() {
-        defaults.removePersistentDomain(forName: suite)
-        try? FileManager.default.removeItem(at: folder)
+        folder = try TestFolder(["tasks/Task.md": Self.task])
     }
 
     @Test func sourceModeEndsWhenNothingIsSelected() async {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         model.selection = "tasks/Task.md"
         model.isSourceMode = true
         model.domain = .loose
@@ -36,9 +24,7 @@ struct SourceModeTests {
     }
 
     @Test func typingInSourceEditsTheWholeFileAndBrokenYAMLOnlyWarns() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         let window = NSWindow(contentRect: NSRect(x: -5000, y: -5000, width: 1280, height: 800),
                               styleMask: [.titled, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

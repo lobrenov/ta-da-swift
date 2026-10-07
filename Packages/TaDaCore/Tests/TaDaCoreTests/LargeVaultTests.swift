@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import TaDaCore
+import TaDaCoreTesting
 
 /// Scale: a generated folder of 1,000 tasks and projects plus 200 plain notes. Timings are printed; the
 /// limits are loose enough for a debug build on a busy machine and catch only accidental O(n²) work.

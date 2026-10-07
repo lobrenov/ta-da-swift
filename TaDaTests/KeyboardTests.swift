@@ -7,26 +7,14 @@ import TaDaCore
 /// The list keys and Add Subtask (⌘L), in a real window with key events sent to it.
 @MainActor
 struct KeyboardTests {
-    let defaults: UserDefaults
-    let suite = "TaDaTests-\(UUID().uuidString)"
-    let folder = FileManager.default.temporaryDirectory.appending(path: "TaDaVault-\(UUID().uuidString)", directoryHint: .isDirectory)
+    let folder: TestFolder
 
     init() throws {
-        defaults = UserDefaults(suiteName: suite)!
-        for (path, text) in [
-            ("tasks/A.md", "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-01\n---\nFirst line.\n"),
-            ("tasks/B.md", "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-02\n---\n- [ ] One\n"),
-            ("tasks/C.md", "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-03\n---\n"),
-        ] {
-            let url = folder.appending(path: path)
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try Data(text.utf8).write(to: url)
-        }
-    }
-
-    private func cleanUp() {
-        defaults.removePersistentDomain(forName: suite)
-        try? FileManager.default.removeItem(at: folder)
+        folder = try TestFolder([
+            "tasks/A.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-01\n---\nFirst line.\n",
+            "tasks/B.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-02\n---\n- [ ] One\n",
+            "tasks/C.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-03\n---\n",
+        ])
     }
 
     private func window(for model: AppModel, focus: FocusedEditorProbe.Box = .init()) async throws -> NSWindow {
@@ -76,10 +64,7 @@ struct KeyboardTests {
     }
 
     @Test func arrowKeysMoveThroughTheListButNotWhileEditing() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = LocalDate("2026-10-03")!
-        await model.choose(folder)
+        let model = await folder.model()
         let window = try await window(for: model)
         defer { window.orderOut(nil) }
 
@@ -109,10 +94,7 @@ struct KeyboardTests {
     }
 
     @Test func commandDeleteTrashesTheTaskAndRestoresItInTrash() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = LocalDate("2026-10-03")!
-        await model.choose(folder)
+        let model = await folder.model()
         let window = try await window(for: model)
         defer { window.orderOut(nil) }
 
@@ -134,10 +116,7 @@ struct KeyboardTests {
     }
 
     @Test func addSubtaskEditsTheLineInTheLiveEditor() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = LocalDate("2026-10-03")!
-        await model.choose(folder)
+        let model = await folder.model()
         model.selection = "tasks/A.md"
         let window = try await window(for: model)
         defer { window.orderOut(nil) }
@@ -166,10 +145,7 @@ struct KeyboardTests {
     }
 
     @Test func addSubtaskFollowsTheEditorThatHasTheKeyboard() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = LocalDate("2026-10-03")!
-        await model.choose(folder)
+        let model = await folder.model()
         model.selection = "tasks/A.md"
         let focus = FocusedEditorProbe.Box()
         let window = try await window(for: model, focus: focus)

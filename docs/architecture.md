@@ -59,11 +59,12 @@ Packages/TaDaCore/Sources/TaDaCore/
 ├── Parsing/    FrontmatterSplitter, PropertyReader, BodyScanner, CheckboxSyntax, SourceHighlighter
 ├── Writing/    Lines, FrontmatterEditor, ChecklistEditor, Completion, NewFile, FileNaming, SubtaskLine, SlashCommand
 ├── Index/      VaultIndex, Queries
-├── Storage/    Vault, Trash, CoordinatedFileIO, FilePresenter, VaultWatcher, Conflicts
-└── Testing/    GeneratedVault
+└── Storage/    Vault, Trash, CoordinatedFileIO, FilePresenter, VaultWatcher, Conflicts
+
+Packages/TaDaCore/Sources/TaDaCoreTesting/   GeneratedVault: test data for TaDaCoreTests; TaDaTests compiles the file too
 ```
 
-TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtures in `Fixtures/` (`DesignVault/` is the design's data). TaDaTests covers AppModel, OpenDocument, outside changes, the Source editor, keyboard handling, design renders and UI timings. TaDaUITests holds keyboard smoke tests.
+TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtures in `Fixtures/` (`DesignVault/` is the design's data). TaDaTests covers AppModel, OpenDocument, outside changes, the Source editor, keyboard handling, design renders and UI timings. Its suites set up their files and settings with `TestFolder`, which removes them when each test ends. TaDaUITests holds keyboard smoke tests.
 
 ## Runtime
 

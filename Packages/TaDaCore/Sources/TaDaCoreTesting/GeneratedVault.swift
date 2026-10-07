@@ -1,4 +1,5 @@
 import Foundation
+import TaDaCore
 
 /// A large, varied, deterministic folder of tasks and projects for scale tests: every status, dates
 /// around `today`, contexts, subtasks, links, unresolved projects, nested folders and plain notes

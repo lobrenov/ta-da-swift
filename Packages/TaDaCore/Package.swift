@@ -20,10 +20,13 @@ let package = Package(
                 .product(name: "Yams", package: "Yams"),
             ]
         ),
+        // Test data. The app's tests compile GeneratedVault.swift themselves, so it isn't a product.
+        .target(name: "TaDaCoreTesting", dependencies: ["TaDaCore"]),
         .testTarget(
             name: "TaDaCoreTests",
             dependencies: [
                 "TaDaCore",
+                "TaDaCoreTesting",
                 .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "Yams", package: "Yams"),
             ],

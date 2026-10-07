@@ -8,19 +8,12 @@ import TaDaCore
 /// and one arrow-key step in a list take, including SwiftUI's update of every visible view.
 @MainActor
 struct LargeVaultUITimingTests {
-    let defaults: UserDefaults
-    let suite = "TaDaTests-\(UUID().uuidString)"
-    let folder = FileManager.default.temporaryDirectory.appending(path: "TaDaVault-\(UUID().uuidString)", directoryHint: .isDirectory)
+    let folder: TestFolder
     static let today = LocalDate("2026-10-03")!
 
     init() throws {
-        defaults = UserDefaults(suiteName: suite)!
-        try GeneratedVault.write(to: folder, today: Self.today)
-    }
-
-    private func cleanUp() {
-        defaults.removePersistentDomain(forName: suite)
-        try? FileManager.default.removeItem(at: folder)
+        folder = try TestFolder()
+        try GeneratedVault.write(to: folder.url, today: Self.today)
     }
 
     /// Milliseconds per run of `step`, each followed by the window's layout and display.
@@ -40,10 +33,7 @@ struct LargeVaultUITimingTests {
     }
 
     @Test func typingAndArrowKeysStayQuick() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = Self.today
-        await model.choose(folder)
+        let model = await folder.model(today: Self.today)
         #expect(model.index.items.count == 1000)
         let today = model.index.grouped(model.index.today(Self.today)).flatMap(\.tasks).map(\.path)
         model.selection = today[0]

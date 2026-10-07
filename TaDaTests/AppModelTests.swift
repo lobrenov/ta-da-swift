@@ -7,56 +7,37 @@ import TaDaCore
 
 @MainActor
 struct AppModelTests {
-    let defaults: UserDefaults
-    let suite = "TaDaTests-\(UUID().uuidString)"
-    let folder = FileManager.default.temporaryDirectory.appending(path: "TaDaVault-\(UUID().uuidString)", directoryHint: .isDirectory)
+    let folder: TestFolder
 
     init() throws {
-        defaults = UserDefaults(suiteName: suite)!
-        for (path, text) in [
-            ("projects/Ta Da MVP.md", "---\ntype: project\nstatus: Doing\n---\n"),
-            ("projects/Shipped.md", "---\ntype: project\nstatus: Done\n---\n"),
-            ("tasks/Due today.md", "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\n---\n"),
-            ("tasks/Done.md", "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-02\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\n---\n"),
-            ("tasks/Loose.md", "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\n---\n"),
-            ("notes/Note.md", "Just a note\n"),
-        ] {
-            let url = folder.appending(path: path)
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try Data(text.utf8).write(to: url)
-        }
-    }
-
-    private func cleanUp() {
-        defaults.removePersistentDomain(forName: suite)
-        try? FileManager.default.removeItem(at: folder)
+        folder = try TestFolder([
+            "projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n",
+            "projects/Shipped.md": "---\ntype: project\nstatus: Done\n---\n",
+            "tasks/Due today.md": "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\n---\n",
+            "tasks/Done.md": "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-02\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\n---\n",
+            "tasks/Loose.md": "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\n---\n",
+            "notes/Note.md": "Just a note\n",
+        ])
     }
 
     @Test func startsWithoutAFolder() async {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
+        let model = AppModel(defaults: folder.defaults)
         await model.start()
         #expect(model.state == .noFolder)
     }
 
     @Test func choosingAFolderLoadsItAndCounts() async {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = LocalDate("2026-10-02")!
-        await model.choose(folder)
+        let model = await folder.model(today: LocalDate("2026-10-02")!)
         #expect(model.state == .ready)
         #expect(model.index.items.count == 5)
         #expect(model.todayCount == 2, "open tasks only; Done-today doesn't count")
         #expect(model.looseCount == 1)
         #expect(model.projects.map { "\($0.project.title) \($0.open)/\($0.total)" } == ["Ta Da MVP 1/2"])
-        #expect(model.folderDisplayName == folder.lastPathComponent)
+        #expect(model.folderDisplayName == folder.url.lastPathComponent)
     }
 
     @Test func theListsFollowTheDateTypingAndOutsideChanges() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = LocalDate("2026-10-01")!
-        await model.choose(folder)
+        let model = await folder.model(today: LocalDate("2026-10-01")!)
         #expect(model.todayTasks.map(\.title) == ["Loose"] && model.upcoming.map(\.item.title) == ["Due today"])
 
         model.today = LocalDate("2026-10-02")!
@@ -71,32 +52,30 @@ struct AppModelTests {
         document.text = document.text.replacingOccurrences(of: "status: Not Started", with: "status: Not Started\nproject: \"[[Ta Da MVP]]\"")
         #expect(model.looseTasks.isEmpty && model.projects.map(\.total) == [3])
 
-        try Data("---\ntype: task\nstatus: Doing\n---\n".utf8).write(to: folder.appending(path: "tasks/New.md"))
+        try Data("---\ntype: task\nstatus: Doing\n---\n".utf8).write(to: folder.url.appending(path: "tasks/New.md"))
         await model.refresh()
         #expect(model.looseTasks.map(\.title) == ["New"])
     }
 
     @Test func theFolderAndThemeSurviveARelaunch() async {
-        defer { cleanUp() }
-        let first = AppModel(defaults: defaults)
-        await first.choose(folder)
+        let first = AppModel(defaults: folder.defaults)
+        await first.choose(folder.url)
         first.choose(ThemeSet.named("Nord")!)
         first.appearance = .light
 
-        let second = AppModel(defaults: defaults)
+        let second = AppModel(defaults: folder.defaults)
         #expect(second.themeSet.name == "Nord" && second.appearance == .light && second.theme.name == "Nord Light")
         await second.start()
         #expect(second.state == .ready)
-        #expect(second.vault?.root.resolvingSymlinksInPath() == folder.resolvingSymlinksInPath())
+        #expect(second.vault?.root.resolvingSymlinksInPath() == folder.url.resolvingSymlinksInPath())
     }
 
     @Test func aMissingFolderFailsWithAMessage() async throws {
-        defer { cleanUp() }
-        let first = AppModel(defaults: defaults)
-        await first.choose(folder)
-        try FileManager.default.removeItem(at: folder)
+        let first = AppModel(defaults: folder.defaults)
+        await first.choose(folder.url)
+        try FileManager.default.removeItem(at: folder.url)
 
-        let second = AppModel(defaults: defaults)
+        let second = AppModel(defaults: folder.defaults)
         await second.start()
         guard case let .failed(message) = second.state else {
             Issue.record("expected failed, got \(second.state)")
@@ -106,11 +85,8 @@ struct AppModelTests {
     }
 
     @Test func completingAndReopeningChangesOnlyStatusAndCompletedDate() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = LocalDate("2026-10-03")!
-        await model.choose(folder)
-        let url = folder.appending(path: "tasks/Due today.md")
+        let model = await folder.model(today: LocalDate("2026-10-03")!)
+        let url = folder.url.appending(path: "tasks/Due today.md")
         func expected(_ status: String, _ completed: String) -> String {
             "---\ntype: task\nstatus: \(status)\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\ncompletedDate:\(completed)\n---\n"
         }
@@ -126,12 +102,10 @@ struct AppModelTests {
     }
 
     @Test func completionReadsTheStatusFromTheFileNotTheList() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         let stale = try #require(model.index["tasks/Loose.md"])
         // Another app completed it after the index was read.
-        let url = folder.appending(path: "tasks/Loose.md")
+        let url = folder.url.appending(path: "tasks/Loose.md")
         try String(contentsOf: url, encoding: .utf8).replacingOccurrences(of: "Not Started", with: "Done")
             .write(to: url, atomically: true, encoding: .utf8)
         await model.toggleCompletion(stale)
@@ -139,33 +113,26 @@ struct AppModelTests {
     }
 
     @Test func aProjectMadeFromTheProjectMenuIsLinkedToTheTask() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        model.today = LocalDate("2026-10-06")!
-        await model.choose(folder)
+        let model = await folder.model(today: LocalDate("2026-10-06")!)
         await model.newProject(named: "Q4: Launch", linking: "tasks/Loose.md")
-        #expect(try String(contentsOf: folder.appending(path: "projects/Q4 - Launch.md"), encoding: .utf8)
+        #expect(try String(contentsOf: folder.url.appending(path: "projects/Q4 - Launch.md"), encoding: .utf8)
                 == "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-06\n---\n")
-        #expect(try String(contentsOf: folder.appending(path: "tasks/Loose.md"), encoding: .utf8)
+        #expect(try String(contentsOf: folder.url.appending(path: "tasks/Loose.md"), encoding: .utf8)
                 == "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\nproject: \"[[Q4 - Launch]]\"\n---\n")
         #expect(model.index.project(of: try #require(model.index["tasks/Loose.md"]))?.path == "projects/Q4 - Launch.md")
         #expect(model.titleFocus == nil, "the new project's title isn't focused; the task stays open")
     }
 
     @Test func savingToAMissingFileReportsAnError() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         let item = try #require(model.index["tasks/Loose.md"])
-        try FileManager.default.removeItem(at: folder.appending(path: "tasks/Loose.md"))
+        try FileManager.default.removeItem(at: folder.url.appending(path: "tasks/Loose.md"))
         await model.toggleCompletion(item)
         #expect(model.errorMessage?.contains("Loose") == true)
     }
 
     @Test func pickingADomainClearsTheSelectionAndProjectsOpenAsPages() async {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         model.selection = "tasks/Loose.md"
         model.domain = .today
         #expect(model.selection == "tasks/Loose.md", "same domain keeps the selection")
@@ -181,18 +148,16 @@ struct AppModelTests {
     }
 
     @Test func unknownThemeNamesFallBackToTomorrow() {
-        defer { cleanUp() }
-        defaults.set("Monokai", forKey: "themeSet")
-        defaults.set("Monokai Light", forKey: "lightScheme")
-        defaults.set(true, forKey: "usesSchemePerAppearance")
-        defaults.set("Light", forKey: "appearance")
-        let model = AppModel(defaults: defaults)
+        folder.defaults.set("Monokai", forKey: "themeSet")
+        folder.defaults.set("Monokai Light", forKey: "lightScheme")
+        folder.defaults.set(true, forKey: "usesSchemePerAppearance")
+        folder.defaults.set("Light", forKey: "appearance")
+        let model = AppModel(defaults: folder.defaults)
         #expect(model.themeSet.name == "Tomorrow" && model.theme.name == "Tomorrow")
     }
 
     @Test func theSchemeFollowsTheAppearance() {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
+        let model = AppModel(defaults: folder.defaults)
         model.choose(ThemeSet.named("Gruvbox")!)
         model.systemIsDark = false
         #expect(model.theme.name == "Gruvbox Light")
@@ -203,8 +168,7 @@ struct AppModelTests {
     }
 
     @Test func aWindowTakesItsSchemesAppearanceAndTheModelFollowsTheMacs() async throws {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
+        let model = AppModel(defaults: folder.defaults)
         let macIsDark = Appearance.systemIsDark
         model.appearance = macIsDark ? .light : .dark
         let window = NSWindow(contentRect: NSRect(x: -5000, y: -5000, width: 900, height: 600),
@@ -228,23 +192,20 @@ struct AppModelTests {
     }
 
     @Test func aSchemePerAppearanceStartsFromTheSetAndEndsWhenASetIsChosen() {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
+        let model = AppModel(defaults: folder.defaults)
         model.choose(ThemeSet.named("Ayu")!)
         model.appearance = .dark
         model.usesSchemePerAppearance = true
         #expect(model.lightScheme.name == "Ayu Light" && model.darkScheme.name == "Ayu Mirage")
         model.darkScheme = Theme.named("Dracula")!
         #expect(model.theme.name == "Dracula")
-        #expect(AppModel(defaults: defaults).theme.name == "Dracula", "survives a relaunch")
+        #expect(AppModel(defaults: folder.defaults).theme.name == "Dracula", "survives a relaunch")
         model.choose(ThemeSet.named("Nord")!)
         #expect(!model.usesSchemePerAppearance && model.theme.name == "Nord")
     }
 
     @Test func deletingTheSelectedTaskSelectsTheNextOne() async {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         model.show(.loose)
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: ["tasks/Due today.md", "tasks/Loose.md"])
         model.selection = "tasks/Due today.md"
@@ -252,13 +213,11 @@ struct AppModelTests {
         #expect(model.index["tasks/Due today.md"] == nil)
         #expect(model.selection == "tasks/Loose.md")
         #expect(model.trash.map(\.id) == [".trash/Due today.md"])
-        #expect(FileManager.default.fileExists(atPath: folder.appending(path: ".trash/Due today.md").path(percentEncoded: false)))
+        #expect(FileManager.default.fileExists(atPath: folder.url.appending(path: ".trash/Due today.md").path(percentEncoded: false)))
     }
 
     @Test func aDeletedProjectTakesItsTasksAndComesBackWithThem() async {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         model.show(.project("projects/Ta Da MVP.md"))
         await model.moveToTrash(["projects/Ta Da MVP.md"])
         #expect(model.domain == .today)
@@ -275,9 +234,7 @@ struct AppModelTests {
     }
 
     @Test func shiftAndCommandClicksPickSeveralTasksToDelete() async {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         let paths = ["tasks/Due today.md", "tasks/Loose.md", "tasks/Done.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[0]
@@ -300,9 +257,7 @@ struct AppModelTests {
     }
 
     @Test func clicksInTrashPickFilesWithoutOpeningThem() async {
-        defer { cleanUp() }
-        let model = AppModel(defaults: defaults)
-        await model.choose(folder)
+        let model = await folder.model()
         for path in ["tasks/Due today.md", "tasks/Loose.md", "tasks/Done.md"] { await model.moveToTrash([path]) }
         model.show(.trash)
         let paths = model.trash.map(\.id)
@@ -324,7 +279,6 @@ struct AppModelTests {
         ("/Users/me/Projects/Ta Da/SampleVault", "SampleVault"),
     ])
     func folderNamesReadLikeFinder(_ path: String, _ expected: String) {
-        defer { cleanUp() }
         #expect(AppModel.displayName(for: URL(filePath: path)) == expected)
     }
 }
