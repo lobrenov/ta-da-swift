@@ -28,6 +28,8 @@ final class PropertyPicker {
     @ObservationIgnored private var closedByClick: (target: Target, time: TimeInterval)?
     /// What the project menu needs to refresh as its search changes.
     @ObservationIgnored private var projectMenuContext: ProjectMenuContext?
+    /// The row the file menu's Move, Schedule or Set Deadline… came from, ringed while the picker is open.
+    @ObservationIgnored private var ringed: (model: AppModel, path: String)?
 
     private struct ProjectMenuContext {
         let tasks: [Item]
@@ -35,8 +37,6 @@ final class PropertyPicker {
         let anchor: CGRect
         let gap: CGFloat
         let window: NSWindow
-        /// The row the file menu's Move came from, ringed while the menu is open.
-        let ringed: String?
         /// New project… was picked with nothing typed, so the search field takes the name.
         var naming = false
     }
@@ -76,22 +76,36 @@ final class PropertyPicker {
     func pickProject(of tasks: [Item], model: AppModel, below rect: CGRect, gap: CGFloat = 6, in window: NSWindow,
                      ringing ringed: String? = nil) {
         guard let first = tasks.first, toggle(first.path, "project", anchor: rect) else { return }
-        projectMenuContext = ProjectMenuContext(tasks: tasks, model: model, anchor: rect, gap: gap, window: window, ringed: ringed)
-        if let ringed { model.menuTarget = ringed }
+        projectMenuContext = ProjectMenuContext(tasks: tasks, model: model, anchor: rect, gap: gap, window: window)
+        ring(ringed, model: model)
         projectMenu.query = ""
         projectMenu.searchPrompt = ProjectChoice.findPrompt
         showProjects()
     }
 
-    /// Opens `kind`'s calendar under `anchor`, or closes it when it's open.
-    func pickDate(_ kind: AgendaEntry.Kind, of item: Item, model: AppModel, anchor: ScreenAnchor) {
-        guard let window = anchor.window, toggle(item.path, kind.key, anchor: anchor.rect) else { return }
-        let p = item.properties
-        let current = kind == .due ? p.dueDate : p.deadline
-        calendar.show(kind, selected: current, other: kind == .due ? p.deadline : p.dueDate, today: model.today,
-                      theme: model.theme, below: anchor.rect, in: window) { [weak self] date in
+    /// Opens `kind`'s calendar for `items` under `anchor`, or closes it when it's open.
+    func pickDate(_ kind: AgendaEntry.Kind, of items: [Item], model: AppModel, anchor: ScreenAnchor, gap: CGFloat = 6) {
+        guard let window = anchor.window else { return }
+        pickDate(kind, of: items, model: model, below: anchor.rect, gap: gap, in: window)
+    }
+
+    /// Opens `kind`'s calendar for `items` below `rect` (screen coordinates), or closes it when it's open.
+    /// `ringed` is a row to ring while it's open.
+    func pickDate(_ kind: AgendaEntry.Kind, of items: [Item], model: AppModel, below rect: CGRect, gap: CGFloat = 6,
+                  in window: NSWindow, ringing ringed: String? = nil) {
+        guard let first = items.first, toggle(first.path, kind.key, anchor: rect) else { return }
+        ring(ringed, model: model)
+        // Several files have a date, and the other date's dot, only when they all agree.
+        func agreed(_ date: KeyPath<Properties, LocalDate?>) -> LocalDate? {
+            let dates = Set(items.map { $0.properties[keyPath: date] })
+            return dates.count == 1 ? dates.first ?? nil : nil
+        }
+        let current = agreed(kind.date)
+        let paths = items.map(\.path)
+        calendar.show(kind, selected: current, other: agreed(kind == .due ? \.deadline : \.dueDate), today: model.today,
+                      theme: model.theme, below: rect, gap: gap, in: window) { [weak self] date in
             self?.close()
-            if date != current { Task { await model.setProperty(kind.key, to: date.map { .date($0) }, in: item.path) } }
+            if date != current { Task { await model.setDate(kind, to: date, of: paths) } }
         }
     }
 
@@ -104,11 +118,18 @@ final class PropertyPicker {
         statusMenu.hide()
         projectMenu.hide()
         calendar.hide()
-        if let context = projectMenuContext, let ringed = context.ringed, context.model.menuTarget == ringed {
-            context.model.menuTarget = nil
+        if let ringed, ringed.model.menuTarget == ringed.path {
+            ringed.model.menuTarget = nil
         }
+        ringed = nil
         projectMenuContext = nil
         open = nil
+    }
+
+    private func ring(_ path: String?, model: AppModel) {
+        guard let path else { return }
+        ringed = (model, path)
+        model.menuTarget = path
     }
 
     /// Closes the open picker. True when `key`'s picker is to open under `anchor`; false when it was the one

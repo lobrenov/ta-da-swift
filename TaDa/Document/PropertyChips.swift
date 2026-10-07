@@ -93,9 +93,9 @@ private struct ProjectPropertyChip: View {
         .buttonStyle(PropertyChipStyle(text: project != nil ? \.link : \.muted, isMissing: link == nil,
                                        isOpen: PropertyPicker.shared.isOpen(task.path, "project")))
         .background(ScreenAnchorReader(anchor: anchor))
-        .onChange(of: model.moveMenuRequest) { _, request in
-            guard let request, request.onChip, request.anchor == task.path else { return }
-            model.moveMenuRequest = nil
+        .onChange(of: model.propertyMenuRequest) { _, request in
+            guard let request, request.menu == .project, request.onChip, request.anchor == task.path else { return }
+            model.propertyMenuRequest = nil
             PropertyPicker.shared.pickProject(of: [task], model: model, anchor: anchor)
         }
         .help(project.map { "⌘-click to open \($0.title)" } ?? link.map { "No project is called “\($0.title)”" } ?? "")
@@ -118,7 +118,7 @@ private struct ProjectPropertyChip: View {
 }
 
 /// A due date or deadline: its icon in the key's colour and the day, red once it has passed and all `muted`
-/// once the file is done.
+/// once the file is done. Clicking, or ⌘S (due date) or ⌘D (deadline), opens its calendar.
 private struct DatePropertyChip: View {
     let kind: AgendaEntry.Kind
     let model: AppModel
@@ -131,7 +131,7 @@ private struct DatePropertyChip: View {
         let date = kind == .due ? p.dueDate : p.deadline
         let isDone = p.status == .done
         let isOverdue = !isDone && date.map { $0 < model.today } == true
-        Button { PropertyPicker.shared.pickDate(kind, of: item, model: model, anchor: anchor) } label: {
+        Button { PropertyPicker.shared.pickDate(kind, of: [item], model: model, anchor: anchor) } label: {
             if let date {
                 HStack(spacing: 6) {
                     Image(systemName: kind.systemImage)
@@ -146,6 +146,11 @@ private struct DatePropertyChip: View {
         .buttonStyle(PropertyChipStyle(text: isDone ? \.muted : isOverdue ? \.deadline : \.fg, isMissing: date == nil,
                                        isOpen: PropertyPicker.shared.isOpen(item.path, kind.key)))
         .background(ScreenAnchorReader(anchor: anchor))
+        .onChange(of: model.propertyMenuRequest) { _, request in
+            guard let request, request.menu == .date(kind), request.onChip, request.anchor == item.path else { return }
+            model.propertyMenuRequest = nil
+            PropertyPicker.shared.pickDate(kind, of: [item], model: model, anchor: anchor)
+        }
         .accessibilityLabel(kind.name)
         .accessibilityValue(date.map { $0.formatted(.weekdayDayMonthYear) + (isOverdue ? ", overdue" : "") } ?? "None")
         .accessibilityActions {

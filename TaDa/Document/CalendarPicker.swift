@@ -9,6 +9,7 @@ final class CalendarPicker {
     private let model: CalendarPickerModel
     private let panel: PopupPanel<CalendarPickerView>
     private var anchor = CGRect.zero
+    private var gap: CGFloat = 6
     private weak var parent: NSWindow?
 
     /// What a click elsewhere, a scroll or esc does.
@@ -32,7 +33,7 @@ final class CalendarPicker {
     /// the cursor on that day and `other` (the file's other date) as a dot. `set` gets the date picked, or nil
     /// from Clear.
     func show(_ kind: AgendaEntry.Kind, selected: LocalDate?, other: LocalDate?, today: LocalDate, theme: Theme,
-              below anchor: CGRect, in parent: NSWindow, set: @escaping (LocalDate?) -> Void) {
+              below anchor: CGRect, gap: CGFloat = 6, in parent: NSWindow, set: @escaping (LocalDate?) -> Void) {
         model.kind = kind
         model.selected = selected
         model.other = other
@@ -41,6 +42,7 @@ final class CalendarPicker {
         model.theme = theme
         model.set = set
         self.anchor = anchor
+        self.gap = gap
         self.parent = parent
         layout()
         announceToVoiceOver("\(kind.name), \(model.cursor.formatted(.weekdayDayMonthYear))")
@@ -51,7 +53,7 @@ final class CalendarPicker {
     private func layout() {
         guard let parent else { return }
         panel.show(size: CGSize(width: CalendarMetrics.width, height: CalendarMetrics.height(weeks: MonthGrid(model.cursor).weeks)),
-                   below: anchor, inset: 0, gap: 6, in: parent)
+                   below: anchor, inset: 0, gap: gap, in: parent)
     }
 
     private func handleKey(_ event: NSEvent) {

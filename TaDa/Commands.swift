@@ -1,6 +1,6 @@
 // Menu commands: ⌘N/⇧⌘N new task/project; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
-// the caret is on, ⇧⌘M move the selected or picked tasks to a project.
+// the caret is on, ⇧⌘M move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline.
 import SwiftUI
 import TaDaCore
 
@@ -58,6 +58,12 @@ struct AppCommands: Commands {
             Button("Move to Project…") { model.showMoveMenu() }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
                 .disabled(model.isSourceMode || model.moveTargets().isEmpty)
+            Button("Schedule…") { model.showDateMenu(.due) }
+                .keyboardShortcut("s")
+                .disabled(model.isSourceMode || model.dateTargets().isEmpty)
+            Button("Set Deadline…") { model.showDateMenu(.deadline) }
+                .keyboardShortcut("d")
+                .disabled(model.isSourceMode || model.dateTargets().isEmpty)
         }
     }
 

@@ -1,6 +1,6 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on a
-// project or task. Rows add it with `.fileMenu(model, path:)`. Move (tasks), Reveal in Finder and Delete everywhere;
-// Restore, Reveal in Finder and Delete Forever in Trash.
+// project or task. Rows add it with `.fileMenu(model, path:)`. Move (tasks), Schedule, Set Deadline…, Reveal in
+// Finder and Delete everywhere; Restore, Reveal in Finder and Delete Forever in Trash.
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -22,9 +22,10 @@ struct FileMenuAction: PopupMenuItem {
     var startsGroup = false
     let run: () -> Void
 
-    /// Move for tasks, Reveal in Finder and Delete for a file in the folder; Restore, Reveal in Finder and Delete
-    /// Forever for one in `.trash/`. A right-click on a picked file acts on every picked file. Move opens the project menu at `point` (screen
-    /// coordinates) in `window`, else under the row.
+    /// Move for tasks, Schedule, Set Deadline…, Reveal in Finder and Delete for a file in the folder; Restore,
+    /// Reveal in Finder and Delete Forever for one in `.trash/`. A right-click on a picked file acts on every picked
+    /// file. Move, Schedule and Set Deadline… open their menu at `point` (screen coordinates) in `window`, else under
+    /// the row or the open file's chip.
     static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
         guard path.hasPrefix(Vault.trashFolder + "/") else {
             let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
@@ -36,14 +37,30 @@ struct FileMenuAction: PopupMenuItem {
                                                       below: CGRect(origin: point, size: .zero), gap: 0, in: window,
                                                       ringing: path)
                 } else {
-                    model.moveMenuRequest = AppModel.MoveMenuRequest(paths: tasks, anchor: path, onChip: false)
+                    model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: .project, paths: tasks, anchor: path,
+                                                                             onChip: false)
                 }
             }
+            let files = model.dateTargets(for: path)
+            func date(_ kind: AgendaEntry.Kind, title: String, shortcut: String) -> FileMenuAction {
+                FileMenuAction(title: title, systemImage: kind.systemImage, shortcut: shortcut) {
+                    if let point, let window {
+                        PropertyPicker.shared.pickDate(kind, of: files.compactMap { model.index[$0] }, model: model,
+                                                       below: CGRect(origin: point, size: .zero), gap: 0, in: window,
+                                                       ringing: path)
+                    } else {
+                        model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: .date(kind), paths: files,
+                                                                                 anchor: path, onChip: model.selection == path)
+                    }
+                }
+            }
+            let schedule = date(.due, title: files.count == 1 ? "Schedule" : "Schedule \(files.count) Tasks", shortcut: "⌘S")
+            let deadline = date(.deadline, title: "Set Deadline…", shortcut: "⌘D")
             let delete = FileMenuAction(title: paths.count == 1 ? "Delete" : "Delete \(paths.count) Tasks",
                                         systemImage: "trash", shortcut: "⌘⌫") {
                 Task { await model.moveToTrash(paths) }
             }
-            return (tasks.isEmpty ? [] : [move]) + [reveal(paths, model: model), delete]
+            return (tasks.isEmpty ? [] : [move]) + [schedule, deadline, reveal(paths, model: model), delete]
         }
         let paths = model.trashSelection.contains(path) ? model.trashSelection : [path]
         return [

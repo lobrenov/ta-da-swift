@@ -288,19 +288,65 @@ struct AppModelTests {
         #expect(model.moveTargets(for: paths[3]) == [paths[1], paths[2], paths[3]], "a picked row takes the others")
     }
 
+    @Test func datesActOnProjectsToo() async {
+        let model = await folder.model()
+        let paths = ["projects/Ta Da MVP.md", "tasks/Loose.md", "tasks/Due today.md"]
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
+        model.selection = paths[0]
+        #expect(model.dateTargets() == [paths[0]], "the open project")
+        #expect(model.dateTargets(for: paths[0]) == [paths[0]], "a right-clicked project")
+
+        model.selection = paths[1]
+        model.extendSelection(to: paths[2])
+        #expect(model.dateTargets() == [paths[1], paths[2]], "picked tasks, in list order")
+    }
+
     @Test func showMoveMenuAsksTheChipOrTheFirstPickedRow() async {
         let model = await folder.model()
         let paths = ["tasks/Loose.md", "tasks/Due today.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[1]
         model.showMoveMenu()
-        #expect(model.moveMenuRequest?.paths == [paths[1]] && model.moveMenuRequest?.anchor == paths[1])
-        #expect(model.moveMenuRequest?.onChip == true)
+        #expect(model.propertyMenuRequest?.menu == .project)
+        #expect(model.propertyMenuRequest?.paths == [paths[1]] && model.propertyMenuRequest?.anchor == paths[1])
+        #expect(model.propertyMenuRequest?.onChip == true)
 
         model.extendSelection(to: paths[0])
         model.showMoveMenu()
-        #expect(model.moveMenuRequest?.paths == paths && model.moveMenuRequest?.anchor == paths[0])
-        #expect(model.moveMenuRequest?.onChip == false)
+        #expect(model.propertyMenuRequest?.paths == paths && model.propertyMenuRequest?.anchor == paths[0])
+        #expect(model.propertyMenuRequest?.onChip == false)
+    }
+
+    @Test func showDateMenuAsksTheChipOrTheFirstPickedRow() async {
+        let model = await folder.model()
+        let paths = ["tasks/Loose.md", "tasks/Due today.md"]
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
+        model.selection = "projects/Ta Da MVP.md"
+        model.showDateMenu(.deadline)
+        #expect(model.propertyMenuRequest?.menu == .date(.deadline))
+        #expect(model.propertyMenuRequest?.paths == ["projects/Ta Da MVP.md"] && model.propertyMenuRequest?.onChip == true)
+
+        model.selection = paths[0]
+        model.extendSelection(to: paths[1])
+        model.showDateMenu(.due)
+        #expect(model.propertyMenuRequest?.menu == .date(.due))
+        #expect(model.propertyMenuRequest?.paths == paths && model.propertyMenuRequest?.anchor == paths[0])
+        #expect(model.propertyMenuRequest?.onChip == false)
+    }
+
+    @Test func settingSeveralDatesWritesOnlyTheOnesThatChange() async throws {
+        let model = await folder.model()
+        let files = ["tasks/Due today.md", "tasks/Loose.md", "projects/Ta Da MVP.md"]
+        let before = try folder.read(files[1])
+
+        await model.setDate(.deadline, to: LocalDate("2026-09-30"), of: files)
+        #expect(try folder.read(files[1]) == before, "already on that deadline")
+        #expect(model.index[files[0]]?.properties.deadline == LocalDate("2026-09-30"))
+        #expect(model.index[files[2]]?.properties.deadline == LocalDate("2026-09-30"), "projects take dates too")
+
+        await model.setDate(.due, to: nil, of: files)
+        #expect(try folder.read(files[1]) == before, "had no due date")
+        #expect(model.index[files[0]]?.properties.dueDate == nil)
     }
 
     @Test func movingSeveralTasksWritesOnlyTheOnesThatChange() async throws {

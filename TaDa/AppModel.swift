@@ -89,15 +89,22 @@ import TaDaCore
     var trashNote: String?
     /// The file whose file menu is open; its row is ringed.
     var menuTarget: String?
-    /// ⇧⌘M's request for the project menu. The view it names opens the menu and sets this back to nil.
-    var moveMenuRequest: MoveMenuRequest?
-    struct MoveMenuRequest: Equatable {
+    /// ⇧⌘M's request for the project menu, or ⌘S's and ⌘D's for a date's calendar. The view it names opens the
+    /// menu and sets this back to nil.
+    var propertyMenuRequest: PropertyMenuRequest?
+    struct PropertyMenuRequest: Equatable {
         let id = UUID()
-        /// The tasks to move.
+        let menu: Menu
+        /// The files to set.
         let paths: [String]
-        /// The task whose project chip (`onChip`) or list row the menu opens under.
+        /// The file whose chip (`onChip`) or list row the menu opens under.
         let anchor: String
         let onChip: Bool
+
+        enum Menu: Equatable {
+            case project
+            case date(AgendaEntry.Kind)
+        }
     }
     /// Whether FSEvents is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
@@ -800,11 +807,11 @@ import TaDaCore
         return paths[(i + 1)...].first { !removed.contains($0) } ?? paths[..<i].last { !removed.contains($0) }
     }
 
-    // MARK: Move
+    // MARK: Move and dates
 
-    /// The tasks a move acts on, in list order. With `path` (a right-clicked or dragged row): the picked tasks when
-    /// it's one of them, else just it. Without: the picked tasks, else the open one. Projects are left out.
-    func moveTargets(for path: String? = nil) -> [String] {
+    /// The files a due date or deadline is set on, in list order. With `path` (a right-clicked or dragged row): the
+    /// picked tasks when it's one of them, else just it. Without: the picked tasks, else the open file.
+    func dateTargets(for path: String? = nil) -> [String] {
         let paths: Set<String>
         if let path {
             paths = multiSelection.contains(path) ? multiSelection : [path]
@@ -812,16 +819,30 @@ import TaDaCore
             paths = multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
         }
         let order = arrowKeyList?.paths ?? []
-        return paths.filter { index[$0]?.properties.kind == .task }
+        return paths.filter { index[$0] != nil }
             .sorted { (order.firstIndex(of: $0) ?? .max, $0) < (order.firstIndex(of: $1) ?? .max, $1) }
+    }
+
+    /// The tasks a move acts on: `dateTargets(for:)` without projects.
+    func moveTargets(for path: String? = nil) -> [String] {
+        dateTargets(for: path).filter { index[$0]?.properties.kind == .task }
     }
 
     /// ⇧⌘M: asks for the project menu for the move targets, under the open task's project chip or the first
     /// picked row.
     func showMoveMenu() {
-        let paths = moveTargets()
+        requestMenu(.project, for: moveTargets())
+    }
+
+    /// ⌘S (due date) and ⌘D (deadline): asks for `kind`'s calendar for the date targets, under the open file's
+    /// date chip or the first picked row.
+    func showDateMenu(_ kind: AgendaEntry.Kind) {
+        requestMenu(.date(kind), for: dateTargets())
+    }
+
+    private func requestMenu(_ menu: PropertyMenuRequest.Menu, for paths: [String]) {
         guard let first = paths.first else { return }
-        moveMenuRequest = MoveMenuRequest(paths: paths, anchor: first, onChip: selection == first)
+        propertyMenuRequest = PropertyMenuRequest(menu: menu, paths: paths, anchor: first, onChip: selection == first)
     }
 
     /// Links the tasks at `paths` to `project`, or empties their `project:` when it's nil. Tasks already there
@@ -836,6 +857,15 @@ import TaDaCore
             } else if task.properties.project != nil {
                 await setProperty("project", to: nil, in: path)
             }
+        }
+    }
+
+    /// Sets `kind`'s date of the files at `paths`, or empties it when `date` is nil. Files already on it aren't
+    /// written.
+    func setDate(_ kind: AgendaEntry.Kind, to date: LocalDate?, of paths: [String]) async {
+        for path in paths {
+            guard let item = index[path], item.properties[keyPath: kind.date] != date else { continue }
+            await setProperty(kind.key, to: date.map { .date($0) }, in: path)
         }
     }
 

@@ -30,8 +30,7 @@ struct DocumentPane: View {
         } else if let error = model.documentError, model.selection != nil {
             EmptyState(systemImage: "exclamationmark.triangle", title: "Couldn’t open the file", message: "\(error)")
         } else if model.selection == nil, model.multiSelection.count > 1 {
-            EmptyState(systemImage: "doc.on.doc", title: "\(model.multiSelection.count) tasks selected",
-                       message: "Right-click for actions, press ⇧⌘M to move them or ⌫ to delete them. Click one task to open it.")
+            EmptyState(systemImage: "doc.on.doc", title: "\(model.multiSelection.count) tasks selected")
         } else if model.selection == nil {
             EmptyState(systemImage: "doc.text", title: "No task selected", message: "Pick a task to read and edit it here.")
         } else {

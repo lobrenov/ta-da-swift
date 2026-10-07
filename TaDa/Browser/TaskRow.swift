@@ -210,6 +210,7 @@ extension AgendaEntry.Kind {
     var name: String { self == .due ? "Due date" : "Deadline" }
     /// The frontmatter key: `dueDate` or `deadline`.
     var key: String { self == .due ? "dueDate" : "deadline" }
+    var date: KeyPath<Properties, LocalDate?> { self == .due ? \.dueDate : \.deadline }
 }
 
 extension Theme {

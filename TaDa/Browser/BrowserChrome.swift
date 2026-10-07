@@ -197,7 +197,7 @@ struct ContextFilter: View {
 struct EmptyState: View {
     let systemImage: String
     let title: String
-    let message: LocalizedStringKey
+    var message: LocalizedStringKey?
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -209,10 +209,12 @@ struct EmptyState: View {
             Text(title)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(theme.color(\.strong))
-            Text(message)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(theme.color(\.muted))
-                .frame(maxWidth: 360)
+            if let message {
+                Text(message)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(theme.color(\.muted))
+                    .frame(maxWidth: 360)
+            }
         }
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

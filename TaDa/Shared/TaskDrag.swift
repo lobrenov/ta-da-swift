@@ -1,11 +1,12 @@
 // Dragging task files: task rows drag as their files, onto the sidebar's projects, Loose tasks and Today or into
-// other apps as a drag from Finder would, and the project menu opens under a row for ⇧⌘M. A drag on a picked row
+// other apps as a drag from Finder would, and the project menu or a calendar opens under a row for ⇧⌘M, ⌘S or ⌘D. A drag on a picked row
 // takes every picked task. Other apps get copies: Finder never moves a file out of the folder.
 import SwiftUI
 import TaDaCore
 
 extension View {
-    /// Makes a task's row draggable, and opens ⇧⌘M's project menu under it when it's the first picked row.
+    /// Makes a task's row draggable, and opens ⇧⌘M's project menu, or ⌘S's or ⌘D's calendar, under it when it's
+    /// the first picked row.
     func taskDrag(_ model: AppModel, path: String) -> some View {
         modifier(TaskDragSource(model: model, path: path))
     }
@@ -54,11 +55,14 @@ private struct TaskDragSource: ViewModifier {
         content
             .background(ScreenAnchorReader(anchor: anchor))
             .draggable(containerItemID: path)
-            .onChange(of: model.moveMenuRequest) { _, request in
+            .onChange(of: model.propertyMenuRequest) { _, request in
                 guard let request, !request.onChip, request.anchor == path else { return }
-                model.moveMenuRequest = nil
-                PropertyPicker.shared.pickProject(of: request.paths.compactMap { model.index[$0] }, model: model,
-                                                  anchor: anchor, gap: 4)
+                model.propertyMenuRequest = nil
+                let items = request.paths.compactMap { model.index[$0] }
+                switch request.menu {
+                case .project: PropertyPicker.shared.pickProject(of: items, model: model, anchor: anchor, gap: 4)
+                case .date(let kind): PropertyPicker.shared.pickDate(kind, of: items, model: model, anchor: anchor, gap: 4)
+                }
             }
     }
 }
