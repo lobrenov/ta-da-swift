@@ -34,7 +34,7 @@ For a new build, repeat steps 1 and 2 and choose Replace. Your folder is remembe
 README
 
 codesign --verify --deep --strict "$STAGING/Ta Da.app"
-rm -f "$DMG"
+rm -f build/TaDa-*.dmg
 hdiutil create -volname "Ta Da" -srcfolder "$STAGING" -format UDZO "$DMG"
 
 echo "$PWD/$DMG"

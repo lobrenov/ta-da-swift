@@ -8,7 +8,7 @@ Beta testers get a `.dmg` that holds the app, an Applications shortcut and `Read
    ```bash
    scripts/make-beta-dmg.sh
    ```
-   The output is `build/TaDa-<version>-<build>.dmg`. The script prints the path and reveals the file in Finder. `build/` is gitignored.
+   The output is `build/TaDa-<version>-<build>.dmg`. The script deletes earlier DMGs in `build/`, prints the path and reveals the file in Finder. `build/` is gitignored.
 
 ## Sharing
 Send the DMG through an iCloud Drive link (right-click › Share › Copy Link), AirDrop or any file-sharing link. Downloading it adds the quarantine flag, which testers clear once per build.
