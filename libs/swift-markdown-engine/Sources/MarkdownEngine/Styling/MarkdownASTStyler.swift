@@ -370,9 +370,10 @@ enum MarkdownASTStyler {
     struct QuoteLayout {
         let indent: CGFloat
         let spacing: CGFloat
-        /// Ta Da fork: a callout line's spacing above and right indent.
+        /// Ta Da fork: a callout line's spacing above and right indent, and the width of its shown `>` markers.
         var spacingBefore: CGFloat = 0
         var tailIndent: CGFloat = 0
+        var markerWidth: CGFloat = 0
     }
 
     /// AST list-item decoration: indent paragraph, `•` bullet, checkbox + strikethrough, all caret-aware.
@@ -451,7 +452,13 @@ enum MarkdownASTStyler {
         ps.tailIndent = quote?.tailIndent ?? 0
         ps.tabStops = []
         ps.defaultTabInterval = ctx.config.lists.indentPerLevel
-        ps.firstLineHeadIndent = quoteIndent + ctx.config.lists.indentPerLevel
+        // Ta Da fork: in a quote, each tab nests one level past the quote's text, as wrapped lines hang.
+        if let quote {
+            ps.tabStops = (2...12).map {
+                NSTextTab(textAlignment: .left, location: quote.indent + CGFloat($0) * ctx.config.lists.indentPerLevel)
+            }
+        }
+        ps.firstLineHeadIndent = quoteIndent + ctx.config.lists.indentPerLevel - (quote?.markerWidth ?? 0)
         // Wrapped lines hang under the first line's content (indent + marker
         // width). No checkbox-specific extra: the box is a drawn overlay that
         // doesn't change text advance, so adding it here (and only here, not to

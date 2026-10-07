@@ -807,6 +807,22 @@ struct FragmentGeometryTests {
         withExtendedLifetime(keep) {}
     }
 
+    @Test func aQuotedItemNestsOneLevelPerTabAndStaysPutUnderTheCaret() throws {
+        let text = "Intro\n\n> [!note] T\n> - a\n> \t- b\n"
+        let (_, keep) = try fragments(text) { $0.callouts = testCalloutStyle }
+        let (window, coordinator, _) = try #require(keep as? (NSWindow, NativeTextViewCoordinator, MarkdownLayoutManagerDelegate))
+        let tv = try #require(coordinator.textView as? NativeTextView)
+        let ns = text as NSString
+        func x(_ needle: String) throws -> CGFloat {
+            try #require(tv.layoutBridge).boundingRect(forCharacterRange: ns.range(of: needle), in: try #require(tv.textContainer)).minX
+        }
+        let a = try x("a"), b = try x("b")
+        #expect(abs(b - a - 27.5) < 0.5)
+        tv.setSelectedRange(NSRange(location: NSMaxRange(ns.range(of: "b")), length: 0))
+        #expect(abs(try x("b") - b) < 0.5)
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
     @Test func aCalloutEndingTheDocumentDrawsItsBottomPadding() throws {
         let (fragments, keep) = try fragments("Intro\n\n> [!note] T\n> body") { $0.callouts = testCalloutStyle }
         let last = try #require(fragments.last)
@@ -815,3 +831,4 @@ struct FragmentGeometryTests {
         withExtendedLifetime(keep) {}
     }
 }
+

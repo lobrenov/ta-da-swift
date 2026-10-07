@@ -127,8 +127,11 @@ extension MarkdownASTStyler {
                 spacingAfter += style.blockSpacing
             }
 
+            // On the caret's line the `>` markers show, hanging left of the text so it stays put.
+            let isActive = ctx.isActive(line.text)
+            let markerWidth = isActive ? HeadingHelpers.textWidth(ctx.ns.substring(with: line.markers), font: ctx.baseFont) : 0
             let para = NSMutableParagraphStyle()
-            para.firstLineHeadIndent = textIndent
+            para.firstLineHeadIndent = textIndent - markerWidth
             para.headIndent = textIndent
             para.tailIndent = -CGFloat(panels.count) * style.paddingSide
             if let title, callouts[title].header.fold.length == 1 {
@@ -144,7 +147,6 @@ extension MarkdownASTStyler {
             if line.content.length > 0 {
                 attrs.append((line.content, [.foregroundColor: endsWithBar ? ctx.theme.mutedText : style.bodyColor]))
             }
-            let isActive = ctx.isActive(line.text)
             attrs.append((line.markers, isActive
                 ? [.foregroundColor: ctx.theme.mutedText]
                 : [.foregroundColor: NSColor.clear, .font: ctx.inlineMarkerFont]))
@@ -184,7 +186,8 @@ extension MarkdownASTStyler {
             if !isHidden, let item = itemsByLine[line.line.location] {
                 styleListItem(item, displayNumber: nil,
                               quote: QuoteLayout(indent: textIndent, spacing: spacingAfter,
-                                                 spacingBefore: spacingBefore, tailIndent: para.tailIndent),
+                                                 spacingBefore: spacingBefore, tailIndent: para.tailIndent,
+                                                 markerWidth: markerWidth),
                               ctx: ctx, into: &attrs)
             }
         }
