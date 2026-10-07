@@ -23,6 +23,7 @@ struct WorkspaceView: View {
         .font(.system(size: 13))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(theme.color(\.bg))
+        .taskDragContainer(model)
     }
 
     @ViewBuilder private var domain: some View {

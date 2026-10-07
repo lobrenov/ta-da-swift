@@ -1,6 +1,6 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on a
-// project or task. Rows add it with `.fileMenu(model, path:)`. Move (tasks) and Delete everywhere; Restore and
-// Delete Forever in Trash.
+// project or task. Rows add it with `.fileMenu(model, path:)`. Move (tasks), Reveal in Finder and Delete everywhere;
+// Restore, Reveal in Finder and Delete Forever in Trash.
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -22,8 +22,8 @@ struct FileMenuAction: PopupMenuItem {
     var startsGroup = false
     let run: () -> Void
 
-    /// Move for tasks and Delete for a file in the folder; Restore and Delete Forever for one in `.trash/`. A
-    /// right-click on a picked file acts on every picked file. Move opens the project menu at `point` (screen
+    /// Move for tasks, Reveal in Finder and Delete for a file in the folder; Restore, Reveal in Finder and Delete
+    /// Forever for one in `.trash/`. A right-click on a picked file acts on every picked file. Move opens the project menu at `point` (screen
     /// coordinates) in `window`, else under the row.
     static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
         guard path.hasPrefix(Vault.trashFolder + "/") else {
@@ -43,18 +43,33 @@ struct FileMenuAction: PopupMenuItem {
                                         systemImage: "trash", shortcut: "⌘⌫") {
                 Task { await model.moveToTrash(paths) }
             }
-            return (tasks.isEmpty ? [] : [move]) + [delete]
+            return (tasks.isEmpty ? [] : [move]) + [reveal(paths, model: model), delete]
         }
         let paths = model.trashSelection.contains(path) ? model.trashSelection : [path]
         return [
             FileMenuAction(title: "Restore", systemImage: "arrow.counterclockwise", shortcut: "⌘⌫") {
                 Task { await model.restore(paths) }
             },
+            reveal(paths.sorted(), model: model),
             FileMenuAction(title: "Delete Forever", systemImage: "xmark.bin", shortcut: "⌥⌘⌫",
                            isDestructive: true, startsGroup: true) {
                 Task { await model.discard(paths) }
             },
         ]
+    }
+
+    private static func reveal(_ paths: [String], model: AppModel) -> FileMenuAction {
+        FileMenuAction(title: "Reveal in Finder", systemImage: "arrow.up.forward.square", shortcut: "") {
+            model.revealInFinder(paths)
+        }
+    }
+}
+
+extension AppModel {
+    /// Selects the files at `paths` in a Finder window.
+    func revealInFinder(_ paths: [String]) {
+        guard let vault, !paths.isEmpty else { return }
+        NSWorkspace.shared.activateFileViewerSelecting(paths.map { vault.url(for: $0) })
     }
 }
 

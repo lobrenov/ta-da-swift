@@ -20,11 +20,7 @@ struct FileInspector: View {
                     TimelineView(.everyMinute) { _ in
                         Text(fileFacts).font(.system(size: 12)).foregroundStyle(theme.color(\.muted))
                     }
-                    Button("Reveal in Finder") {
-                        if let url = model.vault?.url(for: document.path) {
-                            NSWorkspace.shared.activateFileViewerSelecting([url])
-                        }
-                    }
+                    Button("Reveal in Finder") { model.revealInFinder([document.path]) }
                     .padding(.top, 4)
                 }
                 Hairline()

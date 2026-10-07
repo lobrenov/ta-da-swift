@@ -454,7 +454,8 @@ import TaDaCore
     }
 
     /// The rows a click starts from: the picked trashed files in Trash, else the picked tasks or the open one.
-    private var picked: Set<String> {
+    /// The menu bar's Reveal in Finder shows them.
+    var picked: Set<String> {
         if domain == .trash { return trashSelection }
         return multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
     }

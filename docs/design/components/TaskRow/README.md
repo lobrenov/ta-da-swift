@@ -14,7 +14,7 @@ One task file as a row in a browser list: checkbox, title, and a meta line drawn
 - A click opens the file. Shift-click picks a range from the last task clicked on its own or ⌘-clicked; ⌘-click adds or removes one task. Every picked row shows `is-selected`, and the editor shows "N tasks selected" instead of a file.
 - Picked tasks that a filter or search hides drop out of the selection, so nothing unseen is deleted.
 - Escape clears the selection; ⌫ moves the picked tasks to the trash; ⇧⌘M opens the project menu under the first picked row.
-- Rows drag onto the sidebar's projects, Loose tasks and Today; dragging a picked row takes every picked task.
+- Rows drag onto the sidebar's projects, Loose tasks and Today, and into other apps as their files; dragging a picked row takes every picked task.
 
 ## Rules
 

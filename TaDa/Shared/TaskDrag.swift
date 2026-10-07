@@ -1,5 +1,6 @@
-// Moving tasks between projects from the lists: task rows drag onto the sidebar's projects, Loose tasks and Today,
-// and the project menu opens under a row for ⇧⌘M. A drag or drop on a picked row acts on every picked task.
+// Dragging task files: task rows drag as their files, onto the sidebar's projects, Loose tasks and Today or into
+// other apps as a drag from Finder would, and the project menu opens under a row for ⇧⌘M. A drag on a picked row
+// takes every picked task. Other apps get copies: Finder never moves a file out of the folder.
 import SwiftUI
 import TaDaCore
 
@@ -9,10 +10,32 @@ extension View {
         modifier(TaskDragSource(model: model, path: path))
     }
 
+    /// Holds the rows `.taskDrag` makes draggable: drags the picked tasks when a picked row is dragged, else the
+    /// dragged row's, as copies of their files.
+    func taskDragContainer(_ model: AppModel) -> some View {
+        dragContainer(for: TaskFile.self, itemID: \.path) { paths in
+            paths.compactMap { path in model.vault.map { TaskFile(path: path, url: $0.url(for: path)) } }
+        }
+        .dragContainerSelection(model.moveTargets())
+        .dragConfiguration(DragConfiguration(operationsWithinApp: .init(allowCopy: true),
+                                             operationsOutsideApp: .init(allowCopy: true)))
+        .dragPreviewsFormation(.stack)
+    }
+
     /// Takes dropped task rows: a project links them to it, Loose tasks empties their project and Today makes
     /// them due today. Rings the row while a drag is over it.
     func taskDrop(_ model: AppModel, onto target: TaskDropTarget, cornerRadius: CGFloat = 7) -> some View {
         modifier(TaskDropZone(model: model, target: target, cornerRadius: cornerRadius))
+    }
+}
+
+/// A dragged task: its file URL is what a drop receives.
+struct TaskFile: Transferable {
+    let path: String
+    let url: URL
+
+    static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation(exporting: \.url)
     }
 }
 
@@ -26,21 +49,11 @@ private struct TaskDragSource: ViewModifier {
     let model: AppModel
     let path: String
     @State private var anchor = ScreenAnchor()
-    @Environment(\.theme) private var theme
 
     func body(content: Content) -> some View {
         content
             .background(ScreenAnchorReader(anchor: anchor))
-            .draggable(path) {
-                let count = model.multiSelection.contains(path) ? model.moveTargets(for: path).count : 1
-                Text(count == 1 ? Item.title(ofPath: path) : "\(count) tasks")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(theme.color(\.strong))
-                    .lineLimit(1)
-                    .padding(.horizontal, 10)
-                    .frame(height: 26)
-                    .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
-            }
+            .draggable(containerItemID: path)
             .onChange(of: model.moveMenuRequest) { _, request in
                 guard let request, !request.onChip, request.anchor == path else { return }
                 model.moveMenuRequest = nil
@@ -59,8 +72,8 @@ private struct TaskDropZone: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .dropDestination(for: String.self) { paths, _ in
-                let tasks = paths.first.map { model.moveTargets(for: $0) } ?? []
+            .dropDestination(for: URL.self) { urls, _ in
+                let tasks = urls.compactMap { model.vault?.path(of: $0) }.filter { model.index[$0]?.properties.kind == .task }
                 guard !tasks.isEmpty else { return }
                 Task {
                     switch target {
