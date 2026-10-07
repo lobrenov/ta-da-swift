@@ -51,11 +51,13 @@ TaDa/
 │   ├── SourceTextView.swift   Source mode (NSTextView, line numbers)
 │   ├── SlashMenu.swift
 │   ├── CheckboxMenu.swift
+│   ├── CalloutMenu.swift
+│   ├── CalloutIcon.swift      callout icons and tints
 │   └── AddSubtask.swift
-└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, file and property menus share); FileMenu (right-click on a project or task); Buttons (the text button style and segmented control)
+└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, callout, file and property menus share); FileMenu (right-click on a project or task); Buttons (the text button style and segmented control)
 
 Packages/TaDaCore/Sources/TaDaCore/
-├── Model/      Item, Status, LocalDate, WikiLink, Checkbox
+├── Model/      Item, Status, LocalDate, WikiLink, Checkbox, CalloutType
 ├── Parsing/    FrontmatterSplitter, PropertyReader, BodyScanner, CheckboxSyntax, SourceHighlighter
 ├── Writing/    Lines, FrontmatterEditor, ChecklistEditor, Completion, NewFile, FileNaming, SubtaskLine, SlashCommand
 ├── Index/      VaultIndex, Queries
@@ -99,6 +101,7 @@ Browser lists share their selection: each registers its rows with `.arrowKeySele
 - **Source**: `SourceTextView`, a TextKit 1 `NSTextView` with a line-number ruler and a current-line highlight. It edits the whole file, frontmatter included. `SourceHighlighter` (in TaDaCore, on `FrontmatterSplitter`, `WikiLink` and `LocalDate`) colours it by role (key `accent`, value `fg`, string `done`, date `due`, heading `strong`, punctuation and checkbox `muted`, done checkbox `done`, link `link`) and reruns over the whole file after each edit.
 - **Slash menu**: `/` in the Live editor opens `SlashMenu`, a themed list of `SlashCommand` formats in a `PopupMenu`: a borderless panel that places itself under its anchor and closes on a click elsewhere or a scroll. The checkbox, file and property menus use it too.
 - **Checkbox menu**: a right-click on a Live editor checkbox opens `CheckboxMenu`, the same kind of panel listing every marker (subtasks, then icons) with its box drawn by `InlineCheckbox`. While open it takes ↑↓, ↵ and esc.
+- **Callouts**: `LiveEditor` gives the engine a `CalloutStyle`, so `> [!type]` quotes draw as panels (types and aliases from `CalloutType`, icons from `CalloutIcon`). A click on a foldable callout's icon, chevron or the row past its title folds or opens it on screen only; the file keeps its `+` or `-`, and a folded body shows while the caret is in it. A right-click on a title line opens `CalloutMenu` under the icon, with the callout ringed: picking a type or fold edits only the text between `[!` and `]` or the character after it, as one undo step. While open it takes ↑↓, ↵ and esc.
 - **Properties**: `PropertyChips` shows status, project (tasks only), dueDate and deadline as chips under the title, and the type, createdDate and completedDate in a line below. A chip opens its picker under it through `PropertyPicker`. Status and project are `PopupMenu`s: they take ↑↓, ↵, esc and typed letters, and the project menu's search field takes the keyboard. New project creates the file and links the task with `AppModel.newProject(named:linking:)`. A date opens `CalendarPicker`, a month in a `PopupPanel` that takes ←↑↓→, ↵ and esc. VoiceOver gets each chip's choices as actions on the chip.
 
 ## Shortcuts

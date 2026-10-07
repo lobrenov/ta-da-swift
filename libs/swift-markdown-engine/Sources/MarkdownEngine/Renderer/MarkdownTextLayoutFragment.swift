@@ -81,7 +81,7 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
         var bounds = super.renderingSurfaceBounds
         // Task checkboxes too: the box draws left of the first glyph (marker
         // slot), outside the default text surface — TextKit would clip it.
-        if hasCodeBlockBackground || hasThematicBreak || hasBlockquote || hasTaskCheckbox {
+        if hasCodeBlockBackground || hasThematicBreak || hasBlockquote || hasTaskCheckbox || hasCallout {
             let containerWidth = textLayoutManager?.textContainer?.size.width ?? bounds.width
             // Extend left to container edge
             bounds.origin.x = -layoutFragmentFrame.origin.x
@@ -96,6 +96,13 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
         for fill in blockBackgroundFills(at: .zero) {
             bounds = bounds.union(fill.rect)
         }
+        // Ta Da fork: bubbles reach past their glyphs; callout panels fill the paragraph spacing.
+        for shape in inlineBubbleShapes(at: .zero) {
+            bounds = bounds.union(shape.rect)
+        }
+        if hasCallout {
+            bounds = bounds.union(CGRect(x: bounds.minX, y: 0, width: bounds.width, height: layoutFragmentFrame.height))
+        }
         return bounds
     }
 
@@ -107,6 +114,10 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
 
         // 1b. Line-box fills (`==highlight==` and friends), behind text
         drawBlockBackgrounds(at: point, in: context)
+
+        // 1c. Ta Da fork: callout panels and inline bubbles, behind text
+        drawCalloutPanels(at: point, in: context)
+        drawInlineBubbles(at: point, in: context)
 
         // 2. LaTeX images (behind text — hidden markers are invisible anyway)
         drawLatexImages(at: point, in: context)
@@ -127,12 +138,15 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
 
         // 6. Blockquote bars (left gutter, behind nothing — text is indented)
         drawBlockquoteBars(at: point, in: context)
+
+        // 7. Ta Da fork: callout icons, untitled names and fold chevrons
+        drawCalloutTitles(at: point, in: context)
     }
 
     // MARK: - Helpers
 
     /// NSRange in the document for this fragment's content.
-    private var fragmentNSRange: NSRange? {
+    var fragmentNSRange: NSRange? {
         guard let tcs = textLayoutManager?.textContentManager as? NSTextContentStorage else { return nil }
         let start = tcs.offset(from: tcs.documentRange.location, to: rangeInElement.location)
         let end = tcs.offset(from: tcs.documentRange.location, to: rangeInElement.endLocation)
@@ -140,7 +154,7 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
         return NSRange(location: start, length: end - start)
     }
 
-    private var textStorage: NSTextStorage? {
+    var textStorage: NSTextStorage? {
         (textLayoutManager?.textContentManager as? NSTextContentStorage)?.textStorage
     }
 
@@ -284,7 +298,7 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
 
     /// Returns active text-selection rectangles intersecting this fragment, in
     /// the same draw-relative coordinate system used by `drawCodeBlockBackground`.
-    private func selectionRectsInDrawCoordinates(drawPoint: CGPoint, snappedY: CGFloat, snappedMaxY: CGFloat) -> [CGRect] {
+    func selectionRectsInDrawCoordinates(drawPoint: CGPoint, snappedY: CGFloat, snappedMaxY: CGFloat) -> [CGRect] {
         guard let tlm = textLayoutManager else { return [] }
         var rects: [CGRect] = []
 

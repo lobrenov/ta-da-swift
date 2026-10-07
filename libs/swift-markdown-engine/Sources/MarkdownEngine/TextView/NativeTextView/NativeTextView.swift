@@ -71,6 +71,10 @@ final class NativeTextView: NSTextView {
     var isCursorExcluded: ((CGPoint) -> Bool)?
     /// Ta Da fork: see ``NativeTextViewWrapper/onTaskMarkerMenu``.
     var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
+    /// Ta Da fork: see ``NativeTextViewWrapper/onCalloutMenu``.
+    var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
+    /// Ta Da fork: the title line location of the callout whose menu is open.
+    var calloutMenuTarget: Int?
 
     // MARK: Wide-table overlay state
     /// Live NSScrollView per wide table; keyed by source-ID hash.
@@ -82,6 +86,10 @@ final class NativeTextView: NSTextView {
     /// which moves the caret to the click — onto the box's line, revealing the raw `[ ]`.
     override func menu(for event: NSEvent) -> NSMenu? {
         if let hit = taskCheckboxHit(for: event) { return taskMarkerMenu(for: hit) }
+        if let onCalloutMenu, let hit = calloutTitleHit(for: event) {
+            showCalloutMenu(for: hit, onCalloutMenu)
+            return nil
+        }
         return super.menu(for: event)
     }
 

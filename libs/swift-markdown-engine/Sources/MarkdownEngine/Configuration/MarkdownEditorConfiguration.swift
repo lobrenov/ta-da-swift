@@ -95,6 +95,10 @@ public struct MarkdownEditorConfiguration: Sendable {
     public var directives: [any MarkdownDirective]
     /// Marker configuration for ``directives`` (default `@`).
     public var directiveSettings: DirectiveRegistrySettings
+    /// Ta Da fork: draws Obsidian callouts (`> [!type] Title`) as panels. nil keeps them plain quotes.
+    public var callouts: CalloutStyle? = nil
+    /// Ta Da fork: callouts folded or opened on screen, by title line, overriding the file's `+` or `-`.
+    var calloutFoldOverrides: [String: Bool] = [:]
 
     public init(
         theme: MarkdownEditorTheme = .default,
@@ -294,9 +298,12 @@ public struct CodeBlockStyle: Sendable {
 public struct InlineCodeStyle: Sendable {
     /// Inline-code reuses the code block font size scale by default.
     public var fontSizeScale: CGFloat
+    /// Ta Da fork: draws each span as a rounded bubble instead of a flat code-coloured fill.
+    public var bubble: InlineBubble?
 
-    public init(fontSizeScale: CGFloat = 0.85) {
+    public init(fontSizeScale: CGFloat = 0.85, bubble: InlineBubble? = nil) {
         self.fontSizeScale = fontSizeScale
+        self.bubble = bubble
     }
 
     public static let `default` = InlineCodeStyle()

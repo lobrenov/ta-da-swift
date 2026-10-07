@@ -95,6 +95,7 @@ private struct SlashCommandIcon: View {
         case .numberedList: "list.number"
         case .task: "checkmark.square"
         case .quote: "text.quote"
+        case .callout: "text.bubble"
         case .divider: "minus"
         case .codeBlock: "terminal"
         case .table: "tablecells"

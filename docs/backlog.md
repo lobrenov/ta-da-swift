@@ -13,4 +13,4 @@ Work not yet built.
 - A better design for a project's linked-tasks table (its columns have fixed widths).
 - iOS/iPad, including the choice of editor.
 - Upstream fix for alias display: `[[Target|Alias]]` shows the target name.
-- Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, rounded inline code, highlights and code blocks, and Obsidian callouts with folding and the callout menu.
+- Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, code blocks, and the caret's line in mono on `code`.

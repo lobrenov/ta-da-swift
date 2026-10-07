@@ -2,7 +2,7 @@ import Foundation
 
 /// A markdown format offered by the editor's slash menu, in menu order.
 public enum SlashCommand: CaseIterable, Sendable {
-    case heading1, heading2, heading3, bulletedList, numberedList, task, quote, divider, codeBlock, table
+    case heading1, heading2, heading3, bulletedList, numberedList, task, quote, callout, divider, codeBlock, table
     case wikiLink, link, image
     case bold, italic, strikethrough, highlight, inlineCode
 
@@ -21,6 +21,7 @@ public enum SlashCommand: CaseIterable, Sendable {
         case .numberedList: "Numbered list"
         case .task: "Task"
         case .quote: "Quote"
+        case .callout: "Callout"
         case .divider: "Divider"
         case .codeBlock: "Code block"
         case .table: "Table"
@@ -37,7 +38,8 @@ public enum SlashCommand: CaseIterable, Sendable {
 
     public var group: Group {
         switch self {
-        case .heading1, .heading2, .heading3, .bulletedList, .numberedList, .task, .quote, .divider, .codeBlock, .table: .blocks
+        case .heading1, .heading2, .heading3, .bulletedList, .numberedList, .task, .quote, .callout, .divider, .codeBlock,
+             .table: .blocks
         case .wikiLink, .link, .image: .links
         case .bold, .italic, .strikethrough, .highlight, .inlineCode: .inline
         }
@@ -53,6 +55,7 @@ public enum SlashCommand: CaseIterable, Sendable {
         case .numberedList: ["ol", "ordered", "number"]
         case .task: ["todo", "checkbox", "check"]
         case .quote: ["blockquote"]
+        case .callout: ["admonition", "aside", "info", "warning", "tip"]
         case .divider: ["hr", "rule", "separator", "line"]
         case .codeBlock: ["fence", "pre", "snippet"]
         case .table: ["grid", "columns", "rows"]
@@ -77,6 +80,7 @@ public enum SlashCommand: CaseIterable, Sendable {
         case .numberedList: "1."
         case .task: "- [ ]"
         case .quote: ">"
+        case .callout: "> [!]"
         case .divider: "---"
         case .codeBlock: "```"
         case .table: "| |"
@@ -101,6 +105,7 @@ public enum SlashCommand: CaseIterable, Sendable {
         case .numberedList: "1. §"
         case .task: "- [ ] §"
         case .quote: "> §"
+        case .callout: "> [!note] §"
         case .divider: "---\n§"
         case .codeBlock: "```\n§\n```"
         case .table: "| §Column§ | Column |\n| --- | --- |\n|  |  |"

@@ -487,3 +487,240 @@ struct TaskMarkerMenuHookTests {
         withExtendedLifetime((window, coordinator)) {}
     }
 }
+
+private let testCalloutStyle = CalloutStyle(
+    tint: { _ in .systemBlue }, drawIcon: { _, _, _ in }, titleColor: .labelColor, bodyColor: .textColor,
+    foldColor: .gray, targetColor: .systemRed, fillOpacity: 0.09, ringOpacity: 0.24)
+
+@Suite("Ta Da fork — callouts")
+struct CalloutTests {
+
+    private func header(_ line: String) -> [String]? {
+        let ns = line as NSString
+        let quote = QuoteLine.parse(NSRange(location: 0, length: ns.length), of: ns)
+        return CalloutHeader.parse(ns, content: quote.content).map {
+            [ns.substring(with: $0.type), ns.substring(with: $0.fold), ns.substring(with: $0.title)]
+        }
+    }
+
+    private func callouts(_ text: String) -> [[Int]] {
+        let ns = text as NSString
+        let lines = QuoteLine.lines(in: NSRange(location: 0, length: ns.length), of: ns)
+        return Callout.find(in: lines, of: ns).map { [$0.level, $0.first, $0.last] }
+    }
+
+    private func attrs(_ text: String, caret: Int = -1, folds: [String: Bool] = [:], callouts: Bool = true) -> [StyledRange] {
+        var config = MarkdownEditorConfiguration.default
+        if callouts { config.callouts = testCalloutStyle }
+        config.calloutFoldOverrides = folds
+        return MarkdownASTStyler.styleAttributes(text: text, fontName: NSFont.systemFont(ofSize: 14).fontName,
+                                                 fontSize: 14, caretLocation: caret, configuration: config)
+    }
+
+    private func calloutLines(_ attrs: [StyledRange]) -> [CalloutLine] {
+        attrs.compactMap { $0.attributes[.calloutLine] as? CalloutLine }
+    }
+
+    /// The last value styled for `key` over exactly `range`.
+    private func last(_ key: NSAttributedString.Key, at range: NSRange, in attrs: [StyledRange]) -> Any? {
+        attrs.last { $0.range == range && $0.attributes[key] != nil }?.attributes[key]
+    }
+
+    @Test func titleLinesParse() {
+        #expect(header("> [!note] Title") == ["note", "", "Title"])
+        #expect(header("> [!FAQ]+ Why plain files?  ") == ["FAQ", "+", "Why plain files?"])
+        #expect(header(">[!tip]-") == ["tip", "-", ""])
+        #expect(header("> [!note]Title") == nil)
+        #expect(header("> [!] x") == nil)
+        #expect(header("> [note] x") == nil)
+    }
+
+    @Test func calloutsNestAndEndWithTheirLevel() {
+        #expect(callouts("> [!note] A\n> body\n> > [!quote] B\n> > inner\n> after\n") == [[1, 0, 4], [2, 2, 3]])
+    }
+
+    @Test func onlyTheFirstLineAtALevelOpensOne() {
+        #expect(callouts("> text\n> [!note] not a title\n").isEmpty)
+        #expect(callouts("> [!a]\n> [!b]\n") == [[1, 0, 1]])
+    }
+
+    @Test func eachLineGetsItsPanelAndTheTitleHidesItsSyntaxBehindTheIcon() throws {
+        let styled = attrs("> [!warning] Two\n> body\n\nafter")
+        let lines = calloutLines(styled)
+        try #require(lines.count == 2)
+        #expect(lines[0].isTitle && lines[0].panels.first?.opens == true && lines[0].title?.type == "warning")
+        #expect(lines[1].panels.first?.opens == false && lines[1].panels.first?.bottomPadding == 11)
+        // `[!warning] ` is hidden; its last character makes room for the 16pt icon and 8pt gap.
+        #expect(last(.kern, at: NSRange(location: 12, length: 1), in: styled) as? CGFloat == 24)
+    }
+
+    @Test func theCaretOnTheTitleLineShowsItsSyntax() {
+        let styled = attrs("> [!warning] Two\n> body", caret: 5)
+        #expect(calloutLines(styled).first?.title == nil)
+        #expect(last(.kern, at: NSRange(location: 12, length: 1), in: styled) == nil)
+    }
+
+    @Test func anUntitledCalloutMakesRoomForItsName() throws {
+        let kern = try #require(last(.kern, at: NSRange(location: 7, length: 1), in: attrs("> [!faq]\n> x")) as? CGFloat)
+        #expect(kern > 24)
+        #expect(calloutLines(attrs("> [!faq]\n> x")).first?.title?.name == "Faq")
+    }
+
+    @Test func aFoldedBodyHidesUntilTheCaretIsInIt() {
+        let text = "> [!tip]- Hidden\n> body\n\nafter"
+        func bodyHeight(_ styled: [StyledRange]) -> CGFloat? {
+            (styled.last { $0.range.location == 17 && $0.attributes[.paragraphStyle] != nil }?
+                .attributes[.paragraphStyle] as? NSParagraphStyle)?.maximumLineHeight
+        }
+        #expect(bodyHeight(attrs(text, caret: 26)) == 0.1)
+        #expect(calloutLines(attrs(text, caret: 26)).first?.isFolded == true)
+        #expect(bodyHeight(attrs(text, caret: 20)) != 0.1)
+        #expect(bodyHeight(attrs(text, caret: 26, folds: ["> [!tip]- Hidden": false])) != 0.1)
+    }
+
+    @Test func plainQuotesAndDisabledCalloutsStayQuotes() {
+        #expect(calloutLines(attrs("> quote\n> more")).isEmpty)
+        #expect(calloutLines(attrs("> [!note] A\n> b", callouts: false)).isEmpty)
+        #expect(attrs("> [!note] A\n> b", callouts: false).contains { $0.attributes[.blockquoteLevel] != nil })
+    }
+}
+
+@Suite("Ta Da fork — inline bubbles")
+struct InlineBubbleTests {
+
+    private struct Mark: MarkdownExtension {
+        var id: String { HighlightExtension.identifier }
+        var inline: InlineSyntax? { InlineSyntax(open: "==", close: "==") }
+        func contentAttributes(theme: MarkdownEditorTheme) -> [NSAttributedString.Key: Any] { [:] }
+        func html(childrenHTML: String) -> String { childrenHTML }
+        func bubble(theme: MarkdownEditorTheme) -> InlineBubble? { InlineBubble(fill: .yellow, horizontalPadding: 4, margin: -1) }
+    }
+
+    private func attrs(_ text: String, caret: Int = -1) -> [StyledRange] {
+        var config = MarkdownEditorConfiguration.default
+        config.inlineCode.bubble = InlineBubble(fill: .gray, ring: .black, text: .red, horizontalPadding: 6, margin: 1)
+        config.extensions = [Mark()]
+        return MarkdownASTStyler.styleAttributes(text: text, fontName: NSFont.systemFont(ofSize: 14).fontName,
+                                                 fontSize: 14, caretLocation: caret, configuration: config)
+    }
+
+    private func kern(at location: Int, in attrs: [StyledRange]) -> CGFloat? {
+        attrs.last { $0.range == NSRange(location: location, length: 1) && $0.attributes[.kern] != nil }?
+            .attributes[.kern] as? CGFloat
+    }
+
+    @Test func inlineCodeIsABubbleWhoseHiddenMarkersHoldItsPadding() {
+        let styled = attrs("a `b` c")
+        #expect(styled.contains { $0.range == NSRange(location: 2, length: 3) && $0.attributes[.markdownInlineBubble] is InlineBubbleSpan })
+        #expect(styled.contains { $0.range == NSRange(location: 3, length: 1) && $0.attributes[.foregroundColor] as? NSColor == .red })
+        #expect(!styled.contains { $0.attributes[.backgroundColor] != nil })
+        #expect(kern(at: 2, in: styled) == 7 && kern(at: 4, in: styled) == 7)
+        #expect(kern(at: 2, in: attrs("a `b` c", caret: 3)) == nil)
+    }
+
+    @Test func anExtensionSpanCanBeABubble() {
+        let styled = attrs("a ==b== c")
+        #expect(styled.contains { $0.range == NSRange(location: 2, length: 5) && $0.attributes[.markdownInlineBubble] is InlineBubbleSpan })
+        #expect(kern(at: 3, in: styled) == 3 && kern(at: 6, in: styled) == 3)
+    }
+}
+
+@MainActor
+@Suite("Ta Da fork — callout menu and folding")
+struct CalloutInteractionTests {
+
+    /// An editor showing `text` with callouts on, the caret at 0.
+    private func editor(_ text: String) throws -> (tv: NativeTextView, window: NSWindow, coordinator: NativeTextViewCoordinator) {
+        _ = NSApplication.shared
+        let coordinator = NativeTextViewCoordinator(
+            text: .constant(text), fontName: "SF Pro", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        coordinator.configuration.callouts = testCalloutStyle
+        let tv = NativeTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
+        tv.configuration = coordinator.configuration
+        tv.isEditable = true
+        tv.allowsUndo = true
+        tv.delegate = coordinator
+        let scrollView = NSScrollView(frame: tv.frame)
+        scrollView.documentView = tv
+        let window = NSWindow(contentRect: tv.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = scrollView
+        let bridge = LayoutBridge(try #require(tv.textLayoutManager))
+        coordinator.layoutBridge = bridge
+        tv.layoutBridge = bridge
+        coordinator.textView = tv
+        coordinator.rebuildTextStorageAndStyle(tv, from: text)
+        coordinator.lastSyncedText = text
+        coordinator.lastComputedStorage = text
+        coordinator.previousDisplayLength = (text as NSString).length
+        tv.setSelectedRange(NSRange(location: 0, length: 0))
+        return (tv, window, coordinator)
+    }
+
+    /// A mouse event on the icon of the callout titled at `location`.
+    private func iconEvent(_ type: NSEvent.EventType, titleAt location: Int, in tv: NativeTextView, window: NSWindow) throws -> NSEvent {
+        let storage = try #require(tv.textStorage)
+        let line = try #require(storage.attribute(.calloutLine, at: location, effectiveRange: nil) as? CalloutLine)
+        let title = try #require(line.title)
+        let lineRange = (storage.string as NSString).lineRange(for: NSRange(location: location, length: 0))
+        let rect = try #require(tv.layoutBridge).boundingRect(forCharacterRange: lineRange, in: try #require(tv.textContainer))
+        let viewPoint = CGPoint(x: title.iconX + title.iconSize / 2 + tv.textContainerOrigin.x,
+                                y: rect.midY + tv.textContainerOrigin.y)
+        return try #require(NSEvent.mouseEvent(
+            with: type, location: tv.convert(viewPoint, to: nil), modifierFlags: [], timestamp: 0,
+            windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1
+        ))
+    }
+
+    @Test func rightClickOnATitleGoesToTheHookAndEditsOnce() throws {
+        let (tv, window, coordinator) = try editor("Intro\n\n> [!note] T\n> body\n")
+        var requests: [CalloutMenuRequest] = []
+        tv.onCalloutMenu = { requests.append($0) }
+
+        #expect(tv.menu(for: try iconEvent(.rightMouseDown, titleAt: 7, in: tv, window: window)) == nil)
+        let request = try #require(requests.first)
+        #expect(request.type == "note" && request.fold == nil)
+        #expect(tv.calloutMenuTarget == 7)
+        request.setFold("-")
+        #expect(tv.string == "Intro\n\n> [!note]- T\n> body\n")
+        // The title line changed since the request, so a second pick does nothing.
+        request.setType("tip")
+        #expect(tv.string == "Intro\n\n> [!note]- T\n> body\n")
+        request.close()
+        #expect(tv.calloutMenuTarget == nil)
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
+    @Test func aTypeReplacesOnlyTheTypeAndUndoesInOneStep() throws {
+        let (tv, window, coordinator) = try editor("Intro\n\n> [!note]+ T\n> body\n")
+        var requests: [CalloutMenuRequest] = []
+        tv.onCalloutMenu = { requests.append($0) }
+        _ = tv.menu(for: try iconEvent(.rightMouseDown, titleAt: 7, in: tv, window: window))
+        try #require(requests.first).setType("warning")
+        #expect(tv.string == "Intro\n\n> [!warning]+ T\n> body\n")
+        tv.undoManager?.undo()
+        #expect(tv.string == "Intro\n\n> [!note]+ T\n> body\n")
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
+    @Test func aClickOnTheIconFoldsOnScreenOnly() throws {
+        let text = "Intro\n\n> [!note]+ T\n> body\n"
+        let (tv, window, coordinator) = try editor(text)
+        #expect(tv.toggleCalloutFoldIfHit(event: try iconEvent(.leftMouseDown, titleAt: 7, in: tv, window: window)))
+        #expect(coordinator.configuration.calloutFoldOverrides == ["> [!note]+ T": true])
+        let title = try #require(tv.textStorage?.attribute(.calloutLine, at: 7, effectiveRange: nil) as? CalloutLine)
+        #expect(title.isFolded)
+        #expect(tv.string == text)
+        // Opening it again matches the file, so the override goes.
+        #expect(tv.toggleCalloutFoldIfHit(event: try iconEvent(.leftMouseDown, titleAt: 7, in: tv, window: window)))
+        #expect(coordinator.configuration.calloutFoldOverrides.isEmpty)
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
+    @Test func aCalloutThatDoesNotFoldIgnoresTheClick() throws {
+        let (tv, window, coordinator) = try editor("Intro\n\n> [!note] T\n> body\n")
+        #expect(!tv.toggleCalloutFoldIfHit(event: try iconEvent(.leftMouseDown, titleAt: 7, in: tv, window: window)))
+        withExtendedLifetime((window, coordinator)) {}
+    }
+}

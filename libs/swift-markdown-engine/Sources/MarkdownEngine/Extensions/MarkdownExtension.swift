@@ -123,6 +123,8 @@ public protocol MarkdownExtension: Sendable {
     /// Wrap the rendered inner HTML for the clean-copy path
     /// (`childrenHTML` is already escaped / recursively rendered).
     func html(childrenHTML: String) -> String
+    /// Ta Da fork: draws the span, markers included, as a rounded bubble. nil (default) draws none.
+    func bubble(theme: MarkdownEditorTheme) -> InlineBubble?
 }
 
 public extension MarkdownExtension {
@@ -132,6 +134,7 @@ public extension MarkdownExtension {
     // first.
     var inline: InlineSyntax? { nil }
     var block: BlockSyntax? { nil }
+    func bubble(theme: MarkdownEditorTheme) -> InlineBubble? { nil }
 }
 
 // MARK: - Parser-facing registry (internal)

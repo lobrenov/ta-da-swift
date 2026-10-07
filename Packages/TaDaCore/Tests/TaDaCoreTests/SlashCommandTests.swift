@@ -40,3 +40,11 @@ import Testing
     let afterText = SlashCommand.divider.insertion(followsBlankLine: false)
     #expect(afterText.text == "\n---\n" && afterText.selection.location == 5)
 }
+
+@Test func calloutOpensANoteWithTheCaretAtItsTitle() {
+    #expect(SlashCommand.matching("call", atLineStart: true) == [.callout])
+    #expect(SlashCommand.matching("warn", atLineStart: true) == [.callout])
+    #expect(!SlashCommand.matching("", atLineStart: false).contains(.callout))
+    let callout = SlashCommand.callout.insertion()
+    #expect(callout.text == "> [!note] " && callout.selection == NSRange(location: 10, length: 0))
+}

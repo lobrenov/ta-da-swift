@@ -205,6 +205,14 @@ extension NativeTextViewCoordinator {
     ) -> [NSRange] {
         // Raw mode: no restyling; typing keeps base attrs via the typing shim.
         guard !configuration.rawSourceMode else { return [] }
+        // Ta Da fork: a callout's lines draw from the whole quote, so restyle every quote a candidate touches.
+        var paragraphCandidates = paragraphCandidates
+        if configuration.callouts != nil, let blocks {
+            let candidates = paragraphCandidates
+            paragraphCandidates += blocks.filter { block in
+                block.kind == .blockquote && candidates.contains { NSIntersectionRange($0, block.range).length > 0 }
+            }.map(\.range)
+        }
         let (baseFont, paragraphStyle) = TextStylingService.makeBaseFontAndStyle(
             fontName: fontName,
             fontSize: fontSize,

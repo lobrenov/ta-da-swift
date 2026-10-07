@@ -146,6 +146,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
     public var onSlashCommandChange: ((SlashCommandState?) -> Void)?
     /// Ta Da fork: a right-click on a task box. When set, it replaces the built-in marker menu.
     public var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
+    /// Ta Da fork: a right-click on a callout's title line. Without it, the line gets the standard menu.
+    public var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
     /// Ta Da fork: ↑/↓ and ↵/⇥ (`.confirm`) while a slash command is open. Return `true`
     /// to consume the key. Esc always closes it.
     public var onSlashCommandKey: ((InlinePreviewKey) -> Bool)?
@@ -181,7 +183,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         onSlashCommandChange: ((SlashCommandState?) -> Void)? = nil,
         onSlashCommandKey: ((InlinePreviewKey) -> Bool)? = nil,
         slashCommandProxy: SlashCommandProxy? = nil,
-        onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil
+        onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil,
+        onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -212,6 +215,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         self.onSlashCommandKey = onSlashCommandKey
         self.slashCommandProxy = slashCommandProxy
         self.onTaskMarkerMenu = onTaskMarkerMenu
+        self.onCalloutMenu = onCalloutMenu
     }
 
     public func sizeThatFits(
@@ -427,9 +431,12 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         context.coordinator.onSlashCommandKey = onSlashCommandKey
         slashCommandProxy?.coordinator = context.coordinator
         textView.onTaskMarkerMenu = onTaskMarkerMenu
+        textView.onCalloutMenu = onCalloutMenu
         reconcileHeader(textView: textView, context: context)
 
         let isNodeSwitch = context.coordinator.documentId != documentId
+        // Ta Da fork: callouts folded on screen belong to the document they were folded in.
+        if isNodeSwitch { context.coordinator.configuration.calloutFoldOverrides = [:] }
 
         // Refreshed here, not with the other callbacks at the bottom — teardown has
         // to reach the CURRENT closures even when the pass below returns early.
@@ -592,6 +599,13 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
             textView.configuration.theme = configuration.theme
             context.coordinator.configuration.taskCheckbox = configuration.taskCheckbox
             textView.configuration.taskCheckbox = configuration.taskCheckbox
+            // Ta Da fork: bubbles and callouts take their colours from the theme too.
+            context.coordinator.configuration.inlineCode = configuration.inlineCode
+            textView.configuration.inlineCode = configuration.inlineCode
+            context.coordinator.configuration.extensions = configuration.extensions
+            textView.configuration.extensions = configuration.extensions
+            context.coordinator.configuration.callouts = configuration.callouts
+            textView.configuration.callouts = configuration.callouts
             context.coordinator.configuration.services = configuration.services
             textView.configuration.services = configuration.services
             context.coordinator.cachedParsedDocument = nil
