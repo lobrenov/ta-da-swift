@@ -10,6 +10,8 @@
 //    as an indented code block.
 //  - Edits only insert or delete leading whitespace, one line at a time, in one
 //    undo group. Never rewrite a span: that drops `.wikiLinkID` (see ContextMenu.swift).
+//  - In a quote, the item's whitespace is the whitespace after its `>` markers, and
+//    siblings and children are lines at the same quote level.
 //
 
 import AppKit
@@ -23,7 +25,8 @@ extension MarkdownLists {
         guard let first = lines.first else { return nil }
         guard hasPreviousSibling(of: first, in: ns),
               lines.allSatisfy({ level(ofLineAt: $0, in: ns) < maximumLevel }) else { return true }
-        applyLineEdits(textView, selection: selection, edits: lines.map { (location: $0.location, delete: 0, insert: "\t") })
+        applyLineEdits(textView, selection: selection,
+                       edits: lines.map { (location: $0.location + quotePrefix(ofLineAt: $0, in: ns), delete: 0, insert: "\t") })
         return true
     }
 
@@ -34,9 +37,10 @@ extension MarkdownLists {
         guard !lines.isEmpty else { return nil }
         let edits = lines.compactMap { line -> (location: Int, delete: Int, insert: String)? in
             let ws = leadingWhitespace(ofLineAt: line, in: ns)
-            if ws.hasPrefix("\t") { return (line.location, 1, "") }
+            let location = line.location + quotePrefix(ofLineAt: line, in: ns)
+            if ws.hasPrefix("\t") { return (location, 1, "") }
             let spaces = ws.prefix(2).prefix { $0 == " " }.count
-            return spaces > 0 ? (line.location, spaces, "") : nil
+            return spaces > 0 ? (location, spaces, "") : nil
         }
         applyLineEdits(textView, selection: selection, edits: edits)
         return true
@@ -61,11 +65,13 @@ extension MarkdownLists {
         guard let last = result.last else { return [] }
         // Children of the last touched item: deeper list lines (blank lines between are allowed).
         let parentLevel = level(ofLineAt: last, in: ns)
+        let quote = quoteLevel(ofLineAt: last, in: ns)
         location = NSMaxRange(last)
         while location < ns.length {
             let line = ns.lineRange(for: NSRange(location: location, length: 0))
             if isBlank(line, in: ns) { location = NSMaxRange(line); continue }
-            guard isListLine(line, in: ns), level(ofLineAt: line, in: ns) > parentLevel else { break }
+            guard isListLine(line, in: ns), quoteLevel(ofLineAt: line, in: ns) == quote,
+                  level(ofLineAt: line, in: ns) > parentLevel else { break }
             result.append(line)
             location = NSMaxRange(line)
         }
@@ -75,12 +81,13 @@ extension MarkdownLists {
     /// Walking up past blank lines and deeper items, is the first list line at the same level?
     static func hasPreviousSibling(of line: NSRange, in ns: NSString) -> Bool {
         let itemLevel = level(ofLineAt: line, in: ns)
+        let quote = quoteLevel(ofLineAt: line, in: ns)
         var location = line.location
         while location > 0 {
             let previous = ns.lineRange(for: NSRange(location: location - 1, length: 0))
             location = previous.location
             if isBlank(previous, in: ns) { continue }
-            guard isListLine(previous, in: ns) else { return false }
+            guard isListLine(previous, in: ns), quoteLevel(ofLineAt: previous, in: ns) == quote else { return false }
             let previousLevel = level(ofLineAt: previous, in: ns)
             if previousLevel > itemLevel { continue }
             return previousLevel == itemLevel
@@ -89,16 +96,31 @@ extension MarkdownLists {
     }
 
     static func isListLine(_ line: NSRange, in ns: NSString) -> Bool {
-        let text = ns.substring(with: line)
+        let text = ns.substring(with: afterQuote(line, in: ns))
         return listRegex.firstMatch(in: text, range: NSRange(location: 0, length: (text as NSString).length)) != nil
     }
 
     static func isBlank(_ line: NSRange, in ns: NSString) -> Bool {
-        ns.substring(with: line).allSatisfy(\.isWhitespace)
+        ns.substring(with: afterQuote(line, in: ns)).allSatisfy(\.isWhitespace)
     }
 
     static func leadingWhitespace(ofLineAt line: NSRange, in ns: NSString) -> String {
-        String(ns.substring(with: line).prefix { $0 == " " || $0 == "\t" })
+        String(ns.substring(with: afterQuote(line, in: ns)).prefix { $0 == " " || $0 == "\t" })
+    }
+
+    /// The length of a quote line's `>` markers and the space after each; 0 off a quote.
+    static func quotePrefix(ofLineAt line: NSRange, in ns: NSString) -> Int {
+        let quote = QuoteLine.parse(line, of: ns)
+        return quote.level > 0 ? NSMaxRange(quote.markers) - line.location : 0
+    }
+
+    static func quoteLevel(ofLineAt line: NSRange, in ns: NSString) -> Int {
+        QuoteLine.parse(line, of: ns).level
+    }
+
+    private static func afterQuote(_ line: NSRange, in ns: NSString) -> NSRange {
+        let prefix = quotePrefix(ofLineAt: line, in: ns)
+        return NSRange(location: line.location + prefix, length: line.length - prefix)
     }
 
     static func level(ofLineAt line: NSRange, in ns: NSString) -> Int {

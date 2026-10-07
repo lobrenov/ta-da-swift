@@ -85,7 +85,9 @@ enum MarkdownDetection {
             let start = token.range.location
             let end = start + token.range.length
             if range.length == 0 {
-                if range.location >= start && range.location <= end { return true }
+                // Ta Da fork: a caret just after inline code's closing backtick is outside it.
+                let inclusiveEnd = token.kind == .inlineCode ? end - 1 : end
+                if range.location >= start && range.location <= inclusiveEnd { return true }
             } else {
                 if range.location < end && range.location + range.length > start { return true }
             }

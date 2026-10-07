@@ -173,6 +173,16 @@ struct ListIndentTests {
         tv.doCommand(by: #selector(NSResponder.insertBacktab(_:)))
     }
 
+    @Test func tabAndShiftTabWorkAfterAQuotesMarkers() {
+        let tv = makeEditor("> [!note] T\n> - a\n> - b\n")
+        select(tv, "b"); tab(tv)
+        #expect(tv.string == "> [!note] T\n> - a\n> \t- b\n")
+        backtab(tv)
+        #expect(tv.string == "> [!note] T\n> - a\n> - b\n")
+        select(tv, "a"); tab(tv)
+        #expect(tv.string == "> [!note] T\n> - a\n> - b\n")
+    }
+
     @Test func firstItemHasNoSiblingSoTabDoesNothing() {
         let tv = makeEditor("Intro\n\n- [ ] a\n- [ ] b\n")
         select(tv, "a"); tab(tv)
@@ -722,5 +732,86 @@ struct CalloutInteractionTests {
         let (tv, window, coordinator) = try editor("Intro\n\n> [!note] T\n> body\n")
         #expect(!tv.toggleCalloutFoldIfHit(event: try iconEvent(.leftMouseDown, titleAt: 7, in: tv, window: window)))
         withExtendedLifetime((window, coordinator)) {}
+    }
+}
+
+@Suite("Ta Da fork — inline code edges")
+struct InlineCodeEdgeTests {
+
+    @Test func aCaretAfterTheClosingBacktickIsOutsideTheCode() {
+        let text = "- a `x`"
+        #expect(MarkdownDetection.isInsideCodeBlock(location: 6, in: text))
+        #expect(!MarkdownDetection.isInsideCodeBlock(location: 7, in: text))
+    }
+
+    @MainActor
+    @Test func returnAfterInlineCodeContinuesTheList() {
+        let tv = NSTextView()
+        tv.string = "- [ ] a `x`"
+        let end = NSRange(location: 11, length: 0)
+        #expect(!MarkdownLists.handleInsertion(textView: tv, affectedCharRange: end, replacementString: "\n",
+                                               isInsideCodeBlock: MarkdownDetection.isInsideCodeBlock(location: 11, in: tv.string)))
+        #expect(tv.string == "- [ ] a `x`\n- [ ] ")
+    }
+}
+
+@MainActor
+@Suite("Ta Da fork — bubble and callout geometry")
+struct FragmentGeometryTests {
+
+    /// The laid-out fragments of an editor showing `text`, the caret at 0.
+    private func fragments(_ text: String, _ configure: (inout MarkdownEditorConfiguration) -> Void) throws
+        -> (fragments: [MarkdownTextLayoutFragment], keep: Any) {
+        _ = NSApplication.shared
+        let coordinator = NativeTextViewCoordinator(
+            text: .constant(text), fontName: "SF Pro", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        configure(&coordinator.configuration)
+        let tv = NativeTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
+        tv.configuration = coordinator.configuration
+        tv.delegate = coordinator
+        let scrollView = NSScrollView(frame: tv.frame)
+        scrollView.documentView = tv
+        let window = NSWindow(contentRect: tv.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = scrollView
+        let layoutManager = try #require(tv.textLayoutManager)
+        let layoutDelegate = MarkdownLayoutManagerDelegate()
+        coordinator.layoutDelegate = layoutDelegate
+        layoutManager.delegate = layoutDelegate
+        let bridge = LayoutBridge(layoutManager)
+        coordinator.layoutBridge = bridge
+        tv.layoutBridge = bridge
+        coordinator.textView = tv
+        coordinator.rebuildTextStorageAndStyle(tv, from: text)
+        tv.setSelectedRange(NSRange(location: 0, length: 0))
+        layoutManager.ensureLayout(for: layoutManager.documentRange)
+        var fragments: [MarkdownTextLayoutFragment] = []
+        layoutManager.enumerateTextLayoutFragments(from: layoutManager.documentRange.location, options: []) {
+            if let fragment = $0 as? MarkdownTextLayoutFragment { fragments.append(fragment) }
+            return true
+        }
+        return (fragments, (window, coordinator, layoutDelegate))
+    }
+
+    @Test func aBubblePadsBothSidesOfItsTextEqually() throws {
+        let (fragments, keep) = try fragments("Intro\n\nab `cd` ef") {
+            $0.inlineCode.bubble = InlineBubble(fill: .gray, horizontalPadding: 6, margin: 1)
+        }
+        let fragment = try #require(fragments.last)
+        let shape = try #require(fragment.inlineBubbleShapes(at: .zero).first)
+        let font = try #require(fragment.textStorage?.attribute(.font, at: 11, effectiveRange: nil) as? NSFont)
+        let content = ("cd" as NSString).size(withAttributes: [.font: font]).width
+        // Each hidden backtick takes padding + margin; the bubble stops a margin short of each.
+        #expect(abs(shape.rect.width - (content + 12)) < 0.5)
+        withExtendedLifetime(keep) {}
+    }
+
+    @Test func aCalloutEndingTheDocumentDrawsItsBottomPadding() throws {
+        let (fragments, keep) = try fragments("Intro\n\n> [!note] T\n> body") { $0.callouts = testCalloutStyle }
+        let last = try #require(fragments.last)
+        let line = try #require(last.textLineFragments.last)
+        #expect(last.renderingSurfaceBounds.maxY >= line.typographicBounds.maxY + 11)
+        withExtendedLifetime(keep) {}
     }
 }

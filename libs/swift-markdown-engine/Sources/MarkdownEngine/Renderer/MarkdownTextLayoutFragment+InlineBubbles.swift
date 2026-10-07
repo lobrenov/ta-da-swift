@@ -24,10 +24,13 @@ extension MarkdownTextLayoutFragment {
                 let hit = NSIntersectionRange(lineRange, local)
                 guard hit.length > 0 else { continue }
                 let bounds = lineFragment.typographicBounds
-                let startX = lineFragment.locationForCharacter(at: hit.location).x
-                let endX = NSMaxRange(hit) >= NSMaxRange(lineRange)
-                    ? bounds.width
-                    : lineFragment.locationForCharacter(at: NSMaxRange(hit)).x
+                let glyphs = glyphEdges(of: lineFragment)
+                let startX = glyphs.start[hit.location - lineRange.location]
+                    ?? lineFragment.locationForCharacter(at: hit.location).x
+                let endX = glyphs.end[NSMaxRange(hit) - 1 - lineRange.location]
+                    ?? (NSMaxRange(hit) >= NSMaxRange(lineRange)
+                        ? bounds.width
+                        : lineFragment.locationForCharacter(at: NSMaxRange(hit)).x)
                 let left = hit.location == local.location ? startX + bubble.margin : startX - bubble.horizontalPadding
                 let right = NSMaxRange(hit) == NSMaxRange(local) ? endX - bubble.margin : endX + bubble.horizontalPadding
                 guard right > left else { continue }
@@ -47,6 +50,28 @@ extension MarkdownTextLayoutFragment {
             }
         }
         return shapes
+    }
+
+    /// Where each character's glyph starts and ends, by index in the line. Caret offsets put half a kern before the
+    /// next character; the glyph runs put all of it after the kerned glyph, as it draws.
+    private func glyphEdges(of line: NSTextLineFragment) -> (start: [Int: CGFloat], end: [Int: CGFloat]) {
+        let text = line.attributedString.attributedSubstring(from: line.characterRange)
+        var start: [Int: CGFloat] = [:]
+        var end: [Int: CGFloat] = [:]
+        for run in CTLineGetGlyphRuns(CTLineCreateWithAttributedString(text as CFAttributedString)) as? [CTRun] ?? [] {
+            let count = CTRunGetGlyphCount(run)
+            var positions = [CGPoint](repeating: .zero, count: count)
+            var advances = [CGSize](repeating: .zero, count: count)
+            var indices = [CFIndex](repeating: 0, count: count)
+            CTRunGetPositions(run, CFRange(), &positions)
+            CTRunGetAdvances(run, CFRange(), &advances)
+            CTRunGetStringIndices(run, CFRange(), &indices)
+            for k in 0..<count {
+                start[indices[k]] = min(start[indices[k]] ?? .infinity, positions[k].x)
+                end[indices[k]] = max(end[indices[k]] ?? -.infinity, positions[k].x + advances[k].width)
+            }
+        }
+        return (start, end)
     }
 
     func drawInlineBubbles(at point: CGPoint, in context: CGContext) {

@@ -101,7 +101,7 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
             bounds = bounds.union(shape.rect)
         }
         if hasCallout {
-            bounds = bounds.union(CGRect(x: bounds.minX, y: 0, width: bounds.width, height: layoutFragmentFrame.height))
+            bounds = bounds.union(CGRect(x: bounds.minX, y: 0, width: bounds.width, height: calloutSurfaceHeight))
         }
         return bounds
     }

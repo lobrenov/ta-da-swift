@@ -77,6 +77,14 @@ extension MarkdownTextLayoutFragment {
 
     var hasCallout: Bool { calloutLine != nil }
 
+    /// The fragment's height, or more where a panel ends below it: the document's last paragraph gets no spacing
+    /// after it to hold the panel's bottom padding.
+    var calloutSurfaceHeight: CGFloat {
+        let padding = calloutLine?.panels.compactMap(\.bottomPadding).max()
+        guard let padding, let last = textLines.last else { return layoutFragmentFrame.height }
+        return max(layoutFragmentFrame.height, ceil(last.typographicBounds.maxY + padding + 1))
+    }
+
     private var textLines: [NSTextLineFragment] {
         textLineFragments.filter { $0.characterRange.length > 0 }
     }
