@@ -181,7 +181,8 @@ extension NativeTextViewWrapper.Coordinator {
         var content = rawLine
         while content.hasPrefix("#") { content.removeFirst() }
         content = content.trimmingCharacters(in: .whitespaces)
-        let prefix = String(repeating: "#", count: level) + " "
+        // Ta Da fork: level 0 makes the line body text.
+        let prefix = level > 0 ? String(repeating: "#", count: level) + " " : ""
         // lineRange(for:) includes the trailing line terminator; preserve it so
         // applying a heading to a non-final line doesn't swallow the newline and
         // merge the line with the next one (mirrors applyList's suffix handling).

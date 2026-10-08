@@ -167,6 +167,12 @@ final class NativeTextView: UITextView {
 
     // MARK: Layout
 
+    /// Lays out the whole document, so `sizeThatFits` measures all of it.
+    func ensureFullLayout() {
+        guard let layoutManager = textLayoutManager else { return }
+        layoutManager.ensureLayout(for: layoutManager.documentRange)
+    }
+
     /// Lays out the visible part of the document, as AppKit's `ensureLayout` would.
     func ensureVisibleLayout() {
         guard let layoutManager = textLayoutManager,
@@ -177,6 +183,34 @@ final class NativeTextView: UITextView {
     override func layoutSubviews() {
         super.layoutSubviews()
         layoutHeader()
+    }
+
+    // MARK: Keyboard bar
+
+    private var keyboardBarHost: UIHostingController<AnyView>?
+
+    func setKeyboardBar(_ bar: AnyView?) {
+        guard let bar else {
+            guard keyboardBarHost != nil else { return }
+            keyboardBarHost = nil
+            inputAccessoryView = nil
+            if isFirstResponder { reloadInputViews() }
+            return
+        }
+        if let keyboardBarHost {
+            keyboardBarHost.rootView = bar
+            return
+        }
+        let host = UIHostingController(rootView: bar)
+        host.view.backgroundColor = .clear
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 52))
+        container.autoresizingMask = .flexibleWidth
+        host.view.frame = container.bounds
+        host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.addSubview(host.view)
+        keyboardBarHost = host
+        inputAccessoryView = container
+        if isFirstResponder { reloadInputViews() }
     }
 
     // MARK: Header

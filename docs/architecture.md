@@ -5,7 +5,7 @@ How the app is built. The file format and writing rules are in `docs/file-format
 ## Layers
 
 - **TaDaCore** (`Packages/TaDaCore`, local package): the model, parsing, surgical writes, the index, queries and storage. Foundation, swift-markdown 0.9.0 and Yams 6.2.2 only; no UI.
-- **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 and iOS 26 minimum; on the Mac, App Sandbox with user-selected read/write. The model, theme, live editor and folder handling build for both; the Mac's views are behind `#if os(macOS)`, and iOS shows a placeholder Today list until its screens are built.
+- **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 and iOS 26 minimum; on the Mac, App Sandbox with user-selected read/write. The model, theme, live editor, folder handling and the document's title, body, banner and footer build for both; the Mac's views are behind `#if os(macOS)` and the iPhone's are in `TaDa/iOS/`.
 - **TaDaMarkdown** (`Packages/TaDaMarkdown`, local package): the Live editor, from swift-markdown-engine 0.13.0 under Apache-2.0, for macOS and iOS. Parsing, styling, layout, input and the text-delegate path are shared; `Platform/Platform.swift` names the AppKit and UIKit types, and `TextView/iOS/` holds the iOS editor. Its `ORIGIN.md` lists the changes.
 
 The workspace `TaDa.xcworkspace` holds the project, TaDaCore and TaDaMarkdown; the test plan `TaDa.xctestplan` runs TaDaTests, TaDaCoreTests and TaDaUITests.
@@ -16,7 +16,7 @@ The workspace `TaDa.xcworkspace` holds the project, TaDaCore and TaDaMarkdown; t
 TaDa/
 ├── TaDaApp.swift              one main window plus Settings, sharing one AppModel; AppDelegate owns it and handles activation, quitting and day changes.
 │                              On iOS, one window group that refreshes when the scene becomes active and saves when it leaves
-├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace (on iOS, the Today list); applies the theme
+├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace (on iOS, PhoneRootView); applies the theme
 ├── AppModel.swift             root state: folder, index, domain, selection, open document, theme set and appearance; refresh, save, outside-change handling
 ├── OpenDocument.swift         the selected file's whole text; edits reparse it
 ├── SettingsStore.swift        where AppModel keeps its settings: UserDefaults, or a test's in-memory store
@@ -57,6 +57,7 @@ TaDa/
 │   ├── CalloutMenu.swift
 │   ├── CalloutIcon.swift      callout icons and tints
 │   └── AddSubtask.swift
+├── iOS/                       the iPhone app (see iPhone below)
 └── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, callout, file and property menus share); FileMenu (right-click on a project or task); TaskDrag (task rows dragged as files onto the sidebar or into other apps, and ⇧⌘M's, ⌘S's and ⌘D's menus under a row); Buttons (the text button style and segmented control); InlineTitleField (a title renamed in place)
 
 Packages/TaDaCore/Sources/TaDaCore/
@@ -103,6 +104,21 @@ Setting dates: the file menu's Schedule and Set Deadline…, ⌘S and ⌘D act o
 Browser lists share their selection: each registers its rows with `.arrowKeySelection(model, paths:, allowsMultipleSelection:)` (the lists beside the document through `BrowserColumn`, which also sets their header and padding), and rows show `model.isSelected(_:)`, call `model.click(_:)` and add `.fileMenu`. Every list allows several (Search picks tasks only, since a project opens its page): shift-click picks a range and ⌘-click adds or removes a row (`AppModel.multiSelection`, or `trashSelection` in Trash). The document pane shows "N tasks selected", and Upcoming keeps its agenda column while tasks are picked. In Trash a plain click picks one file. The list keys go to a `ListKeyView` behind each list, an AppKit responder that takes the keyboard when the list appears, when nothing has it and when a row is picked, but never from a text view, or for a new file whose title is about to take it.
 
 A project's browser folds its Open and Completed groups from their headers. `AppModel.foldedGroups` keeps the folded ones per project path in the settings and follows a rename; a folded group's rows leave the arrow-key list. Its header shows the project's chips through `PropertyChipRow`, and its title and the project page table's titles are `InlineTitleField`s, which rename with `AppModel.rename(_:to:)`. The table's New linked task calls `AppModel.newLinkedTask(in:)`, which sets `titleFocus` so the new row's title starts editing without opening the task.
+
+## iPhone
+
+`PhoneRootView` is a `TabView` of Today, Upcoming, Loose, Projects and Other, each a `NavigationStack` whose path lives in `PhoneNavigation` (`@Observable`, in the environment), with the date and project sheets over them.
+
+- `PhoneNavigation.swift`: tabs, routes (file, project, settings section, trash), the sheet, picked rows and `Haptic`, played through `.sensoryFeedback` when Settings ▸ Haptics is on (`AppModel.haptics`).
+- `PhoneList.swift`: what every list shares: large title and subtitle, `.searchable` in the navigation bar (pulled down to show; scopes are the list, Everywhere and Titles Only), the floating + and the "…" menu with Select.
+- `PhoneScreens.swift`: Today and Loose (context pills, grouped by project), Upcoming (a week strip over day headers), Projects (Completed folds) and a project's tasks (Open and Completed fold, with `AppModel.isFolded`).
+- `PhoneRows.swift`: task and project rows. Press and hold opens `PhoneFileMenu`: Complete, Today and Tomorrow, Status, Schedule…, Set Deadline…, Move to Project…, Share…, Select and Move to Trash.
+- `PhoneFileScreen.swift`: a file pushed from any list. Title (`TitleField`), chips that open the sheets, the body in `BodyEditor` or the whole file in a Source `TextEditor`, and a project's linked tasks. The top bar has the Live/Source toggle and a More menu (Done while the keyboard is up); the bottom toolbar has Complete, Schedule, Deadline, Move, Share and Trash. It sets `model.selection` while shown.
+- `PhoneSheets.swift`: `PhoneDateSheet` (due date or deadline, quick days and a month grid) and `PhoneProjectSheet` (search, No project, New Project…), for one file or the picked ones. Each writes on ✓.
+- `PhonePicking.swift`: swipe to pick. A `UIPanGestureRecognizer` that begins only for a rightward, mostly horizontal pan away from the screen's left edge slides the row; past 64 pt it picks the row, and moving the finger picks each row it crosses (row frames come from `onGeometryChange` in the list's coordinate space). While picking, Select All, the count and Done replace the navigation bar, and the action bar (Complete, Schedule, Move, More, Delete) replaces the tab bar.
+- `PhoneOther.swift`: Other (Trash and Settings rows, the sync line), Settings (Vault, Themes, Editor Autocomplete, Haptics), Trash (pick, restore, empty) and onboarding.
+
+On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a checkbox or callout title opens `CheckboxMenu` or `CalloutMenu` as popovers. Its keyboard bar (`EditorKeyboardBar`, the editor's `inputAccessoryView`) has subtask, heading, bold, italic, code, wikilink, callout, `/`, outdent, indent and hide keyboard; while a slash query is open it shows the matching commands instead.
 
 ## Editors
 

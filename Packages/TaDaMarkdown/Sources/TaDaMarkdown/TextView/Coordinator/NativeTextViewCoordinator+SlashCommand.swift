@@ -62,6 +62,27 @@ public final class SlashCommandProxy {
     public func dismiss() {
         coordinator?.dismissSlashCommand()
     }
+
+    /// Ta Da fork: formats the selection as the editor's formatting commands do, for iOS's formatting bar.
+    public func apply(_ format: MarkdownFormat) {
+        guard let coordinator, let textView = coordinator.textView else { return }
+        switch format {
+        case .bold: coordinator.didMarkdownBold(nil)
+        case .italic: coordinator.didMarkdownItalic(nil)
+        case .inlineCode: coordinator.didMarkdownInlineCode(nil)
+        case .nextHeading:
+            let text = textView.string as NSString
+            let line = text.substring(with: text.lineRange(for: textView.currentSelectedRange))
+            let level = line.prefix { $0 == "#" }.count
+            coordinator.didMarkdownHeading(level: level >= 3 ? 0 : level + 1)
+        }
+    }
+}
+
+/// Ta Da fork: a format ``SlashCommandProxy/apply(_:)`` toggles. `nextHeading` steps the line through
+/// headings 1 to 3, then back to body text.
+public enum MarkdownFormat: Sendable {
+    case bold, italic, inlineCode, nextHeading
 }
 
 extension NativeTextViewCoordinator {

@@ -1,4 +1,4 @@
-// Root view: the folder picker until a folder is open, then sidebar + workspace (on iOS, the Today list).
+// Root view: the folder picker until a folder is open, then sidebar + workspace (on iOS, the tabs).
 // Applies the theme.
 import SwiftUI
 import TaDaCore
@@ -43,14 +43,13 @@ struct ContentView: View {
         Group {
             switch model.state {
             case .noFolder, .failed:
-                FolderPickerView(model: model)
-            case .loading, .ready:
-                NavigationStack {
-                    List(model.todayTasks, id: \.path) { task in
-                        Text(task.title)
-                    }
-                    .navigationTitle("Today")
-                }
+                PhoneOnboardingView(model: model)
+            case .loading:
+                ProgressView("Reading \(model.folderDisplayName)…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(model.theme.color(\.bg))
+            case .ready:
+                PhoneRootView(model: model)
             }
         }
         .themed(by: model)

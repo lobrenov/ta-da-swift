@@ -1,9 +1,9 @@
 // Sidebar: search, the three domains and Trash with counts, active projects with progress rings, the folder line,
 // Settings and the New buttons. Task rows drop onto Today, Loose tasks and the projects.
-#if os(macOS)
 import SwiftUI
 import TaDaCore
 
+#if os(macOS)
 struct SidebarView: View {
     @Bindable var model: AppModel
     @Environment(\.theme) private var theme
@@ -205,6 +205,8 @@ struct SidebarRow<Icon: View, Label: View>: View {
     }
 }
 
+#endif
+
 /// A ring with a pie inside that fills clockwise from the top: done/total of a project's tasks.
 struct ProgressRing: View {
     let fraction: Double
@@ -234,4 +236,3 @@ struct ProgressRing: View {
         }
     }
 }
-#endif

@@ -33,6 +33,9 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
     public var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
     /// A tap toggled a task box from this marker, for the embedder's haptics.
     public var onTaskCheckboxToggle: ((Character) -> Void)?
+    /// A bar above the keyboard while the editor has it (the embedder's formatting bar). It's hosted outside the
+    /// SwiftUI hierarchy, so it gets no environment from here.
+    public var keyboardBar: AnyView?
 
     public init(
         text: Binding<String>,
@@ -49,7 +52,8 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         slashCommandProxy: SlashCommandProxy? = nil,
         onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil,
         onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil,
-        onTaskCheckboxToggle: ((Character) -> Void)? = nil
+        onTaskCheckboxToggle: ((Character) -> Void)? = nil,
+        keyboardBar: AnyView? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -66,6 +70,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         self.onTaskMarkerMenu = onTaskMarkerMenu
         self.onCalloutMenu = onCalloutMenu
         self.onTaskCheckboxToggle = onTaskCheckboxToggle
+        self.keyboardBar = keyboardBar
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -94,7 +99,8 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         textView.textContainer.widthTracksTextView = true
         textView.bodyInsets = insets
         textView.backgroundColor = .clear
-        textView.alwaysBounceVertical = true
+        textView.isScrollEnabled = configuration.heightBehavior == .scrolls
+        textView.alwaysBounceVertical = configuration.heightBehavior == .scrolls
         textView.keyboardDismissMode = .interactive
         textView.smartDashesType = .no
         textView.smartQuotesType = .yes
@@ -127,7 +133,16 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         textView.onCalloutMenu = onCalloutMenu
         textView.onTaskCheckboxToggle = onTaskCheckboxToggle
         textView.setHeader(header)
+        textView.setKeyboardBar(keyboardBar)
         return textView
+    }
+
+    /// In `.fitsContent`, the height of all the text at the proposed width.
+    public func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        guard configuration.heightBehavior == .fitsContent, let width = proposal.width, width > 0 else { return nil }
+        (uiView as? NativeTextView)?.ensureFullLayout()
+        let height = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height
+        return CGSize(width: width, height: ceil(height))
     }
 
     public func updateUIView(_ uiView: UITextView, context: Context) {
@@ -141,6 +156,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         textView.onCalloutMenu = onCalloutMenu
         textView.onTaskCheckboxToggle = onTaskCheckboxToggle
         textView.setHeader(header)
+        textView.setKeyboardBar(keyboardBar)
         textView.bodyInsets = insets
 
         let isNodeSwitch = coordinator.documentId != documentId

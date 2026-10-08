@@ -140,6 +140,10 @@ import TaDaCore
     var autocomplete: Autocomplete {
         didSet { defaults.set(autocomplete.dictionary, forKey: Keys.autocomplete) }
     }
+    /// Haptic feedback on iOS; Settings ▸ Haptics turns it off.
+    var haptics: Bool {
+        didSet { defaults.set(!haptics, forKey: Keys.hapticsOff) }
+    }
     /// The task groups folded in each project's browser ("Open", "Completed"), by project path.
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
@@ -199,6 +203,7 @@ import TaDaCore
         static let darkScheme = "darkScheme"
         static let foldedGroups = "foldedGroups"
         static let autocomplete = "autocomplete"
+        static let hapticsOff = "hapticsOff"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -210,6 +215,7 @@ import TaDaCore
         darkScheme = defaults.string(forKey: Keys.darkScheme).flatMap(Theme.named) ?? ThemeSet.standard.dark
         foldedGroups = defaults.dictionary(forKey: Keys.foldedGroups) as? [String: [String]] ?? [:]
         autocomplete = Autocomplete(defaults.dictionary(forKey: Keys.autocomplete))
+        haptics = !defaults.bool(forKey: Keys.hapticsOff)
     }
 
     // MARK: Folder

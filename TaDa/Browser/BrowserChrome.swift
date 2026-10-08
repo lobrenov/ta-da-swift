@@ -1,8 +1,8 @@
 // Pieces shared by the browser lists: the column layout, domain header, group headers, context filter and empty states.
-#if os(macOS)
 import SwiftUI
 import TaDaCore
 
+#if os(macOS)
 /// A browser list beside the document pane: its header, then its content scrolling below. `paths` are the files of its
 /// rows from top to bottom, for the arrow keys; `empty`, when set, takes the content's place.
 struct BrowserColumn<Header: View, Content: View>: View {
@@ -34,12 +34,13 @@ struct BrowserColumn<Header: View, Content: View>: View {
         .arrowKeySelection(model, paths: paths, allowsMultipleSelection: true)
     }
 }
+#endif
 
 /// A domain's title row: an icon, a large title and optional trailing content.
 struct DomainHeader<Trailing: View>: View {
     let title: String
     var systemImage: String? = nil
-    var tint: KeyPath<Theme, NSColor> = \.accent
+    var tint: KeyPath<Theme, PlatformColor> = \.accent
     @ViewBuilder var trailing: Trailing
     @Environment(\.theme) private var theme
 
@@ -71,7 +72,7 @@ extension DomainHeader {
 }
 
 extension DomainHeader where Trailing == EmptyView {
-    init(title: String, systemImage: String? = nil, tint: KeyPath<Theme, NSColor> = \.accent) {
+    init(title: String, systemImage: String? = nil, tint: KeyPath<Theme, PlatformColor> = \.accent) {
         self.init(title: title, systemImage: systemImage, tint: tint) { EmptyView() }
     }
 
@@ -103,7 +104,7 @@ extension AppModel.Domain {
         }
     }
 
-    var tint: KeyPath<Theme, NSColor> {
+    var tint: KeyPath<Theme, PlatformColor> {
         switch self {
         case .today: \.due
         case .upcoming: \.deadline
@@ -249,4 +250,3 @@ struct Hairline: View {
             .frame(width: axis == .vertical ? 1 : nil, height: axis == .horizontal ? 1 : nil)
     }
 }
-#endif

@@ -1,5 +1,4 @@
 // Over the document when its file changed outside Ta Da: what happened and the choices.
-#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -48,4 +47,3 @@ struct DocumentBanner: View {
         .accessibilityElement(children: .contain)
     }
 }
-#endif

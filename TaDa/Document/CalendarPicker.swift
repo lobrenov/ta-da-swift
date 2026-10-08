@@ -1,9 +1,9 @@
 // The calendar under a dueDate or deadline chip: its month in a popup panel like Upcoming's calendar, with
 // Today, Tomorrow, Next week and Clear. The arrow keys move a cursor through the days and ↵ sets it.
-#if os(macOS)
 import SwiftUI
-import AppKit
 import TaDaCore
+#if os(macOS)
+import AppKit
 
 /// Shows the calendar under a chip and passes on the date picked in it.
 final class CalendarPicker {
@@ -70,6 +70,8 @@ final class CalendarPicker {
     }
 }
 
+#endif
+
 /// The calendar's state: which date it sets, the date it has, and the cursor the arrow keys move.
 @Observable
 final class CalendarPickerModel {
@@ -101,12 +103,18 @@ final class CalendarPickerModel {
         if month != before { onMonthChange() }
     }
 
+    /// The coming Saturday, or `today` on a Saturday or Sunday.
+    static func thisWeekend(after today: LocalDate) -> LocalDate {
+        today.weekday == 1 ? today : today.adding(days: 7 - today.weekday)
+    }
+
     /// The first day of the week after `today`'s, by the locale's first weekday.
     static func nextWeek(after today: LocalDate, calendar: Calendar = .current) -> LocalDate {
         today.adding(days: 7 - (today.weekday - calendar.firstWeekday + 7) % 7)
     }
 }
 
+#if os(macOS)
 /// The calendar's sizes, which give the panel its height.
 private enum CalendarMetrics {
     static let width: CGFloat = 288

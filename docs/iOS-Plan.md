@@ -59,15 +59,14 @@ The milestones run in order in one worktree. Each ends with its check passing.
 - Check: macOS build and tests unchanged; TaDaCore tests pass on the iOS Simulator; the iOS app opens a picked folder and lists Today.
 
 ### B2 — iPhone app
-- iOS counterparts of the Mac's AppKit pieces, as each screen needs them: popup panels → sheets and context menus; `FileMenu` → the row menu; `CalendarPicker` and the project picker → sheets; the editor's checkbox, callout and slash menus.
-- Onboarding (choose folder), the five tabs, lists with the floating +, pull-down search, project browser and file, task file with the bottom toolbar, press-and-hold menus, date and project sheets, Settings (Vault, Themes, Editor autocomplete, Haptics), Trash.
-- The task file uses a plain markdown editor until A2 lands, then the live editor with the keyboard formatting bar.
-- Check: run on the simulator against `SampleVault`; compare each screen with its artboard; `git diff SampleVault` shows only intended writes.
+- `TaDa/iOS/` (see `docs/architecture.md`, iPhone): onboarding, the five tabs, lists with the floating +, pull-down search with scopes, project browser and file, task file with the bottom toolbar, press-and-hold row menus, date and project sheets, Settings (Vault, Themes, Editor autocomplete, Haptics), Trash.
+- Shared with the Mac: `BodyEditor`, `TitleField`, `DocumentBanner`, `DocumentFooter`, `ProgressRing`, `WrappingHStack`, `CalendarPickerModel` (with `thisWeekend(after:)`).
+- The live editor on iOS: checkbox and callout menus as popovers, and a keyboard formatting bar with slash suggestions. TaDaMarkdown gained `SlashCommandProxy.apply(_:)`, the `keyboardBar` parameter and `.fitsContent` sizing on iOS.
+- Checked on the iPhone 18 Pro Simulator against a copy of `SampleVault` in On My iPhone: each screen against its artboard, and the files after each write.
 
 ### B3 — Swipe to pick
-- A custom horizontal row gesture that picks on right swipe and extends the pick down the list, alongside scrolling and the edge swipe; the action bar replaces the tab bar while picking.
-- Fallback if it conflicts with scrolling: the system's two-finger swipe to select in edit mode, with the same action bar.
-- Check: on the simulator, then on device.
+- `PhonePicking.swift`: a right swipe picks a row and carries the pick to the rows the finger moves over, alongside scrolling and the back swipe. The action bar (Complete, Schedule, Move, More, Delete) replaces the tab bar until Done; More holds Status, Set Deadline… and Share N Files…. The row menu's Select starts picking too.
+- Checked on the Simulator; on device in M1.
 
 ### M1 — On device and docs
 - Install on your iPhone with the Personal Team. Check folder access after relaunch, edits made on the Mac appearing, and files iCloud hasn't downloaded yet.
