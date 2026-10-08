@@ -1,22 +1,19 @@
-// A throwaway folder of files and its own settings for one test. Both go when the suite instance that holds
-// the folder does, at the end of the test.
+// A throwaway folder of files and its own settings for one test. The folder goes when the suite instance that
+// holds it does, at the end of the test.
 import Foundation
 import TaDaCore
 @testable import TaDa
 
 final class TestFolder {
     let url = FileManager.default.temporaryDirectory.appending(path: "TaDaVault-\(UUID().uuidString)", directoryHint: .isDirectory)
-    let defaults: UserDefaults
-    private let suite = "TaDaTests-\(UUID().uuidString)"
+    let defaults = TestSettings()
 
     /// `files` are paths in the folder and their text.
     init(_ files: KeyValuePairs<String, String> = [:]) throws {
-        defaults = UserDefaults(suiteName: suite)!
         for (path, text) in files { try create(text, path) }
     }
 
     deinit {
-        defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: url)
     }
 

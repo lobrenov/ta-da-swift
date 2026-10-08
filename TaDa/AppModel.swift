@@ -159,7 +159,7 @@ import TaDaCore
 
     /// How long an edit waits before it's saved.
     @ObservationIgnored var saveDelay = Duration.milliseconds(600)
-    private let defaults: UserDefaults
+    private let defaults: any SettingsStore
     private var pendingSave: Task<Void, Never>?
     /// The save in progress; each save waits for the one before, so writes land in order.
     private var saving: Task<Void, Never>?
@@ -182,7 +182,7 @@ import TaDaCore
         static let darkScheme = "darkScheme"
     }
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: any SettingsStore = UserDefaults.standard) {
         self.defaults = defaults
         themeSet = defaults.string(forKey: Keys.themeSet).flatMap(ThemeSet.named) ?? .standard
         appearance = defaults.string(forKey: Keys.appearance).flatMap(Appearance.init) ?? .system

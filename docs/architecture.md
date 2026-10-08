@@ -18,6 +18,7 @@ TaDa/
 ├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace; applies the theme
 ├── AppModel.swift             root state: folder, index, domain, selection, open document, theme set and appearance; refresh, save, outside-change handling
 ├── OpenDocument.swift         the selected file's whole text; edits reparse it
+├── SettingsStore.swift        where AppModel keeps its settings: UserDefaults, or a test's in-memory store
 ├── Commands.swift             menu commands and shortcuts
 ├── UITestingLaunch.swift      the `-uiTesting` launch: throwaway settings and folder
 ├── Theme/                     Theme (15 colour tokens + isDark), ThemeSet, Appearance, the 15 bundled schemes and 8 sets;
@@ -66,7 +67,7 @@ Packages/TaDaCore/Sources/TaDaCore/
 Packages/TaDaCore/Sources/TaDaCoreTesting/   GeneratedVault: test data for TaDaCoreTests; TaDaTests compiles the file too
 ```
 
-TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtures in `Fixtures/` (`DesignVault/` is the design's data). TaDaTests covers AppModel, OpenDocument, outside changes, the Source editor, keyboard handling, design renders and UI timings. Its suites set up their files and settings with `TestFolder`, which removes them when each test ends. TaDaUITests holds keyboard smoke tests.
+TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtures in `Fixtures/` (`DesignVault/` is the design's data). TaDaTests covers AppModel, OpenDocument, outside changes, the Source editor, keyboard handling, design renders and UI timings. Its suites set up their files with `TestFolder`, which removes them when each test ends, and their settings in memory with `TestSettings`, so tests write no settings files. TaDaUITests holds keyboard smoke tests.
 
 ## Runtime
 
