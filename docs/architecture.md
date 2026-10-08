@@ -6,7 +6,7 @@ How the app is built. The file format and writing rules are in `docs/file-format
 
 - **TaDaCore** (`Packages/TaDaCore`, local package): the model, parsing, surgical writes, the index, queries and storage. Foundation, swift-markdown 0.9.0 and Yams 6.2.2 only; no UI.
 - **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 minimum, App Sandbox with user-selected read/write.
-- **TaDaMarkdown** (`Packages/TaDaMarkdown`, local package): the Live editor, from swift-markdown-engine 0.13.0 under Apache-2.0. Its `ORIGIN.md` lists the changes.
+- **TaDaMarkdown** (`Packages/TaDaMarkdown`, local package): the Live editor, from swift-markdown-engine 0.13.0 under Apache-2.0, for macOS and iOS. Parsing, styling, layout, input and the text-delegate path are shared; `Platform/Platform.swift` names the AppKit and UIKit types, and `TextView/iOS/` holds the iOS editor. Its `ORIGIN.md` lists the changes.
 
 The workspace `TaDa.xcworkspace` holds the project, TaDaCore and TaDaMarkdown; the test plan `TaDa.xctestplan` runs TaDaTests, TaDaCoreTests and TaDaUITests.
 

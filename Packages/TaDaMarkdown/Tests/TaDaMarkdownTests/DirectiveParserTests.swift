@@ -7,8 +7,11 @@
 //  resulting node carries the geometry the styler needs.
 //
 
-#if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 import Testing
 @testable import TaDaMarkdown
@@ -382,4 +385,3 @@ struct DirectiveParserTests {
     }
 
 }
-#endif

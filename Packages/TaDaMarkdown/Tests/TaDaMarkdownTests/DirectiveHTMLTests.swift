@@ -7,8 +7,11 @@
 //  what was on screen.
 //
 
-#if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 import Testing
 @testable import TaDaMarkdown
@@ -75,4 +78,3 @@ struct DirectiveHTMLTests {
         #expect(out.contains("font-size:18.0px"))
     }
 }
-#endif

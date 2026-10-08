@@ -12,7 +12,11 @@
 //
 
 #if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import SwiftUI
 import Testing
 @testable import TaDaMarkdown

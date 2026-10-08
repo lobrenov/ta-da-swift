@@ -17,8 +17,11 @@
 //  `DirectiveCompositionTests`.
 //
 
-#if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 import Testing
 @testable import TaDaMarkdown
@@ -27,7 +30,7 @@ import Testing
 struct DirectiveStylingTests {
 
     private let base: CGFloat = 14
-    private var fontName: String { NSFont.systemFont(ofSize: 14).fontName }
+    private var fontName: String { PlatformFont.systemFont(ofSize: 14).fontName }
 
     private var configuration: MarkdownEditorConfiguration {
         MarkdownEditorConfiguration(directives: [FontDirective(), MarkerDirective()])
@@ -41,10 +44,10 @@ struct DirectiveStylingTests {
     }
 
     /// Effective font at `pos`: the last styled range covering it that sets `.font`.
-    private func font(in attrs: [StyledRange], at pos: Int) -> NSFont? {
-        var result: NSFont?
+    private func font(in attrs: [StyledRange], at pos: Int) -> PlatformFont? {
+        var result: PlatformFont?
         for (range, a) in attrs where NSLocationInRange(pos, range) {
-            if let f = a[.font] as? NSFont { result = f }
+            if let f = a[.font] as? PlatformFont { result = f }
         }
         return result
     }
@@ -108,7 +111,7 @@ struct DirectiveStylingTests {
         let location = (text as NSString).range(of: "@marker").location
         // No shrink font and no negative kern anywhere in the call.
         for (range, a) in attrs where NSIntersectionRange(range, NSRange(location: location, length: 7)).length > 0 {
-            #expect((a[.font] as? NSFont)?.pointSize != hiddenSize)
+            #expect((a[.font] as? PlatformFont)?.pointSize != hiddenSize)
             #expect((a[.kern] as? CGFloat ?? 0) >= 0)
         }
     }
@@ -148,4 +151,3 @@ struct DirectiveStylingTests {
         #expect(keys([paragraph]) == keys(nil))
     }
 }
-#endif

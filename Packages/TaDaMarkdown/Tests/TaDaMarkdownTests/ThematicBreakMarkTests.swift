@@ -16,7 +16,11 @@
 //
 
 #if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 import Testing
 @testable import TaDaMarkdown
@@ -26,7 +30,7 @@ import Testing
 struct ThematicBreakMarkTests {
 
     private let fontSize: CGFloat = 14
-    private var fontName: String { NSFont.systemFont(ofSize: 14).fontName }
+    private var fontName: String { PlatformFont.systemFont(ofSize: 14).fontName }
 
     /// `(location, mark)` for every styled thematic break. `mark == nil` is the
     /// default full-width rule; a non-nil mark is drawn centred instead.

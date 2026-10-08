@@ -7,8 +7,11 @@
 //  be wrong — without ever throwing or partially applying.
 //
 
-#if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 import Testing
 @testable import TaDaMarkdown
@@ -244,4 +247,3 @@ struct DirectiveArgumentTests {
     }
 
 }
-#endif

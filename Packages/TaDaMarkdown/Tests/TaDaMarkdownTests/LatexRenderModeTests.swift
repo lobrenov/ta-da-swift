@@ -4,7 +4,11 @@
 //
 
 #if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Testing
 @testable import TaDaMarkdown
 
@@ -116,6 +120,6 @@ struct LatexRenderModeTests {
 
 private var testLatexResult: LatexRenderResult {
     let size = CGSize(width: 20, height: 10)
-    return LatexRenderResult(image: NSImage(size: size), size: size, baselineOffset: 2)
+    return LatexRenderResult(image: PlatformImage(size: size), size: size, baselineOffset: 2)
 }
 #endif

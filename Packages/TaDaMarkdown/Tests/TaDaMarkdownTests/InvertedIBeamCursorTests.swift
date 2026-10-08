@@ -9,7 +9,11 @@
 //
 
 #if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Testing
 @testable import TaDaMarkdown
 
@@ -20,7 +24,7 @@ struct InvertedIBeamCursorTests {
     init() { _ = NSApplication.shared }
 
     /// Every opaque pixel of the largest representation, bucketed by hue.
-    private func pixelCounts(_ image: NSImage) -> (ink: Int, block: Int, other: Int) {
+    private func pixelCounts(_ image: PlatformImage) -> (ink: Int, block: Int, other: Int) {
         guard let rep = image.representations.compactMap({ $0 as? NSBitmapImageRep })
             .max(by: { $0.pixelsWide < $1.pixelsWide }) else { return (0, 0, 0) }
         var ink = 0, block = 0, other = 0

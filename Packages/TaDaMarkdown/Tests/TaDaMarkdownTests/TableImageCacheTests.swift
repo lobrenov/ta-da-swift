@@ -6,7 +6,11 @@
 //
 
 #if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 import Testing
 @testable import TaDaMarkdown
@@ -18,7 +22,7 @@ struct TableImageCacheTests {
         for source: String,
         configuration: MarkdownEditorConfiguration = .default
     ) -> MarkdownStyler.StylingContext {
-        let font = NSFont.systemFont(ofSize: 15)
+        let font = PlatformFont.systemFont(ofSize: 15)
         return MarkdownStyler.StylingContext(
             nsText: source as NSString,
             tokens: [],
@@ -135,7 +139,7 @@ struct TableImageCacheTests {
         #expect(repainted.rendered)
     }
 
-    // NSColor descriptions are not identities: two named dynamic colors sharing
+    // PlatformColor descriptions are not identities: two named dynamic colors sharing
     // a name describe identically. The key must use resolved components instead.
     @Test func sameNamedDynamicColorsDoNotCollide() throws {
         let source = "| eta | theta |\n|---|---|\n| 9 | 10 |"
@@ -143,9 +147,9 @@ struct TableImageCacheTests {
         let aqua = try #require(NSAppearance(named: .aqua))
 
         var blueBody = MarkdownEditorConfiguration.default
-        blueBody.theme.bodyText = NSColor(name: "body") { _ in .systemBlue }
+        blueBody.theme.bodyText = PlatformColor(name: "body") { _ in .systemBlue }
         var redBody = MarkdownEditorConfiguration.default
-        redBody.theme.bodyText = NSColor(name: "body") { _ in .systemRed }
+        redBody.theme.bodyText = PlatformColor(name: "body") { _ in .systemRed }
 
         _ = MarkdownStyler.tableImage(
             for: source, parsed: parsed,

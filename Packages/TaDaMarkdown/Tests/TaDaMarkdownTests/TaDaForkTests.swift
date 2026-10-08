@@ -6,7 +6,11 @@
 //
 
 #if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import SwiftUI
 import Testing
 @testable import TaDaMarkdown
@@ -53,7 +57,7 @@ struct AlternativeCheckboxTests {
 
     @Test func checkboxAttributeCarriesTheMarkerAndOnlyDoneStrikes() {
         func attrs(_ text: String) -> [StyledRange] {
-            MarkdownASTStyler.styleAttributes(text: text, fontName: NSFont.systemFont(ofSize: 14).fontName, fontSize: 14)
+            MarkdownASTStyler.styleAttributes(text: text, fontName: PlatformFont.systemFont(ofSize: 14).fontName, fontSize: 14)
         }
         let cancelled = attrs("- [-] dropped")
         #expect(cancelled.contains { $0.attributes[.taskCheckbox] as? String == "-" })
@@ -62,14 +66,14 @@ struct AlternativeCheckboxTests {
         #expect(done.contains { $0.attributes[.taskCheckbox] as? String == "x" })
         #expect(done.contains {
             $0.attributes[.strikethroughStyle] != nil
-                && $0.attributes[.foregroundColor] as? NSColor == MarkdownEditorConfiguration.default.theme.mutedText
+                && $0.attributes[.foregroundColor] as? PlatformColor == MarkdownEditorConfiguration.default.theme.mutedText
         })
     }
 
     @Test func referenceStyleCoversEveryMarker() {
         let style = TaskCheckboxStyle.default
         for marker in TaskMarker.all {
-            #expect(style.symbolNames[marker].flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: nil) } != nil,
+            #expect(style.symbolNames[marker].flatMap { PlatformImage(systemSymbolName: $0, accessibilityDescription: nil) } != nil,
                     "no SF Symbol for [\(marker)]")
         }
         #expect(Set(style.menuItems.map(\.marker)) == Set(TaskMarker.all).subtracting(["X"]))
@@ -85,7 +89,7 @@ struct QuotedListTests {
     }
 
     private func attrs(_ text: String) -> [StyledRange] {
-        MarkdownASTStyler.styleAttributes(text: text, fontName: NSFont.systemFont(ofSize: 14).fontName, fontSize: 14)
+        MarkdownASTStyler.styleAttributes(text: text, fontName: PlatformFont.systemFont(ofSize: 14).fontName, fontSize: 14)
     }
 
     @Test func quoteLinesThatAreListItemsParseAsItems() {
@@ -120,7 +124,7 @@ struct QuotedListTests {
     @MainActor
     @Test func returnContinuesAQuotedItemAndAnEmptyOneLeavesOnlyTheQuote() {
         func enter(_ text: String) -> String {
-            let tv = NSTextView()
+            let tv = PlatformTextView()
             tv.string = text
             let end = NSRange(location: (text as NSString).length, length: 0)
             #expect(!MarkdownLists.handleInsertion(textView: tv, affectedCharRange: end, replacementString: "\n",
@@ -159,18 +163,18 @@ struct ListIndentTests {
     }
     private static var coordinatorKey = 0
 
-    private func select(_ tv: NSTextView, _ needle: String, through end: String? = nil) {
+    private func select(_ tv: PlatformTextView, _ needle: String, through end: String? = nil) {
         let ns = tv.string as NSString
         let start = ns.range(of: needle).location
         let stop = end.map { NSMaxRange(ns.range(of: $0)) } ?? start
         tv.setSelectedRange(NSRange(location: start, length: stop - start))
     }
 
-    private func tab(_ tv: NSTextView) {
+    private func tab(_ tv: PlatformTextView) {
         tv.insertText("\t", replacementRange: tv.selectedRange())
     }
 
-    private func backtab(_ tv: NSTextView) {
+    private func backtab(_ tv: PlatformTextView) {
         tv.doCommand(by: #selector(NSResponder.insertBacktab(_:)))
     }
 
@@ -255,7 +259,7 @@ struct WikiLinkAliasTests {
         let storage = "See [[Target|the alias]]."
         let display = WikiLinkService.makeDisplayState(from: storage)
         let attrs = MarkdownASTStyler.styleAttributes(
-            text: display.display, fontName: NSFont.systemFont(ofSize: 14).fontName, fontSize: 14,
+            text: display.display, fontName: PlatformFont.systemFont(ofSize: 14).fontName, fontSize: 14,
             wikiLinkIDProvider: { range in display.metadata[WikiLinkService.RangeKey(range)]?.id },
             configuration: config
         )
@@ -346,7 +350,7 @@ struct SlashCommandTests {
     }
     private static var coordinatorKey = 0
 
-    private func type(_ tv: NSTextView, _ text: String) async throws {
+    private func type(_ tv: PlatformTextView, _ text: String) async throws {
         for character in text { tv.insertText(String(character), replacementRange: tv.selectedRange()) }
         try await Task.sleep(for: .milliseconds(30))
     }
@@ -524,7 +528,7 @@ struct CalloutTests {
         var config = MarkdownEditorConfiguration.default
         if callouts { config.callouts = testCalloutStyle }
         config.calloutFoldOverrides = folds
-        return MarkdownASTStyler.styleAttributes(text: text, fontName: NSFont.systemFont(ofSize: 14).fontName,
+        return MarkdownASTStyler.styleAttributes(text: text, fontName: PlatformFont.systemFont(ofSize: 14).fontName,
                                                  fontSize: 14, caretLocation: caret, configuration: config)
     }
 
@@ -611,7 +615,7 @@ struct InlineBubbleTests {
         var config = MarkdownEditorConfiguration.default
         config.inlineCode.bubble = InlineBubble(fill: .gray, ring: .black, text: .red, horizontalPadding: 6, margin: 1)
         config.extensions = [Mark()]
-        return MarkdownASTStyler.styleAttributes(text: text, fontName: NSFont.systemFont(ofSize: 14).fontName,
+        return MarkdownASTStyler.styleAttributes(text: text, fontName: PlatformFont.systemFont(ofSize: 14).fontName,
                                                  fontSize: 14, caretLocation: caret, configuration: config)
     }
 
@@ -623,7 +627,7 @@ struct InlineBubbleTests {
     @Test func inlineCodeIsABubbleWhoseHiddenMarkersHoldItsPadding() {
         let styled = attrs("a `b` c")
         #expect(styled.contains { $0.range == NSRange(location: 2, length: 3) && $0.attributes[.markdownInlineBubble] is InlineBubbleSpan })
-        #expect(styled.contains { $0.range == NSRange(location: 3, length: 1) && $0.attributes[.foregroundColor] as? NSColor == .red })
+        #expect(styled.contains { $0.range == NSRange(location: 3, length: 1) && $0.attributes[.foregroundColor] as? PlatformColor == .red })
         #expect(!styled.contains { $0.attributes[.backgroundColor] != nil })
         #expect(kern(at: 2, in: styled) == 7 && kern(at: 4, in: styled) == 7)
         #expect(kern(at: 2, in: attrs("a `b` c", caret: 3)) == nil)
@@ -747,7 +751,7 @@ struct InlineCodeEdgeTests {
 
     @MainActor
     @Test func returnAfterInlineCodeContinuesTheList() {
-        let tv = NSTextView()
+        let tv = PlatformTextView()
         tv.string = "- [ ] a `x`"
         let end = NSRange(location: 11, length: 0)
         #expect(!MarkdownLists.handleInsertion(textView: tv, affectedCharRange: end, replacementString: "\n",
@@ -801,7 +805,7 @@ struct FragmentGeometryTests {
         }
         let fragment = try #require(fragments.last)
         let shape = try #require(fragment.inlineBubbleShapes(at: .zero).first)
-        let font = try #require(fragment.textStorage?.attribute(.font, at: 11, effectiveRange: nil) as? NSFont)
+        let font = try #require(fragment.textStorage?.attribute(.font, at: 11, effectiveRange: nil) as? PlatformFont)
         let content = ("cd" as NSString).size(withAttributes: [.font: font]).width
         // Each hidden backtick takes padding + margin; the bubble stops a margin short of each.
         #expect(abs(shape.rect.width - (content + 12)) < 0.5)
@@ -864,12 +868,12 @@ struct AutoPairTests {
     }
     private static var coordinatorKey = 0
 
-    private func type(_ tv: NSTextView, _ text: String) {
+    private func type(_ tv: PlatformTextView, _ text: String) {
         for character in text { tv.insertText(String(character), replacementRange: tv.selectedRange()) }
     }
 
     /// The text with `|` at the caret.
-    private func shown(_ tv: NSTextView) -> String {
+    private func shown(_ tv: PlatformTextView) -> String {
         (tv.string as NSString).replacingCharacters(in: tv.selectedRange(), with: "|")
     }
 

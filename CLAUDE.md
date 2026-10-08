@@ -10,7 +10,7 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 
 ## Commands
 - Core tests: `swift test --package-path Packages/TaDaCore`
-- Editor tests: `swift test --package-path Packages/TaDaMarkdown` (one known failure on macOS 27, see `Packages/TaDaMarkdown/ORIGIN.md`)
+- Editor tests: `swift test --package-path Packages/TaDaMarkdown` (one known failure on macOS 27, see `Packages/TaDaMarkdown/ORIGIN.md`). On iOS, from `Packages/TaDaMarkdown`: `xcodebuild -scheme TaDaMarkdown -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test`; `TEST_RUNNER_TADA_RENDER_DIR=<dir>` saves the editor render (`ios-editor.png`).
 - App build: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' build`
 - App + core tests: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test`. This runs `TaDa.xctestplan`: TaDaTests, TaDaCoreTests and TaDaUITests. Always ask for user permission before running UI tests that take control of the screen/mouse/keyboard. The UI tests need the Accessibility permission for Xcode's test runner and fail if Ta Da is already running (stop it in Xcode first). They launch with `-uiTesting`, which uses throwaway settings and a small folder in the app's container (`TaDa/UITestingLaunch.swift`). Skip them with `-skip-testing:TaDaUITests`.
 - 1,000-file test folder (to open in the app): `TADA_GENERATE_VAULT=<dir> swift test --package-path Packages/TaDaCore --filter writeGeneratedVault`. `LargeVaultTests` and `LargeVaultUITimingTests` print the scale timings.

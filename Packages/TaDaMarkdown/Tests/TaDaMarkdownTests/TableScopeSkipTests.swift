@@ -13,7 +13,11 @@
 //
 
 #if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 import Testing
 @testable import TaDaMarkdown
@@ -27,7 +31,7 @@ struct TableScopeSkipTests {
     ) -> MarkdownStyler.StylingContext {
         _ = NSApplication.shared   // styleTables reads NSApp.effectiveAppearance
         let tokens = MarkdownTokenizer.parseTokensViaAST(in: text)
-        let font = NSFont.systemFont(ofSize: 15)
+        let font = PlatformFont.systemFont(ofSize: 15)
         var ctx = MarkdownStyler.StylingContext(
             nsText: text as NSString,
             tokens: tokens,
