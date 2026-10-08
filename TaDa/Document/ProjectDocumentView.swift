@@ -32,7 +32,8 @@ struct ProjectDocumentView: View {
     }
 }
 
-/// Every task whose `project` links here: open ones first, by status, then done ones.
+/// Every task whose `project` links here: open ones first, by status, then done ones. Clicking a row opens the task;
+/// its status and dates open their menus, and its title renames it in place. New linked task adds a row here.
 private struct LinkedTasksTable: View {
     let model: AppModel
     let project: Item
@@ -58,7 +59,10 @@ private struct LinkedTasksTable: View {
                     .foregroundStyle(theme.color(\.muted))
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                NewLinkedTaskButton(model: model, bordered: true)
+                Button { Task { await model.newLinkedTask(in: project) } } label: {
+                    Label("New linked task", systemImage: "plus")
+                }
+                .buttonStyle(ActionButtonStyle(height: 28, fill: \.bg))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -72,10 +76,7 @@ private struct LinkedTasksTable: View {
             .accessibilityAddTraits(.isHeader)
             ForEach(sorted) { task in
                 Hairline()
-                Button { model.selection = task.path } label: { taskRow(task).contentShape(.rect) }
-                    .buttonStyle(.plain)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityHint("Opens the task")
+                LinkedTaskRow(model: model, task: task)
                     .fileMenu(model, path: task.path, cornerRadius: 0)
                     .taskDrag(model, path: task.path)
             }
@@ -89,53 +90,113 @@ private struct LinkedTasksTable: View {
         .clipShape(.rect(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
     }
+}
 
-    private func taskRow(_ task: Item) -> some View {
+/// One linked task. Clicking the row opens the task; the status and date cells open their menus under themselves,
+/// and the title renames the task in place.
+private struct LinkedTaskRow: View {
+    let model: AppModel
+    let task: Item
+    @State private var hovering = false
+    @Environment(\.theme) private var theme
+
+    var body: some View {
         let p = task.properties
         let done = p.status == .done
         let subtasks = task.subtasks
         let due = p.dueDate?.relativeLabel(today: model.today)
         let deadline = p.deadline?.relativeLabel(today: model.today)
         let contexts = p.contexts.joined(separator: " ")
-        return columns(
-            StatusLabel(status: p.status, dotSize: 7)
-                .column("status", p.status.rawValue),
+        let picker = PropertyPicker.shared
+        columns(
+            PickerCell(isOpen: picker.isOpen(task.path, "status")) {
+                picker.pickStatus(of: task, model: model, anchor: $0)
+            } label: {
+                StatusLabel(status: p.status, dotSize: 7)
+            }
+            .accessibilityLabel("status")
+            .accessibilityValue(p.status.rawValue),
             HStack(spacing: 10) {
-                TaskTitle(item: task, size: 13).lineLimit(1)
+                InlineTitleField(model: model, path: task.path, height: 26, font: .system(size: 13)) {
+                    TaskTitle(item: task, size: 13)
+                }
+                .accessibilityLabel("title")
+                .accessibilityValue(task.title)
                 if subtasks.total > 0 {
-                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)").font(.system(size: 11.5))
+                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                         spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
+                        .font(.system(size: 11.5))
+                }
+            },
+            PickerCell(isOpen: picker.isOpen(task.path, AgendaEntry.Kind.due.key)) {
+                picker.pickDate(.due, of: [task], model: model, anchor: $0)
+            } label: {
+                Text(due?.capitalizedFirst ?? "—")
+                    .foregroundStyle(theme.color(p.dueDate != nil && !done ? \.fg : \.muted))
+            }
+            .accessibilityLabel("dueDate")
+            .accessibilityValue(due ?? "none"),
+            PickerCell(isOpen: picker.isOpen(task.path, AgendaEntry.Kind.deadline.key)) {
+                picker.pickDate(.deadline, of: [task], model: model, anchor: $0)
+            } label: {
+                HStack(spacing: 5) {
+                    if p.deadline != nil { KindIcon(kind: .deadline) }
+                    Text(deadline?.capitalizedFirst ?? "—")
+                        .foregroundStyle(theme.color(p.deadline != nil ? \.fg : \.muted))
                 }
             }
-            .column("title", task.title + (subtasks.total > 0 ? ", \(subtasks.done) of \(subtasks.total) subtasks done" : "")),
-            Text(due?.capitalizedFirst ?? "—")
-                .foregroundStyle(theme.color(p.dueDate != nil && !done ? \.fg : \.muted))
-                .column("dueDate", due ?? "none"),
-            HStack(spacing: 5) {
-                if p.deadline != nil { KindIcon(kind: .deadline) }
-                Text(deadline?.capitalizedFirst ?? "—")
-                    .foregroundStyle(theme.color(p.deadline != nil ? \.fg : \.muted))
-            }
-            .column("deadline", deadline ?? "none"),
+            .accessibilityLabel("deadline")
+            .accessibilityValue(deadline ?? "none"),
             Text(contexts).foregroundStyle(theme.color(\.muted))
                 .column("contexts", contexts.isEmpty ? "none" : contexts)
         )
         .font(.system(size: 12))
         .frame(height: 36)
+        .background(hovering ? theme.color(\.code) : .clear)
+        .contentShape(.rect)
+        .onHover { hovering = $0 }
+        .onTapGesture { model.selection = task.path }
+        .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Open task") { model.selection = task.path }
     }
+}
 
-    /// The table's five columns: status, title, dueDate, deadline and contexts. Only the title stretches.
-    private func columns(_ status: some View, _ title: some View, _ due: some View, _ deadline: some View,
-                         _ contexts: some View) -> some View {
-        HStack(spacing: 12) {
-            status.frame(width: 128, alignment: .leading)
-            title.frame(maxWidth: .infinity, alignment: .leading)
-            due.frame(width: 104, alignment: .leading)
-            deadline.frame(width: 140, alignment: .leading)
-            contexts.frame(width: 96, alignment: .leading)
+/// A cell that opens a menu under itself, `surface` under the pointer and while its menu is open.
+private struct PickerCell<Label: View>: View {
+    let isOpen: Bool
+    let action: (ScreenAnchor) -> Void
+    @ViewBuilder var label: Label
+    @State private var anchor = ScreenAnchor()
+    @State private var hovering = false
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Button { action(anchor) } label: {
+            label
+                .padding(.horizontal, 8)
+                .frame(height: 26)
+                .background(hovering || isOpen ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
+                .contentShape(.rect)
         }
-        .lineLimit(1)
-        .padding(.horizontal, 16)
+        .buttonStyle(.plain)
+        .background(ScreenAnchorReader(anchor: anchor))
+        .onHover { hovering = $0 }
+        .padding(.leading, -8)
     }
+}
+
+/// The table's five columns: status, title, dueDate, deadline and contexts. Only the title stretches.
+private func columns(_ status: some View, _ title: some View, _ due: some View, _ deadline: some View,
+                     _ contexts: some View) -> some View {
+    HStack(spacing: 12) {
+        status.frame(width: 128, alignment: .leading)
+        title.frame(maxWidth: .infinity, alignment: .leading)
+        due.frame(width: 104, alignment: .leading)
+        deadline.frame(width: 140, alignment: .leading)
+        contexts.frame(width: 96, alignment: .leading)
+    }
+    .lineLimit(1)
+    .padding(.horizontal, 16)
 }
 
 private extension View {
@@ -148,24 +209,18 @@ private extension View {
 /// Creates a task linked to the current project and opens it with its title ready to type.
 struct NewLinkedTaskButton: View {
     let model: AppModel
-    var bordered = false
     @Environment(\.theme) private var theme
 
     var body: some View {
-        if bordered {
-            Button(action: create) { Label("New linked task", systemImage: "plus") }
-                .buttonStyle(ActionButtonStyle(height: 28, fill: \.bg))
-        } else {
-            Button(action: create) {
-                Label("New linked task", systemImage: "plus")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.color(\.muted))
-                    .padding(.horizontal, 10)
-                    .frame(height: 30)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
+        Button(action: create) {
+            Label("New linked task", systemImage: "plus")
+                .font(.system(size: 12))
+                .foregroundStyle(theme.color(\.muted))
+                .padding(.horizontal, 10)
+                .frame(height: 30)
+                .contentShape(.rect)
         }
+        .buttonStyle(.plain)
     }
 
     private func create() {

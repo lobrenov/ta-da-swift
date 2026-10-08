@@ -204,6 +204,19 @@ struct AppModelTests {
         #expect(!model.usesSchemePerAppearance && model.theme.name == "Nord")
     }
 
+    @Test func aNewLinkedTaskIsNotStartedAndLeavesTheProjectPageOpen() async throws {
+        let model = await folder.model()
+        model.open("projects/Ta Da MVP.md")
+        let project = try #require(model.index["projects/Ta Da MVP.md"])
+        await model.newLinkedTask(in: project)
+
+        let task = try #require(model.index.tasks(in: project).first { $0.title == "Untitled" })
+        #expect(task.properties.status == .notStarted)
+        #expect(try folder.read(task.path).contains("project: \"[[Ta Da MVP]]\""))
+        #expect(model.selection == "projects/Ta Da MVP.md" && model.domain == .project("projects/Ta Da MVP.md"))
+        #expect(model.titleFocus == task.path)
+    }
+
     @Test func foldedGroupsSurviveARelaunchAndFollowARename() async {
         let model = await folder.model()
         model.toggleFolded("Completed", in: "projects/Ta Da MVP.md")
