@@ -7,6 +7,7 @@
 //  be wrong — without ever throwing or partially applying.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -243,3 +244,4 @@ struct DirectiveArgumentTests {
     }
 
 }
+#endif

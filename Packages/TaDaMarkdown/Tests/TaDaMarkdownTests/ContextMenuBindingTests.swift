@@ -13,6 +13,7 @@
 //  assertion passes against the broken code too.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -131,3 +132,4 @@ struct ContextMenuBindingTests {
         #expect(coordinator.lastSyncedText == published)
     }
 }
+#endif

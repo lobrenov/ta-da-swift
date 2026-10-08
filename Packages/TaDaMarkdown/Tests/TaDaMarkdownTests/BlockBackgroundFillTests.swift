@@ -8,6 +8,7 @@
 //  spacing. Headless — the fills are geometry, no window needed.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -137,3 +138,4 @@ struct BlockBackgroundFillTests {
         #expect(fills(in: tv).isEmpty)
     }
 }
+#endif

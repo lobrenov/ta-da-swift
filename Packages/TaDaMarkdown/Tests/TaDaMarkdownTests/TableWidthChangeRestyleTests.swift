@@ -3,6 +3,7 @@
 //  TaDaMarkdown
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import SwiftUI
@@ -990,3 +991,4 @@ struct TableWidthChangeRestyleTests {
         #expect(recorder.count == countAtTrackingEnd)
     }
 }
+#endif

@@ -5,6 +5,7 @@
 //  Behaviour added or changed by the Ta Da fork (see FORK.md).
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -956,3 +957,4 @@ struct AutoPairTests {
         #expect(typed("[[a", configure: { $0.autoClosePairsEnabled = false; $0.autoCloseWikiLinksEnabled = false }) == "[[a|")
     }
 }
+#endif

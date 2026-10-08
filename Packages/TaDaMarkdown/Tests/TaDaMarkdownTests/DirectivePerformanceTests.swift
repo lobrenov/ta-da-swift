@@ -27,6 +27,7 @@
 //  knowing about.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -156,3 +157,4 @@ struct DirectivePerformanceTests {
                 "directives cost \(directiveCost)ms vs \(highlightCost)ms for \(count) spans")
     }
 }
+#endif

@@ -14,6 +14,7 @@
 //  Verify manually in a host app.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -812,3 +813,4 @@ struct FullRuntimeReconfigurationTests {
         #expect(stack.container.scrollableContentHeight == scrollsTotal)
     }
 }
+#endif

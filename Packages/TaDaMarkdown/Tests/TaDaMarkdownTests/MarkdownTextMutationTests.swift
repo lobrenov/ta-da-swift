@@ -6,6 +6,7 @@
 //  source authority or mirror an edit into another presentation.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -101,3 +102,4 @@ struct MarkdownTextMutationTests {
         #expect(received.isEmpty)
     }
 }
+#endif

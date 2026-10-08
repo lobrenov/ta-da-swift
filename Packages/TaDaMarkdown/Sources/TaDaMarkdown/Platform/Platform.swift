@@ -5,6 +5,11 @@
 //  The AppKit and UIKit types the shared code names, under one name each.
 //
 
+/// What moved the caret or changed the text, for choices that differ between typing and pointing.
+enum EditorInputKind {
+    case key, click, drag, other
+}
+
 #if canImport(AppKit)
 import AppKit
 
@@ -34,6 +39,13 @@ extension PlatformColor {
 extension PlatformAppearance {
     /// A string that tells appearances apart, for cache keys.
     var cacheKey: String { name.rawValue }
+}
+
+extension PlatformFont {
+    /// The font with this PostScript name; AppKit resolves the system font's private names itself.
+    static func named(_ name: String, size: CGFloat) -> PlatformFont? {
+        PlatformFont(name: name, size: size)
+    }
 }
 
 extension NSTextView {
@@ -68,6 +80,16 @@ func displayScale(of textView: PlatformTextView?) -> CGFloat {
 /// The appearance `textView` draws in.
 func currentAppearance(of textView: PlatformTextView?) -> PlatformAppearance {
     textView?.effectiveAppearance ?? NSApp.effectiveAppearance
+}
+
+/// The event being handled, from AppKit's current event.
+func currentInputKind(of textView: PlatformTextView) -> EditorInputKind {
+    switch NSApp.currentEvent?.type {
+    case .keyDown: .key
+    case .leftMouseDown, .leftMouseUp: .click
+    case .leftMouseDragged, .periodic: .drag
+    default: .other
+    }
 }
 
 /// An image drawn by `draw` in top-left-origin coordinates.
@@ -205,6 +227,12 @@ extension UITextView {
     /// The selected ranges: AppKit's `selectedRanges`, UIKit's one range.
     var currentSelectedRanges: [NSRange] { [selectedRange] }
 
+    /// AppKit's `insertionPointColor`; UIKit tints the caret and selection together.
+    var insertionPointColor: UIColor? {
+        get { tintColor }
+        set { tintColor = newValue }
+    }
+
     /// AppKit's `hasMarkedText()`.
     func hasMarkedText() -> Bool { markedTextRange != nil }
 
@@ -250,6 +278,11 @@ func currentAppearance(of textView: PlatformTextView?) -> PlatformAppearance {
     textView?.traitCollection ?? UITraitCollection.current
 }
 
+/// The input being handled, as the iOS editor last recorded it.
+func currentInputKind(of textView: PlatformTextView) -> EditorInputKind {
+    (textView as? NativeTextView)?.inputKind ?? .other
+}
+
 /// An image drawn by `draw` in top-left-origin coordinates.
 func drawnImage(size: CGSize, draw: () -> Void) -> PlatformImage {
     UIGraphicsImageRenderer(size: size).image { _ in draw() }
@@ -284,5 +317,16 @@ extension UIImage {
 extension UIEdgeInsets {
     /// AppKit's `textContainerInset.width`: the inset on each side, horizontally.
     var width: CGFloat { (left + right) / 2 }
+}
+extension UIFont {
+    /// The font with this PostScript name. UIKit returns a serif fallback for the system
+    /// font's private names (`.SFUI-Regular`), so those map to the system font.
+    static func named(_ name: String, size: CGFloat) -> UIFont? {
+        guard name.hasPrefix(".") else { return UIFont(name: name, size: size) }
+        let system = UIFont.systemFont(ofSize: size)
+        guard let face = name.split(separator: "-").last?.lowercased(), face != "regular" else { return system }
+        let weights: [String: UIFont.Weight] = ["bold": .bold, "semibold": .semibold, "medium": .medium, "light": .light]
+        return weights[face].map { UIFont.systemFont(ofSize: size, weight: $0) } ?? system
+    }
 }
 #endif

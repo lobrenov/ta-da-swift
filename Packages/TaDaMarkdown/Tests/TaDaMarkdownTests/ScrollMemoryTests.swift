@@ -9,6 +9,7 @@
 //  `Context` that cannot be built headlessly — verify that in a host app.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -101,3 +102,4 @@ struct ScrollMemoryTests {
         #expect(coordinator.pendingScrollRestoreDocumentId == nil)
     }
 }
+#endif

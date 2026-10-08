@@ -8,6 +8,7 @@
 //  is the only line break a cell has — a row IS one source line.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -127,3 +128,4 @@ struct TableCellSourceTests {
         #expect(tv.string == source)
     }
 }
+#endif

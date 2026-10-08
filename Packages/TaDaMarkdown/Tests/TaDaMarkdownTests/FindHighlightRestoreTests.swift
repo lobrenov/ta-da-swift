@@ -9,6 +9,7 @@
 //  document-wide, which erased their block until something else restyled.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -136,3 +137,4 @@ struct FindHighlightRestoreTests {
         #expect(background(tv, at: 17) != nil)
     }
 }
+#endif

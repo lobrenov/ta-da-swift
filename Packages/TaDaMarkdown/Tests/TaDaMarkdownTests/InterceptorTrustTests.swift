@@ -11,6 +11,7 @@
 //  InterceptorStorageSyncTests; here we pin the trust flag.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -63,3 +64,4 @@ struct InterceptorTrustTests {
         #expect(coord.debugLastEditWasTrusted == true)
     }
 }
+#endif

@@ -11,6 +11,7 @@
 //  positional, so it gets tested from both ends and through nesting.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -235,3 +236,4 @@ struct DirectiveCompositionTests {
         #expect(result == nil || result?.pointSize == base)
     }
 }
+#endif

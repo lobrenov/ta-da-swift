@@ -3,6 +3,7 @@
 //  TaDaMarkdownTests
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -117,3 +118,4 @@ private var testLatexResult: LatexRenderResult {
     let size = CGSize(width: 20, height: 10)
     return LatexRenderResult(image: NSImage(size: size), size: size, baselineOffset: 2)
 }
+#endif

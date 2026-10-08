@@ -7,6 +7,7 @@
 //  what was on screen.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -74,3 +75,4 @@ struct DirectiveHTMLTests {
         #expect(out.contains("font-size:18.0px"))
     }
 }
+#endif

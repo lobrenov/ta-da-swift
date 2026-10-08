@@ -6,6 +6,7 @@
 //  composition, and reading-column centering — headless (no window).
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -155,3 +156,4 @@ struct NativeTextViewContainerTests {
         #expect(stack.textView.frame.origin.x == 0)
     }
 }
+#endif

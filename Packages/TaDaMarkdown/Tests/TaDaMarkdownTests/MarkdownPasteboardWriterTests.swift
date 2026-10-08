@@ -9,6 +9,7 @@
 //  substitutes visible stand-ins for what RTF cannot represent.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -59,3 +60,4 @@ struct MarkdownPasteboardWriterTests {
         #expect(rtfSource.contains("example.com"))
     }
 }
+#endif

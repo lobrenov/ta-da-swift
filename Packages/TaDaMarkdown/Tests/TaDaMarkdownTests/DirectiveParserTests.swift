@@ -7,6 +7,7 @@
 //  resulting node carries the geometry the styler needs.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -381,3 +382,4 @@ struct DirectiveParserTests {
     }
 
 }
+#endif

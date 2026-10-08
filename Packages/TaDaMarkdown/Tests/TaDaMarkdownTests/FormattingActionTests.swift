@@ -5,6 +5,7 @@
 //  Headless tests for formatting actions wired through the coordinator.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -223,3 +224,4 @@ struct FormattingActionTests {
         #expect(tv.string == "text![](img.png)")
     }
 }
+#endif

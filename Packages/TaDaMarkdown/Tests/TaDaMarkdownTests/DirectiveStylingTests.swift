@@ -17,6 +17,7 @@
 //  `DirectiveCompositionTests`.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -147,3 +148,4 @@ struct DirectiveStylingTests {
         #expect(keys([paragraph]) == keys(nil))
     }
 }
+#endif

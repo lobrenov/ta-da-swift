@@ -8,6 +8,7 @@
 //  so the pointer stays visible inside an inverted highlight.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -60,3 +61,4 @@ struct InvertedIBeamCursorTests {
         #expect(first !== different)
     }
 }
+#endif

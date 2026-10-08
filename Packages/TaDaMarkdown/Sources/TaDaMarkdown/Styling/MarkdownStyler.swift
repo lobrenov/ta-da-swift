@@ -307,7 +307,7 @@ enum MarkdownStyler {
         let codeTokens = classified?.code ?? tokens.filter {
             $0.kind == .codeBlock || $0.kind == .inlineCode
         }
-        let baseFont = PlatformFont(name: fontName, size: fontSize)
+        let baseFont = PlatformFont.named(fontName, size: fontSize)
             ?? PlatformFont.systemFont(ofSize: fontSize)
         let baseDefaultLineHeight = ceil(
             layoutBridge?.defaultLineHeight(for: baseFont)
@@ -324,7 +324,7 @@ enum MarkdownStyler {
             baseDefaultLineHeight: baseDefaultLineHeight,
             codeBackgroundColor: configuration.services.syntaxHighlighter
                 .backgroundColor(),
-            latexMarkerFont: PlatformFont(name: fontName, size: hiddenMarkerSize)
+            latexMarkerFont: PlatformFont.named(fontName, size: hiddenMarkerSize)
                 ?? PlatformFont.systemFont(ofSize: hiddenMarkerSize),
             configuration: configuration,
             wikiLinkIDProvider: wikiLinkIDProvider,

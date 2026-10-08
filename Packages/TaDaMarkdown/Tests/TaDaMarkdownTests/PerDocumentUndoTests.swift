@@ -7,6 +7,7 @@
 //  while it was switched away. Headless.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -65,3 +66,4 @@ struct PerDocumentUndoTests {
         #expect(c.invalidateUndoIfContentDiverged(for: "A", incomingText: "x") == false)
     }
 }
+#endif

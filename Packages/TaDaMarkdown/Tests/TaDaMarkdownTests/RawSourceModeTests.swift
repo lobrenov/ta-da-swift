@@ -10,6 +10,7 @@
 //  the two presentations without touching the storage text. Headless.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -82,3 +83,4 @@ struct RawSourceModeTests {
         #expect(runs.allSatisfy { $0.font?.pointSize == 16 })
     }
 }
+#endif

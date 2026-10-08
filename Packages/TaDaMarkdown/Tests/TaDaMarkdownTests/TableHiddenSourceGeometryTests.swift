@@ -10,6 +10,7 @@
 //  text container.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -60,3 +61,4 @@ struct TableHiddenSourceGeometryTests {
         #expect(usage.width <= viewport.width + 0.5)
     }
 }
+#endif

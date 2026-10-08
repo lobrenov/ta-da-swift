@@ -223,7 +223,7 @@ public struct DirectiveFontTransform {
     public func apply(to font: PlatformFont) -> PlatformFont {
         var result = font
         if let familyName {
-            result = PlatformFont(name: familyName, size: result.pointSize) ?? result
+            result = PlatformFont.named(familyName, size: result.pointSize) ?? result
         }
         switch size {
         case .absolute(let points): result = PlatformFont(descriptor: result.fontDescriptor, size: points) ?? result

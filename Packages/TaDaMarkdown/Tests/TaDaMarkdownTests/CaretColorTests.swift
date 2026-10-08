@@ -9,6 +9,7 @@
 //  color and it disappears.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -115,3 +116,4 @@ struct CaretColorTests {
         #expect(tv.insertionPointColor == NSColor.black)
     }
 }
+#endif

@@ -15,6 +15,7 @@
 //  nothing at all.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -302,3 +303,4 @@ struct ThematicBreakMarkTests {
         breakLineBounds(in: tv).height
     }
 }
+#endif

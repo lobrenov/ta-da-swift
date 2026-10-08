@@ -12,6 +12,7 @@
 //  old loop rather than against hand-written expectations.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -148,3 +149,4 @@ struct FlattenedRunsTests {
         }
     }
 }
+#endif

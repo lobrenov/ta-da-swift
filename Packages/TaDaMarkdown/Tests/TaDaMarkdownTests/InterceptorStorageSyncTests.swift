@@ -11,6 +11,7 @@
 //  display text.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -69,3 +70,4 @@ struct InterceptorStorageSyncTests {
         #expect(coord.lastComputedStorage == "- a\n\t- hello")
     }
 }
+#endif

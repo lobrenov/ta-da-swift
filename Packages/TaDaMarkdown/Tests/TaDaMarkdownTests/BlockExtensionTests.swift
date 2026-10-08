@@ -9,6 +9,7 @@
 //  literal text without a registered extension.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -243,3 +244,4 @@ struct BlockExtensionTests {
         #expect(BlockParser.hasBlockDelimiter(buf, 0, buf.count, fences: [Array(":::".utf16)]))
     }
 }
+#endif

@@ -5,6 +5,7 @@
 //  Created by Luca Chen on 07.07.26.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -158,3 +159,4 @@ struct TableImageCacheTests {
         #expect(redRender.rendered)
     }
 }
+#endif

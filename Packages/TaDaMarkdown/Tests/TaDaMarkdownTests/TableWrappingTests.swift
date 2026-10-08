@@ -11,6 +11,7 @@
 //  minimums genuinely don't fit).
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -119,3 +120,4 @@ struct TableWrappingTests {
         #expect(first.image.size.width != second.image.size.width)
     }
 }
+#endif

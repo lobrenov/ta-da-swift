@@ -9,6 +9,7 @@
 //  re-extracting + memcmp'ing the full document buffer every keystroke.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -91,3 +92,4 @@ struct PrecomputedBlocksTests {
         }
     }
 }
+#endif

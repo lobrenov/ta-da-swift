@@ -7,6 +7,7 @@
 //  body text, including nested emphasis the old per-cell regexes could not do.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -85,3 +86,4 @@ struct TableCellTests {
         #expect(traits(s, "c").contains(.bold))
     }
 }
+#endif

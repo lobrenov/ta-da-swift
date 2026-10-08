@@ -15,6 +15,7 @@
 //  and run every case through BOTH paths — indexed and plain rescan.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -262,3 +263,4 @@ struct RestyleApplyEquivalenceTests {
         }
     }
 }
+#endif

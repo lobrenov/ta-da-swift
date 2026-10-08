@@ -12,6 +12,7 @@
 //  against.
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -94,3 +95,4 @@ struct RebuildSelectionReplayTests {
         #expect(tv.isContinuousSpellCheckingEnabled == false)   // handler ran, caret is in code
     }
 }
+#endif

@@ -6,6 +6,7 @@
 //  of overwriting them (the flat 18-pass styler's flaw).
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -399,3 +400,4 @@ private func styleKeySnapshot(_ ranges: [StyledRange]) -> String {
 private func fmt(_ r: NSRange) -> String {
     r.location == NSNotFound ? "∅" : "\(r.location)+\(r.length)"
 }
+#endif

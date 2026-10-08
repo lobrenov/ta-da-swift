@@ -19,6 +19,7 @@
 //  a caret move produces.
 //
 
+#if os(macOS)
 import AppKit
 import Testing
 @testable import TaDaMarkdown
@@ -120,3 +121,4 @@ struct ScopedListRestyleEquivalenceTests {
         }
     }
 }
+#endif

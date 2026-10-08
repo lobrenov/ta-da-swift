@@ -6,6 +6,7 @@
 //  height, and removal — headless (no window).
 //
 
+#if os(macOS)
 import AppKit
 import SwiftUI
 import Testing
@@ -206,3 +207,4 @@ struct ScrollingHeaderControllerTests {
         #expect(stack.container.subviews.count == 1)   // text view only
     }
 }
+#endif

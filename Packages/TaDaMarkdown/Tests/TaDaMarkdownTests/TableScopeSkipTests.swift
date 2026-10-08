@@ -12,6 +12,7 @@
 //  shared image cache used by TableImageCacheTests.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -79,3 +80,4 @@ struct TableScopeSkipTests {
         #expect(touching.contains { $0.attributes[.spellingState] as? Int == 0 })
     }
 }
+#endif

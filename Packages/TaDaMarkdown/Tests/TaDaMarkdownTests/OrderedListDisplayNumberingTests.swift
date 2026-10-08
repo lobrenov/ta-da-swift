@@ -15,6 +15,7 @@
 //    and revealing it renamed the item the reader was pointing at.
 //
 
+#if os(macOS)
 import AppKit
 import Foundation
 import Testing
@@ -407,3 +408,4 @@ struct OrderedListDisplayNumberingTests {
         #expect(overlays(in: tv).map(\.text) == ["2.", "3.", "4."])
     }
 }
+#endif
