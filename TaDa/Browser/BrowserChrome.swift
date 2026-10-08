@@ -34,27 +34,22 @@ struct BrowserColumn<Header: View, Content: View>: View {
     }
 }
 
-/// A domain's title row: an icon (or a project's progress ring), a large title and optional trailing content.
+/// A domain's title row: an icon, a large title and optional trailing content.
 struct DomainHeader<Trailing: View>: View {
     let title: String
     var systemImage: String? = nil
     var tint: KeyPath<Theme, NSColor> = \.accent
-    /// Shown instead of an icon for a project.
-    var ring: Double? = nil
-    var size: CGFloat = 26
     @ViewBuilder var trailing: Trailing
     @Environment(\.theme) private var theme
 
     var body: some View {
         HStack(spacing: 10) {
-            if let ring {
-                ProgressRing(fraction: ring).scaleEffect(size / 16).frame(width: size - 3, height: size - 3)
-            } else if let systemImage {
-                Image(systemName: systemImage).font(.system(size: size * 0.77)).accessibilityHidden(true)
+            if let systemImage {
+                Image(systemName: systemImage).font(.system(size: 20)).accessibilityHidden(true)
             }
             Text(title)
-                .font(.system(size: size, weight: .bold))
-                .tracking(-size / 100)
+                .font(.system(size: 26, weight: .bold))
+                .tracking(-0.26)
                 .foregroundStyle(theme.color(\.strong))
                 .lineLimit(1)
                 .accessibilityAddTraits(.isHeader)
@@ -75,8 +70,8 @@ extension DomainHeader {
 }
 
 extension DomainHeader where Trailing == EmptyView {
-    init(title: String, systemImage: String? = nil, tint: KeyPath<Theme, NSColor> = \.accent, ring: Double? = nil, size: CGFloat = 26) {
-        self.init(title: title, systemImage: systemImage, tint: tint, ring: ring, size: size) { EmptyView() }
+    init(title: String, systemImage: String? = nil, tint: KeyPath<Theme, NSColor> = \.accent) {
+        self.init(title: title, systemImage: systemImage, tint: tint) { EmptyView() }
     }
 
     init(_ domain: AppModel.Domain) {

@@ -28,20 +28,36 @@ struct ProjectBrowserView: View {
     }
 
     private func header(_ progress: ProjectProgress) -> some View {
-        let p = project.properties
+        let subtasks = project.subtasks
         return VStack(alignment: .leading, spacing: 12) {
-            DomainHeader(title: project.title, ring: progress.fraction, size: 24) {
-                Button("Open project file") { model.selection = project.path }
-                    .buttonStyle(.plain)
+            HStack(spacing: 10) {
+                ProgressRing(fraction: progress.fraction).scaleEffect(24 / 16).frame(width: 21, height: 21)
+                    .foregroundStyle(theme.color(\.accent))
+                InlineTitleField(model: model, path: project.path, height: 34, font: .system(size: 24, weight: .bold)) {
+                    Text(project.title)
+                        .tracking(-0.24)
+                        .foregroundStyle(theme.color(\.strong))
+                        .accessibilityAddTraits(.isHeader)
+                }
+                Spacer(minLength: 12)
+                Button { model.selection = project.path } label: {
+                    Label("Open project file", systemImage: "doc")
+                }
+                .buttonStyle(ActionButtonStyle(height: 28))
+                .fixedSize()
             }
-            HStack(spacing: 14) {
-                StatusLabel(status: p.status, dotSize: 7)
-                if let due = p.dueDate { DateChip(kind: .due, date: due, today: model.today) }
-                if let deadline = p.deadline { DateChip(kind: .deadline, date: deadline, today: model.today) }
-                Text("\(progress.done) of \(progress.total) done")
+            PropertyChipRow(model: model, item: project) {
+                if subtasks.total > 0 {
+                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                         spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(theme.color(\.muted))
+                        .padding(.leading, 6)
+                }
             }
-            .font(.system(size: 12))
-            .foregroundStyle(theme.color(\.muted))
+            Text("\(progress.done) of \(progress.total) tasks done")
+                .font(.system(size: 11.5))
+                .foregroundStyle(theme.color(\.muted))
         }
     }
 
