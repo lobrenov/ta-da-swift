@@ -18,6 +18,7 @@ TaDa/
 ├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace; applies the theme
 ├── AppModel.swift             root state: folder, index, domain, selection, open document, theme set and appearance; refresh, save, outside-change handling
 ├── OpenDocument.swift         the selected file's whole text; edits reparse it
+├── SettingsStore.swift        where AppModel keeps its settings: UserDefaults, or a test's in-memory store
 ├── Commands.swift             menu commands and shortcuts
 ├── UITestingLaunch.swift      the `-uiTesting` launch: throwaway settings and folder
 ├── Theme/                     Theme (15 colour tokens + isDark), ThemeSet, Appearance, the 15 bundled schemes and 8 sets;
@@ -39,8 +40,8 @@ TaDa/
 ├── Document/
 │   ├── DocumentPane.swift     breadcrumb bar and Live/Source toggle over the document
 │   ├── LiveDocumentView.swift a task in Live mode: title, properties, body, footer
-│   ├── ProjectDocumentView.swift  a project's page with its linked-tasks table
-│   ├── PropertyChips.swift    the properties as chips, and the line under them
+│   ├── ProjectDocumentView.swift  a project's page with its linked-tasks table (status, dates and title edited in place)
+│   ├── PropertyChips.swift    the properties as chips (PropertyChipRow), and the line under them
 │   ├── PropertyPickers.swift  the status and project menus the chips open
 │   ├── CalendarPicker.swift   the date chips' calendar
 │   ├── FileInspector.swift    beside the Source editor
@@ -54,7 +55,7 @@ TaDa/
 │   ├── CalloutMenu.swift
 │   ├── CalloutIcon.swift      callout icons and tints
 │   └── AddSubtask.swift
-└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, callout, file and property menus share); FileMenu (right-click on a project or task); TaskDrag (task rows dragged as files onto the sidebar or into other apps, and ⇧⌘M's, ⌘S's and ⌘D's menus under a row); Buttons (the text button style and segmented control)
+└── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, callout, file and property menus share); FileMenu (right-click on a project or task); TaskDrag (task rows dragged as files onto the sidebar or into other apps, and ⇧⌘M's, ⌘S's and ⌘D's menus under a row); Buttons (the text button style and segmented control); InlineTitleField (a title renamed in place)
 
 Packages/TaDaCore/Sources/TaDaCore/
 ├── Model/      Item, Status, LocalDate, WikiLink, Checkbox, CalloutType
@@ -66,7 +67,7 @@ Packages/TaDaCore/Sources/TaDaCore/
 Packages/TaDaCore/Sources/TaDaCoreTesting/   GeneratedVault: test data for TaDaCoreTests; TaDaTests compiles the file too
 ```
 
-TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtures in `Fixtures/` (`DesignVault/` is the design's data). TaDaTests covers AppModel, OpenDocument, outside changes, the Source editor, keyboard handling, design renders and UI timings. Its suites set up their files and settings with `TestFolder`, which removes them when each test ends. TaDaUITests holds keyboard smoke tests.
+TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtures in `Fixtures/` (`DesignVault/` is the design's data). TaDaTests covers AppModel, OpenDocument, outside changes, the Source editor, keyboard handling, design renders and UI timings. Its suites set up their files with `TestFolder`, which removes them when each test ends, and their settings in memory with `TestSettings`, so tests write no settings files. TaDaUITests holds keyboard smoke tests.
 
 ## Runtime
 
@@ -98,6 +99,8 @@ Moving tasks to a project: the file menu's Move, ⇧⌘M and dragging all act on
 Setting dates: the file menu's Schedule and Set Deadline…, ⌘S and ⌘D act on `AppModel.dateTargets(for:)`, the same files as a move but with projects. ⌘S and ⌘D set `AppModel.propertyMenuRequest`, and the open file's due date or deadline chip, or else the first picked row, opens the calendar under itself. For several files the calendar fills a date, and shows the other date's dot, only when they all agree; `AppModel.setDate(_:to:of:)` writes the files whose date changes.
 
 Browser lists share their selection: each registers its rows with `.arrowKeySelection(model, paths:, allowsMultipleSelection:)` (the lists beside the document through `BrowserColumn`, which also sets their header and padding), and rows show `model.isSelected(_:)`, call `model.click(_:)` and add `.fileMenu`. Every list allows several (Search picks tasks only, since a project opens its page): shift-click picks a range and ⌘-click adds or removes a row (`AppModel.multiSelection`, or `trashSelection` in Trash). The document pane shows "N tasks selected", and Upcoming keeps its agenda column while tasks are picked. In Trash a plain click picks one file. The list keys go to a `ListKeyView` behind each list, an AppKit responder that takes the keyboard when the list appears, when nothing has it and when a row is picked, but never from a text view, or for a new file whose title is about to take it.
+
+A project's browser folds its Open and Completed groups from their headers. `AppModel.foldedGroups` keeps the folded ones per project path in the settings and follows a rename; a folded group's rows leave the arrow-key list. Its header shows the project's chips through `PropertyChipRow`, and its title and the project page table's titles are `InlineTitleField`s, which rename with `AppModel.rename(_:to:)`. The table's New linked task calls `AppModel.newLinkedTask(in:)`, which sets `titleFocus` so the new row's title starts editing without opening the task.
 
 ## Editors
 

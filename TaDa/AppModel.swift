@@ -137,6 +137,10 @@ import TaDaCore
     var darkScheme: Theme {
         didSet { defaults.set(darkScheme.name, forKey: Keys.darkScheme) }
     }
+    /// The task groups folded in each project's browser ("Open", "Completed"), by project path.
+    private(set) var foldedGroups: [String: [String]] {
+        didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
+    }
     /// The Mac's appearance, kept current by ContentView.
     var systemIsDark = Appearance.systemIsDark
 
@@ -157,9 +161,19 @@ import TaDaCore
         usesSchemePerAppearance = false
     }
 
+    func isFolded(_ group: String, in project: String) -> Bool {
+        foldedGroups[project]?.contains(group) == true
+    }
+
+    func toggleFolded(_ group: String, in project: String) {
+        var groups = foldedGroups[project] ?? []
+        if let i = groups.firstIndex(of: group) { groups.remove(at: i) } else { groups.append(group) }
+        foldedGroups[project] = groups.isEmpty ? nil : groups
+    }
+
     /// How long an edit waits before it's saved.
     @ObservationIgnored var saveDelay = Duration.milliseconds(600)
-    private let defaults: UserDefaults
+    private let defaults: any SettingsStore
     private var pendingSave: Task<Void, Never>?
     /// The save in progress; each save waits for the one before, so writes land in order.
     private var saving: Task<Void, Never>?
@@ -180,15 +194,17 @@ import TaDaCore
         static let usesSchemePerAppearance = "usesSchemePerAppearance"
         static let lightScheme = "lightScheme"
         static let darkScheme = "darkScheme"
+        static let foldedGroups = "foldedGroups"
     }
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: any SettingsStore = UserDefaults.standard) {
         self.defaults = defaults
         themeSet = defaults.string(forKey: Keys.themeSet).flatMap(ThemeSet.named) ?? .standard
         appearance = defaults.string(forKey: Keys.appearance).flatMap(Appearance.init) ?? .system
         usesSchemePerAppearance = defaults.bool(forKey: Keys.usesSchemePerAppearance)
         lightScheme = defaults.string(forKey: Keys.lightScheme).flatMap(Theme.named) ?? ThemeSet.standard.light
         darkScheme = defaults.string(forKey: Keys.darkScheme).flatMap(Theme.named) ?? ThemeSet.standard.dark
+        foldedGroups = defaults.dictionary(forKey: Keys.foldedGroups) as? [String: [String]] ?? [:]
     }
 
     // MARK: Folder
@@ -707,6 +723,7 @@ import TaDaCore
         if let document, document.path == path { document.path = newPath }
         if domain == .project(path) { domain = .project(newPath) }
         if selection == path || selection == nil && domain == .project(newPath) { selection = newPath }
+        if let folded = foldedGroups.removeValue(forKey: path) { foldedGroups[newPath] = folded }
     }
 
     // MARK: Trash
@@ -890,6 +907,15 @@ import TaDaCore
         titleFocus = path
         if project == nil, domain != .today { domain = .loose }
         selection = path
+    }
+
+    /// Creates a task linked to `project` without opening it, its title ready to type in the project page's table.
+    /// Returns the new file's path.
+    @discardableResult
+    func newLinkedTask(in project: Item) async -> String? {
+        guard let path = await create(NewFile.task(project: project.title, today: today), in: Vault.taskFolder) else { return nil }
+        titleFocus = path
+        return path
     }
 
     /// Creates an untitled project and opens its page with its title ready to type.

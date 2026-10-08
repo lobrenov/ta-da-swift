@@ -20,9 +20,7 @@ struct DesignRenderTests {
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let sampleVault = URL(filePath: #filePath).deletingLastPathComponent()
             .appending(path: "../Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/DesignVault").standardized
-        let suite = "TaDaRender-\(UUID().uuidString)"
-        let defaults = try #require(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
+        let defaults = TestSettings()
 
         let empty = AppModel(defaults: defaults)
         try await render(empty, to: output.appending(path: "onboarding.png"))
