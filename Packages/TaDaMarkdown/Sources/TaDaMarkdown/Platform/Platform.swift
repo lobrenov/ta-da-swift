@@ -58,6 +58,17 @@ extension NSTextView {
     /// The selected ranges: AppKit's `selectedRanges`, UIKit's one range.
     var currentSelectedRanges: [NSRange] { selectedRanges.map(\.rangeValue) }
 
+    /// The text container, optional on both platforms (UIKit's isn't).
+    var optionalTextContainer: NSTextContainer? { textContainer }
+
+    /// The character index nearest a point in the view's coordinates.
+    func characterIndex(atViewPoint point: CGPoint) -> Int { characterIndexForInsertion(at: point) }
+
+    /// A rect in the view's coordinates as a menu anchor: screen coordinates.
+    func menuAnchorRect(forViewRect rect: CGRect) -> CGRect {
+        window?.convertToScreen(convert(rect, to: nil)) ?? .zero
+    }
+
     /// A character range's first line rect in screen coordinates, to anchor a menu.
     func anchorRect(forCharacterRange range: NSRange) -> CGRect {
         firstRect(forCharacterRange: range, actualRange: nil)
@@ -235,6 +246,18 @@ extension UITextView {
 
     /// AppKit's `hasMarkedText()`.
     func hasMarkedText() -> Bool { markedTextRange != nil }
+
+    /// The text container, optional on both platforms (UIKit's isn't).
+    var optionalTextContainer: NSTextContainer? { textContainer }
+
+    /// The character index nearest a point in the view's coordinates.
+    func characterIndex(atViewPoint point: CGPoint) -> Int {
+        guard let position = closestPosition(to: point) else { return 0 }
+        return offset(from: beginningOfDocument, to: position)
+    }
+
+    /// A rect in the view's coordinates as a menu anchor: window coordinates.
+    func menuAnchorRect(forViewRect rect: CGRect) -> CGRect { convert(rect, to: nil) }
 
     /// A character range's first line rect in window coordinates, to anchor a menu.
     func anchorRect(forCharacterRange range: NSRange) -> CGRect {

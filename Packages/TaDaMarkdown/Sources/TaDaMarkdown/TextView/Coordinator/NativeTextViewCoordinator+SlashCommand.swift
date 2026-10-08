@@ -44,6 +44,20 @@ public final class SlashCommandProxy {
         coordinator?.insertSlashCommand(text, selecting: selection)
     }
 
+    /// Indents the selected list lines (and their children), as Tab does.
+    public func indent() {
+        guard let textView = coordinator?.textView else { return }
+        let maximumLevel = (textView as? NativeTextView)?.configuration.lists.maximumNestingLevel
+            ?? MarkdownEditorConfiguration.default.lists.maximumNestingLevel
+        _ = MarkdownLists.indentListLines(textView, selection: textView.currentSelectedRange, maximumLevel: maximumLevel)
+    }
+
+    /// Outdents the selected list lines (and their children), as Shift-Tab does.
+    public func outdent() {
+        guard let coordinator, let textView = coordinator.textView else { return }
+        _ = coordinator.handleBacktab(textView)
+    }
+
     /// Closes the menu until the next `/` is typed.
     public func dismiss() {
         coordinator?.dismissSlashCommand()

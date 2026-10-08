@@ -19,72 +19,22 @@ import AppKit
 
 extension NativeTextView {
 
-    /// The drawn checkbox square under `containerPoint`, if any.
-    ///
-    /// The `[ ]` chars are collapsed to ~zero width, so their bounding rect sits
-    /// at the content edge; reconstruct the DRAWN square from the shared
-    /// `TaskCheckboxGeometry` (right-aligned to it). `baseFont`, not
-    /// NSTextView.font (see the draw site). `searchRange` bounds the scan —
-    /// the hovered line for cursor checks, nil (whole doc) for clicks.
-    func taskCheckboxHit(at containerPoint: CGPoint, in searchRange: NSRange? = nil) -> (range: NSRange, marker: Character, rect: CGRect)? {
-        guard let textContainer = textContainer,
-              let bridge = layoutBridge,
-              let storage = textStorage, storage.length > 0 else { return nil }
-        let style = configuration.taskCheckbox
-        let boxSize = TaskCheckboxGeometry.size(for: baseFont, style: style)
-        let scan = searchRange ?? NSRange(location: 0, length: storage.length)
-        var hit: (range: NSRange, marker: Character, rect: CGRect)?
-        storage.enumerateAttribute(.taskCheckbox, in: scan, options: []) { value, attrRange, stop in
-            guard let marker = (value as? String)?.first else { return }
-            let anchor = bridge.boundingRect(forCharacterRange: attrRange, in: textContainer)
-            let rect = CGRect(
-                x: TaskCheckboxGeometry.boxX(contentX: anchor.minX, size: boxSize, style: style),
-                y: anchor.minY,
-                width: boxSize,
-                height: max(anchor.height, boxSize)
-            )
-            if rect.contains(containerPoint) {
-                hit = (attrRange, marker, rect)
-                stop.pointee = true
-            }
-        }
-        return hit
-    }
-
     func taskCheckboxHit(for event: NSEvent) -> (range: NSRange, marker: Character, rect: CGRect)? {
-        let localPoint = convert(event.locationInWindow, from: nil)
-        let containerPoint = CGPoint(
-            x: localPoint.x - textContainerOrigin.x,
-            y: localPoint.y - textContainerOrigin.y
-        )
-        guard let hit = taskCheckboxHit(at: containerPoint),
-              let storage = textStorage,
-              (storage.string as NSString).substring(with: hit.range)
-                .range(of: TaskMarker.boxPattern, options: .regularExpression) != nil else { return nil }
-        return hit
+        taskCheckboxHit(atViewPoint: convert(event.locationInWindow, from: nil))
     }
 
     /// Applies the click transition for the box under `event`. Returns true when
     /// the click landed on a box (consumed, even if its marker ignores clicks).
     func toggleTaskCheckboxIfHit(event: NSEvent) -> Bool? {
         guard let hit = taskCheckboxHit(for: event) else { return nil }
-        if let next = configuration.taskCheckbox.clickTransitions[hit.marker] {
-            setTaskMarker(next, boxRange: hit.range)
-        }
+        toggleTaskCheckbox(hit)
         return true
     }
 
     /// The marker menu for a right-click on `hit`, or nil after handing the click to `onTaskMarkerMenu`.
     func taskMarkerMenu(for hit: (range: NSRange, marker: Character, rect: CGRect)) -> NSMenu? {
         if let onTaskMarkerMenu {
-            let boxText = "[\(hit.marker)]"
-            let viewRect = hit.rect.offsetBy(dx: textContainerOrigin.x, dy: textContainerOrigin.y)
-            let anchor = window?.convertToScreen(convert(viewRect, to: nil)) ?? .zero
-            onTaskMarkerMenu(TaskMarkerMenuRequest(marker: hit.marker, anchorRect: anchor) { [weak self] marker in
-                guard let self, let storage = self.textStorage, NSMaxRange(hit.range) <= storage.length,
-                      (storage.string as NSString).substring(with: hit.range) == boxText else { return }
-                self.setTaskMarker(marker, boxRange: hit.range)
-            })
+            onTaskMarkerMenu(taskMarkerMenuRequest(for: hit))
             return nil
         }
         let style = configuration.taskCheckbox
@@ -112,21 +62,6 @@ extension NativeTextView {
         return menu
     }
 
-    /// Replaces the marker character inside `[…]`, as one undoable edit.
-    func setTaskMarker(_ marker: Character, boxRange: NSRange) {
-        guard let storage = textStorage, let bridge = layoutBridge else { return }
-        let replacement = "[\(marker)]"
-        guard shouldChangeText(in: boxRange, replacementString: replacement) else { return }
-        storage.replaceCharacters(in: boxRange, with: replacement)
-        storage.addAttribute(.taskCheckbox, value: String(marker), range: boxRange)
-        storage.addAttribute(.foregroundColor, value: NSColor.clear, range: boxRange)
-        didChangeText()
-        bridge.invalidateDisplay(forCharacterRange: boxRange)
-        if let coord = delegate as? NativeTextViewCoordinator {
-            let paragraph = (storage.string as NSString).paragraphRange(for: boxRange)
-            coord.restyleParagraphs([paragraph], in: self)
-        }
-    }
 }
 
 private final class TaskMarkerMenuTarget: NSObject {

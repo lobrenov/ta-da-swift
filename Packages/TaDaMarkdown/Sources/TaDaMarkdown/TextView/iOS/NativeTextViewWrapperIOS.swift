@@ -31,6 +31,8 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
     public var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
     /// A press and hold on a callout's title line: the embedder shows the callout menu.
     public var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
+    /// A tap toggled a task box from this marker, for the embedder's haptics.
+    public var onTaskCheckboxToggle: ((Character) -> Void)?
 
     public init(
         text: Binding<String>,
@@ -46,7 +48,8 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         onSlashCommandKey: ((InlinePreviewKey) -> Bool)? = nil,
         slashCommandProxy: SlashCommandProxy? = nil,
         onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil,
-        onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil
+        onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil,
+        onTaskCheckboxToggle: ((Character) -> Void)? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -62,6 +65,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         self.slashCommandProxy = slashCommandProxy
         self.onTaskMarkerMenu = onTaskMarkerMenu
         self.onCalloutMenu = onCalloutMenu
+        self.onTaskCheckboxToggle = onTaskCheckboxToggle
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -121,6 +125,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         slashCommandProxy?.coordinator = coordinator
         textView.onTaskMarkerMenu = onTaskMarkerMenu
         textView.onCalloutMenu = onCalloutMenu
+        textView.onTaskCheckboxToggle = onTaskCheckboxToggle
         textView.setHeader(header)
         return textView
     }
@@ -134,6 +139,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         slashCommandProxy?.coordinator = coordinator
         textView.onTaskMarkerMenu = onTaskMarkerMenu
         textView.onCalloutMenu = onCalloutMenu
+        textView.onTaskCheckboxToggle = onTaskCheckboxToggle
         textView.setHeader(header)
         textView.bodyInsets = insets
 

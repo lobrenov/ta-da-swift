@@ -24,6 +24,8 @@ final class NativeTextView: UITextView {
     var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
     /// See ``NativeTextViewWrapper/onCalloutMenu``.
     var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
+    /// See ``NativeTextViewWrapper/onTaskCheckboxToggle``.
+    var onTaskCheckboxToggle: ((Character) -> Void)?
     /// The title line location of the callout whose menu is open.
     var calloutMenuTarget: Int?
     /// Skips the next scroll-to-caret, after an edit that places the caret itself.
@@ -51,7 +53,14 @@ final class NativeTextView: UITextView {
         contentStorage.addTextLayoutManager(layoutManager)
         super.init(frame: .zero, textContainer: container)
         container.textView = self
+        gestures.textView = self
+        for recognizer in [gestures.tap, gestures.press] {
+            recognizer.delegate = gestures
+            addGestureRecognizer(recognizer)
+        }
     }
+
+    private let gestures = EditorGestures()
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
@@ -86,6 +95,74 @@ final class NativeTextView: UITextView {
         inputKind = .click
         super.touchesEnded(touches, with: event)
         DispatchQueue.main.async { [weak self] in self?.inputKind = .other }
+    }
+
+    // MARK: Hardware keyboard
+
+    override var keyCommands: [UIKeyCommand]? {
+        var commands = [UIKeyCommand(input: "\t", modifierFlags: .shift, action: #selector(outdent))]
+        if coordinator?.slashCommand != nil {
+            for input in [UIKeyCommand.inputUpArrow, UIKeyCommand.inputDownArrow, UIKeyCommand.inputEscape, "\r"] {
+                let command = UIKeyCommand(input: input, modifierFlags: [], action: #selector(slashKey(_:)))
+                command.wantsPriorityOverSystemBehavior = true
+                commands.append(command)
+            }
+        }
+        return commands
+    }
+
+    @objc func outdent() {
+        _ = coordinator?.handleBacktab(self)
+    }
+
+    /// ↑/↓ move through an open slash menu, ↵ inserts, esc closes, as on macOS.
+    @objc private func slashKey(_ command: UIKeyCommand) {
+        guard let coordinator else { return }
+        if command.input == UIKeyCommand.inputEscape {
+            coordinator.dismissSlashCommand()
+            return
+        }
+        let key: InlinePreviewKey = switch command.input {
+        case UIKeyCommand.inputUpArrow: .moveUp
+        case UIKeyCommand.inputDownArrow: .moveDown
+        default: .confirm
+        }
+        if coordinator.onSlashCommandKey?(key) != true, key == .confirm {
+            insertText("\n")
+        }
+    }
+
+    // MARK: Taps and presses
+
+    /// A tap on a task box toggles it; on a foldable callout's title row (outside its text), folds it.
+    func handleTap(at point: CGPoint) {
+        if let hit = taskCheckboxHit(atViewPoint: point) {
+            toggleTaskCheckbox(hit)
+            onTaskCheckboxToggle?(hit.marker)
+        } else if let hit = calloutTitleHit(atViewPoint: point), !toggleCalloutFold(hit) {
+            if !isFirstResponder { becomeFirstResponder() }
+            setSelectedRange(NSRange(location: characterIndex(atViewPoint: point), length: 0))
+        }
+    }
+
+    /// Press and hold on a task box or a callout title line opens its menu.
+    func handlePress(at point: CGPoint) {
+        if let onTaskMarkerMenu, let hit = taskCheckboxHit(atViewPoint: point) {
+            onTaskMarkerMenu(taskMarkerMenuRequest(for: hit))
+        } else if let onCalloutMenu, let hit = calloutTitleHit(atViewPoint: point) {
+            showCalloutMenu(for: hit, onCalloutMenu)
+        }
+    }
+
+    fileprivate func takesTap(at point: CGPoint) -> Bool {
+        if taskCheckboxHit(atViewPoint: point) != nil { return true }
+        guard let hit = calloutTitleHit(atViewPoint: point) else { return false }
+        return hit.header.fold.length == 1
+    }
+
+    fileprivate func takesPress(at point: CGPoint) -> Bool {
+        (onTaskMarkerMenu != nil && taskCheckboxHit(atViewPoint: point) != nil)
+            || (onCalloutMenu != nil && calloutTitleHit(atViewPoint: point) != nil)
     }
 
     // MARK: Layout
@@ -140,6 +217,37 @@ final class NativeTextView: UITextView {
         var insets = bodyInsets
         insets.top += headerHeight
         if textContainerInset != insets { textContainerInset = insets }
+    }
+}
+/// The editor's own tap and press, which the text view's gestures wait for: they begin only over a
+/// task box or a callout title line, so everywhere else the text view behaves as usual.
+private final class EditorGestures: NSObject, UIGestureRecognizerDelegate {
+    weak var textView: NativeTextView?
+    lazy var tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
+    lazy var press: UILongPressGestureRecognizer = {
+        let press = UILongPressGestureRecognizer(target: self, action: #selector(pressed(_:)))
+        press.minimumPressDuration = 0.4
+        return press
+    }()
+
+    @objc private func tapped(_ recognizer: UITapGestureRecognizer) {
+        textView?.handleTap(at: recognizer.location(in: textView))
+    }
+
+    @objc private func pressed(_ recognizer: UILongPressGestureRecognizer) {
+        guard recognizer.state == .began else { return }
+        textView?.handlePress(at: recognizer.location(in: textView))
+    }
+
+    func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+        guard let textView else { return false }
+        let point = recognizer.location(in: textView)
+        return recognizer === tap ? textView.takesTap(at: point) : textView.takesPress(at: point)
+    }
+
+    func gestureRecognizer(_ recognizer: UIGestureRecognizer,
+                           shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+        other.view === textView && other !== tap && other !== press
     }
 }
 #endif
