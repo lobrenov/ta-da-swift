@@ -1,0 +1,85 @@
+# Ta Da — iOS POC plan
+
+## Context
+Ta Da is macOS-only. The POC brings it to iPhone on the same code, working towards one build workflow for new features on both platforms. Design source: the Claude Design canvas's **iOS POC** and **iPad POC** pages (https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V). Once the iOS design settles, the canvas is reorganised so each Mac artboard has its iOS one beside it.
+
+Starting point, as checked on 2026-10-08:
+- `TaDaCore` builds for the iOS Simulator unchanged. `VaultWatcher`'s FSEvents is macOS-only; elsewhere it falls back to rescanning when the app becomes active.
+- `libs/swift-markdown-engine` declares `platforms: [.macOS(.v14)]`; 71 of its 91 source files import AppKit. Its TextKit 2 layout and rendering (`NSTextLayoutManager`, `NSTextLayoutFragment`) exist on iOS too; the `NSTextView` subclass, input handling and menus don't.
+- The `TaDa` target is `SUPPORTED_PLATFORMS = macosx`; 21 of its 49 Swift files use AppKit (`Theme`'s `NSColor`s, `PopupMenu` panels, `FileMenu`, `SourceTextView`, `InlineTitleField`, `ArrowKeySelection`, the pickers).
+- `Vault` bookmarks use `.withSecurityScope`, a macOS bookmark option.
+
+## Decisions
+- **Scope**: iPhone first. iPad is designed and comes largely from the same views; building it is optional for the POC. No notifications, widgets, Shortcuts or share extension.
+- **Minimum iOS 26** (Liquid Glass tab bar, sheets and toolbars). Swift 6, one multiplatform `TaDa` target.
+- **Navigation**: one `TabView` with five tabs: Today, Upcoming, Loose, Projects, Other (Settings and Trash). `.sidebarAdaptable` gives bottom tabs on iPhone, a sidebar on iPad in landscape and tabs on top in portrait. Each tab is a `NavigationStack` on iPhone; iPad columns sit in a `NavigationSplitView`.
+- **Search**: pull down on a list to reveal its search field (`.searchable`); it searches that list first, Everywhere widens it. On iPad the field sits at the top of the sidebar.
+- **New task**: a floating + at each list's bottom right, with haptic feedback.
+- **Rows**: tap pushes the file; swipe from the left edge returns. Swipe right to pick rows (Things style); the tab bar becomes an action bar (Complete, Schedule, Move, More, Delete; More holds Status, Set Deadline… and Share). Press and hold for the row menu.
+- **Files**: no tab bar on task and project files; a bottom glass toolbar holds Complete, Schedule, Set Deadline, Move, Share and Trash. Live/Source sits in the navigation bar.
+- **Menus**: press and hold replaces right-click (row, checkbox and callout menus); pickers are sheets with detents.
+- **Haptics** (`.sensoryFeedback`): task complete `.success`; subtask toggled `.impact(weight: .light)`; + pressed and swipe thresholds `.impact(weight: .medium)`; each row picked, status, date or project picked `.selection`; Move to Trash `.impact(weight: .rigid)`; Empty Trash confirmed `.warning`. A Settings switch turns them off.
+- **Folder**: any iCloud Drive folder, picked with `.fileImporter` for folders. No iCloud entitlement is needed, so the free Personal Team works; device builds expire after 7 days.
+- **Editor**: the POC ships the live editor. The engine becomes our own package, **TaDaMarkdown**, under Apache-2.0. The licence of the rest of Ta Da is decided later.
+- **Testing**: iOS Simulator (iPhone 18 Pro) first, then your iPhone on the Personal Team.
+
+## TaDaMarkdown licensing
+Apache-2.0 allows renaming, modifying and redistributing, provided we:
+- keep `LICENSE` (Apache-2.0) in the package;
+- add a `NOTICE` crediting nodes-app/swift-markdown-engine 0.13.0 (commit `d1421012`) as the origin;
+- keep upstream's copyright and attribution notices in the files that carry them;
+- mark files we changed (a header line, as the fork's `Ta Da fork` markers do now);
+- don't use the upstream project's name to imply endorsement, which the rename covers.
+
+## Milestones
+Tracks A and B run in parallel after M0. Each milestone ends with its check passing.
+
+### M0 — Platforms
+- Branch `ios-poc`. Add iOS (iPhone; iPad later) to the `TaDa` target; set `IPHONEOS_DEPLOYMENT_TARGET` to 26.0.
+- Check: macOS build and all tests unchanged. The iOS build's errors are the AppKit list for A and B.
+
+### A1 — Repackage the engine as TaDaMarkdown
+- Move `libs/swift-markdown-engine` to `Packages/TaDaMarkdown`; rename the package, product and module to `TaDaMarkdown`; update `TaDa/Editor/LiveEditor.swift`'s import and the workspace.
+- Licensing as above. `FORK.md` becomes `ORIGIN.md`: where it came from and what we changed; upstream is no longer tracked.
+- Resolve the known `MarkdownHTMLRendererTests` failure (fix it or drop the HTML renderer the app doesn't use).
+- Check: `swift test --package-path Packages/TaDaMarkdown` passes; the Mac app's editor behaves as before.
+
+### A2 — TaDaMarkdown on iOS
+- Platform layer: typealiases for colour, font, image and bezier path; shared theme types.
+- Keep the TextKit 2 parser, styler and layout fragments shared; add a `UITextView` (TextKit 2) editor beside the `NSTextView` one, with a SwiftUI wrapper of the same shape.
+- Input on iOS: list continuation, Tab/Shift-Tab (hardware keyboard and the formatting bar), auto-pairs, slash commands, checkbox taps.
+- Press and hold on a checkbox or callout title raises the existing `TaskMarkerMenuRequest` and `CalloutMenuRequest`.
+- Check: the tests run on the iOS Simulator and macOS; an iOS test screen edits a sample file with checkboxes, callouts and bubbles.
+
+### B1 — Shared app layer
+- `Theme` built on SwiftUI `Color` (or a platform colour typealias), same tokens and `BundledThemes`.
+- AppKit-only views behind `#if os(macOS)`, with iOS counterparts: popup panels → sheets and context menus; `FileMenu` → the row menu; `CalendarPicker` and the project picker → sheets.
+- `Vault` bookmarks: platform-correct creation and resolution options; check access survives relaunch on iOS.
+- Change detection on iOS: `FilePresenter` on the folder, plus a rescan on `scenePhase` becoming active. Coordinated reads trigger downloads of files not yet on the device.
+- Check: macOS build and tests unchanged (UI tests with your permission).
+
+### B2 — iPhone app
+- Onboarding (choose folder), the five tabs, lists with the floating +, pull-down search, project browser and file, task file with the bottom toolbar, press-and-hold menus, date and project sheets, Settings (Vault, Themes, Editor autocomplete, Haptics), Trash.
+- The task file uses a plain markdown editor until A2 lands, then the live editor with the keyboard formatting bar.
+- Check: run on the simulator against `SampleVault`; compare each screen with its artboard; `git diff SampleVault` shows only intended writes.
+
+### B3 — Swipe to pick
+- A custom horizontal row gesture that picks on right swipe and extends the pick down the list, alongside scrolling and the edge swipe; the action bar replaces the tab bar while picking.
+- Fallback if it conflicts with scrolling: the system's two-finger swipe to select in edit mode, with the same action bar.
+- Check: on the simulator, then on device.
+
+### M1 — On device and docs
+- Install on your iPhone with the Personal Team. Check folder access after relaunch, edits made on the Mac appearing, and files iCloud hasn't downloaded yet.
+- Update `docs/architecture.md` (platform layers), `docs/design/design-framework.md` (iOS in In the app and As built), `CLAUDE.md` (iOS build and test commands, TaDaMarkdown), `docs/backlog.md`.
+- Check: build, tests and docs agree; this plan moves to `docs/archive/`.
+
+### Later (outside the POC)
+- iPad: verify the iPad POC page in the iPad Simulator.
+- Canvas reorganisation: iOS artboards beside their Mac ones on each page.
+- iOS UI tests.
+
+## Risks
+- **Engine port size**: A2 is the long pole. B2 isn't blocked by it.
+- **Swipe to pick**: no system control; gesture conflicts are likely (B3 has a fallback).
+- **iCloud on iOS**: files may be placeholders until read; coordinated reads and download progress need handling.
+- **Free Personal Team**: device builds expire after 7 days and need reinstalling from Xcode.
