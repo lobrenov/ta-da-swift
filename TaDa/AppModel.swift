@@ -137,6 +137,9 @@ import TaDaCore
     var darkScheme: Theme {
         didSet { defaults.set(darkScheme.name, forKey: Keys.darkScheme) }
     }
+    var autocomplete: Autocomplete {
+        didSet { defaults.set(autocomplete.dictionary, forKey: Keys.autocomplete) }
+    }
     /// The task groups folded in each project's browser ("Open", "Completed"), by project path.
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
@@ -195,6 +198,7 @@ import TaDaCore
         static let lightScheme = "lightScheme"
         static let darkScheme = "darkScheme"
         static let foldedGroups = "foldedGroups"
+        static let autocomplete = "autocomplete"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -205,6 +209,7 @@ import TaDaCore
         lightScheme = defaults.string(forKey: Keys.lightScheme).flatMap(Theme.named) ?? ThemeSet.standard.light
         darkScheme = defaults.string(forKey: Keys.darkScheme).flatMap(Theme.named) ?? ThemeSet.standard.dark
         foldedGroups = defaults.dictionary(forKey: Keys.foldedGroups) as? [String: [String]] ?? [:]
+        autocomplete = Autocomplete(defaults.dictionary(forKey: Keys.autocomplete))
     }
 
     // MARK: Folder

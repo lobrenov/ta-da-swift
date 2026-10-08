@@ -832,3 +832,127 @@ struct FragmentGeometryTests {
     }
 }
 
+
+@MainActor
+@Suite("Ta Da fork — auto-closed pairs")
+struct AutoPairTests {
+
+    private func makeEditor(_ text: String = "", configure: (inout MarkdownEngine.ListStyle) -> Void = { _ in }) -> NativeTextView {
+        _ = NSApplication.shared
+        let textView = NativeTextView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        textView.isEditable = true
+        textView.allowsUndo = true
+        var configuration = MarkdownEditorConfiguration.default
+        configuration.lists.autoCloseFormattingEnabled = true
+        configure(&configuration.lists)
+        textView.configuration = configuration
+        let coordinator = NativeTextViewCoordinator(
+            text: .constant(text), fontName: "SF Pro Text", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        coordinator.configuration = configuration
+        coordinator.textView = textView
+        textView.delegate = coordinator
+        textView.string = text
+        coordinator.lastSyncedText = text
+        coordinator.lastComputedStorage = text
+        coordinator.previousDisplayLength = (text as NSString).length
+        textView.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
+        objc_setAssociatedObject(textView, &Self.coordinatorKey, coordinator, .OBJC_ASSOCIATION_RETAIN)
+        return textView
+    }
+    private static var coordinatorKey = 0
+
+    private func type(_ tv: NSTextView, _ text: String) {
+        for character in text { tv.insertText(String(character), replacementRange: tv.selectedRange()) }
+    }
+
+    /// The text with `|` at the caret.
+    private func shown(_ tv: NSTextView) -> String {
+        (tv.string as NSString).replacingCharacters(in: tv.selectedRange(), with: "|")
+    }
+
+    private func typed(_ text: String, configure: (inout MarkdownEngine.ListStyle) -> Void = { _ in }) -> String {
+        let tv = makeEditor(configure: configure)
+        type(tv, text)
+        return shown(tv)
+    }
+
+    @Test func anAddedCloserIsSteppedOver() {
+        let tv = makeEditor()
+        type(tv, "(")
+        #expect(shown(tv) == "(|)")
+        type(tv, "test)")
+        #expect(shown(tv) == "(test)|")
+        #expect(typed("((a))") == "((a))|")
+        #expect(typed("{x} [y]") == "{x} [y]|")
+    }
+
+    @Test func aCloserTheEditorDidNotAddIsTyped() {
+        let tv = makeEditor("(a)")
+        tv.setSelectedRange(NSRange(location: 2, length: 0))
+        type(tv, ")")
+        #expect(shown(tv) == "(a)|)")
+    }
+
+    @Test func leavingThePairForgetsItsCloser() {
+        let tv = makeEditor()
+        type(tv, "(a")
+        tv.setSelectedRange(NSRange(location: 0, length: 0))
+        tv.setSelectedRange(NSRange(location: 2, length: 0))
+        type(tv, ")")
+        #expect(shown(tv) == "(a)|)")
+    }
+
+    @Test func undoForgetsThePairs() {
+        let tv = makeEditor("x")
+        type(tv, "(a")
+        tv.undoManager?.undo()
+        #expect(tv.autoPairs.isEmpty)
+    }
+
+    @Test func formattingMarkersPairAndAreSteppedOver() {
+        #expect(typed("a **b** c") == "a **b** c|")
+        #expect(typed("*i* _u_ __s__") == "*i* _u_ __s__|")
+        #expect(typed("~~gone~~ ==hi==") == "~~gone~~ ==hi==|")
+        #expect(typed("`code` then") == "`code` then|")
+        let tv = makeEditor("a ")
+        type(tv, "**")
+        #expect(shown(tv) == "a **|**")
+    }
+
+    @Test func markersStayPlainWhereTheyCantFormat() {
+        #expect(typed("* item") == "* item|")
+        #expect(typed("snake_case") == "snake_case|")
+        #expect(typed("2*3") == "2*3|")
+        #expect(typed("2 * 3") == "2 * 3|")
+        #expect(typed("a == b") == "a == b|")
+        #expect(typed("~") == "~|")
+    }
+
+    @Test func aRunPastTheLongestMarkerStaysUnpaired() {
+        #expect(typed("***") == "***|")
+        #expect(typed("```") == "```|")
+        #expect(typed("~~~") == "~~~|")
+        #expect(typed("===") == "===|")
+    }
+
+    @Test func markersDontPairInCode() {
+        let tv = makeEditor("```\nx \n```")
+        tv.setSelectedRange(NSRange(location: 6, length: 0))
+        type(tv, "*")
+        #expect(shown(tv) == "```\nx *|\n```")
+    }
+
+    @Test func wikiLinksCompleteAndAreSteppedOver() {
+        #expect(typed("[[Note]] ") == "[[Note]] |")
+        #expect(typed("![[Image]]") == "![[Image]]|")
+        #expect(typed("[[Note]]", configure: { $0.autoClosePairsEnabled = false }) == "[[Note]]|")
+    }
+
+    @Test func eachToggleTurnsItsPairsOff() {
+        #expect(typed("(a", configure: { $0.autoClosePairsEnabled = false }) == "(a|")
+        #expect(typed("**b", configure: { $0.autoCloseFormattingEnabled = false }) == "**b|")
+        #expect(typed("[[a", configure: { $0.autoClosePairsEnabled = false; $0.autoCloseWikiLinksEnabled = false }) == "[[a|")
+    }
+}

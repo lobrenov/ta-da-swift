@@ -48,6 +48,7 @@ struct BodyEditor: View {
             documentID: document.path,
             linkTargets: model.index.titles,
             fitsContent: true,
+            autocomplete: model.autocomplete,
             onLinkClick: openLink
         )
         // The editor insets its text by 16pt; line it up with the title.

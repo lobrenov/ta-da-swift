@@ -319,6 +319,10 @@ public struct ListStyle: Sendable {
     public var helpersEnabled: Bool
     /// Master switch for auto-closing pairs `()`, `{}`, `[]` while typing.
     public var autoClosePairsEnabled: Bool
+    /// Ta Da fork: auto-closing formatting markers `*`, `**`, `_`, `__`, `~~`, `==` and `` ` `` while typing.
+    public var autoCloseFormattingEnabled: Bool
+    /// Ta Da fork: completing `[[` (and `![[`) to `[[]]` while typing.
+    public var autoCloseWikiLinksEnabled: Bool
     /// Indent (in points) that one nesting level adds to the list item.
     public var indentPerLevel: CGFloat
     /// Maximum nesting level reachable by pressing Tab inside a list.
@@ -334,6 +338,8 @@ public struct ListStyle: Sendable {
     public init(
         helpersEnabled: Bool = true,
         autoClosePairsEnabled: Bool = true,
+        autoCloseFormattingEnabled: Bool = false,
+        autoCloseWikiLinksEnabled: Bool = true,
         indentPerLevel: CGFloat = 27.5,
         maximumNestingLevel: Int = 3,
         extraLineHeight: CGFloat = 2,
@@ -342,6 +348,8 @@ public struct ListStyle: Sendable {
     ) {
         self.helpersEnabled = helpersEnabled
         self.autoClosePairsEnabled = autoClosePairsEnabled
+        self.autoCloseFormattingEnabled = autoCloseFormattingEnabled
+        self.autoCloseWikiLinksEnabled = autoCloseWikiLinksEnabled
         self.indentPerLevel = indentPerLevel
         self.maximumNestingLevel = maximumNestingLevel
         self.extraLineHeight = extraLineHeight

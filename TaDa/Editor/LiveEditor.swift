@@ -11,6 +11,7 @@ struct LiveEditor: View {
     /// Titles that links can resolve to, matched case-insensitively.
     var linkTargets: Set<String> = []
     var fitsContent = false
+    var autocomplete = Autocomplete()
     var header: AnyView? = nil
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
@@ -137,6 +138,9 @@ struct LiveEditor: View {
             wikiLinks: TitleResolver(titles: linkTargets),
             syntaxHighlighter: CodeBlockStyle(background: theme.code)
         )
+        config.lists.autoClosePairsEnabled = autocomplete.brackets
+        config.lists.autoCloseFormattingEnabled = autocomplete.formatting
+        config.lists.autoCloseWikiLinksEnabled = autocomplete.wikiLinks
         config.heightBehavior = fitsContent ? .fitsContent : .scrolls
         config.textInsets = TextInsets(horizontal: 16, vertical: 8)
         return config
