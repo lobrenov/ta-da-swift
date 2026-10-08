@@ -41,9 +41,6 @@ struct ProjectBrowserView: View {
             }
             .font(.system(size: 12))
             .foregroundStyle(theme.color(\.muted))
-            if let summary = project.summary {
-                Text(summary).font(.system(size: 13)).foregroundStyle(theme.color(\.fg)).lineLimit(4)
-            }
         }
     }
 

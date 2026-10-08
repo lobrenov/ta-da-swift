@@ -55,7 +55,7 @@ Bring the project instruction files in line with how I actually work now.
 
 ## Body
 
-- **Description**: the whole body. Its first paragraph is the summary shown in lists.
+- **Description**: the whole body. Search also matches its first paragraph (the summary).
 - **Checkboxes**: a list item whose marker is followed by `[c]` and a space or tab (as in GFM, so a bare `- [ ]` is text), where `c` is one character from the [Alternative Checkboxes Reference Set](https://github.com/damiankorcz/Alternative-Checkboxes-Reference-Set). Items inside code blocks don't count, and any other character inside the brackets (e.g. `[y]`) stays plain text.
 - **Subtasks** are the checkboxes in these states, anywhere in the body and at any depth, counted as done/total:
 
