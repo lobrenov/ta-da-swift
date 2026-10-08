@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 import TaDaCore
 
@@ -6,7 +5,7 @@ import TaDaCore
 /// Quote's marks are filled.
 nonisolated enum CalloutIcon {
     /// Draws `type`'s icon into a flipped (y-down) context.
-    static func draw(_ type: CalloutType, in rect: CGRect, tint: NSColor, context: CGContext) {
+    static func draw(_ type: CalloutType, in rect: CGRect, tint: PlatformColor, context: CGContext) {
         guard let paths = paths[type] else { return }
         context.saveGState()
         defer { context.restoreGState() }
@@ -50,7 +49,7 @@ nonisolated enum CalloutIcon {
 
 nonisolated extension Theme {
     /// The colour of a callout type, from the design framework's Callouts table.
-    func calloutTint(_ type: CalloutType) -> NSColor {
+    func calloutTint(_ type: CalloutType) -> PlatformColor {
         switch type {
         case .note, .info, .todo: accent
         case .abstract, .tip: doing
@@ -67,7 +66,7 @@ nonisolated extension Theme {
 /// `CalloutIcon` as a view, filling its frame.
 struct CalloutIconView: View {
     let type: CalloutType
-    let tint: NSColor
+    let tint: PlatformColor
 
     var body: some View {
         Canvas { context, size in

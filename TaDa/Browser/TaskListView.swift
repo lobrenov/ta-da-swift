@@ -1,4 +1,5 @@
 // Today and Loose tasks: a header with context filters, loose tasks first, then one group per project.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -69,3 +70,4 @@ struct TaskListView: View {
         }
     }
 }
+#endif

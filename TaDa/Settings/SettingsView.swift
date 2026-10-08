@@ -1,4 +1,5 @@
 // Settings window: a themed sidebar with the Vault, Themes and Editor pages, and the parts the pages share.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -125,3 +126,4 @@ struct SettingsButton: View {
 #Preview {
     SettingsView(model: AppModel())
 }
+#endif

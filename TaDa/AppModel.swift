@@ -106,7 +106,7 @@ import TaDaCore
             case date(AgendaEntry.Kind)
         }
     }
-    /// Whether FSEvents is watching the folder. Without it, changes are picked up when the app becomes active.
+    /// Whether `VaultWatcher` is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
     /// Whether the folder is in iCloud Drive, or in an app's iCloud folder such as Obsidian's.
     private(set) var isInICloud = false
@@ -144,7 +144,7 @@ import TaDaCore
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
     }
-    /// The Mac's appearance, kept current by ContentView.
+    /// The system appearance, kept current by `themed(by:)`.
     var systemIsDark = Appearance.systemIsDark
 
     var isDark: Bool {
@@ -264,6 +264,9 @@ import TaDaCore
         trash = await Self.run { vault.trashedItems() }
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         state = .ready
+        #if os(iOS)
+        await Self.run { vault.downloadPlaceholders() }
+        #endif
         watcher = VaultWatcher(root: vault.root) { [weak self] in
             Task { await self?.refresh() }
         }
@@ -287,6 +290,9 @@ import TaDaCore
             defer { refreshing = nil }
             repeat {
                 refreshAgain = false
+                #if os(iOS)
+                await Self.run { vault.downloadPlaceholders() }
+                #endif
                 let known = fileDates, presenter = presenter
                 let changes = await Self.run { vault.changes(since: known, presenter: presenter) }
                 guard self.vault?.root == vault.root else { return }

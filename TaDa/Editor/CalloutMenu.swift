@@ -1,5 +1,6 @@
 // The callout menu: callout types and fold signs in a popup menu under a right-clicked callout's icon.
 // The editor engine reports the right-click; LiveEditor bridges the two.
+#if os(macOS)
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -112,3 +113,4 @@ private struct CalloutMenuRow: View {
         }
     }
 }
+#endif

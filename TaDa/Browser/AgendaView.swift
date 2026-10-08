@@ -1,5 +1,6 @@
 // Upcoming: the seven days from tomorrow (empty days included), then later entries by month.
 // An open task gets one entry on its due date and another on its deadline.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -202,3 +203,4 @@ private struct ColumnAgendaRow: View {
         }
     }
 }
+#endif

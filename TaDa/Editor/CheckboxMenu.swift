@@ -1,5 +1,6 @@
 // The checkbox menu: checkbox markers in a popup menu under a right-clicked box.
 // The editor engine reports the right-click; LiveEditor bridges the two.
+#if os(macOS)
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -64,3 +65,4 @@ private struct CheckboxMenuRow: View {
         }
     }
 }
+#endif

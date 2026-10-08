@@ -1,4 +1,5 @@
 // Beside the Source editor: where the file lives, what Ta Da read from it, where it shows up, and any problems.
+#if os(macOS)
 import AppKit
 import SwiftUI
 import TaDaCore
@@ -135,3 +136,4 @@ struct FileInspector: View {
         return places
     }
 }
+#endif

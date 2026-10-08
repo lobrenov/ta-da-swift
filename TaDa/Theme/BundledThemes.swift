@@ -1,5 +1,5 @@
 // The fifteen bundled schemes and the eight theme sets that pair them, from the Theme tokens artboard.
-import AppKit
+import SwiftUI
 
 nonisolated extension Theme {
     static let all: [Theme] = [

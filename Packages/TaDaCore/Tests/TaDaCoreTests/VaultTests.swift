@@ -36,14 +36,28 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
     }
 }
 
+@Test func placeholdersAreListedByThePathTheyWillHave() async throws {
+    try await withTemporaryFolder { folder in
+        for path in ["tasks/.Not here.md.icloud", ".Top.MD.icloud", ".obsidian/.Hidden.md.icloud", "tasks/.Image.png.icloud",
+                     "tasks/Here.md"] {
+            try writeFile("", path, in: folder)
+        }
+        #expect(Vault(root: folder).placeholderPaths() == ["Top.MD", "tasks/Not here.md"])
+    }
+}
+
 @Test func pathsOfURLsAreTheOnesAScanLists() async throws {
     try await withTemporaryFolder { folder in
         try writeFile(task, "Vault/tasks/a.md", in: folder)
         try writeFile(task, "Vault/B.MD", in: folder)
         let vault = Vault(root: folder.appending(path: "Vault"))
         #expect(vault.path(of: folder.appending(path: "Vault/tasks/a.md")) == "tasks/a.md")
+        #if os(macOS)
         // The temporary directory is under /var, a symlink to /private/var.
         #expect(vault.path(of: URL(filePath: "/private" + folder.appending(path: "Vault/B.MD").path)) == "B.MD")
+        #else
+        #expect(vault.path(of: folder.appending(path: "Vault/B.MD")) == "B.MD")
+        #endif
         for outside in ["Vault/.trash/a.md", "Vault/tasks/a.txt", "Vault", "Other/a.md"] {
             #expect(vault.path(of: folder.appending(path: outside)) == nil)
         }
@@ -202,7 +216,12 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
         let fired = Fired()
         let watcher = try #require(VaultWatcher(root: folder, latency: 0.05) { fired.set() })
         try await Task.sleep(for: .milliseconds(200))
+        #if os(macOS)
         try writeFile(task, "tasks/New.md", in: folder)
+        #else
+        // On iOS the watcher hears coordinated writes only.
+        try Vault(root: folder).write(task, to: "New.md")
+        #endif
         for _ in 0..<40 where !fired.value { try await Task.sleep(for: .milliseconds(50)) }
         #expect(fired.value)
         _ = watcher

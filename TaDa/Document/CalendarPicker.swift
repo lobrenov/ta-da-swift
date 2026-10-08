@@ -1,5 +1,6 @@
 // The calendar under a dueDate or deadline chip: its month in a popup panel like Upcoming's calendar, with
 // Today, Tomorrow, Next week and Clear. The arrow keys move a cursor through the days and ↵ sets it.
+#if os(macOS)
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -273,3 +274,4 @@ private struct PickerDayCell: View {
         return parts.joined(separator: ", ")
     }
 }
+#endif

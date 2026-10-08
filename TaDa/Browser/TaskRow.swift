@@ -123,7 +123,7 @@ struct StatusCheckbox: View {
     }
 
     /// The checkbox marker and tint that show a status.
-    static func box(for status: Status, theme: Theme) -> (marker: Character, tint: NSColor) {
+    static func box(for status: Status, theme: Theme) -> (marker: Character, tint: PlatformColor) {
         let marker: Character = switch status {
         case .notStarted: " "
         case .doing: "/"
@@ -151,7 +151,7 @@ struct StatusLabel: View {
 /// An icon and a short text. VoiceOver reads `spoken` (or the text) instead of the icon's name.
 struct Chip: View {
     let systemImage: String
-    var tint: KeyPath<Theme, NSColor>? = nil
+    var tint: KeyPath<Theme, PlatformColor>? = nil
     let text: String
     var spoken: String? = nil
     @Environment(\.theme) private var theme
@@ -200,7 +200,7 @@ struct KindIcon: View {
 
 extension AgendaEntry.Kind {
     var systemImage: String { self == .due ? "calendar" : "flag" }
-    var tint: KeyPath<Theme, NSColor> { self == .due ? \.due : \.deadline }
+    var tint: KeyPath<Theme, PlatformColor> { self == .due ? \.due : \.deadline }
     /// "Due" or "Deadline", before a day.
     var label: String { self == .due ? "Due" : "Deadline" }
     /// "Due date" or "Deadline", on a missing date's chip and atop its calendar.

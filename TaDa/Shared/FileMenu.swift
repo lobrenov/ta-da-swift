@@ -1,6 +1,7 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on a
 // project or task. Rows add it with `.fileMenu(model, path:)`. Move (tasks), Schedule, Set Deadline…, Reveal in
 // Finder and Delete everywhere; Restore, Reveal in Finder and Delete Forever in Trash.
+#if os(macOS)
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -212,3 +213,4 @@ private struct RightClickReader: NSViewRepresentable {
         }
     }
 }
+#endif

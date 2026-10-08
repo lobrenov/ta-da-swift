@@ -32,7 +32,7 @@ Apache-2.0 allows renaming, modifying and redistributing, provided we:
 - don't use the upstream project's name to imply endorsement, which the rename covers.
 
 ## Milestones
-Tracks A and B run in parallel after M0. Each milestone ends with its check passing.
+The milestones run in order in one worktree. Each ends with its check passing.
 
 ### M0 — Platforms
 - Branch `ios-poc`. Add iOS (iPhone; iPad later) to the `TaDa` target; set `IPHONEOS_DEPLOYMENT_TARGET` to 26.0.
@@ -52,13 +52,14 @@ Tracks A and B run in parallel after M0. Each milestone ends with its check pass
 - Check: the tests run on the iOS Simulator and macOS; an iOS test screen edits a sample file with checkboxes, callouts and bubbles.
 
 ### B1 — Shared app layer
-- `Theme` built on SwiftUI `Color` (or a platform colour typealias), same tokens and `BundledThemes`.
-- AppKit-only views behind `#if os(macOS)`, with iOS counterparts: popup panels → sheets and context menus; `FileMenu` → the row menu; `CalendarPicker` and the project picker → sheets.
-- `Vault` bookmarks: platform-correct creation and resolution options; check access survives relaunch on iOS.
-- Change detection on iOS: `FilePresenter` on the folder, plus a rescan on `scenePhase` becoming active. Coordinated reads trigger downloads of files not yet on the device.
-- Check: macOS build and tests unchanged (UI tests with your permission).
+- `Theme` on a `PlatformColor` typealias (`NSColor` or `UIColor`), same tokens and `BundledThemes`; `themed(by:)` follows the system appearance on both.
+- The Mac's views behind `#if os(macOS)`. Shared: `AppModel`, theme, onboarding, the live editor (without its menus on iOS), checkbox and callout drawing, task-row helpers. The iOS root is the folder picker, then a placeholder Today list.
+- `Vault` bookmarks: no security-scope options on iOS. Access survives relaunch (checked in the Simulator with a folder in On My iPhone).
+- Change detection on iOS: `VaultWatcher` presents the folder to file coordination; the scene becoming active rescans and saving happens as it leaves. Files iCloud hasn't downloaded (`.Name.md.icloud`) are asked to download.
+- Check: macOS build and tests unchanged; TaDaCore tests pass on the iOS Simulator; the iOS app opens a picked folder and lists Today.
 
 ### B2 — iPhone app
+- iOS counterparts of the Mac's AppKit pieces, as each screen needs them: popup panels → sheets and context menus; `FileMenu` → the row menu; `CalendarPicker` and the project picker → sheets; the editor's checkbox, callout and slash menus.
 - Onboarding (choose folder), the five tabs, lists with the floating +, pull-down search, project browser and file, task file with the bottom toolbar, press-and-hold menus, date and project sheets, Settings (Vault, Themes, Editor autocomplete, Haptics), Trash.
 - The task file uses a plain markdown editor until A2 lands, then the live editor with the keyboard formatting bar.
 - Check: run on the simulator against `SampleVault`; compare each screen with its artboard; `git diff SampleVault` shows only intended writes.

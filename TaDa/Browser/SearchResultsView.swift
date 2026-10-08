@@ -1,4 +1,5 @@
 // Search matches in the browser column: tasks as rows, projects with their rings. Titles that match come first.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -64,3 +65,4 @@ struct SearchResultsView: View {
         .accessibilityHint("Opens the project")
     }
 }
+#endif

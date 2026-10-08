@@ -1,6 +1,7 @@
 // A file's properties under its title, as the canvas's Properties page draws them: status, project (on a task),
 // due date and deadline as chips that open pickers, with a dashed chip for a missing one; then the type and the
 // days the file was created and completed in a quiet line. Area, contexts and repeat aren't shown.
+#if os(macOS)
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -332,3 +333,4 @@ private struct WrappingHStack: Layout {
         return rows
     }
 }
+#endif

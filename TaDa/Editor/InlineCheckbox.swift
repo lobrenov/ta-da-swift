@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 /// The checkboxes of the editor and task rows, from the Inline markdown checkboxes artboard: a 16pt
@@ -12,7 +11,7 @@ nonisolated enum InlineCheckbox {
     }
 
     /// Draws `marker`'s box into a flipped (y-down) context.
-    static func draw(_ marker: Character, in rect: CGRect, tint: NSColor, background: NSColor, context: CGContext) {
+    static func draw(_ marker: Character, in rect: CGRect, tint: PlatformColor, background: PlatformColor, context: CGContext) {
         let glyph = glyphs[marker] ?? Glyph()
         context.saveGState()
         defer { context.restoreGState() }
@@ -87,7 +86,7 @@ nonisolated enum InlineCheckbox {
 
 nonisolated extension Theme {
     /// The Inline markdown checkboxes artboard's tint for `marker`, Ta Da's `[B]` included.
-    func checkboxTint(_ marker: Character) -> NSColor {
+    func checkboxTint(_ marker: Character) -> PlatformColor {
         switch marker {
         case " ", "-", "\"": muted
         case "x", "X", "S", "p", "u": done
@@ -105,8 +104,8 @@ nonisolated extension Theme {
 /// `InlineCheckbox` as a view, filling its frame.
 struct InlineCheckboxView: View {
     let marker: Character
-    let tint: NSColor
-    let background: NSColor
+    let tint: PlatformColor
+    let background: PlatformColor
 
     var body: some View {
         Canvas { context, size in

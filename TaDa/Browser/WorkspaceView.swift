@@ -1,5 +1,6 @@
 // The area right of the sidebar: a domain's list beside the selected document, Upcoming's month view
 // when nothing is selected, or a project's own page.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -95,3 +96,4 @@ struct WorkspaceView: View {
         }
     }
 }
+#endif

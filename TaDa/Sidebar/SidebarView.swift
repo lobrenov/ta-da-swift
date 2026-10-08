@@ -1,5 +1,6 @@
 // Sidebar: search, the three domains and Trash with counts, active projects with progress rings, the folder line,
 // Settings and the New buttons. Task rows drop onto Today, Loose tasks and the projects.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -233,3 +234,4 @@ struct ProgressRing: View {
         }
     }
 }
+#endif

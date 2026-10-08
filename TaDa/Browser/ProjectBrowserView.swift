@@ -1,4 +1,5 @@
 // A project's tasks beside the document pane: the project's header, then Open and Completed groups, each foldable.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -81,3 +82,4 @@ struct ProjectBrowserView: View {
         }
     }
 }
+#endif

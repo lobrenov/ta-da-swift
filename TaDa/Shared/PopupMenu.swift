@@ -2,6 +2,7 @@
 // `PopupPanel` places the panel, closes it on a click elsewhere, a scroll or esc and passes it keys; the date
 // picker's calendar uses it too. `PopupMenu` moves the highlight and picks, and its view draws the list around
 // each menu's own rows, in the full or compact style of the design system's Menu component.
+#if os(macOS)
 import SwiftUI
 import AppKit
 
@@ -523,3 +524,4 @@ private final class KeyablePanel: NSPanel {
 private final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
+#endif

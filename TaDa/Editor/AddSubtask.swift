@@ -1,5 +1,6 @@
 // Add Subtask (⌘L): makes the caret's line in the focused editor a subtask, or completes (or reopens) it.
 // Works through NSTextView, so the live editor and Source mode both get it with their own undo.
+#if os(macOS)
 import AppKit
 import SwiftUI
 import TaDaCore
@@ -46,3 +47,4 @@ enum AddSubtask {
         textView.breakUndoCoalescing()
     }
 }
+#endif

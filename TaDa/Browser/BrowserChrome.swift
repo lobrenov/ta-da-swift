@@ -1,4 +1,5 @@
 // Pieces shared by the browser lists: the column layout, domain header, group headers, context filter and empty states.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -248,3 +249,4 @@ struct Hairline: View {
             .frame(width: axis == .vertical ? 1 : nil, height: axis == .horizontal ? 1 : nil)
     }
 }
+#endif

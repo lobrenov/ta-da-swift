@@ -3,6 +3,7 @@
 // the trash (in Trash, ⌘⌫ restores and ⌥⌘⌫ deletes forever). A key view behind each list takes the keyboard when the
 // list appears, when nothing has it and when a row is picked. Keys reach it through the responder chain, so a text
 // view (an editor, the title or the search field) with the keyboard keeps its own keys.
+#if os(macOS)
 import AppKit
 import SwiftUI
 
@@ -135,3 +136,4 @@ final class ListKeyView: NSView {
         }
     }
 }
+#endif

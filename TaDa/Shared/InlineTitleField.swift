@@ -1,5 +1,6 @@
 // A file's title in a list or header that turns into a text field when clicked: the project browser's title and the
 // titles in a project's linked-tasks table.
+#if os(macOS)
 import AppKit
 import SwiftUI
 import TaDaCore
@@ -104,3 +105,4 @@ struct InlineTitleField<Label: View>: View {
         Task { await model.rename(path, to: new) }
     }
 }
+#endif

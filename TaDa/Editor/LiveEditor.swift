@@ -1,6 +1,10 @@
 // The only file that imports TaDaMarkdown.
 import SwiftUI
+#if os(macOS)
 import AppKit
+#else
+import UIKit
+#endif
 import TaDaMarkdown
 import TaDaCore
 
@@ -16,12 +20,15 @@ struct LiveEditor: View {
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
 
-    @State private var slashMenu = SlashMenuController()
     @State private var slashCommand = SlashCommandProxy()
+    #if os(macOS)
+    @State private var slashMenu = SlashMenuController()
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
+    #endif
 
     var body: some View {
+        #if os(macOS)
         NativeTextViewWrapper(
             text: $text,
             configuration: configuration,
@@ -49,7 +56,21 @@ struct LiveEditor: View {
             checkboxMenu.hide()
             calloutMenu.hide()
         }
+        #else
+        NativeTextViewWrapper(
+            text: $text,
+            configuration: configuration,
+            fontName: UIFont.systemFont(ofSize: 14).fontName,
+            fontSize: 14,
+            documentId: documentID,
+            onLinkClick: onLinkClick,
+            header: header,
+            slashCommandProxy: slashCommand
+        )
+        #endif
     }
+
+    #if os(macOS)
 
     private func showCheckboxMenu(_ request: TaskMarkerMenuRequest) {
         checkboxMenu.show(
@@ -76,9 +97,10 @@ struct LiveEditor: View {
             dismiss: { [slashCommand] in slashCommand.dismiss() }
         )
     }
+    #endif
 
     /// `due` behind a highlight.
-    private var highlightFill: NSColor {
+    private var highlightFill: PlatformColor {
         theme.due.withAlphaComponent(theme.isDark ? 0.26 : 0.3)
     }
 
@@ -115,7 +137,7 @@ struct LiveEditor: View {
             sizeScale: 0.96,
             contentGap: 10,
             draw: { marker, rect, tint in
-                guard let context = NSGraphicsContext.current?.cgContext else { return }
+                guard let context = Self.currentContext else { return }
                 InlineCheckbox.draw(marker, in: rect, tint: tint, background: background, context: context)
             }
         )
@@ -128,7 +150,7 @@ struct LiveEditor: View {
         config.callouts = CalloutStyle(
             tint: { theme.calloutTint(CalloutType(named: $0) ?? .note) },
             drawIcon: { type, rect, tint in
-                guard let context = NSGraphicsContext.current?.cgContext else { return }
+                guard let context = Self.currentContext else { return }
                 CalloutIcon.draw(CalloutType(named: type) ?? .note, in: rect, tint: tint, context: context)
             },
             titleColor: theme.strong, bodyColor: theme.fg, foldColor: theme.muted, targetColor: theme.accent,
@@ -145,9 +167,20 @@ struct LiveEditor: View {
         config.textInsets = TextInsets(horizontal: 16, vertical: 8)
         return config
     }
+
+    /// The context the editor draws checkboxes and callout icons into.
+    nonisolated private static var currentContext: CGContext? {
+        #if os(macOS)
+        NSGraphicsContext.current?.cgContext
+        #else
+        UIGraphicsGetCurrentContext()
+        #endif
+    }
 }
 
+#if os(macOS)
 extension SlashCommandProxy: TextViewHolder {}
+#endif
 
 /// `==highlight==` as a bubble. It keeps the engine's highlight id, so the editor's Highlight command toggles it.
 nonisolated private struct HighlightBubble: MarkdownExtension {
@@ -173,13 +206,13 @@ nonisolated struct TitleResolver: WikiLinkResolver {
 }
 
 nonisolated private struct CodeBlockStyle: SyntaxHighlighter {
-    let background: NSColor
+    let background: PlatformColor
 
-    func codeFont(size: CGFloat) -> NSFont {
-        NSFont.monospacedSystemFont(ofSize: size, weight: .regular)
+    func codeFont(size: CGFloat) -> PlatformFont {
+        PlatformFont.monospacedSystemFont(ofSize: size, weight: .regular)
     }
 
-    func backgroundColor() -> NSColor { background }
+    func backgroundColor() -> PlatformColor { background }
 
     func highlight(code: String, language: String?) -> NSAttributedString? { nil }
 

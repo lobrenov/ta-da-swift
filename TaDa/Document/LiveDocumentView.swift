@@ -1,4 +1,5 @@
 // A task in Live mode: title (rename by editing), properties, the body in the live editor, and a footer.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -209,3 +210,4 @@ extension Warning {
         }
     }
 }
+#endif

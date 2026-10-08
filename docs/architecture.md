@@ -5,7 +5,7 @@ How the app is built. The file format and writing rules are in `docs/file-format
 ## Layers
 
 - **TaDaCore** (`Packages/TaDaCore`, local package): the model, parsing, surgical writes, the index, queries and storage. Foundation, swift-markdown 0.9.0 and Yams 6.2.2 only; no UI.
-- **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 minimum, App Sandbox with user-selected read/write.
+- **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 and iOS 26 minimum; on the Mac, App Sandbox with user-selected read/write. The model, theme, live editor and folder handling build for both; the Mac's views are behind `#if os(macOS)`, and iOS shows a placeholder Today list until its screens are built.
 - **TaDaMarkdown** (`Packages/TaDaMarkdown`, local package): the Live editor, from swift-markdown-engine 0.13.0 under Apache-2.0, for macOS and iOS. Parsing, styling, layout, input and the text-delegate path are shared; `Platform/Platform.swift` names the AppKit and UIKit types, and `TextView/iOS/` holds the iOS editor. Its `ORIGIN.md` lists the changes.
 
 The workspace `TaDa.xcworkspace` holds the project, TaDaCore and TaDaMarkdown; the test plan `TaDa.xctestplan` runs TaDaTests, TaDaCoreTests and TaDaUITests.
@@ -14,15 +14,16 @@ The workspace `TaDa.xcworkspace` holds the project, TaDaCore and TaDaMarkdown; t
 
 ```
 TaDa/
-├── TaDaApp.swift              one main window plus Settings, sharing one AppModel; AppDelegate owns it and handles activation, quitting and day changes
-├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace; applies the theme
+├── TaDaApp.swift              one main window plus Settings, sharing one AppModel; AppDelegate owns it and handles activation, quitting and day changes.
+│                              On iOS, one window group that refreshes when the scene becomes active and saves when it leaves
+├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace (on iOS, the Today list); applies the theme
 ├── AppModel.swift             root state: folder, index, domain, selection, open document, theme set and appearance; refresh, save, outside-change handling
 ├── OpenDocument.swift         the selected file's whole text; edits reparse it
 ├── SettingsStore.swift        where AppModel keeps its settings: UserDefaults, or a test's in-memory store
 ├── Commands.swift             menu commands and shortcuts
 ├── UITestingLaunch.swift      the `-uiTesting` launch: throwaway settings and folder
-├── Theme/                     Theme (15 colour tokens + isDark), ThemeSet, Appearance, the 15 bundled schemes and 8 sets;
-│                              themed(by:) sets \.theme and NSApp.appearance and follows the Mac's appearance
+├── Theme/                     Theme (15 colour tokens + isDark, as `PlatformColor`: NSColor or UIColor), ThemeSet, Appearance, the 15 bundled
+│                              schemes and 8 sets; themed(by:) sets \.theme and the colour scheme and follows the system appearance
 ├── Onboarding/                FolderPickerView
 ├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView, EditorSettingsView
 ├── Sidebar/                   SidebarView: search, domains, projects, folder line, Settings, New buttons
@@ -76,7 +77,7 @@ TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtur
 - **Editing**: `OpenDocument` holds the selected file's whole text. Typing, property edits and checkbox clicks change that text, which is reparsed into the index. It saves 600 ms after the last change, and also before switching files, when the app deactivates and on quit. Files load one at a time: each selection waits for the previous load, which is skipped if it hasn't started. `AppModel` does its file work off the main actor through `run`. Quitting, including by closing the window, waits for the save: `AppDelegate.applicationShouldTerminate` returns `.terminateLater`. A checkbox click in a row whose file isn't open does a coordinated read, a surgical edit and an atomic write.
 - **Saving** is guarded: Ta Da writes only if the file still holds the text it last read or wrote.
 - **Trash**: deleting moves a file into `.trash/` in the folder (created when needed); a project takes its linked tasks. `AppModel.trash` lists the Ta Da files there, reloaded on each refresh. Restoring moves files to `tasks/` or `projects/` (a project brings its trashed tasks, relinked if its name changed); Delete Forever and Empty Trash move them to the Mac's Trash. The rules are in `docs/file-format.md`.
-- **Outside changes**: `VaultWatcher` (FSEvents) and app activation both trigger `refresh()`, which compares modification dates with the last scan and reparses only changed files. The open document reloads if it has no unsaved edits. With unsaved edits, `DocumentBanner` offers keep mine / use the file on disk, save again / discard after a deletion, or keep this / use the other iCloud version (`Conflicts` writes the file, marks the conflict resolved and removes the other versions in one coordinated write). Leaving the file or quitting with a choice still open writes the edits to `<title> (unsaved edits).md` beside it. The open file is presented to file coordination (`FilePresenter`): another app's coordinated read or merge, iCloud Drive's uploads among them, first saves the edits, and a coordinated move or rename (Finder, iCloud) is followed. A rename without coordination (Obsidian, Terminal, git) shows as a deletion.
+- **Outside changes**: `VaultWatcher` (FSEvents on the Mac; on iOS, file coordination on the folder) and app activation both trigger `refresh()`, which compares modification dates with the last scan and reparses only changed files. The open document reloads if it has no unsaved edits. With unsaved edits, `DocumentBanner` offers keep mine / use the file on disk, save again / discard after a deletion, or keep this / use the other iCloud version (`Conflicts` writes the file, marks the conflict resolved and removes the other versions in one coordinated write). Leaving the file or quitting with a choice still open writes the edits to `<title> (unsaved edits).md` beside it. The open file is presented to file coordination (`FilePresenter`): another app's coordinated read or merge, iCloud Drive's uploads among them, first saves the edits, and a coordinated move or rename (Finder, iCloud) is followed. A rename without coordination (Obsidian, Terminal, git) shows as a deletion. On iOS, files iCloud Drive hasn't downloaded are hidden `.Name.md.icloud` placeholders; opening the folder and each refresh ask for them (`Vault.downloadPlaceholders()`), and each joins the index once it arrives.
 
 ## Themes
 

@@ -1,6 +1,7 @@
 // Menu commands: ⌘N/⇧⌘N new task/project; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on, ⇧⌘M move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -73,3 +74,4 @@ struct AppCommands: Commands {
             .keyboardShortcut(key)
     }
 }
+#endif
