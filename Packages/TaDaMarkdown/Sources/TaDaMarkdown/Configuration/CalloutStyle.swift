@@ -8,19 +8,23 @@
 //  maps each type, as written, to a tint and an icon.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 public struct CalloutStyle: Sendable {
     /// The type's colour, given the type as written (`faq`, `Warning`, `recipe`).
-    public var tint: @Sendable (_ type: String) -> NSColor
+    public var tint: @Sendable (_ type: String) -> PlatformColor
     /// Draws the type's icon into the current (flipped) graphics context.
-    public var drawIcon: @Sendable (_ type: String, _ rect: CGRect, _ tint: NSColor) -> Void
-    public var titleColor: NSColor
-    public var bodyColor: NSColor
+    public var drawIcon: @Sendable (_ type: String, _ rect: CGRect, _ tint: PlatformColor) -> Void
+    public var titleColor: PlatformColor
+    public var bodyColor: PlatformColor
     /// The fold chevron.
-    public var foldColor: NSColor
+    public var foldColor: PlatformColor
     /// The ring of a callout whose menu is open.
-    public var targetColor: NSColor
+    public var targetColor: PlatformColor
     /// The panel's fill and ring, as fractions of the tint's opacity.
     public var fillOpacity: CGFloat
     public var ringOpacity: CGFloat
@@ -40,9 +44,9 @@ public struct CalloutStyle: Sendable {
     public var chevronSize: CGFloat = 14
     public var chevronGap: CGFloat = 8
 
-    public init(tint: @escaping @Sendable (String) -> NSColor,
-                drawIcon: @escaping @Sendable (String, CGRect, NSColor) -> Void,
-                titleColor: NSColor, bodyColor: NSColor, foldColor: NSColor, targetColor: NSColor,
+    public init(tint: @escaping @Sendable (String) -> PlatformColor,
+                drawIcon: @escaping @Sendable (String, CGRect, PlatformColor) -> Void,
+                titleColor: PlatformColor, bodyColor: PlatformColor, foldColor: PlatformColor, targetColor: PlatformColor,
                 fillOpacity: CGFloat, ringOpacity: CGFloat) {
         self.tint = tint
         self.drawIcon = drawIcon

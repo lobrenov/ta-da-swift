@@ -14,12 +14,16 @@
 //    siblings and children are lines at the same quote level.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 extension MarkdownLists {
 
     /// Tab over list lines. Nil when the selection touches no list line (Tab behaves normally).
-    static func indentListLines(_ textView: NSTextView, selection: NSRange, maximumLevel: Int) -> Bool? {
+    static func indentListLines(_ textView: PlatformTextView, selection: NSRange, maximumLevel: Int) -> Bool? {
         let ns = textView.string as NSString
         let lines = targetLines(in: ns, selection: selection)
         guard let first = lines.first else { return nil }
@@ -31,7 +35,7 @@ extension MarkdownLists {
     }
 
     /// Shift-Tab over list lines. Nil when the selection touches no list line.
-    static func outdentListLines(_ textView: NSTextView, selection: NSRange) -> Bool? {
+    static func outdentListLines(_ textView: PlatformTextView, selection: NSRange) -> Bool? {
         let ns = textView.string as NSString
         let lines = targetLines(in: ns, selection: selection)
         guard !lines.isEmpty else { return nil }
@@ -131,7 +135,7 @@ extension MarkdownLists {
 
     /// Applies whitespace edits bottom-up (so earlier offsets stay valid) in one undo group,
     /// then shifts the selection to follow the text.
-    private static func applyLineEdits(_ textView: NSTextView, selection: NSRange,
+    private static func applyLineEdits(_ textView: PlatformTextView, selection: NSRange,
                                        edits: [(location: Int, delete: Int, insert: String)]) {
         guard !edits.isEmpty else { return }
         textView.undoManager?.beginUndoGrouping()

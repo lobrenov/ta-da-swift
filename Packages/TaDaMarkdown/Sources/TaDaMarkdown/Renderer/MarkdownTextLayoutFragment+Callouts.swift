@@ -8,7 +8,11 @@
 //  fold chevron. Everything comes from the line's `.calloutLine`.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 extension NSAttributedString.Key {
     /// Ta Da fork: a `CalloutLine` over a line of a blockquote that holds callouts.
@@ -25,9 +29,9 @@ final class CalloutLine: NSObject {
         let topPadding: CGFloat
         /// Below this line's text, when the panel ends here.
         let bottomPadding: CGFloat?
-        let fill: NSColor
-        let ring: NSColor
-        let targetRing: NSColor
+        let fill: PlatformColor
+        let ring: PlatformColor
+        let targetRing: PlatformColor
         let cornerRadius: CGFloat
         /// Where the title line starts, to find the callout whose menu is open.
         let titleLocation: Int
@@ -35,20 +39,20 @@ final class CalloutLine: NSObject {
 
     struct Title {
         let type: String
-        let tint: NSColor
-        let drawIcon: @Sendable (String, CGRect, NSColor) -> Void
+        let tint: PlatformColor
+        let drawIcon: @Sendable (String, CGRect, PlatformColor) -> Void
         let iconX: CGFloat
         let iconSize: CGFloat
         /// Drawn after the icon when the callout has no title.
         let name: String?
         let nameX: CGFloat
-        let font: NSFont
-        let color: NSColor
+        let font: PlatformFont
+        let color: PlatformColor
         /// nil when the callout doesn't fold.
         let folded: Bool?
         let chevronRightInset: CGFloat
         let chevronSize: CGFloat
-        let chevronColor: NSColor
+        let chevronColor: PlatformColor
     }
 
     let panels: [Panel]
@@ -142,8 +146,7 @@ extension MarkdownTextLayoutFragment {
 
     /// `y` on the device pixel grid of the whole document, so the slices of consecutive lines meet without a seam.
     private func snapped(_ y: CGFloat, point: CGPoint) -> CGFloat {
-        let scale = textLayoutManager?.textContainer?.textView?.window?.backingScaleFactor
-            ?? NSScreen.main?.backingScaleFactor ?? 2
+        let scale = displayScale(of: textLayoutManager?.textContainer?.textView)
         let documentY = layoutFragmentFrame.minY + y - point.y
         return point.y + (documentY * scale).rounded() / scale - layoutFragmentFrame.minY
     }
@@ -158,9 +161,8 @@ extension MarkdownTextLayoutFragment {
             : point.y + bounds.midY + (title.font.ascender + title.font.descender) / 2
         let centerY = baseline - title.font.capHeight / 2
 
-        NSGraphicsContext.saveGraphicsState()
-        defer { NSGraphicsContext.restoreGraphicsState() }
-        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: true)
+        pushGraphicsContext(context)
+        defer { popGraphicsContext() }
 
         title.drawIcon(title.type, CGRect(x: leftEdge + title.iconX, y: centerY - title.iconSize / 2,
                                           width: title.iconSize, height: title.iconSize), title.tint)

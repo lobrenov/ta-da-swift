@@ -8,7 +8,11 @@
 //  wraps, the end reaches past the text by the padding instead.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 extension MarkdownTextLayoutFragment {
 
@@ -36,10 +40,10 @@ extension MarkdownTextLayoutFragment {
                 guard right > left else { continue }
 
                 // The tallest font in the segment: the content's, not a hidden marker's.
-                var font: NSFont?
+                var font: PlatformFont?
                 storage.enumerateAttribute(.font, in: NSRange(location: range.location + hit.location, length: hit.length),
                                            options: []) { value, _, _ in
-                    if let candidate = value as? NSFont, candidate.pointSize > (font?.pointSize ?? 0) { font = candidate }
+                    if let candidate = value as? PlatformFont, candidate.pointSize > (font?.pointSize ?? 0) { font = candidate }
                 }
                 guard let font else { continue }
                 let baseline = point.y + bounds.origin.y + lineFragment.locationForCharacter(at: hit.location).y

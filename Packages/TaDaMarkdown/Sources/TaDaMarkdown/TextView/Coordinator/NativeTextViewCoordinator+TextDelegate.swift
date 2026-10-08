@@ -12,9 +12,10 @@
 //  `+Restyling.swift` then consumes.
 //
 
+#if os(macOS)
 import AppKit
 
-extension NativeTextViewCoordinator {
+extension NativeTextViewCoordinator: NSTextViewDelegate {
 
     /// The complete leading syntax whose mutation can change list membership,
     /// indentation, or the positional numbering of following ordered items.
@@ -1133,3 +1134,4 @@ extension NativeTextViewCoordinator {
     }
 
 }
+#endif

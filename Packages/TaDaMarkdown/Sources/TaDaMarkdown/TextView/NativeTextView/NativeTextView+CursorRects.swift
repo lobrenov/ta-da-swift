@@ -7,6 +7,7 @@
 //  Read-only cursor handling: arrow over text, pointing hand over links.
 //
 
+#if os(macOS)
 import AppKit
 
 extension NativeTextView {
@@ -177,3 +178,4 @@ extension NativeTextView {
         cursor.set()
     }
 }
+#endif

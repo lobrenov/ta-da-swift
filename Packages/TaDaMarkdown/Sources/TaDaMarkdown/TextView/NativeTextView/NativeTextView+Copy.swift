@@ -11,6 +11,7 @@
 //  and keeps the raw markdown as the plain-text flavor.
 //
 
+#if os(macOS)
 import AppKit
 
 extension NativeTextView {
@@ -26,3 +27,4 @@ extension NativeTextView {
                                        directiveSettings: configuration.directiveSettings)
     }
 }
+#endif

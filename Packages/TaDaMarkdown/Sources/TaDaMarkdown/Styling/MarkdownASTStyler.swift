@@ -17,7 +17,11 @@
 //  bullets, task checkboxes, horizontal rules.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 
 enum MarkdownASTStyler {
@@ -33,7 +37,7 @@ enum MarkdownASTStyler {
         precomputedBlocks: [Block]? = nil,
         configuration: MarkdownEditorConfiguration = .default
     ) -> [StyledRange] {
-        let baseFont = NSFont(name: fontName, size: fontSize) ?? .systemFont(ofSize: fontSize)
+        let baseFont = PlatformFont(name: fontName, size: fontSize) ?? .systemFont(ofSize: fontSize)
         let baseLineHeight = ceil(baseFont.ascender - baseFont.descender + baseFont.leading)
         let baseParagraphSpacing = ceil(baseLineHeight * configuration.paragraph.spacingFactor)
         let codeFontSize = round(fontSize * configuration.codeBlock.fontSizeScale)
@@ -64,7 +68,7 @@ enum MarkdownASTStyler {
             codeFont: codeFont,
             codeBackground: configuration.services.syntaxHighlighter.backgroundColor(),
             codeParagraphStyle: codePara,
-            inlineMarkerFont: NSFont(name: fontName, size: hiddenSize) ?? .systemFont(ofSize: hiddenSize),
+            inlineMarkerFont: PlatformFont(name: fontName, size: hiddenSize) ?? .systemFont(ofSize: hiddenSize),
             caret: caretLocation,
             selection: selection,
             config: configuration,
@@ -198,7 +202,7 @@ enum MarkdownASTStyler {
         guard hr.length > 0,
               !(NSLocationInRange(ctx.caret, hr) || ctx.caret == NSMaxRange(hr)) else { return }
         var tags: [NSAttributedString.Key: Any] = [
-            .foregroundColor: NSColor.clear,
+            .foregroundColor: PlatformColor.clear,
             .thematicBreak: true,
         ]
         let mark = ctx.config.thematicBreak.mark(forMarker: thematicBreakMarker(in: hr, ctx: ctx))
@@ -475,21 +479,21 @@ enum MarkdownASTStyler {
             // `- ` keeps full advance (the box's slot, like the bullet `•`);
             // `[ ]` + trailing space collapse to the hidden-marker font so the
             // content starts at the bullet-content x.
-            attrs.append((item.marker, [.foregroundColor: NSColor.clear]))
+            attrs.append((item.marker, [.foregroundColor: PlatformColor.clear]))
             // Ta Da fork: widen the hidden spacer so the box (drawn right-aligned to the
             // content edge) covers the `- ` slot and keeps `contentGap` from the text.
             let slotExtra = taskSlotExtra(markerWidth: markerWidth, ctx: ctx)
             if spacer.length > 0 {
-                var spacerAttrs: [NSAttributedString.Key: Any] = [.foregroundColor: NSColor.clear]
+                var spacerAttrs: [NSAttributedString.Key: Any] = [.foregroundColor: PlatformColor.clear]
                 if slotExtra > 0 { spacerAttrs[.kern] = slotExtra / CGFloat(spacer.length) }
                 attrs.append((spacer, spacerAttrs))
             }
-            attrs.append((box, [.taskCheckbox: String(item.taskMarker ?? " "), .foregroundColor: NSColor.clear,
+            attrs.append((box, [.taskCheckbox: String(item.taskMarker ?? " "), .foregroundColor: PlatformColor.clear,
                                 .font: ctx.inlineMarkerFont]))
             let postGap = NSRange(location: NSMaxRange(box),
                                   length: item.contentRange.location - NSMaxRange(box))
             if postGap.length > 0 {
-                attrs.append((postGap, [.foregroundColor: NSColor.clear, .font: ctx.inlineMarkerFont]))
+                attrs.append((postGap, [.foregroundColor: PlatformColor.clear, .font: ctx.inlineMarkerFont]))
             }
             if let marker = item.taskMarker, ctx.config.taskCheckbox.struckMarkers.contains(marker),
                NSMaxRange(item.range) > NSMaxRange(box) {
@@ -503,14 +507,14 @@ enum MarkdownASTStyler {
             let syntax = NSRange(location: item.marker.location,
                                  length: item.contentRange.location - item.marker.location)
             if NSLocationInRange(ctx.caret, syntax) { return }
-            attrs.append((item.marker, [.bulletMarker: true, .foregroundColor: NSColor.clear]))
+            attrs.append((item.marker, [.bulletMarker: true, .foregroundColor: PlatformColor.clear]))
         } else if orderedOverlayActive, let displayNumber {
             // Hide the ENTIRE source marker (digits + dot) as one unit and paint
             // the whole display marker "N." over it, so the dot travels with the
             // digits.
             //
             // Hidden by SIZE, like every other marker this engine hides, not by a
-            // clear colour: NSTextView.selectedTextAttributes carries a
+            // clear colour: PlatformTextView.selectedTextAttributes carries a
             // `selectedTextColor`, so it repaints every selected glyph opaque —
             // a colour-hidden marker comes back under the highlight and collides
             // with the number painted over it. A shrunken run cannot be
@@ -528,7 +532,7 @@ enum MarkdownASTStyler {
                 .size(withAttributes: [.font: ctx.baseFont]).width
             var markerAttrs: [NSAttributedString.Key: Any] = [
                 .orderedMarker: "\(displayNumber)\(orderedPunct)",
-                .foregroundColor: NSColor.clear,
+                .foregroundColor: PlatformColor.clear,
                 .font: ctx.inlineMarkerFont,
             ]
             if abs(displayW - hiddenW) > 0.01 {
@@ -603,13 +607,13 @@ enum MarkdownASTStyler {
     struct Ctx {
         let ns: NSString
         let fontName: String
-        let baseFont: NSFont
+        let baseFont: PlatformFont
         let baseLineHeight: CGFloat
         let baseParagraphSpacing: CGFloat
-        let codeFont: NSFont
-        let codeBackground: NSColor
+        let codeFont: PlatformFont
+        let codeBackground: PlatformColor
         let codeParagraphStyle: NSParagraphStyle
-        let inlineMarkerFont: NSFont
+        let inlineMarkerFont: PlatformFont
         let caret: Int
         /// The full selected range (nil/empty when the selection is a bare
         /// caret). Token-based elements already reveal on selection via
@@ -652,14 +656,14 @@ enum MarkdownASTStyler {
 
     // MARK: - Blocks
 
-    private static func styleBlock(_ block: BlockNode, font: NSFont, ctx: Ctx, into attrs: inout [StyledRange]) {
+    private static func styleBlock(_ block: BlockNode, font: PlatformFont, ctx: Ctx, into attrs: inout [StyledRange]) {
         switch block {
         case .paragraph(_, let inlines):
             styleInlines(inlines, font: font, ctx: ctx, into: &attrs)
 
         case .heading(let level, let range, let markers, let inlines):
             let multiplier = ctx.config.headings.fontMultiplier(for: level)
-            let headingBase = NSFont(name: ctx.fontName, size: ctx.baseFont.pointSize * multiplier)
+            let headingBase = PlatformFont(name: ctx.fontName, size: ctx.baseFont.pointSize * multiplier)
                 ?? .systemFont(ofSize: ctx.baseFont.pointSize * multiplier)
             let headingFont = adding(.bold, to: headingBase)
             let lineHeight = ceil(headingFont.ascender - headingFont.descender + headingFont.leading) + 1
@@ -693,7 +697,7 @@ enum MarkdownASTStyler {
         case .ext(let node):
             styleExtensionBlock(node, font: font, ctx: ctx, into: &attrs)
         case .blockLatex, .table, .blank:
-            break   // NSImage rendering ported next
+            break   // PlatformImage rendering ported next
         }
     }
 
@@ -704,7 +708,7 @@ enum MarkdownASTStyler {
     /// caret is inside the block and hide otherwise (mirroring code fences —
     /// clear color, unchanged font, so the line keeps its height and layout
     /// stays stable across the active flip).
-    private static func styleExtensionBlock(_ node: ExtensionBlockNode, font: NSFont, ctx: Ctx, into attrs: inout [StyledRange]) {
+    private static func styleExtensionBlock(_ node: ExtensionBlockNode, font: PlatformFont, ctx: Ctx, into attrs: inout [StyledRange]) {
         if let ext = ctx.extensionsByID[node.extensionID] {
             var block = node.range
             // Keep the block's trailing newline out, so the band doesn't
@@ -720,7 +724,7 @@ enum MarkdownASTStyler {
         }
         let markerAttrs: [NSAttributedString.Key: Any] = ctx.isActive(node.range)
             ? [.foregroundColor: ctx.theme.mutedText]
-            : [.foregroundColor: NSColor.clear]
+            : [.foregroundColor: PlatformColor.clear]
         attrs.append((node.openFence, markerAttrs))
         if let close = node.closeFence { attrs.append((close, markerAttrs)) }
         styleInlines(node.inlines, font: font, ctx: ctx, into: &attrs)
@@ -779,7 +783,7 @@ enum MarkdownASTStyler {
             if ctx.isActive(tokenRange) {
                 attrs.append((markerRange, [.foregroundColor: ctx.theme.mutedText]))
             } else {
-                attrs.append((markerRange, [.foregroundColor: NSColor.clear, .font: ctx.inlineMarkerFont]))
+                attrs.append((markerRange, [.foregroundColor: PlatformColor.clear, .font: ctx.inlineMarkerFont]))
             }
             // Whole line, not just the first char, so each soft-wrapped visual line
             attrs.append((tokenRange, [.blockquoteLevel: level]))
@@ -809,7 +813,7 @@ enum MarkdownASTStyler {
         // Use the whole block range (not codeRange): an incomplete fence collapses codeRange to the ```.
         let markerAttrs: [NSAttributedString.Key: Any] = ctx.isActive(range)
             ? [.foregroundColor: ctx.theme.mutedText, .font: ctx.codeFont]
-            : [.foregroundColor: NSColor.clear, .font: ctx.codeFont]   // hiddenMarkerFont == codeFont
+            : [.foregroundColor: PlatformColor.clear, .font: ctx.codeFont]   // hiddenMarkerFont == codeFont
         attrs.append((parts.openFence, markerAttrs))
         attrs.append((parts.closeFence, markerAttrs))
     }
@@ -842,7 +846,7 @@ enum MarkdownASTStyler {
 
     // MARK: - Inlines (composing)
 
-    private static func styleInlines(_ nodes: [InlineNode], font: NSFont, ctx: Ctx, into attrs: inout [StyledRange]) {
+    private static func styleInlines(_ nodes: [InlineNode], font: PlatformFont, ctx: Ctx, into attrs: inout [StyledRange]) {
         for node in nodes {
             switch node {
             case .text:
@@ -922,7 +926,7 @@ enum MarkdownASTStyler {
 
     private static func styleLink(
         range: NSRange, textRange: NSRange, url urlRange: NSRange, markers: [NSRange],
-        children: [InlineNode], font: NSFont, ctx: Ctx, into attrs: inout [StyledRange]
+        children: [InlineNode], font: PlatformFont, ctx: Ctx, into attrs: inout [StyledRange]
     ) {
         attrs.append((range, [.spellingState: 0]))
         var urlString = ctx.ns.substring(with: urlRange)
@@ -1018,7 +1022,7 @@ enum MarkdownASTStyler {
                     if markers.count >= 4 {   // also hide the "(url)" run
                         let hide = NSRange(location: markers[2].location,
                                            length: NSMaxRange(markers[3]) - markers[2].location)
-                        attrs.append((hide, [.font: ctx.inlineMarkerFont, .foregroundColor: NSColor.clear]))
+                        attrs.append((hide, [.font: ctx.inlineMarkerFont, .foregroundColor: PlatformColor.clear]))
                     }
                 }
                 shrinkInlineMarkers(children, ctx: ctx, forceReveal: active, into: &attrs)
@@ -1042,7 +1046,7 @@ enum MarkdownASTStyler {
 
     // MARK: - Helpers
 
-    private static func traits(for kind: EmphasisKind) -> NSFontDescriptor.SymbolicTraits {
+    private static func traits(for kind: EmphasisKind) -> PlatformFontDescriptor.SymbolicTraits {
         switch kind {
         case .italic: return .italic
         case .bold: return .bold
@@ -1050,9 +1054,9 @@ enum MarkdownASTStyler {
         }
     }
 
-    private static func adding(_ extra: NSFontDescriptor.SymbolicTraits, to font: NSFont) -> NSFont {
+    private static func adding(_ extra: PlatformFontDescriptor.SymbolicTraits, to font: PlatformFont) -> PlatformFont {
         let merged = font.fontDescriptor.symbolicTraits.union(extra)
-        return NSFont(descriptor: font.fontDescriptor.withSymbolicTraits(merged), size: font.pointSize) ?? font
+        return PlatformFont(descriptor: font.fontDescriptor.withSymbolicTraits(merged), size: font.pointSize) ?? font
     }
 
     private static func content(of markers: [NSRange]) -> NSRange {

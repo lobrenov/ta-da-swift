@@ -14,18 +14,8 @@
 //  the embedder to draw its own menu.
 //
 
+#if os(macOS)
 import AppKit
-
-/// Ta Da fork: a right-click on a task box, delivered through
-/// ``NativeTextViewWrapper/onTaskMarkerMenu``.
-public struct TaskMarkerMenuRequest {
-    /// The box's current marker.
-    public let marker: Character
-    /// The box in screen coordinates, to anchor the menu.
-    public let anchorRect: CGRect
-    /// Replaces the marker as one undoable edit. Does nothing once the box's text has changed.
-    public let setMarker: @MainActor (Character) -> Void
-}
 
 extension NativeTextView {
 
@@ -154,3 +144,4 @@ private final class TaskMarkerMenuTarget: NSObject {
         textView?.setTaskMarker(marker, boxRange: boxRange)
     }
 }
+#endif

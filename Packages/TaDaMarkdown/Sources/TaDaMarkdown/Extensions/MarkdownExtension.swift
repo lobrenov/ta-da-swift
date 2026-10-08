@@ -18,7 +18,11 @@
 //  engine, identical for every extension.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 
 // MARK: - Syntax rule

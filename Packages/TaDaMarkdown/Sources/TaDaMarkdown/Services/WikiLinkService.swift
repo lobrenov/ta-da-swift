@@ -17,7 +17,11 @@
 //  via the ``WikiLinkResolver`` protocol.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 import os
 
@@ -301,7 +305,7 @@ public enum WikiLinkService {
 
     /// Resolve a clicked wiki-link's target name (the styler stores it as the `.link` value).
     /// Ta Da fork: the `.wikiLinkID` suffix is an Obsidian alias, not an id, so it is never reported.
-    public static func resolveIdentifier(link: Any, textView: NSTextView, at charIndex: Int) -> String? {
+    public static func resolveIdentifier(link: Any, textView: PlatformTextView, at charIndex: Int) -> String? {
         link as? String
     }
 

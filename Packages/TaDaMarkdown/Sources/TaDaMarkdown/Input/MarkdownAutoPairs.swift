@@ -6,7 +6,11 @@
 //  editor remembers each closer it adds, so typing that closer steps over it.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 /// A pair the editor closed: the typed `opener` and the `closer` it added after the caret.
 struct AutoPair: Equatable {
@@ -45,7 +49,7 @@ enum MarkdownAutoPairs {
     }
 
     /// Handles a typed opener, closer, marker or space. `nil` leaves the keystroke to the caller.
-    static func handleInsertion(_ textView: NSTextView, range: NSRange, replacement: String, isInCodeBlock: Bool) -> Bool? {
+    static func handleInsertion(_ textView: PlatformTextView, range: NSRange, replacement: String, isInCodeBlock: Bool) -> Bool? {
         guard replacement.utf16.count == 1, let typed = replacement.first,
               triggers.contains(typed) || typed == " " else { return nil }
         let native = textView as? NativeTextView

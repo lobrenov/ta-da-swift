@@ -7,6 +7,7 @@
 //  cache that defeats in-fragment custom scrolling.
 //
 
+#if os(macOS)
 import AppKit
 
 // MARK: - Faint scroller
@@ -357,3 +358,4 @@ extension NativeTextView {
         wideTableOverlays.removeAll()
     }
 }
+#endif

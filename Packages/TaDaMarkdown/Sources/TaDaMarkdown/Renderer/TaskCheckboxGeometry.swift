@@ -12,13 +12,17 @@
 //  these functions so their rects can't drift apart.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 enum TaskCheckboxGeometry {
 
     /// Side length of the square for the given (body) font.
     /// Ta Da fork: sized from the line height via `TaskCheckboxStyle.sizeScale`.
-    static func size(for font: NSFont, style: TaskCheckboxStyle) -> CGFloat {
+    static func size(for font: PlatformFont, style: TaskCheckboxStyle) -> CGFloat {
         let ascent = max(0, font.ascender)
         let descent = max(0, -font.descender)
         let fontHeight = max(1, ceil(ascent + descent))

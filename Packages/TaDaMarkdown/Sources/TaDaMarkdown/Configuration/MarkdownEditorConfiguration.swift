@@ -13,7 +13,11 @@
 //  override individual fields without forking the engine.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 
 // MARK: - Top-level Configuration
@@ -171,11 +175,11 @@ public struct MarkdownEditorConfiguration: Sendable {
 /// at `makeNSView` time; afterwards the user's context-menu choices take
 /// precedence and are surfaced via ``NativeTextViewWrapper/onSpellCheckingPolicyChanged``.
 public struct SpellCheckingPolicy: Sendable {
-    /// Mirrors `NSTextView.isContinuousSpellCheckingEnabled`.
+    /// Mirrors `PlatformTextView.isContinuousSpellCheckingEnabled`.
     public var continuousSpellChecking: Bool
-    /// Mirrors `NSTextView.isGrammarCheckingEnabled`.
+    /// Mirrors `PlatformTextView.isGrammarCheckingEnabled`.
     public var grammarChecking: Bool
-    /// Mirrors `NSTextView.isAutomaticSpellingCorrectionEnabled`.
+    /// Mirrors `PlatformTextView.isAutomaticSpellingCorrectionEnabled`.
     public var automaticSpellingCorrection: Bool
 
     public init(
@@ -222,7 +226,7 @@ public struct ScrollersPolicy: Sendable {
 
 // MARK: - Text insets
 
-/// Margins inside the text view (`NSTextView.textContainerInset`). Scroll bar stays at the outer edge.
+/// Margins inside the text view (`PlatformTextView.textContainerInset`). Scroll bar stays at the outer edge.
 public struct TextInsets: Sendable {
     public var horizontal: CGFloat
     public var vertical: CGFloat
@@ -373,7 +377,7 @@ public struct TaskCheckboxStyle: Sendable {
     /// SF Symbol drawn for each marker character.
     public var symbolNames: [Character: String]
     /// Tint per marker character; missing entries use the theme defaults above.
-    public var tints: [Character: NSColor]
+    public var tints: [Character: PlatformColor]
     /// Markers whose item text is struck through.
     public var struckMarkers: Set<Character>
     /// What a click on the box changes the marker to. Markers without an entry ignore clicks.
@@ -386,17 +390,17 @@ public struct TaskCheckboxStyle: Sendable {
     public var contentGap: CGFloat
     /// Draws a marker's box into the current (flipped) graphics context, given the box rect
     /// and the marker's tint. When set, it replaces `symbolNames` on the page and in the menu.
-    public var draw: (@Sendable (_ marker: Character, _ rect: CGRect, _ tint: NSColor) -> Void)?
+    public var draw: (@Sendable (_ marker: Character, _ rect: CGRect, _ tint: PlatformColor) -> Void)?
 
     public init(
         symbolNames: [Character: String] = TaskCheckboxStyle.referenceSymbols,
-        tints: [Character: NSColor] = [:],
+        tints: [Character: PlatformColor] = [:],
         struckMarkers: Set<Character> = ["x", "X"],
         clickTransitions: [Character: Character] = [" ": "x", "x": " ", "X": " "],
         menuItems: [(marker: Character, title: String)] = TaskCheckboxStyle.referenceMenu,
         sizeScale: CGFloat = 1.0,
         contentGap: CGFloat = 6,
-        draw: (@Sendable (_ marker: Character, _ rect: CGRect, _ tint: NSColor) -> Void)? = nil
+        draw: (@Sendable (_ marker: Character, _ rect: CGRect, _ tint: PlatformColor) -> Void)? = nil
     ) {
         self.symbolNames = symbolNames
         self.tints = tints

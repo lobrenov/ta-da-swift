@@ -8,7 +8,11 @@
 //  coordinator can trigger a restyle when the caret enters/leaves.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 
 extension MarkdownStyler {

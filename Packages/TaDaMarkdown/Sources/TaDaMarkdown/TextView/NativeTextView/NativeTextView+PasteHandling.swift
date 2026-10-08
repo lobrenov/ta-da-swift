@@ -6,6 +6,7 @@
 //
 //
 
+#if os(macOS)
 import AppKit
 
 extension NativeTextView {
@@ -204,3 +205,4 @@ extension NativeTextView {
         return count
     }
 }
+#endif

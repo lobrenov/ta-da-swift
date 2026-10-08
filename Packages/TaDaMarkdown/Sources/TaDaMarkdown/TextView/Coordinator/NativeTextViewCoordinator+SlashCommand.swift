@@ -7,7 +7,11 @@
 //  embedder draws the menu and inserts through `SlashCommandProxy`.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 /// Ta Da fork: the `/query` being typed, delivered through
 /// ``NativeTextViewWrapper/onSlashCommandChange``.
@@ -33,7 +37,7 @@ public final class SlashCommandProxy {
     public init() {}
 
     /// Ta Da fork: the editor's text view, for edits the embedder makes itself.
-    public var textView: NSTextView? { coordinator?.textView }
+    public var textView: PlatformTextView? { coordinator?.textView }
 
     /// Replaces the `/query` with `text` (one undo step) and selects `selection`, which is relative to `text`.
     public func insert(_ text: String, selecting selection: NSRange) {
@@ -62,10 +66,10 @@ extension NativeTextViewCoordinator {
     }
 
     /// From every selection change: follows the caret, or closes once it leaves the `/query`.
-    func updateSlashCommand(in tv: NSTextView) {
+    func updateSlashCommand(in tv: PlatformTextView) {
         guard let anchor = slashAnchor else { return }
         let text = tv.string as NSString
-        let selection = tv.selectedRange()
+        let selection = tv.currentSelectedRange
         guard selection.length == 0, anchor < text.length, text.character(at: anchor) == 0x2F,
               selection.location > anchor else { return dismissSlashCommand() }
         let range = NSRange(location: anchor, length: selection.location - anchor)
@@ -93,6 +97,7 @@ extension NativeTextViewCoordinator {
         reportSlashCommand()
     }
 
+    #if os(macOS)
     /// From `doCommandBy`: ↑/↓ move, ↵/⇥ insert, esc closes. `true` when the key was consumed.
     func handleSlashCommandKey(_ commandSelector: Selector) -> Bool {
         guard slashCommand != nil, let handler = onSlashCommandKey else { return false }
@@ -106,6 +111,7 @@ extension NativeTextViewCoordinator {
         default: return false
         }
     }
+    #endif
 
     func insertSlashCommand(_ insertion: String, selecting selection: NSRange) {
         guard let tv = textView, let range = slashCommand?.range else { return }
@@ -115,7 +121,7 @@ extension NativeTextViewCoordinator {
         isProgrammaticEdit = true
         defer { isProgrammaticEdit = false }
         guard tv.shouldChangeText(in: range, replacementString: insertion) else { return }
-        tv.textStorage?.replaceCharacters(in: range, with: insertion)
+        tv.optionalTextStorage?.replaceCharacters(in: range, with: insertion)
         tv.didChangeText()
         tv.undoManager?.setActionName("Insert Formatting")
         tv.breakUndoCoalescing()
@@ -129,8 +135,7 @@ extension NativeTextViewCoordinator {
             guard let self else { return }
             var state: SlashCommandState?
             if let command = slashCommand, let tv = textView {
-                let anchor = tv.firstRect(forCharacterRange: NSRange(location: command.range.location, length: 1),
-                                          actualRange: nil)
+                let anchor = tv.anchorRect(forCharacterRange: NSRange(location: command.range.location, length: 1))
                 state = SlashCommandState(range: command.range, query: command.query,
                                           isAtLineStart: command.isAtLineStart,
                                           followsBlankLine: command.followsBlankLine, anchorRect: anchor)

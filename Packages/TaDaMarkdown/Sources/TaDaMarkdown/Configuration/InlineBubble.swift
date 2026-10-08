@@ -7,14 +7,18 @@
 //  `InlineCodeStyle.bubble`, or return it from `MarkdownExtension.bubble(theme:)`.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 public struct InlineBubble: Sendable, Equatable {
-    public var fill: NSColor
+    public var fill: PlatformColor
     /// A 1pt ring inside the bubble's edge; none when nil.
-    public var ring: NSColor?
+    public var ring: PlatformColor?
     /// The span's text colour; nil keeps the surrounding colour.
-    public var text: NSColor?
+    public var text: PlatformColor?
     /// Space between the text and the bubble's left and right edges.
     public var horizontalPadding: CGFloat
     /// Space between the bubble and the text beside it; negative overlaps it.
@@ -23,7 +27,7 @@ public struct InlineBubble: Sendable, Equatable {
     public var verticalPadding: CGFloat
     public var cornerRadius: CGFloat
 
-    public init(fill: NSColor, ring: NSColor? = nil, text: NSColor? = nil, horizontalPadding: CGFloat,
+    public init(fill: PlatformColor, ring: PlatformColor? = nil, text: PlatformColor? = nil, horizontalPadding: CGFloat,
                 margin: CGFloat = 0, verticalPadding: CGFloat = 2, cornerRadius: CGFloat = 6) {
         self.fill = fill
         self.ring = ring

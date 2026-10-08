@@ -10,6 +10,7 @@
 //
 // Public selection / replacement value types live in
 // `NativeTextViewSelectionTypes.swift`.
+#if os(macOS)
 import SwiftUI
 import AppKit
 
@@ -851,3 +852,4 @@ private extension NativeTextViewWrapper {
         )
     }
 }
+#endif

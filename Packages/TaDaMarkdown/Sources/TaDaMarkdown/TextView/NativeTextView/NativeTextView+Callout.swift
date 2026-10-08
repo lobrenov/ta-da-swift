@@ -8,24 +8,8 @@
 //  which can change the type and the fold sign.
 //
 
+#if os(macOS)
 import AppKit
-
-/// Ta Da fork: a right-click on a callout's title line, delivered through
-/// ``NativeTextViewWrapper/onCalloutMenu``.
-public struct CalloutMenuRequest {
-    /// The type as written, between `[!` and `]`.
-    public let type: String
-    /// `+`, `-` or nil.
-    public let fold: Character?
-    /// The icon in screen coordinates, to anchor the menu.
-    public let anchorRect: CGRect
-    /// Replaces the type as one undoable edit. Does nothing once the title line has changed.
-    public let setType: @MainActor (String) -> Void
-    /// Sets, changes or removes the fold sign as one undoable edit. Does nothing once the title line has changed.
-    public let setFold: @MainActor (Character?) -> Void
-    /// Call when the menu closes: the callout drops its ring.
-    public let close: @MainActor () -> Void
-}
 
 extension NativeTextView {
 
@@ -136,3 +120,4 @@ extension NativeTextView {
         return NSRange(location: title.line.location, length: end - title.line.location)
     }
 }
+#endif

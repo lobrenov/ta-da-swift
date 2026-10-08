@@ -7,17 +7,21 @@
 
 // Keeps the editor in sync while you type, updating formatting, selections,
 // links, and other editing behavior in one place.
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import SwiftUI
 
 /// `NSTextViewDelegate` that bridges ``NativeTextViewWrapper`` and the
-/// underlying `NSTextView`.
+/// underlying `PlatformTextView`.
 ///
 /// The coordinator is created automatically by SwiftUI; embedders never
 /// construct one directly. Behaviors that don't fit in the main file live
 /// in extensions (Autocorrect, CodeBlocks, Find, InlineSelection,
 /// Notifications, Restyling, TextDelegate, WritingTools).
-public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
+public final class NativeTextViewCoordinator: NSObject {
     var documentId: String?
     /// Remembered scroll offset (`bounds.origin.y`) per `documentId` — saved on
     /// switch-away, restored on switch-back. Dies with the coordinator, so an
@@ -34,7 +38,7 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     /// budget bounds it: a document that really got shorter must not keep yanking.
     var pendingScrollRestoreDocumentId: String?
     var pendingScrollRestoreAttempts = 0
-    /// Per-`documentId` undo manager. AppKit reuses a single `NSTextView` across
+    /// Per-`documentId` undo manager. AppKit reuses a single `PlatformTextView` across
     /// all open documents, so its built-in (view-wide) undo manager would mix
     /// files together. Keying a manager on the current document gives each file
     /// its own undo stack that survives switching away and back. Vended through
@@ -74,18 +78,22 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     var lastWikiFingerprint: AnyHashable?
     private var busObservers: [NSObjectProtocol] = []
     private var registeredAppearanceObserverName: Notification.Name?
-    weak var textView: NSTextView?
+    weak var textView: PlatformTextView?
+    #if os(macOS)
     /// Owns the scroll-away header (build, content refresh, collapse/expand,
     /// teardown). Created on first reconcile with a non-nil header.
     var headerController: ScrollingHeaderController?
+    #endif
     var layoutBridge: LayoutBridge?
     var layoutDelegate: MarkdownLayoutManagerDelegate?
     var onLinkClick: ((String) -> Void)?
     var onCaretRectChange: ((CGRect) -> Void)?
     var onTextMutation: ((MarkdownTextMutation) -> Void)?
+    #if os(macOS)
     /// Embedder hook to build the right-click menu (the engine ships none). Gets the
     /// default menu + current selection range, returns the menu to show.
     var onBuildContextMenu: ((NSMenu, NSRange) -> NSMenu)?
+    #endif
     var onInlineSelectionChange: ((InlineSelectionState?) -> Void)?
     var onInlinePreviewKey: ((InlinePreviewKey) -> Bool)?
     /// Ta Da fork: slash commands (see `NativeTextViewCoordinator+SlashCommand`).
@@ -108,7 +116,9 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     var isProgrammaticEdit: Bool = false
     var isWritingToolsActive: Bool = false
     var wtStartDocumentId: String?
+    #if os(macOS)
     weak var wtChildWindow: NSWindow?
+    #endif
     var wtInitialChildOrigin: CGPoint?
     var wtInitialSelectionRange: NSRange?
     enum WTMode { case unknown, proofread, rewrite }
@@ -183,7 +193,7 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     /// invert the ink under the caret). `updateNSView` re-applies it instead of
     /// resetting to `theme.bodyText`, which would stomp it on any SwiftUI pass;
     /// nil = no span, use the theme.
-    var resolvedCaretColor: NSColor?
+    var resolvedCaretColor: PlatformColor?
 
     var cachedCodeBlockTokens: [(index: Int, token: MarkdownToken)] = []
     /// Dedupe key of the last emitted code-block selections — identical
@@ -226,10 +236,12 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     /// underlying property. Snapshots the text view's state, refreshes the
     /// cache so the next caret move doesn't immediately overwrite it, and
     /// notifies the embedder.
-    func didToggleSpellCheckingPolicy(textView: NSTextView) {
+    func didToggleSpellCheckingPolicy(textView: PlatformTextView) {
+        #if os(macOS)
         userPrefersContinuousSpellChecking = textView.isContinuousSpellCheckingEnabled
         userPrefersGrammarChecking = textView.isGrammarCheckingEnabled
         userPrefersAutomaticSpellingCorrection = textView.isAutomaticSpellingCorrectionEnabled
+        #endif
         // Invalidate the "didn't change" short-circuit so the next selection
         // update re-applies the preferences cleanly.
         cachedSpellingDisabled = nil
@@ -255,7 +267,7 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
         /// checks need the original index) — collected in the same single
         /// classification pass instead of a per-call full-token filter.
         let codeBlockTokensWithIndices: [(index: Int, token: MarkdownToken)]
-        /// Per-kind indexed token arrays for the styler's NSImage passes, built
+        /// Per-kind indexed token arrays for the styler's PlatformImage passes, built
         /// in the same single classification pass so the passes iterate small
         /// scope-sliced arrays instead of walking every document token.
         let classified: MarkdownStyler.ClassifiedStyleTokens
@@ -424,6 +436,7 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
                 self?.handleImageNotification(notification)
             })
         }
+        #if os(macOS)
         if let name = bus.findScrollToRange {
             busObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] notification in
                 self?.handleFindScrollToRange(notification)
@@ -449,6 +462,7 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
                 self?.handleReplaceAll(notification)
             })
         }
+        #endif
     }
 
     // Find-in-document highlight handlers live in
@@ -495,7 +509,8 @@ public final class NativeTextViewCoordinator: NSObject, NSTextViewDelegate {
     }
 }
 
-extension NSTextView {
+extension PlatformTextView {
+    #if os(macOS)
     func viewRect(forCharacterRange range: NSRange, using bridge: LayoutBridge?) -> CGRect? {
         guard range.location != NSNotFound,
               let bridge = bridge,
@@ -522,4 +537,14 @@ extension NSTextView {
         }
         return boundingRect
     }
+    #else
+    /// A character range's rect relative to the visible area's top left.
+    func viewRect(forCharacterRange range: NSRange, using bridge: LayoutBridge?) -> CGRect? {
+        guard range.location != NSNotFound, let bridge else { return nil }
+        var boundingRect = bridge.boundingRect(forCharacterRange: range, in: textContainer)
+        boundingRect.origin.x += textContainerOrigin.x - contentOffset.x
+        boundingRect.origin.y += textContainerOrigin.y - contentOffset.y
+        return boundingRect
+    }
+    #endif
 }

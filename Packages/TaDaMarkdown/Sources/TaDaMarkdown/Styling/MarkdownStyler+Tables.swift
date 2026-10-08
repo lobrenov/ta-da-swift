@@ -2,13 +2,17 @@
 //  MarkdownStyler+Tables.swift
 //  TaDaMarkdown
 //
-//  GFM tables. The block is rendered to a single NSImage and emitted via
+//  GFM tables. The block is rendered to a single PlatformImage and emitted via
 //  the same collapsedSource path block-LaTeX uses, so the source stays
 //  in sync with the document but the user only sees the rendered grid
 //  when the caret is outside the table.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 
 extension MarkdownStyler {
@@ -26,10 +30,10 @@ extension MarkdownStyler {
     }
 
     /// Rendered-table image cache. A table's pixels depend only on its source,
-    /// font, colors, and appearance — so identical keys can reuse the NSImage
+    /// font, colors, and appearance — so identical keys can reuse the PlatformImage
     /// instead of re-rendering every inactive table on every keystroke.
-    private static let tableImageCache: NSCache<NSString, NSImage> = {
-        let cache = NSCache<NSString, NSImage>()
+    private static let tableImageCache: NSCache<NSString, PlatformImage> = {
+        let cache = NSCache<NSString, PlatformImage>()
         // Must exceed a document's unique-table count or a full restyle (load /
         // theme / font change) re-renders every table (same thrash class as the
         // metadata cap). NSCache still auto-evicts under memory pressure.
@@ -38,30 +42,29 @@ extension MarkdownStyler {
     }()
 
     /// Pixel-level fingerprint of a theme color: its sRGB components resolved
-    /// under `appearance`. NSColor descriptions are not sound identities —
+    /// under `appearance`. PlatformColor descriptions are not sound identities —
     /// named dynamic colors describe by name only (two providers collide),
     /// unnamed ones by per-instance UUID (never hit) — so key on what actually
     /// reaches the bitmap.
-    private static func colorKey(_ color: NSColor, under appearance: NSAppearance) -> String {
-        var srgb: NSColor?
+    private static func colorKey(_ color: PlatformColor, under appearance: PlatformAppearance) -> String {
+        var rgba: (CGFloat, CGFloat, CGFloat, CGFloat)?
         appearance.performAsCurrentDrawingAppearance {
-            srgb = color.usingColorSpace(.sRGB)
+            rgba = color.rgbaComponents
         }
-        guard let c = srgb else { return "\(color)" }
-        return String(format: "%.4f,%.4f,%.4f,%.4f",
-                      c.redComponent, c.greenComponent, c.blueComponent, c.alphaComponent)
+        guard let c = rgba else { return "\(color)" }
+        return String(format: "%.4f,%.4f,%.4f,%.4f", c.0, c.1, c.2, c.3)
     }
 
     /// Resolving six colors per table per keystroke is measurable (10 tables ×
     /// 6 appearance-scoped resolutions). The resolved prefix depends only on
     /// the color INSTANCES + appearance + font, so memoize it by identity —
-    /// theme copies keep the same NSColor references across keystrokes.
+    /// theme copies keep the same PlatformColor references across keystrokes.
     private static let themeKeyLock = NSLock()
     private static var themeKeyCache: [String: String] = [:]
 
-    private static func themeKeyPrefix(ctx: StylingContext, appearance: NSAppearance) -> String {
+    private static func themeKeyPrefix(ctx: StylingContext, appearance: PlatformAppearance) -> String {
         let theme = ctx.configuration.theme
-        let identity = "\(ctx.baseFont.fontName)|\(ctx.baseFont.pointSize)|\(appearance.name.rawValue)|"
+        let identity = "\(ctx.baseFont.fontName)|\(ctx.baseFont.pointSize)|\(appearance.cacheKey)|"
             + "\(ObjectIdentifier(theme.bodyText))|\(ObjectIdentifier(theme.mutedText))|"
             + "\(ObjectIdentifier(theme.highlightColor))|\(ObjectIdentifier(ctx.codeBackgroundColor))|"
             + "\(ObjectIdentifier(theme.latexLightModeText))|\(ObjectIdentifier(theme.latexDarkModeText))|"
@@ -80,7 +83,7 @@ extension MarkdownStyler {
         let prefix = [
             ctx.baseFont.fontName,
             "\(ctx.baseFont.pointSize)",
-            appearance.name.rawValue,
+            appearance.cacheKey,
             colorKey(theme.bodyText, under: appearance),
             colorKey(theme.mutedText, under: appearance),
             colorKey(theme.highlightColor, under: appearance),
@@ -138,9 +141,9 @@ extension MarkdownStyler {
         for source: String,
         parsed: ParsedTable,
         ctx: StylingContext,
-        appearance: NSAppearance,
+        appearance: PlatformAppearance,
         availableWidth: CGFloat
-    ) -> (image: NSImage, rendered: Bool) {
+    ) -> (image: PlatformImage, rendered: Bool) {
         // Rendering consumes the exact point width. Key it losslessly as well:
         // fractional SwiftUI/split-view widths can differ by more than 0.5 pt
         // while rounding to the same integer, which would otherwise reuse a
@@ -237,8 +240,7 @@ extension MarkdownStyler {
             if ctx.outsideScope(token.range) { continue }
 
             // See renderTable: resolve table colors under the text view's real appearance.
-            let renderAppearance = ctx.layoutBridge?.firstTextContainer?.textView?.effectiveAppearance
-                ?? NSApp.effectiveAppearance
+            let renderAppearance = currentAppearance(of: ctx.layoutBridge?.firstTextContainer?.textView)
             // Cells wrap to the container width (Obsidian-style); the render
             // only exceeds it when the per-column floors genuinely don't fit,
             // in which case the scrollable overlay below takes over.
@@ -289,7 +291,7 @@ extension MarkdownStyler {
         if tableCount > 0 {
             let ms = Double(DispatchTime.now().uptimeNanoseconds - tablesT0) / 1_000_000
             let metaMs = Double(metaNanos) / 1_000_000
-            PerfTrace.note { "styleTables scanned=\(tableCount) tables (skipped=\(skippedCount)), re-rendered=\(renderedCount) NSImage in \(String(format: "%.2f", ms))ms (substring+meta=\(String(format: "%.2f", metaMs))ms)" }
+            PerfTrace.note { "styleTables scanned=\(tableCount) tables (skipped=\(skippedCount)), re-rendered=\(renderedCount) PlatformImage in \(String(format: "%.2f", ms))ms (substring+meta=\(String(format: "%.2f", metaMs))ms)" }
         }
         return attrs
     }
@@ -383,18 +385,18 @@ extension MarkdownStyler {
     /// Raw cell → `NSAttributedString`: inline markdown applied, markers stripped, LaTeX as attachments.
     static func formattedCellString(
         _ raw: String,
-        baseFont: NSFont,
+        baseFont: PlatformFont,
         header: Bool,
         theme: MarkdownEditorTheme,
-        codeBackgroundColor: NSColor,
+        codeBackgroundColor: PlatformColor,
         latex: any LatexRenderer,
         extensions: [any MarkdownExtension] = []
     ) -> NSAttributedString {
         let descriptor = baseFont.fontDescriptor
         let pointSize = baseFont.pointSize
-        let codeFont = NSFont.monospacedSystemFont(ofSize: pointSize, weight: .regular)
+        let codeFont = PlatformFont.monospacedSystemFont(ofSize: pointSize, weight: .regular)
         let startFont = header
-            ? (NSFont(descriptor: descriptor.withSymbolicTraits(.bold), size: pointSize) ?? baseFont)
+            ? (PlatformFont(descriptor: descriptor.withSymbolicTraits(.bold), size: pointSize) ?? baseFont)
             : baseFont
         let out = NSMutableAttributedString()
         var extensionsByID: [String: any MarkdownExtension] = [:]
@@ -414,16 +416,16 @@ extension MarkdownStyler {
 
     /// Compose `current`'s bold/italic traits with `kind` so nested emphasis stacks (italic+bold).
     private static func composeEmphasis(
-        _ current: NSFont, _ kind: EmphasisKind,
-        baseDescriptor: NSFontDescriptor, pointSize: CGFloat
-    ) -> NSFont {
+        _ current: PlatformFont, _ kind: EmphasisKind,
+        baseDescriptor: PlatformFontDescriptor, pointSize: CGFloat
+    ) -> PlatformFont {
         var traits = current.fontDescriptor.symbolicTraits.intersection([.bold, .italic])
         switch kind {
         case .bold: traits.insert(.bold)
         case .italic: traits.insert(.italic)
         case .boldItalic: traits.formUnion([.bold, .italic])
         }
-        return NSFont(descriptor: baseDescriptor.withSymbolicTraits(traits), size: pointSize) ?? current
+        return PlatformFont(descriptor: baseDescriptor.withSymbolicTraits(traits), size: pointSize) ?? current
     }
 
     /// Walk the inline AST into marker-stripped runs; LaTeX as attachments, links/embeds emitted raw.
@@ -431,22 +433,22 @@ extension MarkdownStyler {
         _ nodes: [InlineNode],
         in ns: NSString,
         into out: NSMutableAttributedString,
-        font: NSFont,
-        baseDescriptor: NSFontDescriptor,
+        font: PlatformFont,
+        baseDescriptor: PlatformFontDescriptor,
         pointSize: CGFloat,
-        codeFont: NSFont,
+        codeFont: PlatformFont,
         theme: MarkdownEditorTheme,
-        codeBackgroundColor: NSColor,
+        codeBackgroundColor: PlatformColor,
         latex: any LatexRenderer,
         extensionsByID: [String: any MarkdownExtension] = [:]
     ) {
-        func recurse(_ children: [InlineNode], _ f: NSFont) {
+        func recurse(_ children: [InlineNode], _ f: PlatformFont) {
             appendInlineCell(children, in: ns, into: out, font: f, baseDescriptor: baseDescriptor,
                              pointSize: pointSize, codeFont: codeFont, theme: theme,
                              codeBackgroundColor: codeBackgroundColor, latex: latex,
                              extensionsByID: extensionsByID)
         }
-        func appendPlain(_ range: NSRange, _ f: NSFont) {
+        func appendPlain(_ range: NSRange, _ f: PlatformFont) {
             out.append(NSAttributedString(string: ns.substring(with: range),
                                           attributes: [.font: f, .foregroundColor: theme.bodyText]))
         }
@@ -509,25 +511,21 @@ extension MarkdownStyler {
 
     private static func renderTable(
         _ table: ParsedTable,
-        baseFont: NSFont,
+        baseFont: PlatformFont,
         theme: MarkdownEditorTheme,
-        codeBackgroundColor: NSColor,
+        codeBackgroundColor: PlatformColor,
         latex: any LatexRenderer,
-        appearance: NSAppearance,
+        appearance: PlatformAppearance,
         availableWidth: CGFloat,
         extensions: [any MarkdownExtension] = []
-    ) -> NSImage {
+    ) -> PlatformImage {
         let columnCount = table.alignments.count
         let cellHPadding: CGFloat = 12
         let cellVPadding: CGFloat = 6
         let borderWidth: CGFloat = 1
         // Resolve under the real appearance: `.withAlphaComponent()` freezes a dynamic color otherwise.
-        func mutedColor(alpha: CGFloat) -> NSColor {
-            var resolved: NSColor = theme.mutedText
-            appearance.performAsCurrentDrawingAppearance {
-                resolved = theme.mutedText.usingColorSpace(.sRGB) ?? theme.mutedText
-            }
-            return resolved.withAlphaComponent(alpha)
+        func mutedColor(alpha: CGFloat) -> PlatformColor {
+            theme.mutedText.resolved(under: appearance).withAlphaComponent(alpha)
         }
         let borderColor = mutedColor(alpha: 0.5)
         let baseLineHeight: CGFloat = ceil(baseFont.ascender - baseFont.descender + baseFont.leading)
@@ -586,8 +584,9 @@ extension MarkdownStyler {
         func naturalWidth(_ cell: NSAttributedString) -> CGFloat {
             guard cell.string.contains("\n") else { return ceil(cell.size().width) }
             return ceil(cell.boundingRect(
-                with: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
-                options: [.usesLineFragmentOrigin]
+                with: CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin],
+                context: nil
             ).width)
         }
         func considerCell(_ cell: NSAttributedString, col: Int) {
@@ -632,8 +631,9 @@ extension MarkdownStyler {
         // Per-row heights: each row is as tall as its tallest (wrapped) cell.
         func cellHeight(_ cell: NSAttributedString, col: Int) -> CGFloat {
             let bounds = cell.boundingRect(
-                with: NSSize(width: columnWidths[col], height: .greatestFiniteMagnitude),
-                options: [.usesLineFragmentOrigin]
+                with: CGSize(width: columnWidths[col], height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin],
+                context: nil
             )
             return ceil(bounds.height)
         }
@@ -654,7 +654,7 @@ extension MarkdownStyler {
         let totalHeight = rowContentHeights.reduce(0) { $0 + $1 + 2 * cellVPadding }
             + CGFloat(rowCount + 1) * borderWidth
 
-        let size = NSSize(width: totalWidth, height: totalHeight)
+        let size = CGSize(width: totalWidth, height: totalHeight)
 
         // Pre-compute layout offsets (top-down coords; drawing runs flipped).
         var columnLeft = [CGFloat](repeating: 0, count: columnCount + 1)
@@ -672,10 +672,10 @@ extension MarkdownStyler {
         let headerFill = mutedColor(alpha: 0.08)
 
         // Flipped image so AppKit handles the y-flip; a manual transform mirror would flip glyphs too.
-        return NSImage(size: size, flipped: true) { _ in
+        return drawnImage(size: size) {
             // Header row fill
             headerFill.setFill()
-            NSBezierPath(rect: NSRect(
+            PlatformBezierPath(rect: CGRect(
                 x: borderWidth,
                 y: borderWidth,
                 width: size.width - 2 * borderWidth,
@@ -684,7 +684,7 @@ extension MarkdownStyler {
 
             // Outer border
             borderColor.setStroke()
-            let outer = NSBezierPath(rect: NSRect(
+            let outer = PlatformBezierPath(rect: CGRect(
                 x: borderWidth / 2,
                 y: borderWidth / 2,
                 width: size.width - borderWidth,
@@ -694,17 +694,17 @@ extension MarkdownStyler {
             outer.stroke()
 
             // Internal separators
-            let separators = NSBezierPath()
+            let separators = PlatformBezierPath()
             separators.lineWidth = borderWidth
             for i in 1..<columnCount {
                 let x = columnLeft[i] - borderWidth / 2
-                separators.move(to: NSPoint(x: x, y: 0))
-                separators.line(to: NSPoint(x: x, y: size.height))
+                separators.move(to: CGPoint(x: x, y: 0))
+                separators.line(to: CGPoint(x: x, y: size.height))
             }
             for i in 1..<rowCount {
                 let y = rowTop[i] - borderWidth / 2
-                separators.move(to: NSPoint(x: 0, y: y))
-                separators.line(to: NSPoint(x: size.width, y: y))
+                separators.move(to: CGPoint(x: 0, y: y))
+                separators.line(to: CGPoint(x: size.width, y: y))
             }
             separators.stroke()
 
@@ -728,7 +728,7 @@ extension MarkdownStyler {
                     value: paragraph,
                     range: NSRange(location: 0, length: aligned.length)
                 )
-                let drawRect = NSRect(
+                let drawRect = CGRect(
                     x: cellLeft,
                     y: rowTop[row] + cellVPadding,
                     width: cellContentWidth,
@@ -745,7 +745,6 @@ extension MarkdownStyler {
                     drawCell(cell, col: col, row: rowIdx + 1)
                 }
             }
-            return true
         }
     }
 
@@ -754,7 +753,7 @@ extension MarkdownStyler {
     /// Container width with fallback chain for "styler runs before layout" case.
     static func effectiveContainerWidth(for ctx: StylingContext) -> CGFloat {
         if let container = ctx.layoutBridge?.firstTextContainer {
-            // During SwiftUI-hosted window resizing, NSTextView bounds can be
+            // During SwiftUI-hosted window resizing, PlatformTextView bounds can be
             // updated before a width-tracking NSTextContainer publishes its
             // derived size. The view is the width owner in this mode, so use
             // its live geometry instead of rerasterizing tables at a stale

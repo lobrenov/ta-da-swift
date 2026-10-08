@@ -7,10 +7,14 @@
 
 // Makes list editing feel natural by continuing items, handling indentation,
 // and applying spacing/alignment that keeps lists easy to read.
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 struct MarkdownLists {
-    static func performEdit(_ textView: NSTextView, replace range: NSRange, with string: String) {
+    static func performEdit(_ textView: PlatformTextView, replace range: NSRange, with string: String) {
         let ns = textView.string as NSString
         let loc = min(range.location, ns.length)
         let maxLen = ns.length - loc
@@ -30,9 +34,13 @@ struct MarkdownLists {
             if let coord = textView.delegate as? NativeTextViewWrapper.Coordinator { coord.isProgrammaticEdit = false }
         }
 
+        #if os(macOS)
         guard textView.shouldChangeText(in: safeRange, replacementString: string) else { return }
-        textView.textStorage?.replaceCharacters(in: safeRange, with: string)
+        textView.optionalTextStorage?.replaceCharacters(in: safeRange, with: string)
         textView.didChangeText()
+        #else
+        textView.replaceCharacters(in: safeRange, with: string)
+        #endif
     }
 
     // Markers: `-`/`*`/`+` (raw Markdown) + legacy `•` (rendered, never typed).
@@ -58,7 +66,7 @@ struct MarkdownLists {
     /// Remove the current line's leading marker from `start` and put the caret there (exit empty block on Enter).
     /// Ta Da fork: `start` keeps a quote marker before a list marker.
     private static func removeLinePrefixAndExit(
-        textView: NSTextView,
+        textView: PlatformTextView,
         currentLineRange: NSRange,
         from start: Int = 0,
         prefixLength: Int
@@ -101,7 +109,7 @@ struct MarkdownLists {
     /// `affectedCharRange.location` (the coordinator derives it from the
     /// keystroke's existing parse). `nil` — direct callers without a parse —
     /// falls back to deriving it here, which walks the whole document.
-    static func handleInsertion(textView: NSTextView, affectedCharRange: NSRange, replacementString: String?, isInsideCodeBlock: Bool? = nil) -> Bool {
+    static func handleInsertion(textView: PlatformTextView, affectedCharRange: NSRange, replacementString: String?, isInsideCodeBlock: Bool? = nil) -> Bool {
         guard let replacementString = replacementString else { return true }
 
         // Fast path: plain characters never trigger list/pair/arrow handling.

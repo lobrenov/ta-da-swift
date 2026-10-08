@@ -12,7 +12,11 @@
 //  styler; this file only answers membership.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import Foundation
 
 extension MarkdownStyler {

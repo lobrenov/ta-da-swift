@@ -9,7 +9,11 @@
 //  the body.
 //
 
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 
 /// How a blockquote with callouts lays out on screen: which callouts are folded and which lines that hides.
 struct CalloutQuoteLayout {
@@ -59,11 +63,11 @@ struct CalloutQuoteLayout {
         type.prefix(1).uppercased() + type.dropFirst().lowercased()
     }
 
-    static func titleFont(_ ctx: MarkdownASTStyler.Ctx) -> NSFont {
+    static func titleFont(_ ctx: MarkdownASTStyler.Ctx) -> PlatformFont {
         let descriptor = ctx.baseFont.fontDescriptor.addingAttributes([
-            .traits: [NSFontDescriptor.TraitKey.weight: NSFont.Weight.semibold],
+            .traits: [PlatformFontDescriptor.TraitKey.weight: PlatformFont.Weight.semibold],
         ])
-        return NSFont(descriptor: descriptor, size: ctx.baseFont.pointSize) ?? ctx.baseFont
+        return PlatformFont(descriptor: descriptor, size: ctx.baseFont.pointSize) ?? ctx.baseFont
     }
 }
 
@@ -149,7 +153,7 @@ extension MarkdownASTStyler {
             }
             attrs.append((line.markers, isActive
                 ? [.foregroundColor: ctx.theme.mutedText]
-                : [.foregroundColor: NSColor.clear, .font: ctx.inlineMarkerFont]))
+                : [.foregroundColor: PlatformColor.clear, .font: ctx.inlineMarkerFont]))
 
             var drawnTitle: CalloutLine.Title?
             if let title {
@@ -212,13 +216,13 @@ extension MarkdownASTStyler {
                     let name = CalloutQuoteLayout.displayName(of: ctx.ns.substring(with: header.type))
                     slot += HeadingHelpers.textWidth(name, font: CalloutQuoteLayout.titleFont(ctx))
                 }
-                attrs.append((header.syntax, [.font: ctx.inlineMarkerFont, .foregroundColor: NSColor.clear, .kern: -ctx.inlineMarkerFont.pointSize]))
+                attrs.append((header.syntax, [.font: ctx.inlineMarkerFont, .foregroundColor: PlatformColor.clear, .kern: -ctx.inlineMarkerFont.pointSize]))
                 attrs.append((NSRange(location: NSMaxRange(header.syntax) - 1, length: 1), [.kern: slot]))
             }
             for (line, isHidden) in zip(layout.lines, layout.hidden) where isHidden {
                 attrs.append((line.line, [
-                    .font: ctx.inlineMarkerFont, .foregroundColor: NSColor.clear, .kern: -ctx.inlineMarkerFont.pointSize,
-                    .backgroundColor: NSColor.clear, .markdownInlineBubble: NSNull(),
+                    .font: ctx.inlineMarkerFont, .foregroundColor: PlatformColor.clear, .kern: -ctx.inlineMarkerFont.pointSize,
+                    .backgroundColor: PlatformColor.clear, .markdownInlineBubble: NSNull(),
                     .underlineStyle: 0, .strikethroughStyle: 0,
                 ]))
             }

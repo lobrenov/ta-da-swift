@@ -5,7 +5,7 @@ import PackageDescription
 // (see ORIGIN.md). Apache-2.0 (LICENSE, NOTICE). No external dependencies.
 let package = Package(
     name: "TaDaMarkdown",
-    platforms: [.macOS(.v14)],
+    platforms: [.macOS(.v14), .iOS("26.0")],
     products: [
         .library(name: "TaDaMarkdown", targets: ["TaDaMarkdown"]),
     ],
