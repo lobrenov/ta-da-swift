@@ -38,7 +38,6 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                                        scopePaths: scope == .list ? scopePaths : nil, titlesOnly: scope == .titles)
                 } else {
                     LazyVStack(alignment: .leading, spacing: 0) { content }
-                        .coordinateSpace(.named(PickSwipe.space))
                         .padding(.bottom, 96)
                 }
             }

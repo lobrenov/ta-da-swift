@@ -121,6 +121,14 @@ struct IOSEditorInputTests {
         await editor.type("\n", after: "First")
         #expect(editor.textView.string == "- [ ] First\n- [ ] ")
         #expect(editor.text == "- [ ] First\n- [ ] ")
+        #expect(editor.textView.selectedRange == NSRange(location: 18, length: 0))
+    }
+
+    @Test func returnContinuesABulletListAfterTheCaret() async throws {
+        let editor = try IOSEditorHarness("- a\n\nAfter")
+        await editor.type("\n", after: "- a")
+        #expect(editor.textView.string == "- a\n- \n\nAfter")
+        #expect(editor.textView.selectedRange == NSRange(location: 6, length: 0))
     }
 
     @Test func tabIndentsAListItemUnderItsSibling() async throws {

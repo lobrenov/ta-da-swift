@@ -72,10 +72,8 @@ enum Haptic: Equatable {
     /// Rows picked by swiping or Select, in the order they were picked. Picking hides the tab bar for the action bar.
     var picked: [String] = []
     var isPicking = false
-    /// The rows of the list being picked from, top to bottom, for Select All and swiping down the list.
+    /// The rows of the list being picked from, top to bottom, for Select All.
     var pickable: [String] = []
-    /// Where each row of the list on screen is, in its content (`PickSwipe.space`), for a swipe that moves down the list.
-    @ObservationIgnored var rowFrames: [String: CGRect] = [:]
 
     /// The last haptic asked for; each new one plays once.
     private(set) var haptic: (Haptic, Int)?
@@ -118,13 +116,6 @@ enum Haptic: Equatable {
             picked.append(path)
         }
         play(.pick)
-    }
-
-    /// Picks `path` if it isn't already; a swipe passing over a row calls this. `quietly` leaves the haptic to the caller.
-    func pick(_ path: String, quietly: Bool = false) {
-        guard !picked.contains(path) else { return }
-        picked.append(path)
-        if !quietly { play(.pick) }
     }
 
     func pickAll() {

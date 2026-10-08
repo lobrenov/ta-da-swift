@@ -65,7 +65,7 @@ The milestones run in order in one worktree. Each ends with its check passing.
 - Checked on the iPhone 18 Pro Simulator against a copy of `SampleVault` in On My iPhone: each screen against its artboard, and the files after each write.
 
 ### B3 — Swipe to pick
-- `PhonePicking.swift`: a right swipe picks a row and carries the pick to the rows the finger moves over, alongside scrolling and the back swipe. The action bar (Complete, Schedule, Move, More, Delete) replaces the tab bar until Done; More holds Status, Set Deadline… and Share N Files…. The row menu's Select starts picking too.
+- `PhonePicking.swift`: a left swipe (in from the right) picks the row on release, alongside scrolling and the back swipe; the canvas shows the pick on the leading side. The action bar (Complete, Schedule, Move, More, Delete) replaces the tab bar until Done; More holds Status, Set Deadline… and Share N Files…. The row menu's Select starts picking too.
 - Checked on the Simulator; on device in M1.
 
 ### M1 — On device and docs

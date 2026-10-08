@@ -208,7 +208,15 @@ extension UITextView {
     /// Replaces `range` as an undoable edit the delegate hears of.
     func replaceCharacters(in range: NSRange, with string: String) {
         guard shouldChangeText(in: range, replacementString: string) else { return }
+        let selection = selectedRange
         textStorage.replaceCharacters(in: range, with: string)
+        // Ta Da fork: move the selection as AppKit does: past an edit before it, to the end of one it overlaps.
+        let length = (string as NSString).length
+        if selection.location >= NSMaxRange(range) {
+            selectedRange = NSRange(location: selection.location + length - range.length, length: selection.length)
+        } else if NSMaxRange(selection) > range.location {
+            selectedRange = NSRange(location: range.location + length, length: 0)
+        }
         didChangeText()
     }
 

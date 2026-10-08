@@ -1,21 +1,19 @@
-// Picking rows, as in Things: swipe a row right to pick it and keep the finger down to pick the rows it passes over.
-// While rows are picked the tab bar gives way to an action bar: Complete, Schedule, Move, More and Delete.
+// Picking rows: swipe a row left past the threshold and let go to pick it (or unpick it while picking). While rows
+// are picked the tab bar gives way to an action bar: Complete, Schedule, Move, More and Delete.
 #if os(iOS)
 import SwiftUI
 import UIKit
 import TaDaCore
 
 enum PickSwipe {
-    /// The coordinate space of a list's rows, which a swipe's location is read in.
-    static let space = "PickSwipe"
-    /// How far right a row must move to be picked.
+    /// How far left a row must move to be picked on release.
     static let threshold: CGFloat = 64
-    /// How far the row can move.
+    /// How far the row moves with the finger before it resists.
     static let reach: CGFloat = 88
 }
 
 extension View {
-    /// A right swipe on this row picks it, then picks each row the finger moves onto.
+    /// A left swipe on this row picks it when the finger lifts past the threshold.
     func swipeToPick(_ path: String) -> some View {
         modifier(SwipeToPick(path: path))
     }
@@ -30,57 +28,56 @@ private struct SwipeToPick: ViewModifier {
     let path: String
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
-    @State private var offset: CGFloat = 0
-    @State private var hasPassed = false
+    /// How far the row has moved left.
+    @State private var shift: CGFloat = 0
+    @State private var isPastThreshold = false
 
     func body(content: Content) -> some View {
         content
-            .offset(x: offset)
-            .background(alignment: .leading) {
-                if offset > 0 {
+            .offset(x: -shift)
+            .background(alignment: .trailing) {
+                if shift > 0 {
                     VStack(spacing: 4) {
                         Image(systemName: "checkmark.circle").font(.system(size: 20, weight: .semibold))
                         Text("Pick").font(.system(size: 13, weight: .semibold))
                     }
                     .foregroundStyle(.white)
-                    .frame(width: offset)
+                    .frame(width: max(shift, PickSwipe.threshold))
                     .frame(maxHeight: .infinity)
-                    .background(theme.color(\.accent).opacity(hasPassed ? 1 : 0.6))
+                    .background(theme.color(\.accent).opacity(isPastThreshold ? 1 : 0.6))
+                    .frame(width: shift, alignment: .leading)
                     .clipped()
                     .accessibilityHidden(true)
                 }
             }
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(PickSwipe.space)) } action: { nav.rowFrames[path] = $0 }
             .gesture(PickPan(changed: changed, ended: ended))
             .accessibilityAction(named: "Pick") { nav.isPicking ? nav.togglePicked(path) : nav.startPicking(path) }
     }
 
-    private func changed(_ translation: CGSize, _ location: CGPoint) {
-        let x = max(translation.width, 0)
-        offset = x <= PickSwipe.reach ? x : PickSwipe.reach + (x - PickSwipe.reach) / 4
-        if !hasPassed, x >= PickSwipe.threshold {
-            hasPassed = true
-            if !nav.isPicking { nav.startPicking() }
-            nav.pick(path, quietly: true)
-            nav.play(.press)
-        }
-        guard hasPassed else { return }
-        if let row = nav.pickable.first(where: { nav.rowFrames[$0]?.contains(CGPoint(x: 1, y: location.y)) == true }) {
-            nav.pick(row)
+    private func changed(_ translation: CGFloat) {
+        let x = max(-translation, 0)
+        shift = x <= PickSwipe.reach ? x : PickSwipe.reach + (x - PickSwipe.reach) / 4
+        let isPast = x >= PickSwipe.threshold
+        if isPast != isPastThreshold {
+            isPastThreshold = isPast
+            if isPast { nav.play(.press) }
         }
     }
 
-    private func ended() {
-        withAnimation(.snappy) { offset = 0 }
-        hasPassed = false
+    private func ended(_ isCancelled: Bool) {
+        if isPastThreshold, !isCancelled {
+            nav.isPicking ? nav.togglePicked(path) : nav.startPicking(path)
+        }
+        isPastThreshold = false
+        withAnimation(.spring(duration: 0.35, bounce: 0.3)) { shift = 0 }
     }
 }
 
-/// A pan that starts only when it moves right, away from the screen's left edge (the back swipe's), so the list
-/// still scrolls and the back swipe still works.
+/// A pan that starts only when it moves left and mostly sideways, so the list still scrolls and the back swipe
+/// still works.
 private struct PickPan: UIGestureRecognizerRepresentable {
-    let changed: (CGSize, CGPoint) -> Void
-    let ended: () -> Void
+    let changed: (CGFloat) -> Void
+    let ended: (_ isCancelled: Bool) -> Void
 
     func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
 
@@ -93,10 +90,11 @@ private struct PickPan: UIGestureRecognizerRepresentable {
     func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
         switch pan.state {
         case .began, .changed:
-            let translation = pan.translation(in: pan.view)
-            changed(CGSize(width: translation.x, height: translation.y), context.converter.location(in: .named(PickSwipe.space)))
-        case .ended, .cancelled, .failed:
-            ended()
+            changed(pan.translation(in: pan.view).x)
+        case .ended:
+            ended(false)
+        case .cancelled, .failed:
+            ended(true)
         default:
             break
         }
@@ -106,7 +104,7 @@ private struct PickPan: UIGestureRecognizerRepresentable {
         func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
             guard let pan = recognizer as? UIPanGestureRecognizer, let view = pan.view else { return false }
             let velocity = pan.velocity(in: view)
-            return velocity.x > 0 && velocity.x > abs(velocity.y) * 1.5 && pan.location(in: nil).x > 32
+            return velocity.x < 0 && -velocity.x > abs(velocity.y) * 1.5
         }
     }
 }
