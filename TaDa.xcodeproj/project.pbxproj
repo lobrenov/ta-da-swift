@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2B593608306FCE4600D4BBDB /* TaDaCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2B593607306FCE4600D4BBDB /* TaDaCore */; };
-		2B59360B306FCF3A00D4BBDB /* TaDaMarkdown in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 2B59360A306FCF3A00D4BBDB /* TaDaMarkdown */; };
+		2B59360B306FCF3A00D4BBDB /* TaDaMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 2B59360A306FCF3A00D4BBDB /* TaDaMarkdown */; };
 		2B59360D306FD00100D4BBDB /* GeneratedVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B59360C306FD00100D4BBDB /* GeneratedVault.swift */; };
 /* End PBXBuildFile section */
 
