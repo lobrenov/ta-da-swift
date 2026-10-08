@@ -29,9 +29,6 @@ struct TaskRow: View {
 
     @ViewBuilder private var chips: some View {
         let subtasks = item.subtasks
-        if p.status == .doing || p.status == .blocked {
-            StatusLabel(status: p.status)
-        }
         if subtasks.total > 0 {
             Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
                  spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
