@@ -1,4 +1,4 @@
-// A project's tasks beside the document pane: the project's header, then Open and Completed groups.
+// A project's tasks beside the document pane: the project's header, then Open and Completed groups, each foldable.
 import SwiftUI
 import TaDaCore
 
@@ -11,8 +11,9 @@ struct ProjectBrowserView: View {
         let tasks = model.index.tasks(in: project)
         let open = tasks.filter { $0.properties.status != .done }
         let done = tasks.filter { $0.properties.status == .done }
+        let shown = (isFolded("Open") ? [] : open) + (isFolded("Completed") ? [] : done)
 
-        BrowserColumn(model: model, paths: (open + done).map(\.path), spacing: 18) {
+        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18) {
             header(model.index.progress(of: project))
         } content: {
             group("Open", open)
@@ -44,11 +45,15 @@ struct ProjectBrowserView: View {
         }
     }
 
+    private func isFolded(_ group: String) -> Bool { model.isFolded(group, in: project.path) }
+
     @ViewBuilder private func group(_ title: String, _ tasks: [Item]) -> some View {
         if !tasks.isEmpty {
             VStack(alignment: .leading, spacing: 1) {
-                CountGroupHeader(title: title, count: tasks.count)
-                ForEach(tasks) { task in
+                CountGroupHeader(title: title, count: tasks.count, isExpanded: Binding(
+                    get: { !isFolded(title) },
+                    set: { _ in model.toggleFolded(title, in: project.path) }))
+                ForEach(isFolded(title) ? [] : tasks) { task in
                     TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,
                             dates: .iconsOnly, showsContexts: false,
                             onToggle: { Task { await model.toggleCompletion(task) } },

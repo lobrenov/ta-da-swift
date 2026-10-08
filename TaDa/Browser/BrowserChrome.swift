@@ -138,27 +138,48 @@ struct ProjectGroupHeader: View {
     }
 }
 
-/// A muted group name with a count on the right, over a rule ("Open 6").
+/// A muted group name with a count on the right, over a rule ("Open 6"). With `isExpanded`, a chevron before the
+/// name points down when the group is open and right when it's folded, and clicking the header folds or opens it.
 struct CountGroupHeader: View {
     let title: String
     let count: Int
+    var isExpanded: Binding<Bool>? = nil
     @Environment(\.theme) private var theme
 
     var body: some View {
         VStack(spacing: 7) {
-            HStack {
-                Text(title).fontWeight(.semibold)
-                Spacer()
-                Text("\(count)").fontWeight(.medium).monospacedDigit()
+            if let isExpanded {
+                Button { isExpanded.wrappedValue.toggle() } label: { label(expanded: isExpanded.wrappedValue) }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(isExpanded.wrappedValue ? "Expanded" : "Collapsed")
+                    .accessibilityHint(isExpanded.wrappedValue ? "Folds the group" : "Opens the group")
+            } else {
+                label(expanded: nil)
             }
-            .font(.system(size: 12))
-            .foregroundStyle(theme.color(\.muted))
-            .padding(.horizontal, 10)
             Hairline()
         }
         .padding(.bottom, 4)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
+    }
+
+    private func label(expanded: Bool?) -> some View {
+        HStack(spacing: 6) {
+            if let expanded {
+                Image(systemName: expanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 9, weight: .bold))
+                    .frame(width: 12)
+                    .accessibilityHidden(true)
+            }
+            Text(title).fontWeight(.semibold)
+            Spacer()
+            Text("\(count)").fontWeight(.medium).monospacedDigit()
+        }
+        .font(.system(size: 12))
+        .foregroundStyle(theme.color(\.muted))
+        .padding(.leading, expanded == nil ? 10 : 6)
+        .padding(.trailing, 10)
+        .contentShape(.rect)
     }
 }
 

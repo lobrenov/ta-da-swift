@@ -5,6 +5,7 @@ protocol SettingsStore: AnyObject {
     func string(forKey key: String) -> String?
     func bool(forKey key: String) -> Bool
     func data(forKey key: String) -> Data?
+    func dictionary(forKey key: String) -> [String: Any]?
     func set(_ value: Any?, forKey key: String)
 }
 

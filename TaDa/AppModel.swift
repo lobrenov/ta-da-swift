@@ -137,6 +137,10 @@ import TaDaCore
     var darkScheme: Theme {
         didSet { defaults.set(darkScheme.name, forKey: Keys.darkScheme) }
     }
+    /// The task groups folded in each project's browser ("Open", "Completed"), by project path.
+    private(set) var foldedGroups: [String: [String]] {
+        didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
+    }
     /// The Mac's appearance, kept current by ContentView.
     var systemIsDark = Appearance.systemIsDark
 
@@ -155,6 +159,16 @@ import TaDaCore
     func choose(_ set: ThemeSet) {
         themeSet = set
         usesSchemePerAppearance = false
+    }
+
+    func isFolded(_ group: String, in project: String) -> Bool {
+        foldedGroups[project]?.contains(group) == true
+    }
+
+    func toggleFolded(_ group: String, in project: String) {
+        var groups = foldedGroups[project] ?? []
+        if let i = groups.firstIndex(of: group) { groups.remove(at: i) } else { groups.append(group) }
+        foldedGroups[project] = groups.isEmpty ? nil : groups
     }
 
     /// How long an edit waits before it's saved.
@@ -180,6 +194,7 @@ import TaDaCore
         static let usesSchemePerAppearance = "usesSchemePerAppearance"
         static let lightScheme = "lightScheme"
         static let darkScheme = "darkScheme"
+        static let foldedGroups = "foldedGroups"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -189,6 +204,7 @@ import TaDaCore
         usesSchemePerAppearance = defaults.bool(forKey: Keys.usesSchemePerAppearance)
         lightScheme = defaults.string(forKey: Keys.lightScheme).flatMap(Theme.named) ?? ThemeSet.standard.light
         darkScheme = defaults.string(forKey: Keys.darkScheme).flatMap(Theme.named) ?? ThemeSet.standard.dark
+        foldedGroups = defaults.dictionary(forKey: Keys.foldedGroups) as? [String: [String]] ?? [:]
     }
 
     // MARK: Folder
@@ -707,6 +723,7 @@ import TaDaCore
         if let document, document.path == path { document.path = newPath }
         if domain == .project(path) { domain = .project(newPath) }
         if selection == path || selection == nil && domain == .project(newPath) { selection = newPath }
+        if let folded = foldedGroups.removeValue(forKey: path) { foldedGroups[newPath] = folded }
     }
 
     // MARK: Trash

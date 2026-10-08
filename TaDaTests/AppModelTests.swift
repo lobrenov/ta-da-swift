@@ -204,6 +204,21 @@ struct AppModelTests {
         #expect(!model.usesSchemePerAppearance && model.theme.name == "Nord")
     }
 
+    @Test func foldedGroupsSurviveARelaunchAndFollowARename() async {
+        let model = await folder.model()
+        model.toggleFolded("Completed", in: "projects/Ta Da MVP.md")
+        #expect(model.isFolded("Completed", in: "projects/Ta Da MVP.md"))
+        #expect(!model.isFolded("Open", in: "projects/Ta Da MVP.md") && !model.isFolded("Completed", in: "projects/Shipped.md"))
+        #expect(AppModel(defaults: folder.defaults).isFolded("Completed", in: "projects/Ta Da MVP.md"), "survives a relaunch")
+
+        await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
+        #expect(model.isFolded("Completed", in: "projects/Ta Da 1.0.md"))
+        #expect(!model.isFolded("Completed", in: "projects/Ta Da MVP.md"))
+
+        model.toggleFolded("Completed", in: "projects/Ta Da 1.0.md")
+        #expect(!model.isFolded("Completed", in: "projects/Ta Da 1.0.md"))
+    }
+
     @Test func deletingTheSelectedTaskSelectsTheNextOne() async {
         let model = await folder.model()
         model.show(.loose)
