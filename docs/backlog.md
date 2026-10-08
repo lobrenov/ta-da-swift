@@ -12,5 +12,5 @@ Work not yet built.
 - Areas in Live mode: the property chips leave `area` out until it's reconsidered.
 - A better design for a project's linked-tasks table (its columns have fixed widths).
 - iOS/iPad, including the choice of editor.
-- Upstream fix for alias display: `[[Target|Alias]]` shows the target name.
+- Alias display in TaDaMarkdown: `[[Target|Alias]]` shows the target name.
 - Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, code blocks, and the caret's line in mono on `code`.

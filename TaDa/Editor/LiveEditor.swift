@@ -1,7 +1,7 @@
-// The only file that imports MarkdownEngine.
+// The only file that imports TaDaMarkdown.
 import SwiftUI
 import AppKit
-import MarkdownEngine
+import TaDaMarkdown
 import TaDaCore
 
 struct LiveEditor: View {
