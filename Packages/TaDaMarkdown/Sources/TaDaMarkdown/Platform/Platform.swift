@@ -58,6 +58,9 @@ extension NSTextView {
     /// The selected ranges: AppKit's `selectedRanges`, UIKit's one range.
     var currentSelectedRanges: [NSRange] { selectedRanges.map(\.rangeValue) }
 
+    /// Ta Da fork: whether the caret and selection reveal markdown syntax: while editable.
+    var revealsSyntax: Bool { isEditable }
+
     /// The text container, optional on both platforms (UIKit's isn't).
     var optionalTextContainer: NSTextContainer? { textContainer }
 
@@ -237,6 +240,10 @@ extension UITextView {
 
     /// The selected ranges: AppKit's `selectedRanges`, UIKit's one range.
     var currentSelectedRanges: [NSRange] { [selectedRange] }
+
+    /// Ta Da fork: whether the caret and selection reveal markdown syntax: while editable and
+    /// the keyboard is up, since the caret isn't shown once the text view resigns.
+    var revealsSyntax: Bool { isEditable && isFirstResponder }
 
     /// AppKit's `insertionPointColor`; UIKit tints the caret and selection together.
     var insertionPointColor: UIColor? {

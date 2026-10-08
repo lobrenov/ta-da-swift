@@ -172,8 +172,9 @@ struct IOSEditorInputTests {
 
     @Test func pressAndHoldOnACalloutTitleRequestsItsMenu() async throws {
         let editor = try IOSEditorHarness("> [!note] Title\n> Body\n\nAfter")
+        await editor.settle()
         let bridge = try #require(editor.textView.layoutBridge)
-        let line = bridge.boundingRect(forCharacterRange: NSRange(location: 0, length: 5), in: editor.textView.textContainer)
+        let line = bridge.boundingRect(forCharacterRange: (editor.textView.string as NSString).range(of: "Title"), in: editor.textView.textContainer)
         editor.textView.handlePress(at: CGPoint(x: 200, y: line.midY + editor.textView.textContainerOrigin.y))
         let request = try #require(editor.calloutRequests.first)
         #expect(request.type == "note")
@@ -181,6 +182,27 @@ struct IOSEditorInputTests {
         request.close()
         await editor.settle()
         #expect(editor.textView.string == "> [!tip] Title\n> Body\n\nAfter")
+    }
+
+    @Test func theCaretsSyntaxHidesWhenTheKeyboardGoes() async throws {
+        let editor = try IOSEditorHarness("## Heading\n\nBody")
+        func markerFontSize() -> CGFloat? {
+            (editor.textView.optionalTextStorage?.attribute(.font, at: 0, effectiveRange: nil) as? UIFont)?.pointSize
+        }
+        editor.textView.selectedRange = NSRange(location: (editor.textView.string as NSString).length, length: 0)
+        await editor.settle()
+        let hidden = markerFontSize()
+        editor.textView.selectedRange = NSRange(location: 5, length: 0)
+        await editor.settle()
+        #expect(editor.textView.isFirstResponder)
+        let revealed = markerFontSize()
+        #expect(revealed != hidden)
+        _ = editor.textView.resignFirstResponder()
+        await editor.settle()
+        #expect(markerFontSize() == hidden)
+        _ = editor.textView.becomeFirstResponder()
+        await editor.settle()
+        #expect(markerFontSize() == revealed)
     }
 }
 #endif

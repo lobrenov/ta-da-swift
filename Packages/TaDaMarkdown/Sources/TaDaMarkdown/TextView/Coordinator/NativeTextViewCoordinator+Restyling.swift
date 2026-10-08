@@ -100,12 +100,12 @@ extension NativeTextViewCoordinator {
             parsedForReplay = parsed
             let tokens = parsed.tokens
             // Hide caret from styling when read-only, else clicks reveal raw token syntax.
-            let caretLocation = textView.isEditable ? textView.currentSelectedRange.location : -1
+            let caretLocation = textView.revealsSyntax ? textView.currentSelectedRange.location : -1
             activeTokenIndices = activeTokenIndices(
                 parsed: parsed,
                 selection: textView.currentSelectedRange,
                 in: nsDisplay,
-                suppressed: !textView.isEditable
+                suppressed: !textView.revealsSyntax
             )
 
             let ranges = MarkdownStyler.styleAttributes(
@@ -116,7 +116,7 @@ extension NativeTextViewCoordinator {
                 caretLocation: caretLocation,
                 // Selection-revealed syntax (task checkboxes) needs the full
                 // range, not just the caret; read-only suppresses it like the caret.
-                selection: textView.isEditable ? textView.currentSelectedRange : nil,
+                selection: textView.revealsSyntax ? textView.currentSelectedRange : nil,
                 activeTokenIndices: activeTokenIndices,
                 // FIX: apply .wikiLinkID attributes on load/node-switch too. Without this the uuid
                 // survived only in the range-keyed wikiLinkMetadata; once a later writeback shifted a
@@ -234,11 +234,11 @@ extension NativeTextViewCoordinator {
             paragraphCandidates: paragraphCandidates,
             baseFont: baseFont,
             paragraphStyle: paragraphStyle,
-            caretLocation: textView.isEditable ? textView.currentSelectedRange.location : -1,
+            caretLocation: textView.revealsSyntax ? textView.currentSelectedRange.location : -1,
             // Selection-revealed task syntax: this is the per-keystroke /
             // selection-change restyle path, so the styler needs the full
             // selected range here too (read-only suppresses it like the caret).
-            selection: textView.isEditable ? textView.currentSelectedRange : nil,
+            selection: textView.revealsSyntax ? textView.currentSelectedRange : nil,
             activeTokenIndices: activeTokenIndices,
             wikiLinkIDProvider: { [weak self] range in
                 self?.wikiLinkID(for: range)
@@ -432,10 +432,36 @@ extension NativeTextViewCoordinator {
             parsed: parsed,
             selection: textView.currentSelectedRange,
             in: nsText,
-            suppressed: !textView.isEditable
+            suppressed: !textView.revealsSyntax
         )
         restyleTextView(textView, paragraphCandidates: paragraphs, tokens: tokens,
                         classified: parsed.classified, blocks: parsed.blocks)
+    }
+
+    /// Ta Da fork: the text view took or gave up the keyboard, so `revealsSyntax` changed:
+    /// restyle the caret's paragraph and the tokens that start or stop showing their syntax.
+    func editingFocusDidChange(in textView: PlatformTextView) {
+        guard !configuration.rawSourceMode, !isRebuildingDocument else { return }
+        let docText = textView.string
+        let nsText = docText as NSString
+        let parsed = parsedDocument(for: docText)
+        let previous = activeTokenIndices
+        activeTokenIndices = activeTokenIndices(
+            parsed: parsed,
+            selection: textView.currentSelectedRange,
+            in: nsText,
+            suppressed: !textView.revealsSyntax
+        )
+        let selection = NSIntersectionRange(textView.currentSelectedRange, NSRange(location: 0, length: nsText.length))
+        let paragraphs = [nsText.paragraphRange(for: selection)] + tokenRestyleParagraphs(
+            in: nsText,
+            tokens: parsed.tokens,
+            currentActiveTokenIndices: activeTokenIndices,
+            previousActiveTokenIndices: previous
+        )
+        restyleTextView(textView, paragraphCandidates: paragraphs, tokens: parsed.tokens,
+                        classified: parsed.classified, blocks: parsed.blocks)
+        previousActiveTokenIndices = activeTokenIndices
     }
 
     /// Width changes cannot alter non-table Markdown styling. Reuse the
@@ -462,7 +488,7 @@ extension NativeTextViewCoordinator {
             parsed: parsed,
             selection: textView.currentSelectedRange,
             in: nsText,
-            suppressed: !textView.isEditable
+            suppressed: !textView.revealsSyntax
         )
         return restyleTextView(
             textView,

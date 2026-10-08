@@ -237,7 +237,7 @@ extension NativeTextViewCoordinator {
         pendingPreEditActiveTokenIndices = nil
 
         activeTokenIndices = PerfTrace.measure("activeTok") {
-            activeTokenIndices(parsed: parsed, selection: safeSelRange, in: fullText, suppressed: !tv.isEditable)
+            activeTokenIndices(parsed: parsed, selection: safeSelRange, in: fullText, suppressed: !tv.revealsSyntax)
         }
         filterImageEmbedActiveTokens(parsed: parsed, text: fullText, selectionLocation: safeSelRange.location)
         updateAutocorrectSettings(
@@ -428,7 +428,7 @@ extension NativeTextViewCoordinator {
 
         let prevActive = activeTokenIndices
         PerfTrace.measure("selActive") {
-            activeTokenIndices = activeTokenIndices(parsed: parsed, selection: selRange, in: nsText, suppressed: !tv.isEditable)
+            activeTokenIndices = activeTokenIndices(parsed: parsed, selection: selRange, in: nsText, suppressed: !tv.revealsSyntax)
             filterImageEmbedActiveTokens(parsed: parsed, text: nsText, selectionLocation: selRange.location)
         }
 
@@ -896,7 +896,7 @@ extension NativeTextViewCoordinator {
             parsed: parsed,
             selection: textView.currentSelectedRange,
             in: preNS,
-            suppressed: !textView.isEditable
+            suppressed: !textView.revealsSyntax
         )
 
         defer { PerfTrace.checkpoint("shouldOut") }

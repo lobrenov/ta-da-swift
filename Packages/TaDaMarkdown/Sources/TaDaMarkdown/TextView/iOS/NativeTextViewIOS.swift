@@ -72,6 +72,19 @@ final class NativeTextView: UITextView {
         coordinator.map { $0.undoManager(forDocument: $0.documentId) } ?? super.undoManager
     }
 
+    /// The caret's syntax shows only while the keyboard is up (`revealsSyntax`).
+    override func becomeFirstResponder() -> Bool {
+        let became = super.becomeFirstResponder()
+        if became { coordinator?.editingFocusDidChange(in: self) }
+        return became
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { coordinator?.editingFocusDidChange(in: self) }
+        return resigned
+    }
+
     override var typingAttributes: [NSAttributedString.Key: Any] {
         get { baseTypingAttributes ?? super.typingAttributes }
         set { super.typingAttributes = baseTypingAttributes ?? newValue }
