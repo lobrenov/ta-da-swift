@@ -147,6 +147,15 @@ struct AppModelTests {
         #expect(model.selection == "tasks/Due today.md")
     }
 
+    @Test func autocompleteIsOnUntilASwitchIsTurnedOff() {
+        let first = AppModel(defaults: folder.defaults)
+        #expect(first.autocomplete == Autocomplete())
+        first.autocomplete.formatting = false
+
+        let second = AppModel(defaults: folder.defaults)
+        #expect(!second.autocomplete.formatting && second.autocomplete.brackets && second.autocomplete.wikiLinks)
+    }
+
     @Test func unknownThemeNamesFallBackToTomorrow() {
         folder.defaults.set("Monokai", forKey: "themeSet")
         folder.defaults.set("Monokai Light", forKey: "lightScheme")

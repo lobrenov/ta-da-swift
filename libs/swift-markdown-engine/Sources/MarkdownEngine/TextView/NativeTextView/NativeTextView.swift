@@ -46,6 +46,24 @@ final class NativeTextView: NSTextView {
     var maxOverscrollPoints: CGFloat = MarkdownEditorConfiguration.default.overscroll.maxPoints
     var minOverscrollPoints: CGFloat = MarkdownEditorConfiguration.default.overscroll.minPoints
 
+    // MARK: Auto-closed pairs
+    /// Ta Da fork: the pairs whose closers typing steps over (`MarkdownAutoPairs`). Every applied edit
+    /// moves them; undo and redo forget them.
+    var autoPairs: [AutoPair] = []
+
+    override func shouldChangeText(inRanges affectedRanges: [NSValue], replacementStrings: [String]?) -> Bool {
+        let allowed = super.shouldChangeText(inRanges: affectedRanges, replacementStrings: replacementStrings)
+        guard allowed, !autoPairs.isEmpty, let replacementStrings else { return allowed }
+        if undoManager?.isUndoing == true || undoManager?.isRedoing == true {
+            autoPairs = []
+        } else {
+            for (range, string) in zip(affectedRanges.map(\.rangeValue), replacementStrings).reversed() {
+                autoPairs = MarkdownAutoPairs.map(autoPairs, replacing: range, with: string.utf16.count)
+            }
+        }
+        return allowed
+    }
+
     // MARK: Editor wiring
     var onPasteImage: ((NSPasteboard) -> String?)?
     weak var layoutBridge: LayoutBridge?

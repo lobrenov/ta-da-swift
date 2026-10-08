@@ -107,21 +107,13 @@ struct MarkdownLists {
         // Fast path: plain characters never trigger list/pair/arrow handling.
         if replacementString.count == 1,
            let ch = replacementString.first,
-           ch != ">" && ch != "[" && ch != "(" && ch != "{" &&
-           ch != "\t" && ch != " " && ch != "\n" {
+           ch != ">" && ch != "\t" && ch != " " && ch != "\n",
+           !MarkdownAutoPairs.triggers.contains(ch) {
             return true
         }
 
         let activeConfig = (textView as? NativeTextView)?.configuration ?? .default
         let listsEnabled = activeConfig.lists.helpersEnabled
-        let autoClosePairsEnabled = activeConfig.lists.autoClosePairsEnabled
-
-        func insertAutoPair(open openChar: String, close closeChar: String) -> Bool {
-            let insertionLocation = affectedCharRange.location
-            MarkdownLists.performEdit(textView, replace: affectedCharRange, with: "\(openChar)\(closeChar)")
-            textView.setSelectedRange(NSRange(location: insertionLocation + openChar.count, length: 0))
-            return false
-        }
 
         let isInCodeBlock = isInsideCodeBlock ?? (
             textView.string.contains("`")
@@ -142,39 +134,11 @@ struct MarkdownLists {
             }
         }
 
-        // Autocomplete Obsidian-style node brackets and single square brackets
-        if replacementString == "[" {
-            let nsText = textView.string as NSString
-            let insertionLocation = affectedCharRange.location
-            if insertionLocation > 0 {
-                let prevChar = nsText.substring(with: NSRange(location: insertionLocation - 1, length: 1))
-                if prevChar == "[" {
-                    let hasAutoCloseBracket = insertionLocation < nsText.length
-                        && nsText.substring(with: NSRange(location: insertionLocation, length: 1)) == "]"
-                    if hasAutoCloseBracket {
-                        // Collapse auto-paired "[]" into "[[]]" without changing surrounding text.
-                        MarkdownLists.performEdit(
-                            textView,
-                            replace: NSRange(location: insertionLocation - 1, length: 2),
-                            with: "[[]]"
-                        )
-                    } else {
-                        // If the char to the right is not "]" (e.g. newline), do not delete it.
-                        MarkdownLists.performEdit(textView, replace: affectedCharRange, with: "[]]")
-                    }
-                    textView.setSelectedRange(NSRange(location: insertionLocation + 1, length: 0))
-                    return false
-                }
-            }
-            guard autoClosePairsEnabled else { return true }
-            return insertAutoPair(open: "[", close: "]")
-        }
-
-        // Autocomplete parentheses / braces
-        if replacementString == "(" || replacementString == "{" {
-            guard autoClosePairsEnabled else { return true }
-            let closeChar = (replacementString == "(") ? ")" : "}"
-            return insertAutoPair(open: replacementString, close: closeChar)
+        // Ta Da fork: brackets, formatting markers and wiki links pair, and an added closer is stepped over.
+        if let handled = MarkdownAutoPairs.handleInsertion(
+            textView, range: affectedCharRange, replacement: replacementString, isInCodeBlock: isInCodeBlock
+        ) {
+            return handled
         }
 
         // TAB: indent list items (skip in code blocks)

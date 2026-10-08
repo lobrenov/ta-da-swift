@@ -1,4 +1,4 @@
-// Settings window: a themed sidebar with the Vault and Themes pages, and the parts the pages share.
+// Settings window: a themed sidebar with the Vault, Themes and Editor pages, and the parts the pages share.
 import SwiftUI
 import TaDaCore
 
@@ -16,13 +16,14 @@ private struct SettingsWindow: View {
     @State private var page = Page.vault
     @Environment(\.theme) private var theme
 
-    enum Page { case vault, themes }
+    enum Page { case vault, themes, editor }
 
     var body: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 2) {
                 row(.vault, "Vault", systemImage: "folder", tint: \.accent)
                 row(.themes, "Themes", systemImage: "paintpalette", tint: \.link)
+                row(.editor, "Editor", systemImage: "pencil", tint: \.doing)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 14)
@@ -34,6 +35,7 @@ private struct SettingsWindow: View {
                 switch page {
                 case .vault: VaultSettingsView(model: model)
                 case .themes: ThemeSettingsView(model: model)
+                case .editor: EditorSettingsView(model: model)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

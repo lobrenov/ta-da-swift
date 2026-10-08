@@ -24,7 +24,7 @@ TaDa/
 ├── Theme/                     Theme (15 colour tokens + isDark), ThemeSet, Appearance, the 15 bundled schemes and 8 sets;
 │                              themed(by:) sets \.theme and NSApp.appearance and follows the Mac's appearance
 ├── Onboarding/                FolderPickerView
-├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView
+├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView, EditorSettingsView
 ├── Sidebar/                   SidebarView: search, domains, projects, folder line, Settings, New buttons
 ├── Browser/
 │   ├── WorkspaceView.swift    the area right of the sidebar, per domain
@@ -48,6 +48,7 @@ TaDa/
 │   └── DocumentBanner.swift   outside-change choices
 ├── Editor/
 │   ├── LiveEditor.swift       the only file that imports MarkdownEngine
+│   ├── Autocomplete.swift     the Live editor's Autocomplete switches
 │   ├── InlineCheckbox.swift   checkbox drawing for the editor and task rows
 │   ├── SourceTextView.swift   Source mode (NSTextView, line numbers)
 │   ├── SlashMenu.swift
@@ -83,7 +84,7 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 
 ## Window
 
-`NavigationSplitView { SidebarView } detail: { WorkspaceView }`. Settings (⌘, or the sidebar's Settings row) is the `Settings` scene: `SettingsView`, 900×640, with Vault and Themes pages. The workspace shows:
+`NavigationSplitView { SidebarView } detail: { WorkspaceView }`. Settings (⌘, or the sidebar's Settings row) is the `Settings` scene: `SettingsView`, 900×640, with Vault, Themes and Editor pages. The workspace shows:
 
 - Today, Loose tasks and a project's tasks: the browser list beside `DocumentPane`.
 - Upcoming: the agenda beside the month calendar when nothing is selected, otherwise the agenda beside `DocumentPane`.
@@ -106,6 +107,7 @@ A project's browser folds its Open and Completed groups from their headers. `App
 
 - **Live**: `LiveEditor` runs the engine with `.fitsContent` height inside a SwiftUI `ScrollView`, between the title and properties above and the footer (and a project's linked-tasks table) below. The engine's binding reads and writes only the body; it is spliced back after the frontmatter block. Theme tokens map to `MarkdownEditorTheme`; `TaskCheckboxStyle` takes its strikes and click transitions from `Checkbox.State` and its tints from `Theme.checkboxTint`, and `InlineCheckbox` draws the boxes; wikilinks resolve by `WikiLink.title` against the index's `titles`.
 - **Source**: `SourceTextView`, a TextKit 1 `NSTextView` with a line-number ruler and a current-line highlight. It edits the whole file, frontmatter included. `SourceHighlighter` (in TaDaCore, on `FrontmatterSplitter`, `WikiLink` and `LocalDate`) colours it by role (key `accent`, value `fg`, string `done`, date `due`, heading `strong`, punctuation and checkbox `muted`, done checkbox `done`, link `link`) and reruns over the whole file after each edit.
+- **Autocomplete**: `AppModel.autocomplete` holds Settings ▸ Editor's switches (Brackets, Text formatting, Wikilinks and embeds, all on by default), kept in the settings as one dictionary. `LiveEditor` passes them to the engine's `ListStyle`. A typed `(`, `[` or `{`, a formatting marker (`*`, `**`, `_`, `__`, `~~`, `==`, `` ` ``) or `[[` adds its closer, and typing that closer steps over it while the caret stays between the pair. Markers pair only between words and outside code; a single `*` at a line's start stays a bullet, a space straight after a marker removes its closer, and a run past the longest marker (`***`, ```` ``` ````, `~~~`, `===`) stays unpaired.
 - **Slash menu**: `/` in the Live editor opens `SlashMenu`, a themed list of `SlashCommand` formats in a `PopupMenu`: a borderless panel that places itself under its anchor and closes on a click elsewhere or a scroll. The checkbox, file and property menus use it too.
 - **Checkbox menu**: a right-click on a Live editor checkbox opens `CheckboxMenu`, the same kind of panel listing every marker (subtasks, then icons) with its box drawn by `InlineCheckbox`. While open it takes ↑↓, ↵ and esc.
 - **Callouts**: `LiveEditor` gives the engine a `CalloutStyle`, so `> [!type]` quotes draw as panels (types and aliases from `CalloutType`, icons from `CalloutIcon`). A click on a foldable callout's icon, chevron or the row past its title folds or opens it on screen only; the file keeps its `+` or `-`, and a folded body shows while the caret is in it. A right-click on a title line opens `CalloutMenu` under the icon, with the callout ringed: picking a type or fold edits only the text between `[!` and `]` or the character after it, as one undo step. While open it takes ↑↓, ↵ and esc.

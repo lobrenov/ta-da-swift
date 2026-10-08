@@ -394,6 +394,10 @@ extension NativeTextViewCoordinator {
 
     public func textViewDidChangeSelection(_ notification: Notification) {
         guard let tv = notification.object as? NSTextView else { return }
+        // Ta Da fork: forget auto-closed pairs the caret has left.
+        if let native = tv as? NativeTextView, !native.autoPairs.isEmpty {
+            native.autoPairs = MarkdownAutoPairs.keeping(native.autoPairs, selection: tv.selectedRange())
+        }
         // Raw mode: plain source — no reveal, snap-back, or inline previews.
         if configuration.rawSourceMode { return }
         if isWritingToolsActive { return }
