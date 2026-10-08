@@ -910,9 +910,12 @@ import TaDaCore
     }
 
     /// Creates a task linked to `project` without opening it, its title ready to type in the project page's table.
-    func newLinkedTask(in project: Item) async {
-        guard let path = await create(NewFile.task(project: project.title, today: today), in: Vault.taskFolder) else { return }
+    /// Returns the new file's path.
+    @discardableResult
+    func newLinkedTask(in project: Item) async -> String? {
+        guard let path = await create(NewFile.task(project: project.title, today: today), in: Vault.taskFolder) else { return nil }
         titleFocus = path
+        return path
     }
 
     /// Creates an untitled project and opens its page with its title ready to type.

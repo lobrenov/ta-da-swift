@@ -187,6 +187,47 @@ final class TaDaUITests: XCTestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
+    func testTheProjectPagesTasksTableEditsInPlace() throws {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Roadmap'")).firstMatch.click()
+        app.buttons["Open project file"].click()
+        let newTask = app.buttons["New linked task"]
+        XCTAssertTrue(newTask.waitForExistence(timeout: 5), "the project page is open")
+        newTask.click()
+
+        let titleField = app.textFields.matching(identifier: "linked-task-title").firstMatch
+        XCTAssertTrue(titleField.waitForExistence(timeout: 5), "the new row's title is ready to type")
+        waitForValue(titleField, "isHittable == true")
+        waitForValue(titleField, "hasKeyboardFocus == true")
+        app.typeText("Ship it")
+        app.typeKey(.return, modifierFlags: [])
+        let shipIt = app.groups["Ship it"]
+        XCTAssertTrue(shipIt.waitForExistence(timeout: 5), "Return renames the new task in its row")
+        XCTAssertTrue(newTask.exists, "and the project page stays open")
+
+        shipIt.buttons["status"].click()
+        XCTAssertTrue(app.buttons["Doing"].waitForExistence(timeout: 5), "the status cell opens the status menu")
+        app.buttons["Doing"].click()
+        waitForValue(shipIt.buttons["status"], "value == 'Doing'")
+
+        shipIt.buttons["dueDate"].click()
+        app.typeKey(.rightArrow, modifierFlags: [])
+        app.typeKey(.return, modifierFlags: [])
+        waitForValue(shipIt.buttons["dueDate"], "value != 'none'")
+
+        shipIt.buttons["title"].click()
+        XCTAssertTrue(titleField.waitForExistence(timeout: 5), "clicking the title edits it")
+        waitForValue(titleField, "hasKeyboardFocus == true")
+        app.typeKey("a", modifierFlags: .command)
+        app.typeText("Shipped")
+        app.staticTexts["Tasks"].click()
+        let shipped = app.groups["Shipped"]
+        XCTAssertTrue(shipped.waitForExistence(timeout: 5), "a click away renames it")
+
+        shipped.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).click()
+        waitForTitle("Shipped")
+        XCTAssertTrue(app.buttons["Open project file"].exists, "the rest of the row opens the task beside the project's browser")
+    }
+
     func testCompleteSelectedTask() throws {
         app.buttons["Alpha"].click()
         waitForTitle("Alpha")

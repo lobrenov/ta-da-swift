@@ -6,27 +6,35 @@ struct ProjectDocumentView: View {
     let model: AppModel
     let document: OpenDocument
     let project: Item
+    /// A new linked task's row, scrolled into view once it's laid out.
+    @State private var revealed: String?
 
     var body: some View {
         let tasks = model.index.tasks(in: project)
-        GeometryReader { viewport in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    TitleField(model: model, document: document, size: 28)
-                    PropertyChips(model: model, item: project)
-                    WarningList(warnings: model.index.warnings(for: project))
-                    Hairline()
-                    BodyEditor(model: model, document: document)
-                        .frame(maxWidth: 736, alignment: .leading)
-                    LinkedTasksTable(model: model, project: project, tasks: tasks)
-                        .padding(.top, 6)
-                    Spacer(minLength: 0)
-                    DocumentFooter(model: model, document: document)
+        ScrollViewReader { proxy in
+            GeometryReader { viewport in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        TitleField(model: model, document: document, size: 28)
+                        PropertyChips(model: model, item: project)
+                        WarningList(warnings: model.index.warnings(for: project))
+                        Hairline()
+                        BodyEditor(model: model, document: document)
+                            .frame(maxWidth: 736, alignment: .leading)
+                        LinkedTasksTable(model: model, project: project, tasks: tasks) { revealed = $0 }
+                            .padding(.top, 6)
+                        Spacer(minLength: 0)
+                        DocumentFooter(model: model, document: document)
+                    }
+                    .padding(.horizontal, 56)
+                    .padding(.top, 30)
+                    .padding(.bottom, 40)
+                    .frame(minHeight: viewport.size.height, alignment: .top)
                 }
-                .padding(.horizontal, 56)
-                .padding(.top, 30)
-                .padding(.bottom, 40)
-                .frame(minHeight: viewport.size.height, alignment: .top)
+            }
+            .task(id: revealed) {
+                guard let revealed else { return }
+                withAnimation { proxy.scrollTo(revealed, anchor: .center) }
             }
         }
     }
@@ -38,6 +46,8 @@ private struct LinkedTasksTable: View {
     let model: AppModel
     let project: Item
     let tasks: [Item]
+    /// Shows a new task's row.
+    let reveal: (String) -> Void
     @Environment(\.theme) private var theme
 
     private static let order: [Status] = [.doing, .blocked, .notStarted, .done]
@@ -59,7 +69,9 @@ private struct LinkedTasksTable: View {
                     .foregroundStyle(theme.color(\.muted))
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                Button { Task { await model.newLinkedTask(in: project) } } label: {
+                Button {
+                    Task { if let path = await model.newLinkedTask(in: project) { reveal(path) } }
+                } label: {
                     Label("New linked task", systemImage: "plus")
                 }
                 .buttonStyle(ActionButtonStyle(height: 28, fill: \.bg))
@@ -77,6 +89,7 @@ private struct LinkedTasksTable: View {
             ForEach(sorted) { task in
                 Hairline()
                 LinkedTaskRow(model: model, task: task)
+                    .id(task.path)
                     .fileMenu(model, path: task.path, cornerRadius: 0)
                     .taskDrag(model, path: task.path)
             }
@@ -120,6 +133,7 @@ private struct LinkedTaskRow: View {
                 InlineTitleField(model: model, path: task.path, height: 26, font: .system(size: 13)) {
                     TaskTitle(item: task, size: 13)
                 }
+                .accessibilityIdentifier("linked-task-title")
                 .accessibilityLabel("title")
                 .accessibilityValue(task.title)
                 if subtasks.total > 0 {
@@ -157,6 +171,7 @@ private struct LinkedTaskRow: View {
         .onHover { hovering = $0 }
         .onTapGesture { model.selection = task.path }
         .accessibilityElement(children: .contain)
+        .accessibilityLabel(task.title)
         .accessibilityAction(named: "Open task") { model.selection = task.path }
     }
 }

@@ -29,7 +29,11 @@ extension AppModel {
             ("tasks/Alpha.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\nFirst line.\n"),
             ("tasks/Beta.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\n"),
             ("projects/Website.md", "---\ntype: project\nstatus: Doing\n---\n"),
-        ] {
+            ("projects/Roadmap.md", "---\ntype: project\nstatus: Doing\n---\n"),
+        ] + (1...25).map { n in
+            // Enough linked tasks that a new one's row starts below the project page's fold.
+            (String(format: "tasks/Step %02d.md", n), "---\ntype: task\nstatus: Not Started\nproject: \"[[Roadmap]]\"\n---\n")
+        } {
             let url = folder.appending(path: path)
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             try Data(text.utf8).write(to: url)
