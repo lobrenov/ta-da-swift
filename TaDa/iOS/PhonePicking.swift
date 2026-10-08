@@ -37,11 +37,9 @@ private struct SwipeToPick: ViewModifier {
             .offset(x: -shift)
             .background(alignment: .trailing) {
                 if shift > 0 {
-                    VStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle").font(.system(size: 20, weight: .semibold))
-                        Text("Pick").font(.system(size: 13, weight: .semibold))
-                    }
-                    .foregroundStyle(.white)
+                    Image(systemName: "checkmark.circle")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
                     .frame(width: max(shift, PickSwipe.threshold))
                     .frame(maxHeight: .infinity)
                     .background(theme.color(\.accent).opacity(isPastThreshold ? 1 : 0.6))
