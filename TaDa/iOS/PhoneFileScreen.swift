@@ -12,6 +12,7 @@ struct PhoneFileScreen: View {
     @State private var opened: OpenDocument?
     @State private var isSource = false
     @State private var isEditing = false
+    @State private var isVisible = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -33,8 +34,13 @@ struct PhoneFileScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbar }
-        .onAppear { model.selection = shownPath }
+        .onAppear {
+            isVisible = true
+            model.selection = shownPath
+        }
         .onDisappear {
+            isVisible = false
+            isEditing = false
             // Popping the screen closes the file; a tab switch, or a screen pushed over it, leaves it open.
             let shown = shownPath
             Task {
@@ -52,9 +58,10 @@ struct PhoneFileScreen: View {
         .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidEndEditingNotification)) { editingChanged($0, to: false) }
     }
 
-    /// Follows the focus of the title, body and source text views; a text field in a sheet or alert over the screen
-    /// doesn't count.
+    /// Follows the focus of the title, body and source text views while the screen is showing; a text field in a
+    /// sheet or alert over the screen, or on another screen, doesn't count.
     private func editingChanged(_ notification: Notification, to editing: Bool) {
+        guard isVisible else { return }
         var responder = notification.object as? UIResponder
         while let current = responder {
             if let controller = current as? UIViewController, controller.presentingViewController != nil { return }
