@@ -144,8 +144,8 @@ final class TaDaUITests: XCTestCase {
         waitForValue(project, "value == 'Website'")
 
         app.typeKey("m", modifierFlags: [.command, .shift])
-        XCTAssertTrue(app.buttons["No project"].waitForExistence(timeout: 5), "⇧⌘M opens the project menu")
-        app.buttons["No project"].click()
+        XCTAssertTrue(app.buttons["Loose tasks"].waitForExistence(timeout: 5), "⇧⌘M opens the move menu")
+        app.buttons["Loose tasks"].click()
         waitForValue(project, "value == 'None'")
 
         XCUIElement.perform(withKeyModifiers: .shift) { app.buttons["Beta"].click() }
@@ -204,6 +204,10 @@ final class TaDaUITests: XCTestCase {
         XCTAssertTrue(shipIt.waitForExistence(timeout: 5), "Return renames the new task in its row")
         XCTAssertTrue(newTask.exists, "and the project page stays open")
 
+        // The rename sorts the row to the top of the table, which can be under the toolbar.
+        let top = app.windows.firstMatch.frame.minY + 120
+        let lower = app.groups["Step 10"]
+        for _ in 0..<5 where shipIt.frame.minY < top { lower.scroll(byDeltaX: 0, deltaY: 120) }
         shipIt.buttons["status"].click()
         XCTAssertTrue(app.buttons["Doing"].waitForExistence(timeout: 5), "the status cell opens the status menu")
         app.buttons["Doing"].click()
