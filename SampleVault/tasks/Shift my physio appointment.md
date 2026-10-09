@@ -1,7 +1,7 @@
 ---
 type: task
 status: Blocked
-area: Personal
+area: "[[Personal]]"
 contexts:
   - "@phone"
 createdDate: 2026-09-30

@@ -1,4 +1,4 @@
-// Pieces shared by the browser lists: the column layout, domain header, group headers, context filter and empty states.
+// Pieces shared by the browser lists: the column layout, domain header, group headers and empty states.
 import SwiftUI
 import TaDaCore
 

@@ -1,7 +1,6 @@
 ---
 type: task
 status: Not Started
-area: Personal
 contexts:
   - "@mac"
 project: "[[Ta Da MVP]]"

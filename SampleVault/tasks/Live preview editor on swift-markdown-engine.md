@@ -1,7 +1,6 @@
 ---
 type: task
 status: Blocked
-area: Personal
 contexts:
   - "@mac"
 project: "[[Ta Da MVP]]"

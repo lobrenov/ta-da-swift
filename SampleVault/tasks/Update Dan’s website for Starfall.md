@@ -1,7 +1,6 @@
 ---
 type: task
 status: Doing
-area: Game Jams
 contexts:
   - "@computer"
 project: "[[Game Jam - Starfall]]"

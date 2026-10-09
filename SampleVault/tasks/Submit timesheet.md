@@ -1,7 +1,7 @@
 ---
 type: task
 status: Not Started
-area: Work
+area: "[[Work]]"
 contexts:
   - "@computer"
 createdDate: 2026-09-25

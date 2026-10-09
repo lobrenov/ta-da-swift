@@ -1,5 +1,5 @@
 ---
 type: project
 status: Doing
-area: Personal
+area: "[[Personal]]"
 ---

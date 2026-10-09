@@ -48,7 +48,7 @@ struct VaultSettingsView: View {
                     }
                     Hairline()
                     row("Contents") {
-                        Text("^[\(model.index.tasks.count) task](inflect: true) · ^[\(model.index.projects.count) project](inflect: true)")
+                        Text("^[\(model.index.tasks.count) task](inflect: true) · ^[\(model.index.projects.count) project](inflect: true) · ^[\(model.index.areas.count) area](inflect: true)")
                     }
                 }
             }
@@ -59,6 +59,7 @@ struct VaultSettingsView: View {
                 VStack(spacing: 0) {
                     folder("tasks/", "New tasks, one markdown file each")
                     folder("projects/", "New projects, one markdown file each")
+                    folder("areas/", "New areas, one markdown file each")
                 }
                 .padding(.vertical, 6)
                 .background(theme.color(\.code), in: .rect(cornerRadius: 10))

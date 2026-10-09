@@ -1,7 +1,6 @@
 ---
 type: task
 status: Not Started
-area: Work
 contexts:
   - "@computer"
 project: "[[Atlas Billing]]"

@@ -1,7 +1,7 @@
 ---
 type: task
 status: Not Started
-area: TTRPGs
+area: "[[TTRPGs]]"
 contexts:
   - "@home"
 createdDate: 2026-09-27

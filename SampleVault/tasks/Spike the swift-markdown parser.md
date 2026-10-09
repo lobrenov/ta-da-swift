@@ -1,7 +1,6 @@
 ---
 type: task
 status: Done
-area: Personal
 contexts:
   - "@mac"
 project: "[[Ta Da MVP]]"

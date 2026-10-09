@@ -1,7 +1,7 @@
 ---
 type: project
 status: Doing
-area: Personal
+area: "[[Personal]]"
 createdDate: 2026-09-14
 deadline: 2026-12-18
 ---

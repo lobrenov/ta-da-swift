@@ -1,7 +1,7 @@
 ---
 type: task
 status: Doing
-area: Personal
+area: "[[Personal]]"
 contexts: ["@computer"]
 project:
 createdDate: 2026-09-28

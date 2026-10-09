@@ -1,5 +1,5 @@
 ---
 type: project
 status: Doing
-area: Game Jams
+area: "[[Game Jams]]"
 ---

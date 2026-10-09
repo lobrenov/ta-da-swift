@@ -1,7 +1,7 @@
 ---
 type: task
 status: Not Started
-area: Personal
+area: "[[Personal]]"
 contexts:
   - "@phone"
 createdDate: 2026-10-01
