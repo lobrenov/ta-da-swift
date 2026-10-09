@@ -303,8 +303,8 @@ struct PhoneProjectHeader: View {
     }
 }
 
-/// The menu a press and hold opens on a row: complete, today or tomorrow up top; then status, dates, move (tasks),
-/// share, select (only in the list on screen) and trash. On an area: its file, share and trash.
+/// The menu a press and hold opens on a row: complete, today or tomorrow up top; then status, dates, move (to an
+/// area for a project), share, select (only in the list on screen) and trash. On an area: its file, share and trash.
 struct PhoneFileMenu: View {
     let model: AppModel
     let item: Item
@@ -365,8 +365,8 @@ struct PhoneFileMenu: View {
         .pickerStyle(.menu)
         Button("Schedule…", systemImage: "calendar") { nav.sheet = .date(.due, paths: [path]) }
         Button("Set Deadline…", systemImage: "flag") { nav.sheet = .date(.deadline, paths: [path]) }
-        if item.properties.kind == .task {
-            Button("Move…", systemImage: "folder") { nav.sheet = .move(paths: [path]) }
+        Button("Move…", systemImage: "folder") {
+            nav.sheet = item.properties.kind == .task ? .move(paths: [path]) : .area(paths: [path])
         }
         Divider()
         if let url = model.vault?.url(for: path) {

@@ -1,5 +1,5 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on an area,
-// project or task. Rows add it with `.fileMenu(model, path:)`. Move (tasks), Schedule, Set Deadline…, Reveal in
+// project or task. Rows add it with `.fileMenu(model, path:)`. Move, Schedule, Set Deadline…, Reveal in
 // Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Reveal in Finder and
 // Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
 #if os(macOS)
@@ -24,9 +24,9 @@ struct FileMenuAction: PopupMenuItem {
     var startsGroup = false
     let run: () -> Void
 
-    /// Move for tasks, Schedule, Set Deadline…, Reveal in Finder and Delete for a file in the folder; Restore,
-    /// Reveal in Finder and Delete Forever for one in `.trash/`. A right-click on a picked file acts on every picked
-    /// file. Move, Schedule and Set Deadline… open their menu at `point` (screen coordinates) in `window`, else under
+    /// Move (to a project or area for tasks, to an area for projects), Schedule, Set Deadline…, Reveal in Finder and
+    /// Delete for a file in the folder; Restore, Reveal in Finder and Delete Forever for one in `.trash/`. A
+    /// right-click on a picked file acts on every picked file. Move, Schedule and Set Deadline… open their menu at `point` (screen coordinates) in `window`, else under
     /// the row or the open file's chip.
     static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
         if let area = model.index[path], area.properties.kind == .area {
@@ -34,16 +34,22 @@ struct FileMenuAction: PopupMenuItem {
         }
         guard path.hasPrefix(Vault.trashFolder + "/") else {
             let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
-            let tasks = model.moveTargets(for: path)
-            let move = FileMenuAction(title: tasks.count == 1 ? "Move" : "Move \(tasks.count) Tasks",
+            let isProject = model.index[path]?.properties.kind == .project
+            let moved = isProject ? model.areaTargets(for: path) : model.moveTargets(for: path)
+            let noun = isProject ? "Projects" : "Tasks"
+            let move = FileMenuAction(title: moved.count == 1 ? "Move" : "Move \(moved.count) \(noun)",
                                       systemImage: "folder", shortcut: "⇧⌘M") {
+                let items = moved.compactMap { model.index[$0] }
                 if let point, let window {
-                    PropertyPicker.shared.pickProject(of: tasks.compactMap { model.index[$0] }, model: model,
-                                                      below: CGRect(origin: point, size: .zero), gap: 0, in: window,
-                                                      ringing: path)
+                    let rect = CGRect(origin: point, size: .zero)
+                    if isProject {
+                        PropertyPicker.shared.pickArea(of: items, model: model, below: rect, gap: 0, in: window, ringing: path)
+                    } else {
+                        PropertyPicker.shared.pickProject(of: items, model: model, below: rect, gap: 0, in: window, ringing: path)
+                    }
                 } else {
-                    model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: .project, paths: tasks, anchor: path,
-                                                                             onChip: false)
+                    model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: isProject ? .area : .project, paths: moved,
+                                                                             anchor: path, onChip: model.selection == path)
                 }
             }
             let files = model.dateTargets(for: path)
@@ -65,7 +71,7 @@ struct FileMenuAction: PopupMenuItem {
                                         systemImage: "trash", shortcut: "⌘⌫") {
                 Task { await model.moveToTrash(paths) }
             }
-            return (tasks.isEmpty ? [] : [move]) + [schedule, deadline, reveal(paths, model: model), delete]
+            return (moved.isEmpty ? [] : [move]) + [schedule, deadline, reveal(paths, model: model), delete]
         }
         let paths = model.trashSelection.contains(path) ? model.trashSelection : [path]
         return [

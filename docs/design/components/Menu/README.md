@@ -21,7 +21,7 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 ## File menu
 
 - Opens at the pointer on a right-click or control-click; the right-clicked row gets a 2px `accent` inset ring (`td-row.is-target`, `td-nav-item.is-target`) while it's open.
-- Items: Move (⇧⌘M, tasks only), Schedule (⌘S), Set Deadline… (⌘D), Reveal in Finder (no shortcut) and Delete (⌘⌫) for a file in the folder; Restore (⌘⌫), Reveal in Finder and, after a separator, Delete Forever (⌥⌘⌫) in Trash.
+- Items: Move (⇧⌘M; the area menu for a project), Schedule (⌘S), Set Deadline… (⌘D), Reveal in Finder (no shortcut) and Delete (⌘⌫) for a file in the folder; Restore (⌘⌫), Reveal in Finder and, after a separator, Delete Forever (⌥⌘⌫) in Trash.
 - A right-click on a picked row acts on every picked row, and Move, Schedule and Delete name the count: "Move 3 Tasks", "Schedule 3 Tasks", "Delete 3 Tasks". Reveal in Finder selects every picked file in one Finder window. A right-click on any other row acts on that row only.
 - Move opens the project menu, and Schedule and Set Deadline… the date menu, at the pointer in the file menu's place; the row stays ringed until it closes. For several files the date menu fills a date only when they all share it.
 

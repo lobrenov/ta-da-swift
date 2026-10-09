@@ -25,7 +25,7 @@ struct FileMenuTests {
     @Test func everyFileCanBeRevealedInFinderWithoutAShortcut() async {
         let model = await folder.model()
         #expect(titles("tasks/One.md", model) == ["Move", "Schedule", "Set Deadline…", "Reveal in Finder", "Delete"])
-        #expect(titles("projects/Ta Da MVP.md", model) == ["Schedule", "Set Deadline…", "Reveal in Finder", "Delete"])
+        #expect(titles("projects/Ta Da MVP.md", model) == ["Move", "Schedule", "Set Deadline…", "Reveal in Finder", "Delete"])
 
         let paths = ["tasks/One.md", "tasks/Two.md", "tasks/Three.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)

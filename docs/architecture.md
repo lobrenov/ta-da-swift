@@ -95,7 +95,7 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 - Trash: `TrashView` across the workspace.
 - Source mode: `DocumentPane` with the Source editor and `FileInspector` across the workspace, until the selection clears.
 
-A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Move (tasks), Schedule, Set Deadline…, Reveal in Finder and Delete, or Restore, Reveal in Finder and Delete Forever in Trash. A right-click on a picked file acts on every picked file. Move opens the project menu, and Schedule and Set Deadline… the due date's or deadline's calendar, at the pointer in its place, with the row still ringed. While open it takes ↑↓, ↵ and esc.
+A right-click (or control-click) on a sidebar project or a task row in any list opens `FileMenu`: a compact themed panel at the pointer, with the row ringed in `accent`. It offers Move, Schedule, Set Deadline…, Reveal in Finder and Delete, or Restore, Reveal in Finder and Delete Forever in Trash. A right-click on a picked file acts on every picked file. Move opens the project menu (the area menu for a project), and Schedule and Set Deadline… the due date's or deadline's calendar, at the pointer in its place, with the row still ringed. While open it takes ↑↓, ↵ and esc.
 
 Moving tasks to a project: the file menu's Move, ⇧⌘M and dragging all act on `AppModel.moveTargets(for:)`, the right-clicked or dragged row (every picked task when it's one of them) or, for ⇧⌘M, the picked tasks or the open one, in list order and without projects. ⇧⌘M sets `AppModel.propertyMenuRequest`, and the open task's project chip, or else the first picked row (`.taskDrag`), opens the project menu under itself. Task rows in every list but Trash are draggable (`.taskDrag`) as `TaskFile`s, their file URLs, in `WorkspaceView`'s drag container (`.taskDragContainer`), which drags every picked task when a picked row is dragged and lets other apps only copy; the sidebar's projects, Loose tasks and Today take them (`.taskDrop`), finding the tasks with `Vault.path(of:)`, linking them to the project with `AppModel.setProject(_:of:)`, emptying their project, or making them due today with `AppModel.makeDueToday(_:)`. Tasks already there aren't written.
 
@@ -143,7 +143,7 @@ On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a check
 | ⌘E | Live / Source |
 | ⌘, | Settings |
 | ⌘K | Complete or reopen the selected task |
-| ⇧⌘M | Move the open task (project menu under its project chip) or the picked tasks (under the first) to a project. Off in Source mode |
+| ⇧⌘M | Move the open task (project menu under its project chip) or the picked tasks (under the first) to a project; with no task, the open or picked projects to an area (`AppModel.areaTargets(for:)`, area menu). Off in Source mode |
 | ⌘S / ⌘D | Set the due date / deadline of the open file (calendar under its chip) or the picked tasks (under the first). Off in Source mode |
 | ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step. Off unless the Live or Source editor has the keyboard (its `editor` focused value) |
 | ↑ / ↓, Escape | Move through the list, clear the selection, while the list has the keyboard |

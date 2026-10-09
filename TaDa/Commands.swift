@@ -61,7 +61,7 @@ struct AppCommands: Commands {
             .disabled(editor == nil)
             Button("Move…") { model.showMoveMenu() }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
-                .disabled(model.isSourceMode || model.moveTargets().isEmpty)
+                .disabled(model.isSourceMode || model.moveTargets().isEmpty && model.areaTargets().isEmpty)
             Button("Schedule…") { model.showDateMenu(.due) }
                 .keyboardShortcut("s")
                 .disabled(model.isSourceMode || model.dateTargets().isEmpty)

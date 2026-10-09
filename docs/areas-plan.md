@@ -25,7 +25,7 @@ Starting point, as checked on 2026-10-09:
 - **Restore**: only upward. A task brings back its project and that project's area, or its area. A project brings back its area. An area comes back alone. A parent deleted forever is recreated by name. Restoring a project no longer brings its tasks.
 - **Icon**: the Cube, two-tone (top face filled at 30%), tinted `doing`. Sidebar 16, title 24, chip 13, iPhone row 28.
 - **Contexts**: no longer read or shown. The keys stay in files untouched, as any unknown key does.
-- **Shortcut**: ⌥⌘N New Area. Task ▸ Move… (⇧⌘M) opens the move menu.
+- **Shortcut**: ⌥⌘N New Area. Task ▸ Move… (⇧⌘M) opens the move menu for tasks and the area menu for projects; the file menu's Move (Mac right-click, iPhone press and hold) does the same.
 
 ## Milestones
 The milestones run in order in one worktree. Each ends with its check passing. TaDaCore checks run on macOS and the iOS Simulator.

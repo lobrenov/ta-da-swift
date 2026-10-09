@@ -354,6 +354,23 @@ struct AppModelTests {
         #expect(model.propertyMenuRequest?.onChip == false)
     }
 
+    @Test func showMoveMenuAsksForTheAreaMenuOnAProject() async {
+        let model = await folder.model()
+        let paths = ["projects/Ta Da MVP.md", "tasks/Loose.md"]
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
+        model.selection = paths[0]
+        #expect(model.areaTargets() == [paths[0]])
+        #expect(model.areaTargets(for: paths[1]).isEmpty, "tasks don't take the area menu")
+        model.showMoveMenu()
+        #expect(model.propertyMenuRequest?.menu == .area)
+        #expect(model.propertyMenuRequest?.paths == [paths[0]] && model.propertyMenuRequest?.onChip == true)
+
+        model.extendSelection(to: paths[1])
+        model.showMoveMenu()
+        #expect(model.propertyMenuRequest?.menu == .project, "picked tasks move to a project")
+        #expect(model.propertyMenuRequest?.paths == [paths[1]])
+    }
+
     @Test func showDateMenuAsksTheChipOrTheFirstPickedRow() async {
         let model = await folder.model()
         let paths = ["tasks/Loose.md", "tasks/Due today.md"]

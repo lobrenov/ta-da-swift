@@ -90,9 +90,18 @@ final class PropertyPicker {
     }
 
     /// Opens the area menu for `projects` under `anchor`, or closes it when it's open.
-    func pickArea(of projects: [Item], model: AppModel, anchor: ScreenAnchor) {
-        guard let window = anchor.window, let first = projects.first, toggle(first.path, "area", anchor: anchor.rect) else { return }
-        projectMenuContext = ProjectMenuContext(tasks: projects, model: model, anchor: anchor.rect, gap: 6, window: window)
+    func pickArea(of projects: [Item], model: AppModel, anchor: ScreenAnchor, gap: CGFloat = 6) {
+        guard let window = anchor.window else { return }
+        pickArea(of: projects, model: model, below: anchor.rect, gap: gap, in: window)
+    }
+
+    /// Opens the area menu for `projects` below `rect` (screen coordinates), or closes it when it's open. `ringed`
+    /// is a row to ring while it's open.
+    func pickArea(of projects: [Item], model: AppModel, below rect: CGRect, gap: CGFloat = 6, in window: NSWindow,
+                  ringing ringed: String? = nil) {
+        guard let first = projects.first, toggle(first.path, "area", anchor: rect) else { return }
+        projectMenuContext = ProjectMenuContext(tasks: projects, model: model, anchor: rect, gap: gap, window: window)
+        ring(ringed, model: model)
         areaMenu.query = ""
         areaMenu.searchPrompt = AreaChoice.findPrompt
         showAreas()

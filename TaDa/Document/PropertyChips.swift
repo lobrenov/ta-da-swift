@@ -188,6 +188,11 @@ private struct AreaPropertyChip: View {
         .buttonStyle(PropertyChipStyle(text: area != nil ? \.link : \.muted, isMissing: link == nil, isOpen: isOpen,
                                        trailing: area != nil ? 9 : 11))
         .background(ScreenAnchorReader(anchor: anchor))
+        .onChange(of: model.propertyMenuRequest) { _, request in
+            guard let request, request.menu == .area, request.onChip, request.anchor == project.path else { return }
+            model.propertyMenuRequest = nil
+            PropertyPicker.shared.pickArea(of: [project], model: model, anchor: anchor)
+        }
         .help(area.map { "⌘-click to open \($0.title)" } ?? link.map { "No area is called “\($0.title)”" } ?? "")
         .accessibilityLabel("Area")
         .accessibilityValue(area?.title ?? link.map { "\($0.title), not found" } ?? "None")

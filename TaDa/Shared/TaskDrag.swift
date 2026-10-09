@@ -63,6 +63,7 @@ private struct TaskDragSource: ViewModifier {
                 let items = request.paths.compactMap { model.index[$0] }
                 switch request.menu {
                 case .project: PropertyPicker.shared.pickProject(of: items, model: model, anchor: anchor, gap: 4)
+                case .area: PropertyPicker.shared.pickArea(of: items, model: model, anchor: anchor, gap: 4)
                 case .date(let kind): PropertyPicker.shared.pickDate(kind, of: items, model: model, anchor: anchor, gap: 4)
                 }
             }

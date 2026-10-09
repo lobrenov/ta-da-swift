@@ -91,7 +91,7 @@ import TaDaCore
     var trashNote: String?
     /// The file whose file menu is open; its row is ringed.
     var menuTarget: String?
-    /// ⇧⌘M's request for the project menu, or ⌘S's and ⌘D's for a date's calendar. The view it names opens the
+    /// ⇧⌘M's request for the project or area menu, or ⌘S's and ⌘D's for a date's calendar. The view it names opens the
     /// menu and sets this back to nil.
     var propertyMenuRequest: PropertyMenuRequest?
     struct PropertyMenuRequest: Equatable {
@@ -105,6 +105,7 @@ import TaDaCore
 
         enum Menu: Equatable {
             case project
+            case area
             case date(AgendaEntry.Kind)
         }
     }
@@ -945,10 +946,20 @@ import TaDaCore
         dateTargets(for: path).filter { index[$0]?.properties.kind == .task }
     }
 
+    /// The projects an area move acts on: `dateTargets(for:)` without tasks.
+    func areaTargets(for path: String? = nil) -> [String] {
+        dateTargets(for: path).filter { index[$0]?.properties.kind == .project }
+    }
+
     /// ⇧⌘M: asks for the project menu for the move targets, under the open task's project chip or the first
-    /// picked row.
+    /// picked row; with no tasks to move, the area menu for the area targets.
     func showMoveMenu() {
-        requestMenu(.project, for: moveTargets())
+        let tasks = moveTargets()
+        if tasks.isEmpty {
+            requestMenu(.area, for: areaTargets())
+        } else {
+            requestMenu(.project, for: tasks)
+        }
     }
 
     /// ⌘S (due date) and ⌘D (deadline): asks for `kind`'s calendar for the date targets, under the open file's
