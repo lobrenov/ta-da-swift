@@ -4,7 +4,7 @@ import Yams
 public enum PropertyReader {
     /// Reads frontmatter YAML from Yams' node tree, so values stay the strings that were written:
     /// no YAML 1.1 coercion of dates, `yes`/`no` or numbers.
-    /// Nil when the YAML doesn't declare `type: task` or `type: project` (matched case-insensitively).
+    /// Nil when the YAML doesn't declare `type: task`, `type: project` or `type: area` (matched case-insensitively).
     /// Invalid YAML falls back to a line scan for `type`, so a broken Ta Da file still loads with a warning.
     public static func read(_ yaml: String) -> (properties: Properties, warnings: [Warning])? {
         let root: Node?
@@ -20,20 +20,24 @@ public enum PropertyReader {
         guard let kind = reader.text("type").flatMap({ Item.Kind(rawValue: $0.lowercased()) }) else { return nil }
         var properties = Properties(kind: kind)
 
-        if let status = reader.text("status") {
-            if let parsed = Status(reading: status) {
-                properties.status = parsed
+        if kind != .area {
+            if let status = reader.text("status") {
+                if let parsed = Status(reading: status) {
+                    properties.status = parsed
+                } else {
+                    reader.warnings.append(.unknownStatus(status))
+                }
             } else {
-                reader.warnings.append(.unknownStatus(status))
+                reader.warnings.append(.missingStatus)
             }
-        } else {
-            reader.warnings.append(.missingStatus)
         }
-        properties.area = reader.text("area")
-        properties.contexts = reader.list("contexts")
-        if kind == .task, let project = reader.text("project") {
+        let project = kind == .task ? reader.text("project") : nil
+        if let project {
             properties.project = WikiLink(project)
             if properties.project == nil { reader.warnings.append(.invalidProject(project)) }
+        }
+        if kind != .area, let area = reader.text("area").flatMap(Self.areaLink) {
+            if project == nil { properties.area = area } else { reader.warnings.append(.areaIgnored(area.title)) }
         }
         properties.createdDate = reader.date("createdDate")
         properties.completedDate = reader.date("completedDate")
@@ -57,25 +61,6 @@ public enum PropertyReader {
             return isEmpty(scalar) ? nil : scalar.string
         }
 
-        /// A block or flow list of scalars. A single scalar reads as a one-item list.
-        mutating func list(_ key: String) -> [String] {
-            guard let node = root[key] else { return [] }
-            if let scalar = node.scalar { return isEmpty(scalar) ? [] : [scalar.string] }
-            guard let items = node.sequence else {
-                warnings.append(.unexpectedValue(key: key))
-                return []
-            }
-            var values: [String] = []
-            for item in items {
-                if let scalar = item.scalar {
-                    if !isEmpty(scalar) { values.append(scalar.string) }
-                } else {
-                    warnings.append(.unexpectedValue(key: key))
-                }
-            }
-            return values
-        }
-
         mutating func date(_ key: String) -> LocalDate? {
             guard let text = text(key) else { return nil }
             guard let date = LocalDate(text) else {
@@ -92,7 +77,12 @@ public enum PropertyReader {
         }
     }
 
-    /// Finds an unindented `type: task|project` line, with optional quotes.
+    /// An `area` value: a `"[[Title]]"` link, or plain text read as the title.
+    private static func areaLink(_ text: String) -> WikiLink? {
+        WikiLink(text) ?? WikiLink(inner: text)
+    }
+
+    /// Finds an unindented `type: task|project|area` line, with optional quotes.
     private static func scanKind(_ yaml: String) -> Item.Kind? {
         for line in yaml.split(whereSeparator: { $0 == "\n" || $0 == "\r\n" }) {
             guard line.hasPrefix("type:") else { continue }

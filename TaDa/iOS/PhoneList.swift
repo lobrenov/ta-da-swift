@@ -171,43 +171,6 @@ struct FloatingAddButton: View {
     }
 }
 
-/// "All" and one pill per context; picking one filters the list.
-struct PhoneContextPills: View {
-    let contexts: [String]
-    @Binding var selection: String?
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                pill("All", nil)
-                ForEach(contexts, id: \.self) { pill($0, $0) }
-            }
-            .padding(.horizontal, 16)
-        }
-        .scrollIndicators(.never)
-        .padding(.vertical, 8)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Filter by context")
-    }
-
-    private func pill(_ label: String, _ value: String?) -> some View {
-        let on = selection == value
-        return Button { selection = value } label: {
-            Text(label)
-                .scaledFont(size: 15, weight: .semibold)
-                .foregroundStyle(theme.color(on ? \.strong : \.fg))
-                .padding(.horizontal, 14)
-                .scaledMinHeight(32)
-                .background(on ? theme.color(\.surface) : .clear, in: .capsule)
-                .overlay { if !on { Capsule().strokeBorder(theme.color(\.border)) } }
-                .contentShape(.capsule)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(on ? .isSelected : [])
-    }
-}
-
 /// Files matching every word of `query`: projects first, then tasks, each with the line that matched.
 struct PhoneSearchResults: View {
     let model: AppModel

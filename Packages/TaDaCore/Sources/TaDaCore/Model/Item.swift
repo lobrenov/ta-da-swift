@@ -1,7 +1,7 @@
-/// One task or project file, as parsed from its text.
+/// One task, project or area file, as parsed from its text.
 public struct Item: Hashable, Sendable, Identifiable {
     public enum Kind: String, Sendable {
-        case task, project
+        case task, project, area
     }
 
     /// Path relative to the vault folder, e.g. `tasks/Pick a test framework.md`.
@@ -31,7 +31,7 @@ public struct Item: Hashable, Sendable, Identifiable {
 
     public var id: String { path }
 
-    /// Nil when the text isn't a Ta Da file (no `type: task` or `type: project`).
+    /// Nil when the text isn't a Ta Da file (no `type: task`, `type: project` or `type: area`).
     public init?(parsing text: String, path: String) {
         let split = FrontmatterSplitter.split(text)
         guard let yaml = split.yaml, let read = PropertyReader.read(yaml) else { return nil }
@@ -57,10 +57,11 @@ extension Item {
 /// The frontmatter keys Ta Da understands. Other keys are left alone.
 public struct Properties: Hashable, Sendable {
     public var kind: Item.Kind
+    /// Always Not Started on areas, which have no status.
     public var status: Status = .notStarted
-    public var area: String?
-    public var contexts: [String] = []
-    /// Tasks only; always nil on projects.
+    /// The area a project or task is filed under; always nil on areas, and on tasks with a `project`.
+    public var area: WikiLink?
+    /// Tasks only; always nil on projects and areas.
     public var project: WikiLink?
     public var createdDate: LocalDate?
     public var completedDate: LocalDate?
@@ -89,4 +90,8 @@ public enum Warning: Hashable, Sendable {
     case unexpectedValue(key: String)
     /// A task's `project` link doesn't match any project file, so the task is loose.
     case unresolvedProject(String)
+    /// An `area` link doesn't match any area file, so the file has no parent.
+    case unresolvedArea(String)
+    /// A task has both keys; `project` has a value, so its `area` (this title) is ignored.
+    case areaIgnored(String)
 }

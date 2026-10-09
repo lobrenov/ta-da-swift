@@ -180,37 +180,6 @@ struct CountGroupHeader: View {
     }
 }
 
-/// "All" plus one pill per context; picking one filters the list.
-struct ContextFilter: View {
-    let contexts: [String]
-    @Binding var selection: String?
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        HStack(spacing: 6) {
-            pill("All", value: nil)
-            ForEach(contexts, id: \.self) { pill($0, value: $0) }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Filter by context")
-    }
-
-    private func pill(_ label: String, value: String?) -> some View {
-        let on = selection == value
-        return Button { selection = value } label: {
-            Text(label)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(theme.color(on ? \.strong : \.muted))
-                .padding(.horizontal, 10)
-                .frame(height: 24)
-                .background(on ? theme.color(\.surface) : .clear, in: .capsule)
-                .contentShape(.capsule)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(on ? .isSelected : [])
-    }
-}
-
 /// A centred message for an empty domain or folder.
 struct EmptyState: View {
     let systemImage: String

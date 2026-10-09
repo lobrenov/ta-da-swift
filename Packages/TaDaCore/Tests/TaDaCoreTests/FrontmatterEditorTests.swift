@@ -1,4 +1,5 @@
 import Testing
+import Yams
 @testable import TaDaCore
 
 private let file = """
@@ -92,9 +93,9 @@ Body with status: Done
     "a: b", "a #b", "ends:", " padded ", "quote\"d", "it's", "back\\slash", "tab\there", "line\nbreak", "[x]", "{y}", "*star", "!bang", "Café ☕️",
 ])
 func textValuesReadBackUnchanged(_ value: String) throws {
-    let text = FrontmatterEditor.set("area", to: .text(value), in: "---\ntype: task\nstatus: Doing\n---\n")
+    let text = FrontmatterEditor.set("repeat", to: .text(value), in: "---\ntype: task\nstatus: Doing\n---\n")
     let read = try #require(PropertyReader.read(FrontmatterSplitter.split(text).yaml!))
-    #expect(read.properties.area == value)
+    #expect(read.properties.repeatRule == value)
     #expect(read.warnings.isEmpty)
 }
 
@@ -102,7 +103,7 @@ func textValuesReadBackUnchanged(_ value: String) throws {
     var text = "---\ntype: task\nstatus: Doing\n---\n"
     text = FrontmatterEditor.set("contexts", to: .list(["@computer", "a \"q\"", "Café"]), in: text)
     text = FrontmatterEditor.set("project", to: .link(title: "Game Jam - Starfall"), in: text)
-    let read = try #require(PropertyReader.read(FrontmatterSplitter.split(text).yaml!))
-    #expect(read.properties.contexts == ["@computer", "a \"q\"", "Café"])
-    #expect(read.properties.project?.title == "Game Jam - Starfall")
+    let yaml = try #require(FrontmatterSplitter.split(text).yaml)
+    #expect((try Yams.load(yaml: yaml) as? [String: Any])?["contexts"] as? [String] == ["@computer", "a \"q\"", "Café"])
+    #expect(try #require(PropertyReader.read(yaml)).properties.project?.title == "Game Jam - Starfall")
 }

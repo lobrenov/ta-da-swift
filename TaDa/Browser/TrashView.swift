@@ -163,7 +163,7 @@ struct TrashView: View {
                                 .accessibilityLabel("\(tasks.count) tasks")
                         }
                     }
-                    Text(isProject ? item.properties.area ?? "Project" : item.properties.project?.title ?? "Loose task")
+                    Text(isProject ? item.properties.area?.title ?? "Project" : item.properties.project?.title ?? "Loose task")
                         .font(.system(size: 11.5))
                         .foregroundStyle(theme.color(\.muted))
                 }

@@ -77,11 +77,11 @@ private let index = VaultIndex(items)
 @Test func searchMatchesWordsIgnoringCaseAndDiacritics() {
     let search = VaultIndex([
         makeItem("tasks/Update Dan’s website.md", "type: task\nstatus: Doing\narea: Game Jams"),
-        makeItem("tasks/Café run.md", "type: task\nstatus: Doing\ncontexts: [\"@errands\"]"),
+        makeItem("tasks/Café run.md", "type: task\nstatus: Doing\narea: \"[[Errands]]\""),
         makeItem("tasks/Other.md", "type: task\nstatus: Doing", body: "Mentions the website."),
     ])
     #expect(search.search("WEBSITE").map(\.title) == ["Update Dan’s website", "Other"])
-    #expect(search.search("cafe @err").map(\.title) == ["Café run"])
+    #expect(search.search("cafe err").map(\.title) == ["Café run"])
     #expect(search.search("gamejams dan").map(\.title) == ["Update Dan’s website"])
     #expect(search.search("  ").isEmpty)
 }
@@ -97,5 +97,10 @@ private let index = VaultIndex(items)
         "Message Max about a coat and a jacket", "Resolve the cabin payback", "Shift my physio appointment",
         "Submit timesheet", "Update 2DS before the next session", "Update my claude.md files",
     ])
-    for item in index.items.values { #expect(index.warnings(for: item).isEmpty, "\(item.path)") }
+    // The design has no area files, so its areas don't resolve.
+    for item in index.items.values {
+        #expect(index.warnings(for: item).allSatisfy { warning in
+            switch warning { case .areaIgnored, .unresolvedArea: true; default: false }
+        }, "\(item.path)")
+    }
 }

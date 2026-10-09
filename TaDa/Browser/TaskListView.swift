@@ -1,4 +1,4 @@
-// Today and Loose tasks: a header with context filters, loose tasks first, then one group per project.
+// Today and Loose tasks: a header, loose tasks first, then one group per project.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -8,36 +8,26 @@ struct TaskListView: View {
 
     let model: AppModel
     let kind: Kind
-    /// nil shows every context.
-    @State private var context: String?
 
     var body: some View {
         let all = kind == .today ? model.todayTasks : model.looseTasks
-        let contexts = Set(all.flatMap(\.properties.contexts)).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        let shown = all.filter { task in context.map { task.properties.contexts.contains($0) } ?? true }
-        let groups = model.index.grouped(shown)
+        let groups = model.index.grouped(all)
 
-        BrowserColumn(model: model, paths: groups.flatMap(\.tasks).map(\.path), spacing: 22, empty: shown.isEmpty ? empty : nil) {
-            header(contexts: contexts)
+        BrowserColumn(model: model, paths: groups.flatMap(\.tasks).map(\.path), spacing: 22, empty: all.isEmpty ? empty : nil) {
+            header
         } content: {
             list(groups)
         }
-        .onChange(of: contexts) { if let context, !contexts.contains(context) { self.context = nil } }
     }
 
-    private func header(contexts: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            switch kind {
-            case .today:
-                DomainHeader(.today) {
-                    Text(model.today.formatted(.weekdayDayMonth)).font(.system(size: 13))
-                }
-            case .loose:
-                DomainHeader(.loose)
+    @ViewBuilder private var header: some View {
+        switch kind {
+        case .today:
+            DomainHeader(.today) {
+                Text(model.today.formatted(.weekdayDayMonth)).font(.system(size: 13))
             }
-            if !contexts.isEmpty {
-                ContextFilter(contexts: contexts, selection: $context)
-            }
+        case .loose:
+            DomainHeader(.loose)
         }
     }
 

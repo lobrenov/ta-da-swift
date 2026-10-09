@@ -71,14 +71,16 @@ func itemIgnoresNonTaDaFiles(_ text: String) {
             #expect(file.path.contains("/notes/"), "\(title) didn't parse")
             continue
         }
-        #expect(item.warnings.isEmpty, "\(title): \(item.warnings)")
+        // The design's tasks name an area beside their project, which ignores it.
+        let ignored = item.warnings.filter { if case .areaIgnored = $0 { true } else { false } }
+        #expect(item.warnings == ignored && ignored.count == (item.properties.project != nil ? 1 : 0), "\(title): \(item.warnings)")
         #expect(item.properties.kind == (file.path.contains("/projects/") ? .project : .task), "\(title)")
         items[title] = item
     }
     #expect(items["Not a task"] == nil)
 
     let claude = try #require(items["Update my claude.md files"])
-    #expect(claude.properties.contexts == ["@computer"])
+    #expect(claude.properties.area?.title == "Personal")
     #expect(claude.properties.project == nil && claude.properties.repeatRule == nil)
     #expect(claude.subtasks == (done: 2, total: 5))
     #expect(claude.links.map(\.title) == ["Ta Da MVP"])

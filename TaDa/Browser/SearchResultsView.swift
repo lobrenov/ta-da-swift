@@ -34,7 +34,7 @@ struct SearchResultsView: View {
 
     private var noMatches: EmptyState {
         EmptyState(systemImage: "magnifyingglass", title: "No matches",
-                   message: "No task or project has every word of “\(model.searchText)” in its title, summary, area or contexts.")
+                   message: "No task or project has every word of “\(model.searchText)” in its title, summary or area.")
     }
 
     private func projectRow(_ project: Item) -> some View {

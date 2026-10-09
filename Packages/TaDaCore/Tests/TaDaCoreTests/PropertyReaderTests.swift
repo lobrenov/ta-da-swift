@@ -5,10 +5,6 @@ import Testing
     let yaml = """
     type: task
     status: Doing
-    area: Personal
-    contexts:
-      - "@computer"
-      - "@home"
     project: "[[Ta Da MVP]]"
     createdDate: 2026-09-28
     completedDate: 2026-10-01
@@ -22,8 +18,6 @@ import Testing
     let p = read.properties
     #expect(p.kind == .task)
     #expect(p.status == .doing)
-    #expect(p.area == "Personal")
-    #expect(p.contexts == ["@computer", "@home"])
     #expect(p.project?.target == "Ta Da MVP")
     #expect(p.createdDate == LocalDate("2026-09-28"))
     #expect(p.completedDate == LocalDate("2026-10-01"))
@@ -33,12 +27,31 @@ import Testing
     #expect(read.warnings.isEmpty)
 }
 
-@Test func readerAcceptsFlowAndBlockContexts() throws {
-    #expect(try #require(PropertyReader.read("type: task\nstatus: Done\ncontexts: [\"@a\", '@b', c]\n")).properties.contexts == ["@a", "@b", "c"])
-    #expect(try #require(PropertyReader.read("type: task\nstatus: Done\ncontexts:\n- \"@a\"\n- c\n")).properties.contexts == ["@a", "c"])
-    #expect(try #require(PropertyReader.read("type: task\nstatus: Done\ncontexts: \"@solo\"\n")).properties.contexts == ["@solo"])
-    #expect(try #require(PropertyReader.read("type: task\nstatus: Done\ncontexts: []\n")).properties.contexts == [])
-    #expect(try #require(PropertyReader.read("type: task\nstatus: Done\ncontexts:\n")).properties.contexts == [])
+@Test func readerReadsAreaAsLinkOrTitle() throws {
+    let link = try #require(PropertyReader.read("type: project\nstatus: Doing\narea: \"[[Personal]]\"\n"))
+    #expect(link.properties.area?.title == "Personal" && link.warnings.isEmpty)
+    let plain = try #require(PropertyReader.read("type: task\nstatus: Doing\narea: Personal\n"))
+    #expect(plain.properties.area?.title == "Personal" && plain.warnings.isEmpty)
+}
+
+@Test func readerIgnoresAreaWhenTaskHasProject() throws {
+    let read = try #require(PropertyReader.read("type: task\nstatus: Doing\narea: Personal\nproject: \"[[Ta Da MVP]]\"\n"))
+    #expect(read.properties.area == nil && read.properties.project?.title == "Ta Da MVP")
+    #expect(read.warnings == [.areaIgnored("Personal")])
+    let empty = try #require(PropertyReader.read("type: task\nstatus: Doing\narea: Personal\nproject:\n"))
+    #expect(empty.properties.area?.title == "Personal" && empty.warnings.isEmpty)
+}
+
+@Test func readerReadsAreas() throws {
+    let read = try #require(PropertyReader.read("type: area\ncreatedDate: 2026-10-09\narea: \"[[Other]]\"\nproject: \"[[P]]\"\n"))
+    #expect(read.properties.kind == .area && read.properties.createdDate == LocalDate("2026-10-09"))
+    #expect(read.properties.area == nil && read.properties.project == nil)
+    #expect(read.warnings.isEmpty, "areas have no status")
+}
+
+@Test func readerIgnoresContexts() throws {
+    let read = try #require(PropertyReader.read("type: task\nstatus: Doing\ncontexts:\n  - \"@ok\"\n  - {nested: map}\n"))
+    #expect(read.warnings.isEmpty)
 }
 
 @Test func readerTreatsEmptyAndNullAsMissing() throws {
@@ -49,14 +62,14 @@ import Testing
 }
 
 @Test func readerKeepsValuesAsWritten() throws {
-    let read = try #require(PropertyReader.read("type: task\nstatus: Doing\narea: yes\nrepeat: 2026\ncontexts: [on, \"null\"]\n"))
-    #expect(read.properties.area == "yes")
+    let read = try #require(PropertyReader.read("type: task\nstatus: Doing\narea: yes\nrepeat: 2026\n"))
+    #expect(read.properties.area?.title == "yes")
     #expect(read.properties.repeatRule == "2026")
-    #expect(read.properties.contexts == ["on", "null"])
 }
 
 @Test func readerMatchesTypeCaseInsensitively() {
     #expect(PropertyReader.read("type: Project\nstatus: Doing\n")?.properties.kind == .project)
+    #expect(PropertyReader.read("type: AREA\n")?.properties.kind == .area)
 }
 
 @Test(arguments: ["", "# only a comment\n", "status: Doing\n", "type: note\n", "type:\n", "- type: task\n", "just text\n", "type: [task]\n"])
@@ -78,16 +91,14 @@ func readerIgnoresNonTaDaFrontmatter(_ yaml: String) {
 }
 
 @Test func readerWarnsOnInvalidValues() throws {
-    let yaml = "type: task\nstatus: Doing\ndueDate: 2026-02-30\ndeadline: tomorrow\nproject: Ta Da MVP\narea: [a, b]\ncontexts:\n  - \"@ok\"\n  - {nested: map}\n"
+    let yaml = "type: task\nstatus: Doing\ndueDate: 2026-02-30\ndeadline: tomorrow\nproject: Ta Da MVP\narea: [a, b]\n"
     let read = try #require(PropertyReader.read(yaml))
     #expect(read.properties.dueDate == nil && read.properties.deadline == nil)
     #expect(read.properties.project == nil)
     #expect(read.properties.area == nil)
-    #expect(read.properties.contexts == ["@ok"])
     #expect(Set(read.warnings) == [
         .invalidProject("Ta Da MVP"),
         .unexpectedValue(key: "area"),
-        .unexpectedValue(key: "contexts"),
         .invalidDate(key: "dueDate", value: "2026-02-30"),
         .invalidDate(key: "deadline", value: "tomorrow"),
     ])
@@ -129,9 +140,9 @@ func readerIgnoresNonTaDaFrontmatter(_ yaml: String) {
 }
 
 @Test func readerHandlesCRLFAndUnicode() throws {
-    let read = try #require(PropertyReader.read("type: task\r\nstatus: Doing\r\narea: Café ☕️\r\ncontexts:\r\n  - \"@büro\"\r\nproject: \"[[Dan’s site]]\"\r\ndueDate: 2026-10-02\r\n"))
-    #expect(read.properties.area == "Café ☕️")
-    #expect(read.properties.contexts == ["@büro"])
+    let area = try #require(PropertyReader.read("type: project\r\nstatus: Doing\r\narea: Café ☕️\r\n"))
+    #expect(area.properties.area?.title == "Café ☕️" && area.warnings.isEmpty)
+    let read = try #require(PropertyReader.read("type: task\r\nstatus: Doing\r\nproject: \"[[Dan’s site]]\"\r\ndueDate: 2026-10-02\r\n"))
     #expect(read.properties.project?.title == "Dan’s site")
     #expect(read.properties.dueDate == LocalDate("2026-10-02"))
     #expect(read.warnings.isEmpty)

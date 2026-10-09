@@ -72,7 +72,7 @@ struct ProjectBrowserView: View {
                     set: { _ in model.toggleFolded(title, in: project.path) }))
                 ForEach(isFolded(title) ? [] : tasks) { task in
                     TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,
-                            dates: .iconsOnly, showsContexts: false,
+                            dates: .iconsOnly,
                             onToggle: { Task { await model.toggleCompletion(task) } },
                             onSelect: { model.click(task.path) })
                     .fileMenu(model, path: task.path)

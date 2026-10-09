@@ -105,7 +105,7 @@ extension VaultIndex {
         return (loose.isEmpty ? [] : [TaskGroup(project: nil, tasks: loose)]) + projectGroups
     }
 
-    /// Items whose title, summary, area or contexts contain every word of the query,
+    /// Items whose title, summary or area contain every word of the query,
     /// ignoring case and diacritics. Titles that match rank first.
     public func search(_ query: String) -> [Item] {
         let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
@@ -115,7 +115,7 @@ extension VaultIndex {
         }
         let hits = items.values.filter { item in
             let p = item.properties
-            return matches([item.title, item.summary ?? "", p.area ?? "", p.contexts.joined(separator: " ")].joined(separator: "\n"))
+            return matches([item.title, item.summary ?? "", p.area?.title ?? ""].joined(separator: "\n"))
         }
         return hits.sorted { a, b in
             let (ta, tb) = (matches(a.title), matches(b.title))

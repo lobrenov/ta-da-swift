@@ -8,6 +8,7 @@ public struct Vault: Sendable {
     /// New files go here; existing files can live anywhere.
     public static let taskFolder = "tasks"
     public static let projectFolder = "projects"
+    public static let areaFolder = "areas"
 
     public init(root: URL) {
         self.root = root.standardizedFileURL

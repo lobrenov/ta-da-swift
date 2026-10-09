@@ -19,3 +19,19 @@ private let today = LocalDate("2026-10-02")!
     let project = try #require(Item(parsing: NewFile.project(today: today), path: "p.md"))
     #expect(project.properties.kind == .project && project.properties.createdDate == today && project.warnings.isEmpty)
 }
+
+@Test func newFilesNameOneParent() throws {
+    let areaTask = NewFile.task(area: "Personal", today: today)
+    #expect(areaTask == "---\ntype: task\nstatus: Not Started\narea: \"[[Personal]]\"\ncreatedDate: 2026-10-02\n---\n")
+    let both = try #require(Item(parsing: NewFile.task(project: "Ta Da MVP", area: "Personal", today: today), path: "t.md"))
+    #expect(both.properties.project?.title == "Ta Da MVP" && both.properties.area == nil && both.warnings.isEmpty)
+    let project = try #require(Item(parsing: NewFile.project(area: "Work", today: today), path: "p.md"))
+    #expect(project.properties.area?.title == "Work" && project.warnings.isEmpty)
+}
+
+@Test func newAreaParsesBack() throws {
+    let text = NewFile.area(today: today)
+    #expect(text == "---\ntype: area\ncreatedDate: 2026-10-02\n---\n")
+    let area = try #require(Item(parsing: text, path: "areas/Personal.md"))
+    #expect(area.properties.kind == .area && area.properties.createdDate == today && area.warnings.isEmpty)
+}

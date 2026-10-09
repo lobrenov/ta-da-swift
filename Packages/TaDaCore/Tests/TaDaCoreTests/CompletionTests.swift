@@ -43,6 +43,6 @@ private let today = LocalDate("2026-10-02")!
         let reread = try #require(Item(parsing: after, path: "x.md"))
         #expect(reread.properties.status == (item.properties.status == .done ? .notStarted : .done))
         #expect(reread.properties.completedDate == (item.properties.status == .done ? nil : today))
-        #expect(reread.warnings.isEmpty)
+        #expect(reread.warnings == item.warnings)
     }
 }

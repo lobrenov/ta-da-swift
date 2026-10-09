@@ -81,7 +81,7 @@ private struct LinkedTasksTable: View {
             .padding(.vertical, 12)
             .background(theme.color(\.side))
             Hairline()
-            columns(Text("status"), Text("title"), Text("dueDate"), Text("deadline"), Text("contexts"))
+            columns(Text("status"), Text("title"), Text("dueDate"), Text("deadline"))
             .font(.system(size: 11, design: .monospaced))
             .foregroundStyle(theme.color(\.muted))
             .frame(height: 30)
@@ -120,7 +120,6 @@ private struct LinkedTaskRow: View {
         let subtasks = task.subtasks
         let due = p.dueDate?.relativeLabel(today: model.today)
         let deadline = p.deadline?.relativeLabel(today: model.today)
-        let contexts = p.contexts.joined(separator: " ")
         let picker = PropertyPicker.shared
         columns(
             PickerCell(isOpen: picker.isOpen(task.path, "status")) {
@@ -161,9 +160,7 @@ private struct LinkedTaskRow: View {
                 }
             }
             .accessibilityLabel("deadline")
-            .accessibilityValue(deadline ?? "none"),
-            Text(contexts).foregroundStyle(theme.color(\.muted))
-                .column("contexts", contexts.isEmpty ? "none" : contexts)
+            .accessibilityValue(deadline ?? "none")
         )
         .font(.system(size: 12))
         .frame(height: 36)
@@ -201,25 +198,16 @@ private struct PickerCell<Label: View>: View {
     }
 }
 
-/// The table's five columns: status, title, dueDate, deadline and contexts. Only the title stretches.
-private func columns(_ status: some View, _ title: some View, _ due: some View, _ deadline: some View,
-                     _ contexts: some View) -> some View {
+/// The table's four columns: status, title, dueDate and deadline. Only the title stretches.
+private func columns(_ status: some View, _ title: some View, _ due: some View, _ deadline: some View) -> some View {
     HStack(spacing: 12) {
         status.frame(width: 128, alignment: .leading)
         title.frame(maxWidth: .infinity, alignment: .leading)
         due.frame(width: 104, alignment: .leading)
         deadline.frame(width: 140, alignment: .leading)
-        contexts.frame(width: 96, alignment: .leading)
     }
     .lineLimit(1)
     .padding(.horizontal, 16)
-}
-
-private extension View {
-    /// One element that VoiceOver reads as its column's name and the cell's value.
-    func column(_ name: String, _ value: String) -> some View {
-        accessibilityElement(children: .ignore).accessibilityLabel("\(name): \(value)")
-    }
 }
 
 /// Creates a task linked to the current project and opens it with its title ready to type.

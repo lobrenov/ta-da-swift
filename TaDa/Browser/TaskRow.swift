@@ -16,7 +16,6 @@ struct TaskRow: View {
     let selected: Bool
     let today: LocalDate
     var dates = Dates.labelled
-    var showsContexts = true
     let onToggle: () -> Void
     let onSelect: () -> Void
 
@@ -43,9 +42,6 @@ struct TaskRow: View {
             if let deadline = p.deadline {
                 DateChip(kind: .deadline, date: deadline, today: today, labelled: dates != .iconsOnly)
             }
-        }
-        if showsContexts, !p.contexts.isEmpty {
-            Text(p.contexts.joined(separator: " "))
         }
     }
 }

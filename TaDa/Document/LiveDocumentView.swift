@@ -216,6 +216,10 @@ extension Warning {
             "`\(key)` has a list or mapping where Ta Da expects text, or the other way round."
         case let .unresolvedProject(title):
             "No project is called “\(title)”, so this is a loose task."
+        case let .unresolvedArea(title):
+            "No area is called “\(title)”, so this file has no parent."
+        case let .areaIgnored(title):
+            "The `area` “\(title)” is ignored: a task names its project or its area, and this one has a `project`."
         }
     }
 }

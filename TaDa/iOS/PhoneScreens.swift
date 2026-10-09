@@ -1,4 +1,4 @@
-// The lists the tabs open on: Today and Loose (grouped by project, with context filters), Upcoming (a week strip
+// The lists the tabs open on: Today and Loose (grouped by project), Upcoming (a week strip
 // over the days ahead), Projects, and a project's tasks.
 #if os(iOS)
 import SwiftUI
@@ -9,16 +9,12 @@ struct PhoneTaskListScreen: View {
 
     let model: AppModel
     let kind: Kind
-    /// nil shows every context.
-    @State private var context: String?
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
         let all = kind == .today ? model.todayTasks : model.looseTasks
-        let contexts = Set(all.flatMap(\.properties.contexts)).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        let shown = all.filter { task in context.map { task.properties.contexts.contains($0) } ?? true }
-        let groups = model.index.grouped(shown)
+        let groups = model.index.grouped(all)
         let open = all.count { $0.properties.status != .done }
 
         PhoneList(model: model, title: kind == .today ? "Today" : "Loose tasks",
@@ -28,10 +24,7 @@ struct PhoneTaskListScreen: View {
                   pickable: groups.flatMap(\.tasks).map(\.path), add: newTask) {
             EmptyView()
         } content: {
-            if !contexts.isEmpty {
-                PhoneContextPills(contexts: contexts, selection: $context)
-            }
-            if shown.isEmpty {
+            if all.isEmpty {
                 empty.padding(.top, 60)
             }
             ForEach(groups) { group in
@@ -40,11 +33,10 @@ struct PhoneTaskListScreen: View {
                 }
                 ForEach(group.tasks) { task in
                     PhoneTaskRow(model: model, item: task,
-                                 meta: .chips(kind == .today ? .overdueDueAndDeadline : .labelled, contexts: true))
+                                 meta: .chips(kind == .today ? .overdueDueAndDeadline : .labelled))
                 }
             }
         }
-        .onChange(of: contexts) { if let context, !contexts.contains(context) { self.context = nil } }
     }
 
     private var empty: some View {
@@ -346,7 +338,7 @@ struct PhoneProjectScreen: View {
         if !tasks.isEmpty {
             PhoneFoldHeader(model: model, title: title, count: tasks.count, group: title, in: path)
             if !model.isFolded(title, in: path) {
-                ForEach(tasks) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly, contexts: true)) }
+                ForEach(tasks) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
             }
         }
     }

@@ -6,8 +6,8 @@ import TaDaCore
 
 /// What a task row shows under its title.
 enum PhoneRowMeta {
-    /// Subtasks, repeat, dates and contexts, as the Mac's rows show them.
-    case chips(TaskRow.Dates, contexts: Bool)
+    /// Subtasks, repeat and dates, as the Mac's rows show them.
+    case chips(TaskRow.Dates)
     /// An Upcoming entry: its kind, where the task lives, and its other date.
     case agenda(AgendaEntry, place: String, also: String?, dated: Bool)
     /// A search match: where the task lives and when it's due; the title and summary highlight the words.
@@ -17,11 +17,11 @@ enum PhoneRowMeta {
 struct PhoneTaskRow: View {
     let model: AppModel
     let item: Item
-    var meta = PhoneRowMeta.chips(.labelled, contexts: true)
+    var meta = PhoneRowMeta.chips(.labelled)
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
-    init(model: AppModel, item: Item, meta: PhoneRowMeta = .chips(.labelled, contexts: true)) {
+    init(model: AppModel, item: Item, meta: PhoneRowMeta = .chips(.labelled)) {
         self.model = model
         self.item = item
         self.meta = meta
@@ -92,8 +92,8 @@ struct PhoneTaskRow: View {
 
     @ViewBuilder private var metaLine: some View {
         switch meta {
-        case let .chips(dates, contexts):
-            let chips = chips(dates: dates, contexts: contexts)
+        case let .chips(dates):
+            let chips = chips(dates: dates)
             if !chips.isEmpty {
                 HStack(spacing: 12) {
                     ForEach(chips.indices, id: \.self) { chips[$0] }
@@ -113,7 +113,7 @@ struct PhoneTaskRow: View {
         }
     }
 
-    private func chips(dates: TaskRow.Dates, contexts: Bool) -> [AnyView] {
+    private func chips(dates: TaskRow.Dates) -> [AnyView] {
         let p = item.properties
         let today = model.today
         var chips: [AnyView] = []
@@ -132,9 +132,6 @@ struct PhoneTaskRow: View {
             if let deadline = p.deadline {
                 chips.append(AnyView(DateChip(kind: .deadline, date: deadline, today: today, labelled: dates != .iconsOnly)))
             }
-        }
-        if contexts, !p.contexts.isEmpty {
-            chips.append(AnyView(Text(p.contexts.joined(separator: " "))))
         }
         return chips
     }
