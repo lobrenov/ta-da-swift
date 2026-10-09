@@ -13,11 +13,13 @@ enum LinkMenuKind {
     var confirmLabel: String { self == .link ? "Link" : "Embed" }
 }
 
-/// What the link menu searches: the folder's files and images, the files opened last and the open one, which it
-/// leaves out.
+/// What the link menu searches, and embeds draw from: the folder's files and images, the files opened last and the
+/// open one, which the menu leaves out.
 struct LinkMenuSource {
     var index = VaultIndex()
     var vault: Vault?
+    /// The folder's images, most recently changed first.
+    var attachments: [String] = []
     /// Paths, most recent first.
     var recent: [String] = []
     var openPath: String?
@@ -48,10 +50,9 @@ struct LinkChoice: Hashable, Identifiable {
     }
 }
 
-/// The choices for one editor's queries. Images are listed once per embed query, and their thumbnails kept.
+/// The choices for one editor's queries, and the images' thumbnails.
 final class LinkMenuSearch {
     var source = LinkMenuSource()
-    private var images: [String]?
     private var thumbnails: [URL: CGImage?] = [:]
 
     /// The most rows a query lists.
@@ -65,11 +66,6 @@ final class LinkMenuSearch {
         case .link: links(query)
         case .embed: embeds(query)
         }
-    }
-
-    /// Forgets the image list, so the next embed query reads the folder again.
-    func reset() {
-        images = nil
     }
 
     /// A small thumbnail of an image file; nil when it can't be read (SVG, for one).
@@ -96,10 +92,8 @@ final class LinkMenuSearch {
 
     private func embeds(_ query: String) -> (label: String?, choices: [LinkChoice]) {
         guard let vault = source.vault else { return (nil, []) }
-        let images = images ?? vault.attachmentPaths()
-        self.images = images
         let name = { (path: String) in String(path.split(separator: "/").last ?? "") }
-        let choices = LinkSearch.rank(images, query: query, name: name).prefix(Self.limit).map { path in
+        let choices = LinkSearch.rank(source.attachments, query: query, name: name).prefix(Self.limit).map { path in
             LinkChoice(path: path, icon: .image(vault.url(for: path)), title: name(path), hint: "")
         }
         return (query.trimmingCharacters(in: .whitespaces).isEmpty ? "Attachments" : nil, choices)
@@ -190,7 +184,6 @@ final class LinkMenuController {
         linkMenu.hide()
         embedMenu.hide()
         shown = nil
-        search.reset()
     }
 
     /// Returns `true` when the menu used the key. ↵ with no matches falls through to the editor.

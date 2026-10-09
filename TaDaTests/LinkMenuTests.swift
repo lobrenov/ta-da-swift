@@ -61,10 +61,24 @@ struct LinkMenuTests {
     @Test func anEmbedQueryListsTheFoldersImages() async {
         let model = await folder.model()
         let search = LinkMenuSearch()
-        search.source = LinkMenuSource(index: model.index, vault: model.vault)
+        search.source = LinkMenuSource(index: model.index, vault: model.vault, attachments: model.attachments)
         let all = search.choices(.embed, query: "")
         #expect(all.label == "Attachments" && Set(all.choices.map(\.title)) == ["front.jpg", "odometer.png"])
         let od = search.choices(.embed, query: "od").choices
         #expect(od.map(\.markdown) == ["![[odometer.png]]"])
+    }
+
+    @Test func pastedImagesAreSavedInAttachmentsAndFolderImagesAreEmbeddedWhereTheyAre() async throws {
+        let model = await folder.model()
+        let pasted = try #require(model.embed(.data(Data([1, 2]), extension: "png")))
+        #expect(pasted.hasPrefix("![[Pasted image ") && pasted.hasSuffix(".png]]"))
+        #expect(model.attachments.first?.hasPrefix("attachments/Pasted image ") == true)
+        #expect(model.embed(.file(folder.url.appending(path: "notes/odometer.png"))) == "![[odometer.png]]")
+        #expect(model.attachments.count == 3, "a folder image isn't copied")
+        let outside = FileManager.default.temporaryDirectory.appending(path: "front.jpg")
+        try Data([3]).write(to: outside)
+        defer { try? FileManager.default.removeItem(at: outside) }
+        #expect(model.embed(.file(outside)) == "![[front 2.jpg]]", "a copy numbers a taken name")
+        #expect(try Data(contentsOf: folder.url.appending(path: "attachments/front 2.jpg")) == Data([3]))
     }
 }

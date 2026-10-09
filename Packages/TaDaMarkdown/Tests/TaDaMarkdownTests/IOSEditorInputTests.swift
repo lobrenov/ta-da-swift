@@ -113,6 +113,20 @@ final class IOSEditorHarness {
 @MainActor
 @Suite(.serialized)
 struct IOSEditorInputTests {
+    @Test func anImageOnThePasteboardPastesAsAnEmbedOnItsOwnLine() async throws {
+        let editor = try IOSEditorHarness("Shots:")
+        var pasted = 0
+        editor.textView.onPasteImage = { _ in pasted += 1; return "![[Pasted image.png]]" }
+        UIPasteboard.general.image = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { _ in }
+        editor.textView.selectedRange = NSRange(location: 6, length: 0)
+        #expect(editor.textView.canPerformAction(#selector(UIResponder.paste(_:)), withSender: nil))
+        editor.textView.paste(nil)
+        await editor.settle()
+        #expect(pasted == 1)
+        #expect(editor.text == "Shots:\n![[Pasted image.png]]")
+        UIPasteboard.general.items = []
+    }
+
     @Test func loadsTheDocument() async throws {
         let editor = try IOSEditorHarness("- [ ] First")
         #expect(editor.textView.string == "- [ ] First")

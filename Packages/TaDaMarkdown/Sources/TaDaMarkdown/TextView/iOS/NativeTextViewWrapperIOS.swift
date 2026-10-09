@@ -36,6 +36,9 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
     /// A bar above the keyboard while the editor has it (the embedder's formatting bar). It's hosted outside the
     /// SwiftUI hierarchy, so it gets no environment from here.
     public var keyboardBar: AnyView?
+    /// Ta Da fork: a paste while the pasteboard has an image. Return the embed to insert on its own line (e.g.
+    /// `![[Pasted image.png]]`), or nil to paste as usual.
+    public var onPasteImage: ((UIPasteboard) -> String?)?
 
     public init(
         text: Binding<String>,
@@ -53,7 +56,8 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil,
         onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil,
         onTaskCheckboxToggle: ((Character) -> Void)? = nil,
-        keyboardBar: AnyView? = nil
+        keyboardBar: AnyView? = nil,
+        onPasteImage: ((UIPasteboard) -> String?)? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -71,6 +75,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         self.onCalloutMenu = onCalloutMenu
         self.onTaskCheckboxToggle = onTaskCheckboxToggle
         self.keyboardBar = keyboardBar
+        self.onPasteImage = onPasteImage
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -132,6 +137,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         textView.onTaskMarkerMenu = onTaskMarkerMenu
         textView.onCalloutMenu = onCalloutMenu
         textView.onTaskCheckboxToggle = onTaskCheckboxToggle
+        textView.onPasteImage = onPasteImage
         textView.setHeader(header)
         textView.setKeyboardBar(keyboardBar)
         return textView
@@ -155,6 +161,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         textView.onTaskMarkerMenu = onTaskMarkerMenu
         textView.onCalloutMenu = onCalloutMenu
         textView.onTaskCheckboxToggle = onTaskCheckboxToggle
+        textView.onPasteImage = onPasteImage
         textView.setHeader(header)
         textView.setKeyboardBar(keyboardBar)
         textView.bodyInsets = insets

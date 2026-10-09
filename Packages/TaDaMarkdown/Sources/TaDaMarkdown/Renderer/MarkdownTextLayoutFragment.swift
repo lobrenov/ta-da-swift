@@ -22,6 +22,8 @@ extension NSAttributedString.Key {
     static let latexBounds = NSAttributedString.Key("LatexImageBounds")
     static let latexIsBlock = NSAttributedString.Key("LatexIsBlock")
     static let latexBlockOffsetY = NSAttributedString.Key("LatexBlockOffsetY")
+    /// Ta Da fork: CGFloat — the corner radius an embedded image is clipped to.
+    static let imageCornerRadius = NSAttributedString.Key("TaDaImageCornerRadius")
     static let thematicBreak = NSAttributedString.Key("ThematicBreak")
     /// String — the mark to draw CENTERED in place of the full-width rule on a
     /// line that already carries `.thematicBreak`. Absent means the rule. The
@@ -498,7 +500,16 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
                                   y: pos.baselineY + descent - imageBounds.height,
                                   width: imageBounds.width, height: imageBounds.height)
             }
-            image.draw(in: drawRect)
+            // Ta Da fork: embedded images clip to their corner radius.
+            if let radius = ts.attribute(.imageCornerRadius, at: attrRange.location, effectiveRange: nil) as? CGFloat, radius > 0 {
+                context.saveGState()
+                context.addPath(CGPath(roundedRect: drawRect, cornerWidth: radius, cornerHeight: radius, transform: nil))
+                context.clip()
+                image.draw(in: drawRect)
+                context.restoreGState()
+            } else {
+                image.draw(in: drawRect)
+            }
         }
     }
 

@@ -38,3 +38,10 @@ import Testing
         #expect(vault.attachmentPaths() == ["notes/new.JPG", "attachments/old.png"])
     }
 }
+
+@Test func anEmbedNamesAnImageByItsFilenameUnlessAnotherComesFirst() {
+    let paths = ["attachments/front.jpg", "notes/front.jpg", "notes/odometer.png"]
+    #expect(Vault.embedTarget(for: "attachments/front.jpg", in: paths) == "front.jpg")
+    #expect(Vault.embedTarget(for: "notes/front.jpg", in: paths) == "notes/front.jpg")
+    #expect(Vault.embedTarget(for: "notes/odometer.png", in: paths) == "odometer.png")
+}

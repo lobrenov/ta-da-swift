@@ -67,6 +67,8 @@ final class NativeTextView: NSTextView {
 
     // MARK: Editor wiring
     var onPasteImage: ((NSPasteboard) -> String?)?
+    /// Ta Da fork: the hovered image's `</>` button (`+ImageSourceButton`).
+    var imageSourceButton: ImageSourceButton?
     weak var layoutBridge: LayoutBridge?
     var baseFont: NSFont = NSFont.systemFont(ofSize: NSFont.systemFontSize)
 

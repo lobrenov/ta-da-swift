@@ -83,6 +83,8 @@ import TaDaCore
         var allowsMultipleSelection = false
     }
     @ObservationIgnored var arrowKeyList: ArrowKeyList?
+    /// The folder's images, most recently changed first: what `![[` lists and embeds draw from.
+    private(set) var attachments: [String] = []
     /// The Ta Da files in `.trash/`, most recently deleted first.
     private(set) var trash: [TrashedItem] = []
     /// The files picked in the Trash list, by path.
@@ -286,6 +288,7 @@ import TaDaCore
         let loaded = await vault.loadIndex()
         updateIndex { $0 = loaded }
         trash = await Self.run { vault.trashedItems() }
+        attachments = await Self.run { vault.attachmentPaths() }
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         state = .ready
         #if os(iOS)
@@ -353,6 +356,8 @@ import TaDaCore
                 await apply(changes, from: vault)
                 trash = await Self.run { vault.trashedItems() }
                 trashSelection.formIntersection(trash.map(\.id))
+                let attachments = await Self.run { vault.attachmentPaths() }
+                if attachments != self.attachments { self.attachments = attachments }
                 multiSelection = multiSelection.filter { index[$0] != nil }
             } while refreshAgain
         }
@@ -813,6 +818,43 @@ import TaDaCore
         if selection == path || selection == nil && (domain == .project(newPath) || domain == .area(newPath)) { selection = newPath }
         if let folded = foldedGroups.removeValue(forKey: path) { foldedGroups[newPath] = folded }
         if recentFiles.contains(path) { recentFiles = recentFiles.map { $0 == path ? newPath : $0 } }
+    }
+
+    // MARK: Attachments
+
+    /// An image pasted or dropped into the editor.
+    enum PastedImage {
+        /// An image file: one in the folder is embedded where it is; another is copied into `attachments/`.
+        case file(URL)
+        /// Image data without a file, saved as `Pasted image <time>.<ext>`.
+        case data(Data, extension: String)
+    }
+
+    /// Saves a pasted or dropped image into `attachments/`, numbering a taken name, and returns its `![[ ]]`. An image
+    /// already in the folder isn't copied. Nil when it can't be saved, with the reason in `errorMessage`.
+    func embed(_ image: PastedImage) -> String? {
+        guard let vault else { return nil }
+        do {
+            let path: String
+            switch image {
+            case .file(let url):
+                let root = vault.root.resolvingSymlinksInPath().pathComponents
+                let components = url.resolvingSymlinksInPath().pathComponents
+                let relative = components.dropFirst(root.count)
+                if components.starts(with: root), !relative.isEmpty, !relative.contains(where: { $0.hasPrefix(".") }) {
+                    path = relative.joined(separator: "/")
+                } else {
+                    path = try vault.saveAttachment(Data(contentsOf: url), as: url.lastPathComponent)
+                }
+            case .data(let data, let ext):
+                path = try vault.saveAttachment(data, as: FileNaming.pastedImage(at: Date(), extension: ext))
+            }
+            if !attachments.contains(path) { attachments.insert(path, at: 0) }
+            return "![[\(Vault.embedTarget(for: path, in: attachments))]]"
+        } catch {
+            errorMessage = Self.couldNot("save the image", error)
+            return nil
+        }
     }
 
     // MARK: Trash

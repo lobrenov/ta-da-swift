@@ -26,6 +26,8 @@ final class NativeTextView: UITextView {
     var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
     /// See ``NativeTextViewWrapper/onTaskCheckboxToggle``.
     var onTaskCheckboxToggle: ((Character) -> Void)?
+    /// See ``NativeTextViewWrapper/onPasteImage``.
+    var onPasteImage: ((UIPasteboard) -> String?)?
     /// The title line location of the callout whose menu is open.
     var calloutMenuTarget: Int?
     /// Skips the next scroll-to-caret, after an edit that places the caret itself.
@@ -198,6 +200,32 @@ final class NativeTextView: UITextView {
     override func layoutSubviews() {
         super.layoutSubviews()
         layoutHeader()
+        // Ta Da fork: images fit the width once it's known.
+        RunLoop.main.perform { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.coordinator?.restyleImageEmbedsIfWidthChanged(in: self)
+            }
+        }
+    }
+
+    // MARK: Ta Da fork: image paste
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if action == #selector(paste(_:)), onPasteImage != nil, isEditable, UIPasteboard.general.hasImages { return true }
+        return super.canPerformAction(action, withSender: sender)
+    }
+
+    /// An image on the pasteboard goes to `onPasteImage`, and its embed goes on its own line.
+    override func paste(_ sender: Any?) {
+        guard let onPasteImage, UIPasteboard.general.hasImages, let embed = onPasteImage(.general), !embed.isEmpty else {
+            return super.paste(sender)
+        }
+        let selection = selectedRange
+        let text = self.text as NSString
+        let before = selection.location > 0 && text.character(at: selection.location - 1) != 0x0A ? "\n" : ""
+        let after = NSMaxRange(selection) < text.length && text.character(at: NSMaxRange(selection)) != 0x0A ? "\n" : ""
+        replaceCharacters(in: selection, with: before + embed + after)
     }
 
     // MARK: Keyboard bar

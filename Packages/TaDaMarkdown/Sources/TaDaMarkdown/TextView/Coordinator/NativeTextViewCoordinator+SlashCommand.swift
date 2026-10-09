@@ -103,6 +103,12 @@ public final class SlashCommandProxy {
     }
     #endif
 
+    /// Ta Da fork: shows the source of the image embed at `location` (a drawn image hides it) and puts the caret
+    /// after its `]]`. It's drawn again once the caret leaves its paragraph.
+    public func revealImageEmbed(at location: Int) {
+        coordinator?.revealImageEmbed(at: location)
+    }
+
     /// Closes the menu until the next `/` is typed.
     public func dismiss() {
         coordinator?.dismissSlashCommand()

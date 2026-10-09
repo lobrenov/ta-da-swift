@@ -100,11 +100,19 @@ extension NativeTextViewCoordinator {
     // MARK: - Image Embed Activation
 
     func filterImageEmbedActiveTokens(parsed: ParsedDocument, text: NSString, selectionLocation: Int) {
-        let activeImageEmbedIndex = imageEmbedToken(
+        var activeImageEmbedIndex = imageEmbedToken(
             at: selectionLocation,
             parsed: parsed,
             in: text
         )?.index
+        // Ta Da fork: unless the caret reveals sources, only a revealed image shows its source.
+        if !configuration.imageEmbed.revealsSourceAtCaret {
+            if let index = activeImageEmbedIndex, parsed.tokens[index].range.location == revealedImageEmbed {
+            } else {
+                activeImageEmbedIndex = nil
+                revealedImageEmbed = nil
+            }
+        }
 
         for (idx, token) in parsed.tokens.enumerated() where token.kind == .imageEmbed {
             if idx != activeImageEmbedIndex {

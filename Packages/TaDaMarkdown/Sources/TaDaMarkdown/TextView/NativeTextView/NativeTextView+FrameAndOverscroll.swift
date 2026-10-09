@@ -254,6 +254,15 @@ extension NativeTextView {
     }
 
     override func setFrameSize(_ newSize: NSSize) {
+        // Ta Da fork: images fit the width once it's known.
+        if newSize.width != frame.size.width {
+            RunLoop.main.perform(inModes: [.default, .eventTracking]) { [weak self] in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    (self.delegate as? NativeTextViewCoordinator)?.restyleImageEmbedsIfWidthChanged(in: self)
+                }
+            }
+        }
         if isApplyingManagedFrameSize {
             super.setFrameSize(newSize)
             return

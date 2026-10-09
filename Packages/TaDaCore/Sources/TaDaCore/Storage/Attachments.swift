@@ -33,21 +33,23 @@ extension Vault {
     /// The image an embed shows: the target as a path, else `attachments/<filename>`, else the first file with that
     /// filename by path, ignoring case. Hidden folders, including `.trash`, are skipped. Nil when there's none.
     public func attachmentPath(for embed: WikiLink) -> String? {
-        guard let name = embed.attachmentName else { return nil }
-        let exists = { (path: String) in FileManager.default.fileExists(atPath: self.url(for: path).path(percentEncoded: false)) }
-        if embed.target.contains("/"), exists(embed.target) { return embed.target }
-        if let match = filenames(in: Self.attachmentFolder).first(where: { $0.lowercased() == name.lowercased() }) {
-            return Self.attachmentFolder + "/" + match
+        Self.attachmentPath(for: embed, in: attachmentPaths())
+    }
+
+    /// What `![[ ]]` names an image by: its filename, or its path when the filename finds another image first.
+    public static func embedTarget(for path: String, in paths: [String]) -> String {
+        let name = String(path.split(separator: "/").last ?? "")
+        guard let link = WikiLink(inner: name), attachmentPath(for: link, in: paths) != path else { return name }
+        return path
+    }
+
+    /// The image an embed shows, as `attachmentPath(for:)` finds it, among `paths` (from `attachmentPaths()`).
+    public static func attachmentPath(for embed: WikiLink, in paths: [String]) -> String? {
+        guard let name = embed.attachmentName?.lowercased() else { return nil }
+        if embed.target.contains("/"), let path = paths.first(where: { $0.lowercased() == embed.target.lowercased() }) {
+            return path
         }
-        guard let files = FileManager.default.enumerator(
-            at: root, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else { return nil }
-        let rootComponents = root.pathComponents.count
-        var paths: [String] = []
-        for case let url as URL in files where url.lastPathComponent.lowercased() == name.lowercased() {
-            guard (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { continue }
-            paths.append(url.standardizedFileURL.pathComponents.dropFirst(rootComponents).joined(separator: "/"))
-        }
-        return paths.min()
+        let matches = paths.filter { $0.split(separator: "/").last?.lowercased() == name }
+        return matches.first { $0.lowercased() == attachmentFolder + "/" + name } ?? matches.min()
     }
 }

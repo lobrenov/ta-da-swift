@@ -558,6 +558,124 @@ struct TaskMarkerMenuHookTests {
     }
 }
 
+private struct OneImage: EmbeddedImageProvider {
+    func image(for reference: EmbeddedImageRequest) -> PlatformImage? {
+        guard reference.name == "front.png" else { return nil }
+        return NSImage(size: CGSize(width: 300, height: 200), flipped: false) { rect in
+            NSColor.systemTeal.setFill(); rect.fill(); return true
+        }
+    }
+    func fingerprint() -> AnyHashable { 1 }
+}
+
+@MainActor
+@Suite("Ta Da fork — image embeds")
+struct ImageEmbedTests {
+    static let text = "Intro\n\n![[front.png]]\n\nAfter ![[frnt.png]]\n"
+    static let embed = NSRange(location: 7, length: 14)
+
+    private func editor() throws
+        -> (tv: NativeTextView, proxy: SlashCommandProxy, window: NSWindow, coordinator: NativeTextViewCoordinator) {
+        _ = NSApplication.shared
+        let text = Self.text
+        var configuration = MarkdownEditorConfiguration.default
+        configuration.services = MarkdownEditorServices(images: OneImage())
+        configuration.imageEmbed.revealsSourceAtCaret = false
+        configuration.imageEmbed.missingText = .systemGray
+        configuration.imageEmbed.cornerRadius = 6
+        let coordinator = NativeTextViewCoordinator(
+            text: .constant(text), fontName: "SF Pro", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        coordinator.configuration = configuration
+        let tv = NativeTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
+        tv.configuration = configuration
+        tv.isEditable = true
+        tv.allowsUndo = true
+        tv.delegate = coordinator
+        let scrollView = NSScrollView(frame: tv.frame)
+        scrollView.documentView = tv
+        let window = NSWindow(contentRect: tv.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = scrollView
+        let bridge = LayoutBridge(try #require(tv.textLayoutManager))
+        coordinator.layoutBridge = bridge
+        tv.layoutBridge = bridge
+        coordinator.textView = tv
+        coordinator.rebuildTextStorageAndStyle(tv, from: text)
+        coordinator.lastSyncedText = text
+        coordinator.lastComputedStorage = text
+        coordinator.previousDisplayLength = (text as NSString).length
+        tv.setSelectedRange(NSRange(location: 0, length: 0))
+        let proxy = SlashCommandProxy()
+        proxy.coordinator = coordinator
+        return (tv, proxy, window, coordinator)
+    }
+
+    private func isDrawn(_ tv: NativeTextView) -> Bool {
+        tv.textStorage?.attribute(.latexImage, at: Self.embed.location + 3, effectiveRange: nil) != nil
+    }
+
+    @Test func theImageStaysDrawnAndTheCaretSkipsItsSource() throws {
+        let (tv, _, window, coordinator) = try editor()
+        #expect(isDrawn(tv))
+        #expect(tv.textStorage?.attribute(.imageCornerRadius, at: Self.embed.location + 3, effectiveRange: nil) as? CGFloat == 6)
+        tv.setSelectedRange(NSRange(location: 6, length: 0))
+        tv.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(tv.selectedRange() == NSRange(location: NSMaxRange(Self.embed), length: 0))
+        #expect(isDrawn(tv))
+        tv.setSelectedRange(NSRange(location: 12, length: 0))
+        #expect(tv.selectedRange() == NSRange(location: Self.embed.location, length: 0), "from after it, the caret goes before it")
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
+    @Test func backspaceAfterTheImageRemovesItWhole() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.setSelectedRange(NSRange(location: NSMaxRange(Self.embed), length: 0))
+        tv.deleteBackward(nil)
+        #expect(tv.string == "Intro\n\n\n\nAfter ![[frnt.png]]\n")
+        tv.undoManager?.undo()
+        #expect(tv.string == Self.text)
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
+    @Test func revealShowsTheSourceUntilTheCaretLeaves() throws {
+        let (tv, proxy, window, coordinator) = try editor()
+        proxy.revealImageEmbed(at: Self.embed.location)
+        #expect(tv.selectedRange() == NSRange(location: NSMaxRange(Self.embed), length: 0))
+        tv.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(tv.selectedRange().location == 10, "a revealed source takes the caret")
+        tv.setSelectedRange(NSRange(location: 2, length: 0))
+        #expect(coordinator.revealedImageEmbed == nil)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func hoveringAnImageShowsTheSourceButtonWhichRevealsIt() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.configuration.imageEmbed.sourceButton = .init(fill: .white, hoverFill: .gray, ring: .gray, tint: .black, hoverTint: .blue)
+        let hit = try #require(tv.imageEmbedHit(atViewPoint: CGPoint(x: tv.textContainerOrigin.x + 150, y: 60)))
+        #expect(hit.range == Self.embed && hit.rect.size == CGSize(width: 300, height: 200))
+        #expect(tv.imageEmbedHit(atViewPoint: CGPoint(x: 500, y: 60)) == nil)
+        let event = try #require(NSEvent.mouseEvent(
+            with: .mouseMoved, location: tv.convert(CGPoint(x: hit.rect.midX, y: hit.rect.midY), to: nil), modifierFlags: [],
+            timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 0, pressure: 0))
+        tv.updateImageSourceButton(for: event)
+        let button = try #require(tv.imageSourceButton)
+        #expect(!button.isHidden && button.frame.maxX == hit.rect.maxX - 8 && button.frame.minY == hit.rect.minY + 8)
+        button.onClick(button.embedLocation)
+        #expect(button.isHidden && coordinator.revealedImageEmbed == Self.embed.location)
+        #expect(tv.selectedRange() == NSRange(location: NSMaxRange(Self.embed), length: 0))
+        #expect(tv.imageEmbedHit(atViewPoint: CGPoint(x: tv.textContainerOrigin.x + 150, y: 60)) == nil, "no button while the source shows")
+    }
+
+    @Test func aMissingImageIsDashed() throws {
+        let (tv, _, window, coordinator) = try editor()
+        let name = (Self.text as NSString).range(of: "frnt.png")
+        let underline = tv.textStorage?.attribute(.underlineStyle, at: name.location, effectiveRange: nil) as? Int
+        #expect(underline == NSUnderlineStyle.single.union(.patternDash).rawValue)
+        withExtendedLifetime((window, coordinator)) {}
+    }
+}
+
 private let testCalloutStyle = CalloutStyle(
     tint: { _ in .systemBlue }, drawIcon: { _, _, _ in }, titleColor: .labelColor, bodyColor: .textColor,
     foldColor: .gray, targetColor: .systemRed, fillOpacity: 0.09, ringOpacity: 0.24)

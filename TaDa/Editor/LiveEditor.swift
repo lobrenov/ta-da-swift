@@ -7,6 +7,8 @@ import UIKit
 #endif
 import TaDaMarkdown
 import TaDaCore
+import ImageIO
+import UniformTypeIdentifiers
 
 struct LiveEditor: View {
     @Binding var text: String
@@ -19,8 +21,10 @@ struct LiveEditor: View {
     /// Plays a light tap when a task box is toggled (iOS).
     var haptics = false
     var header: AnyView? = nil
-    /// What `[[` and `![[` list; without it, typing them opens no menu.
+    /// What `[[` and `![[` list and embeds draw; without it, typing them opens no menu.
     var links: LinkMenuSource? = nil
+    /// Saves a pasted or dropped image and returns its `![[ ]]`; without it, images paste as the system does.
+    var embedImage: ((AppModel.PastedImage) -> String?)? = nil
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
 
@@ -49,6 +53,15 @@ struct LiveEditor: View {
             fontName: NSFont.systemFont(ofSize: 14).fontName,
             fontSize: 14,
             documentId: documentID,
+            onPasteImage: embedImage.map { embed in
+                { pasteboard in
+                    if let url = PasteboardImageReader.imageFileURL(from: pasteboard) { return embed(.file(url)) }
+                    // Rich text can carry a picture of itself; it pastes as text.
+                    guard pasteboard.string(forType: .string) == nil,
+                          let data = PasteboardImageReader.imageData(from: pasteboard) else { return nil }
+                    return embed(.data(data, extension: "png"))
+                }
+            },
             onLinkClick: onLinkClick,
             header: header,
             onSlashCommandChange: showQueryMenu,
@@ -98,7 +111,17 @@ struct LiveEditor: View {
                     PhoneLinkList(choices: linkChoices, highlight: linkHighlight, search: linkSearch, theme: theme, pick: insertLink)
                 }
                 EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks, haptics: haptics)
-            })
+            }),
+            onPasteImage: embedImage.map { embed in
+                { pasteboard in
+                    let types: [(UTType, String)] = [(.png, "png"), (.jpeg, "jpg"), (.heic, "heic"), (.gif, "gif"),
+                                                     (.webP, "webp"), (.tiff, "tiff")]
+                    for (type, ext) in types {
+                        if let data = pasteboard.data(forPasteboardType: type.identifier) { return embed(.data(data, extension: ext)) }
+                    }
+                    return pasteboard.image?.pngData().flatMap { embed(.data($0, extension: "png")) }
+                }
+            }
         )
         .onAppear { slashCommand.triggers = links == nil ? [] : [.link, .embed] }
         .sensoryFeedback(.impact(weight: .light), trigger: toggles) { _, _ in haptics }
@@ -133,7 +156,6 @@ struct LiveEditor: View {
     private func showLinkChoices(_ state: SlashCommandState?) {
         guard let state, let links, state.trigger != .slash else {
             linkChoices = []
-            linkSearch.reset()
             return
         }
         linkSearch.source = links
@@ -271,8 +293,19 @@ struct LiveEditor: View {
         )
         config.services = MarkdownEditorServices(
             wikiLinks: TitleResolver(titles: linkTargets),
+            images: AttachmentImages(root: links?.vault?.root, paths: links?.attachments ?? []),
             syntaxHighlighter: CodeBlockStyle(background: theme.code)
         )
+        // Images stay drawn as the caret passes; a missing one is muted and dashed, as an unresolved link.
+        config.imageEmbed.revealsSourceAtCaret = false
+        config.imageEmbed.missingText = theme.muted.withAlphaComponent(0.6)
+        #if os(macOS)
+        config.imageEmbed.cornerRadius = 6
+        config.imageEmbed.sourceButton = .init(fill: theme.isDark ? theme.side : theme.bg, hoverFill: theme.surface,
+                                               ring: theme.surface, tint: theme.fg, hoverTint: theme.accent)
+        #else
+        config.imageEmbed.cornerRadius = 8
+        #endif
         config.lists.autoClosePairsEnabled = autocomplete.brackets
         config.lists.autoCloseFormattingEnabled = autocomplete.formatting
         config.lists.autoCloseWikiLinksEnabled = autocomplete.wikiLinks
@@ -316,6 +349,41 @@ nonisolated struct TitleResolver: WikiLinkResolver {
     }
 
     func fingerprint() -> AnyHashable { titles }
+}
+
+/// Draws `![[name.png]]` from the folder's images, found as `Vault.attachmentPath(for:in:)` finds them. An image keeps
+/// its pixel size in points, so the editor fits a large one to its width.
+nonisolated struct AttachmentImages: EmbeddedImageProvider {
+    let root: URL?
+    let paths: [String]
+
+    func image(for request: EmbeddedImageRequest) -> PlatformImage? {
+        guard let root, let embed = WikiLink(inner: request.name),
+              let path = Vault.attachmentPath(for: embed, in: paths) else { return nil }
+        return Self.load(Vault(root: root).url(for: path))
+    }
+
+    func fingerprint() -> AnyHashable { [root?.path ?? ""] + paths }
+
+    /// Decodes at most 2048 pixels on the long side.
+    static func load(_ url: URL) -> PlatformImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let pixelWidth = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+              let pixelHeight = properties[kCGImagePropertyPixelHeight] as? CGFloat,
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
+                  kCGImageSourceThumbnailMaxPixelSize: 2048,
+              ] as CFDictionary) else { return nil }
+        // EXIF orientations 5 to 8 turn the image a quarter.
+        let turned = ((properties[kCGImagePropertyOrientation] as? Int) ?? 1) >= 5
+        let width = turned ? pixelHeight : pixelWidth
+        #if os(macOS)
+        return NSImage(cgImage: image, size: CGSize(width: width, height: turned ? pixelWidth : pixelHeight))
+        #else
+        return UIImage(cgImage: image, scale: CGFloat(image.width) / width, orientation: .up)
+        #endif
+    }
 }
 
 nonisolated private struct CodeBlockStyle: SyntaxHighlighter {

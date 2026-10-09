@@ -43,4 +43,5 @@ func sanitiseTitles(_ title: String, _ expected: String) {
     let date = Date(timeIntervalSince1970: 1_790_727_322) // 2026-09-30 00:15:22 UTC
     #expect(FileNaming.pastedImage(at: date, timeZone: TimeZone(identifier: "Pacific/Auckland")!) == "Pasted image 20260930131522.png")
     #expect(FileNaming.pastedImage(at: date, timeZone: TimeZone(identifier: "UTC")!) == "Pasted image 20260930001522.png")
+    #expect(FileNaming.pastedImage(at: date, extension: "jpg", timeZone: TimeZone(identifier: "UTC")!) == "Pasted image 20260930001522.jpg")
 }

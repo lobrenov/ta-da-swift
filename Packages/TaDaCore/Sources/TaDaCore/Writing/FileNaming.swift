@@ -45,13 +45,13 @@ public enum FileNaming {
     }
 
     /// The filename of an image pasted without one: `Pasted image 20260930101522.png`, in local time.
-    public static func pastedImage(at date: Date, timeZone: TimeZone = .current) -> String {
+    public static func pastedImage(at date: Date, extension ext: String = "png", timeZone: TimeZone = .current) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.timeZone = timeZone
         formatter.dateFormat = "yyyyMMddHHmmss"
-        return "Pasted image \(formatter.string(from: date)).png"
+        return "Pasted image \(formatter.string(from: date)).\(ext)"
     }
 }
 

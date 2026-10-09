@@ -105,6 +105,10 @@ public final class NativeTextViewCoordinator: NSObject {
     var isOpeningSlashCommand = false
     var slashTriggers: Set<SlashCommandState.Trigger> = Set(SlashCommandState.Trigger.allCases)
     var slashCommand: SlashCommandQuery?
+    /// Ta Da fork: the width image embeds were last fitted to (see `+ImageEmbeds`).
+    var imageEmbedLayoutWidth: CGFloat?
+    /// Ta Da fork: where the image embed whose source `revealImageEmbed` showed starts.
+    var revealedImageEmbed: Int?
     var reportedSlashCommand: SlashCommandState?
     var onCodeBlockSelectionChange: (([CodeBlockSelection]) -> Void)?
     var didInitialFormatting: Bool = false
