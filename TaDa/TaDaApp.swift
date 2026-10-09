@@ -1,7 +1,10 @@
-// App entry: one main window plus Settings, sharing one AppModel, which the app delegate owns.
-import AppKit
+// App entry. On the Mac: one main window plus Settings, sharing one AppModel, which the app delegate owns.
+// On iOS: one window group; the model refreshes when the scene becomes active and saves when it leaves.
+import Combine
 import SwiftUI
 import TaDaCore
+#if os(macOS)
+import AppKit
 
 @main
 struct TaDaApp: App {
@@ -51,3 +54,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return .terminateLater
     }
 }
+#else
+
+@main
+struct TaDaApp: App {
+    @State private var model = AppModel.forLaunch()
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView(model: model)
+                .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged).receive(on: RunLoop.main)) { _ in
+                    model.today = LocalDate(Date())
+                }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .active:
+                Task { await model.refresh() }
+            case .inactive, .background:
+                if let document = model.document { Task { await model.save(document) } }
+            @unknown default:
+                break
+            }
+        }
+    }
+}
+#endif

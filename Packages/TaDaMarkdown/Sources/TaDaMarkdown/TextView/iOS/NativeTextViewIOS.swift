@@ -1,0 +1,300 @@
+//
+//  NativeTextViewIOS.swift
+//  TaDaMarkdown
+//
+//  The iOS editor: a TextKit 2 `UITextView` with the state the shared
+//  styling, input and layout code reads from the macOS `NativeTextView`.
+//
+
+#if os(iOS)
+import SwiftUI
+import UIKit
+
+final class NativeTextView: UITextView {
+    var configuration: MarkdownEditorConfiguration = .default
+
+    /// The pairs whose closers typing steps over (`MarkdownAutoPairs`). Every applied edit
+    /// moves them; undo and redo forget them.
+    var autoPairs: [AutoPair] = []
+
+    weak var layoutBridge: LayoutBridge?
+    var baseFont: UIFont = .systemFont(ofSize: UIFont.systemFontSize)
+
+    /// See ``NativeTextViewWrapper/onTaskMarkerMenu``.
+    var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
+    /// See ``NativeTextViewWrapper/onCalloutMenu``.
+    var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
+    /// See ``NativeTextViewWrapper/onTaskCheckboxToggle``.
+    var onTaskCheckboxToggle: ((Character) -> Void)?
+    /// The title line location of the callout whose menu is open.
+    var calloutMenuTarget: Int?
+    /// Skips the next scroll-to-caret, after an edit that places the caret itself.
+    var suppressAutoRevealOnce = false
+    /// What the selection and text delegates are reacting to: typing or a tap.
+    var inputKind: EditorInputKind = .other
+
+    /// The attributes typed text starts with: the body font and paragraph style,
+    /// so a heading's style never carries into the next line.
+    var baseTypingAttributes: [NSAttributedString.Key: Any]?
+
+    /// The embedder's header, above the text; it scrolls with it.
+    private var headerHost: UIHostingController<AnyView>?
+    private var headerHeight: CGFloat = 0
+    /// The vertical text inset before the header's height is added.
+    var bodyInsets = UIEdgeInsets.zero {
+        didSet { applyInsets() }
+    }
+
+    init() {
+        let layoutManager = NSTextLayoutManager()
+        let container = NSTextContainer(size: CGSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
+        layoutManager.textContainer = container
+        let contentStorage = NSTextContentStorage()
+        contentStorage.addTextLayoutManager(layoutManager)
+        super.init(frame: .zero, textContainer: container)
+        container.textView = self
+        gestures.textView = self
+        for recognizer in [gestures.tap, gestures.press] {
+            recognizer.delegate = gestures
+            addGestureRecognizer(recognizer)
+        }
+    }
+
+    private let gestures = EditorGestures()
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    private var coordinator: NativeTextViewCoordinator? { delegate as? NativeTextViewCoordinator }
+
+    /// Each document keeps its own undo stack (see `NativeTextViewCoordinator.undoManager(forDocument:)`).
+    override var undoManager: UndoManager? {
+        coordinator.map { $0.undoManager(forDocument: $0.documentId) } ?? super.undoManager
+    }
+
+    /// The caret's syntax shows only while the keyboard is up (`revealsSyntax`).
+    override func becomeFirstResponder() -> Bool {
+        let became = super.becomeFirstResponder()
+        if became { coordinator?.editingFocusDidChange(in: self) }
+        return became
+    }
+
+    override func resignFirstResponder() -> Bool {
+        let resigned = super.resignFirstResponder()
+        if resigned { coordinator?.editingFocusDidChange(in: self) }
+        return resigned
+    }
+
+    override var typingAttributes: [NSAttributedString.Key: Any] {
+        get { baseTypingAttributes ?? super.typingAttributes }
+        set { super.typingAttributes = baseTypingAttributes ?? newValue }
+    }
+
+    // MARK: Input kind
+
+    override func insertText(_ text: String) {
+        inputKind = .key
+        defer { inputKind = .other }
+        super.insertText(text)
+    }
+
+    override func deleteBackward() {
+        inputKind = .key
+        defer { inputKind = .other }
+        super.deleteBackward()
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        inputKind = .click
+        super.touchesEnded(touches, with: event)
+        DispatchQueue.main.async { [weak self] in self?.inputKind = .other }
+    }
+
+    // MARK: Hardware keyboard
+
+    override var keyCommands: [UIKeyCommand]? {
+        var commands = [UIKeyCommand(input: "\t", modifierFlags: .shift, action: #selector(outdent))]
+        if coordinator?.slashCommand != nil {
+            for input in [UIKeyCommand.inputUpArrow, UIKeyCommand.inputDownArrow, UIKeyCommand.inputEscape, "\r"] {
+                let command = UIKeyCommand(input: input, modifierFlags: [], action: #selector(slashKey(_:)))
+                command.wantsPriorityOverSystemBehavior = true
+                commands.append(command)
+            }
+        }
+        return commands
+    }
+
+    @objc func outdent() {
+        _ = coordinator?.handleBacktab(self)
+    }
+
+    /// ↑/↓ move through an open slash menu, ↵ inserts, esc closes, as on macOS.
+    @objc private func slashKey(_ command: UIKeyCommand) {
+        guard let coordinator else { return }
+        if command.input == UIKeyCommand.inputEscape {
+            coordinator.dismissSlashCommand()
+            return
+        }
+        let key: InlinePreviewKey = switch command.input {
+        case UIKeyCommand.inputUpArrow: .moveUp
+        case UIKeyCommand.inputDownArrow: .moveDown
+        default: .confirm
+        }
+        if coordinator.onSlashCommandKey?(key) != true, key == .confirm {
+            insertText("\n")
+        }
+    }
+
+    // MARK: Taps and presses
+
+    /// A tap on a task box toggles it; on a foldable callout's title row (outside its text), folds it.
+    func handleTap(at point: CGPoint) {
+        if let hit = taskCheckboxHit(atViewPoint: point) {
+            toggleTaskCheckbox(hit)
+            onTaskCheckboxToggle?(hit.marker)
+        } else if let hit = calloutTitleHit(atViewPoint: point), !toggleCalloutFold(hit) {
+            if !isFirstResponder { becomeFirstResponder() }
+            setSelectedRange(NSRange(location: characterIndex(atViewPoint: point), length: 0))
+        }
+    }
+
+    /// Press and hold on a task box or a callout title line opens its menu.
+    func handlePress(at point: CGPoint) {
+        if let onTaskMarkerMenu, let hit = taskCheckboxHit(atViewPoint: point) {
+            onTaskMarkerMenu(taskMarkerMenuRequest(for: hit))
+        } else if let onCalloutMenu, let hit = calloutTitleHit(atViewPoint: point) {
+            showCalloutMenu(for: hit, onCalloutMenu)
+        }
+    }
+
+    fileprivate func takesTap(at point: CGPoint) -> Bool {
+        if taskCheckboxHit(atViewPoint: point) != nil { return true }
+        guard let hit = calloutTitleHit(atViewPoint: point) else { return false }
+        return hit.header.fold.length == 1
+    }
+
+    fileprivate func takesPress(at point: CGPoint) -> Bool {
+        (onTaskMarkerMenu != nil && taskCheckboxHit(atViewPoint: point) != nil)
+            || (onCalloutMenu != nil && calloutTitleHit(atViewPoint: point) != nil)
+    }
+
+    // MARK: Layout
+
+    /// Lays out the whole document, so `sizeThatFits` measures all of it.
+    func ensureFullLayout() {
+        guard let layoutManager = textLayoutManager else { return }
+        layoutManager.ensureLayout(for: layoutManager.documentRange)
+    }
+
+    /// Lays out the visible part of the document, as AppKit's `ensureLayout` would.
+    func ensureVisibleLayout() {
+        guard let layoutManager = textLayoutManager,
+              let viewport = layoutManager.textViewportLayoutController.viewportRange else { return }
+        layoutManager.ensureLayout(for: viewport)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layoutHeader()
+    }
+
+    // MARK: Keyboard bar
+
+    private var keyboardBarHost: UIHostingController<AnyView>?
+
+    func setKeyboardBar(_ bar: AnyView?) {
+        guard let bar else {
+            guard keyboardBarHost != nil else { return }
+            keyboardBarHost = nil
+            inputAccessoryView = nil
+            if isFirstResponder { reloadInputViews() }
+            return
+        }
+        if let keyboardBarHost {
+            keyboardBarHost.rootView = bar
+            return
+        }
+        let host = UIHostingController(rootView: bar)
+        host.view.backgroundColor = .clear
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 52))
+        container.autoresizingMask = .flexibleWidth
+        host.view.frame = container.bounds
+        host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.addSubview(host.view)
+        keyboardBarHost = host
+        inputAccessoryView = container
+        if isFirstResponder { reloadInputViews() }
+    }
+
+    // MARK: Header
+
+    func setHeader(_ header: AnyView?) {
+        guard let header else {
+            headerHost?.view.removeFromSuperview()
+            headerHost = nil
+            headerHeight = 0
+            applyInsets()
+            return
+        }
+        if let headerHost {
+            headerHost.rootView = header
+        } else {
+            let host = UIHostingController(rootView: header)
+            host.view.backgroundColor = .clear
+            host.sizingOptions = .intrinsicContentSize
+            addSubview(host.view)
+            headerHost = host
+        }
+        setNeedsLayout()
+    }
+
+    private func layoutHeader() {
+        guard let view = headerHost?.view else { return }
+        let width = bounds.width
+        guard width > 0 else { return }
+        let height = ceil(view.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height)
+        view.frame = CGRect(x: 0, y: 0, width: width, height: height)
+        if abs(height - headerHeight) > 0.5 {
+            headerHeight = height
+            applyInsets()
+        }
+    }
+
+    private func applyInsets() {
+        var insets = bodyInsets
+        insets.top += headerHeight
+        if textContainerInset != insets { textContainerInset = insets }
+    }
+}
+/// The editor's own tap and press, which the text view's gestures wait for: they begin only over a
+/// task box or a callout title line, so everywhere else the text view behaves as usual.
+private final class EditorGestures: NSObject, UIGestureRecognizerDelegate {
+    weak var textView: NativeTextView?
+    lazy var tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
+    lazy var press: UILongPressGestureRecognizer = {
+        let press = UILongPressGestureRecognizer(target: self, action: #selector(pressed(_:)))
+        press.minimumPressDuration = 0.4
+        return press
+    }()
+
+    @objc private func tapped(_ recognizer: UITapGestureRecognizer) {
+        textView?.handleTap(at: recognizer.location(in: textView))
+    }
+
+    @objc private func pressed(_ recognizer: UILongPressGestureRecognizer) {
+        guard recognizer.state == .began else { return }
+        textView?.handlePress(at: recognizer.location(in: textView))
+    }
+
+    func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+        guard let textView else { return false }
+        let point = recognizer.location(in: textView)
+        return recognizer === tap ? textView.takesTap(at: point) : textView.takesPress(at: point)
+    }
+
+    func gestureRecognizer(_ recognizer: UIGestureRecognizer,
+                           shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+        other.view === textView && other !== tap && other !== press
+    }
+}
+#endif

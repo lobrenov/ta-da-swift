@@ -46,4 +46,33 @@ public final class VaultWatcher: @unchecked Sendable {
         queue.sync {}
     }
 }
+#else
+
+/// Calls `onChange` on a background queue when file coordination reports a change under a folder: another app's
+/// coordinated write, or iCloud Drive adding, changing or moving a file. It doesn't say what changed: callers
+/// compare modification dates (`Vault.modificationDates()`). Changes made without coordination are found when
+/// the app becomes active. `latency` is unused: coordination reports each change as it happens.
+public final class VaultWatcher: NSObject, NSFilePresenter, Sendable {
+    public let presentedItemURL: URL?
+    public let presentedItemOperationQueue: OperationQueue
+    private let onChange: @Sendable () -> Void
+
+    public init?(root: URL, latency: TimeInterval = 0.3, onChange: @escaping @Sendable () -> Void) {
+        presentedItemURL = root
+        presentedItemOperationQueue = OperationQueue()
+        presentedItemOperationQueue.maxConcurrentOperationCount = 1
+        self.onChange = onChange
+        super.init()
+        NSFileCoordinator.addFilePresenter(self)
+    }
+
+    deinit {
+        NSFileCoordinator.removeFilePresenter(self)
+    }
+
+    public func presentedItemDidChange() { onChange() }
+    public func presentedSubitemDidAppear(at url: URL) { onChange() }
+    public func presentedSubitemDidChange(at url: URL) { onChange() }
+    public func presentedSubitem(at oldURL: URL, didMoveTo newURL: URL) { onChange() }
+}
 #endif

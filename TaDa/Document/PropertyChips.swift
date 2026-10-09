@@ -2,8 +2,9 @@
 // due date and deadline as chips that open pickers, with a dashed chip for a missing one; then the type and the
 // days the file was created and completed in a quiet line. Area, contexts and repeat aren't shown.
 import SwiftUI
-import AppKit
 import TaDaCore
+#if os(macOS)
+import AppKit
 
 struct PropertyChips: View {
     let model: AppModel
@@ -286,8 +287,10 @@ private struct QuietLine: View {
     }
 }
 
+#endif
+
 /// Lays its views out left to right, `spacing` apart, and starts a new row `spacing` below when one is full.
-private struct WrappingHStack: Layout {
+struct WrappingHStack: Layout {
     var spacing: CGFloat
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {

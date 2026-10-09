@@ -1,5 +1,6 @@
 // Upcoming: the seven days from tomorrow (empty days included), then later entries by month.
 // An open task gets one entry on its due date and another on its deadline.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -48,7 +49,7 @@ struct AgendaView: View {
                 let later = Dictionary(grouping: entries.filter { $0.date > lastDay }) { $0.date.startOfMonth }
                 ForEach(later.keys.sorted(), id: \.self) { month in
                     VStack(alignment: .leading, spacing: 0) {
-                        DayHeader(number: nil, label: Self.laterTitle(month, today: today), empty: false, style: style)
+                        DayHeader(number: nil, label: month.agendaMonthTitle(today: today), empty: false, style: style)
                         ForEach(later[month]!) { row($0, dated: true) }
                     }
                 }
@@ -95,12 +96,6 @@ struct AgendaView: View {
         let p = entry.item.properties
         let (kind, date): (AgendaEntry.Kind, LocalDate?) = entry.kind == .due ? (.deadline, p.deadline) : (.due, p.dueDate)
         return date.map { "\(kind.label) \($0.relativeLabel(today: model.today))" }
-    }
-
-    /// "Later in October" for the rest of this month, then "November", or "January 2027" in another year.
-    static func laterTitle(_ month: LocalDate, today: LocalDate) -> String {
-        if month == today.startOfMonth { return "Later in \(month.formatted(.month))" }
-        return month.year == today.year ? month.formatted(.month) : month.formatted(.monthYear)
     }
 }
 
@@ -202,3 +197,4 @@ private struct ColumnAgendaRow: View {
         }
     }
 }
+#endif

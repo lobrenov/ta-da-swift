@@ -106,7 +106,7 @@ import TaDaCore
             case date(AgendaEntry.Kind)
         }
     }
-    /// Whether FSEvents is watching the folder. Without it, changes are picked up when the app becomes active.
+    /// Whether `VaultWatcher` is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
     /// Whether the folder is in iCloud Drive, or in an app's iCloud folder such as Obsidian's.
     private(set) var isInICloud = false
@@ -140,11 +140,15 @@ import TaDaCore
     var autocomplete: Autocomplete {
         didSet { defaults.set(autocomplete.dictionary, forKey: Keys.autocomplete) }
     }
+    /// Haptic feedback on iOS; Settings ▸ Haptics turns it off.
+    var haptics: Bool {
+        didSet { defaults.set(!haptics, forKey: Keys.hapticsOff) }
+    }
     /// The task groups folded in each project's browser ("Open", "Completed"), by project path.
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
     }
-    /// The Mac's appearance, kept current by ContentView.
+    /// The system appearance, kept current by `themed(by:)`.
     var systemIsDark = Appearance.systemIsDark
 
     var isDark: Bool {
@@ -199,6 +203,7 @@ import TaDaCore
         static let darkScheme = "darkScheme"
         static let foldedGroups = "foldedGroups"
         static let autocomplete = "autocomplete"
+        static let hapticsOff = "hapticsOff"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -210,6 +215,7 @@ import TaDaCore
         darkScheme = defaults.string(forKey: Keys.darkScheme).flatMap(Theme.named) ?? ThemeSet.standard.dark
         foldedGroups = defaults.dictionary(forKey: Keys.foldedGroups) as? [String: [String]] ?? [:]
         autocomplete = Autocomplete(defaults.dictionary(forKey: Keys.autocomplete))
+        haptics = !defaults.bool(forKey: Keys.hapticsOff)
     }
 
     // MARK: Folder
@@ -264,6 +270,9 @@ import TaDaCore
         trash = await Self.run { vault.trashedItems() }
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         state = .ready
+        #if os(iOS)
+        await Self.run { vault.downloadPlaceholders() }
+        #endif
         watcher = VaultWatcher(root: vault.root) { [weak self] in
             Task { await self?.refresh() }
         }
@@ -287,6 +296,9 @@ import TaDaCore
             defer { refreshing = nil }
             repeat {
                 refreshAgain = false
+                #if os(iOS)
+                await Self.run { vault.downloadPlaceholders() }
+                #endif
                 let known = fileDates, presenter = presenter
                 let changes = await Self.run { vault.changes(since: known, presenter: presenter) }
                 guard self.vault?.root == vault.root else { return }

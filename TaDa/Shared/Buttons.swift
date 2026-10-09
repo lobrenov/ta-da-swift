@@ -12,7 +12,7 @@ struct ActionButtonStyle: ButtonStyle {
     /// 30pt, or 28 in panels and confirmations and 32 in the sidebar.
     var height: CGFloat = 30
     /// Behind an outlined button's label, as on a panel.
-    var fill: KeyPath<Theme, NSColor>? = nil
+    var fill: KeyPath<Theme, PlatformColor>? = nil
     /// Stretches the button across its container instead of padding the label.
     var fullWidth = false
 
@@ -28,7 +28,7 @@ private struct ActionButtonBody<Label: View>: View {
     @Environment(\.isEnabled) private var isEnabled
 
     var body: some View {
-        let (size, weight, padding, text): (CGFloat, Font.Weight, CGFloat, KeyPath<Theme, NSColor>) = switch style.kind {
+        let (size, weight, padding, text): (CGFloat, Font.Weight, CGFloat, KeyPath<Theme, PlatformColor>) = switch style.kind {
         case .outlined: (12, .regular, 12, \.fg)
         case .outlinedStrong: (12.5, .semibold, 14, \.strong)
         case .primary: (12.5, .bold, 16, \.bg)

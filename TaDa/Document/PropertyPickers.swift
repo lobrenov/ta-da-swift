@@ -1,5 +1,6 @@
 // The pickers under the property chips: status and project in popup menus, and dates in a calendar. One is open
 // at a time; its chip keeps an accent ring until it closes.
+#if os(macOS)
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -383,3 +384,4 @@ private struct CurrentTick: View {
             .foregroundStyle(theme.color(\.accent))
     }
 }
+#endif

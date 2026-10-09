@@ -1,6 +1,9 @@
-// Root view: the folder picker until a folder is open, then sidebar + workspace. Applies the theme.
+// Root view: the folder picker until a folder is open, then sidebar + workspace (on iOS, the tabs).
+// Applies the theme.
 import SwiftUI
+import TaDaCore
 
+#if os(macOS)
 struct ContentView: View {
     @Bindable var model: AppModel
 
@@ -31,6 +34,34 @@ struct ContentView: View {
         .task { await model.start() }
     }
 }
+
+#else
+struct ContentView: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        Group {
+            switch model.state {
+            case .noFolder, .failed:
+                PhoneOnboardingView(model: model)
+            case .loading:
+                ProgressView("Reading \(model.folderDisplayName)…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(model.theme.color(\.bg))
+            case .ready:
+                PhoneRootView(model: model)
+            }
+        }
+        .themed(by: model)
+        .alert("Ta Da", isPresented: Binding { model.errorMessage != nil } set: { if !$0 { model.errorMessage = nil } }) {
+            Button("OK") {}
+        } message: {
+            Text(model.errorMessage ?? "")
+        }
+        .task { await model.start() }
+    }
+}
+#endif
 
 #Preview {
     ContentView(model: AppModel())

@@ -1,6 +1,7 @@
 // Dragging task files: task rows drag as their files, onto the sidebar's projects, Loose tasks and Today or into
 // other apps as a drag from Finder would, and the project menu or a calendar opens under a row for ⇧⌘M, ⌘S or ⌘D. A drag on a picked row
 // takes every picked task. Other apps get copies: Finder never moves a file out of the folder.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -102,3 +103,4 @@ private struct TaskDropZone: ViewModifier {
             }
     }
 }
+#endif

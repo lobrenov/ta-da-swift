@@ -1,5 +1,6 @@
 // Settings ▸ Themes: the appearance, the theme set (or a scheme per appearance), previews of the pair
 // and the bundled sets.
+#if os(macOS)
 import SwiftUI
 
 struct ThemeSettingsView: View {
@@ -288,3 +289,4 @@ private struct ThemeSetButton: View {
 #Preview {
     ThemeSettingsView(model: AppModel())
 }
+#endif

@@ -1,3 +1,5 @@
+// The version store's adding API is macOS-only, so these run on the Mac.
+#if os(macOS)
 import Foundation
 import Synchronization
 import Testing
@@ -60,3 +62,4 @@ private func fileWithAnotherVersion(in folder: URL) throws -> (url: URL, version
         #expect(NSFileVersion.otherVersionsOfItem(at: url)?.isEmpty == true)
     }
 }
+#endif

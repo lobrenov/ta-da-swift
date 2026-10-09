@@ -1,4 +1,5 @@
 // A month grid with dots for open tasks' due dates and deadlines, and the month's entries after the agenda's seven days.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -150,3 +151,4 @@ struct MonthStepButton: View {
         .accessibilityLabel(forward ? "Next month" : "Previous month")
     }
 }
+#endif

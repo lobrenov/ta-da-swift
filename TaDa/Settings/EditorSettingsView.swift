@@ -1,4 +1,5 @@
 // Settings ▸ Editor: the Autocomplete switches for brackets, text formatting, and wikilinks and embeds.
+#if os(macOS)
 import SwiftUI
 
 struct EditorSettingsView: View {
@@ -58,3 +59,4 @@ struct EditorSettingsView: View {
 #Preview {
     EditorSettingsView(model: AppModel())
 }
+#endif

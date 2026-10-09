@@ -2,6 +2,7 @@
 import SwiftUI
 import TaDaCore
 
+#if os(macOS)
 struct LiveDocumentView: View {
     let model: AppModel
     let document: OpenDocument
@@ -35,10 +36,14 @@ struct LiveDocumentView: View {
     }
 }
 
+#endif
+
 /// The body in the live editor, growing with its text so the page scrolls as one.
 struct BodyEditor: View {
     let model: AppModel
     let document: OpenDocument
+    /// Opens a link's file; by default the model shows it.
+    var open: ((String) -> Void)? = nil
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -49,6 +54,7 @@ struct BodyEditor: View {
             linkTargets: model.index.titles,
             fitsContent: true,
             autocomplete: model.autocomplete,
+            haptics: model.haptics,
             onLinkClick: openLink
         )
         // The editor insets its text by 16pt; line it up with the title.
@@ -58,7 +64,7 @@ struct BodyEditor: View {
 
     private func openLink(_ target: String) {
         guard let link = WikiLink(inner: target), let item = model.index.items(titled: link.title).first else { return }
-        model.open(item.path)
+        if let open { open(item.path) } else { model.open(item.path) }
     }
 }
 
@@ -71,23 +77,26 @@ struct TitleField: View {
     /// The file whose title is being edited. The view is reused across files, so a commit only renames
     /// the file the editing started in, and only while it's still the one shown.
     @State private var editingPath: String?
+    @State private var selection: TextSelection?
     @FocusState private var focused: Bool
     @Environment(\.theme) private var theme
 
     private var title: String { Item.title(ofPath: document.path) }
 
     var body: some View {
-        TextField("Title", text: $draft, axis: .vertical)
+        TextField("Title", text: $draft, selection: $selection, axis: .vertical)
             .textFieldStyle(.plain)
             .font(.system(size: size, weight: .bold))
             .tracking(-size / 100)
             .foregroundStyle(theme.color(\.strong))
             .focused($focused)
             .onSubmit { focused = false }
+            #if os(macOS)
             .onExitCommand {
                 draft = title
                 focused = false
             }
+            #endif
             .onChange(of: draft) {
                 // Return ends editing; a title is one line.
                 guard draft.contains(where: \.isNewline) else { return }
@@ -107,10 +116,11 @@ struct TitleField: View {
             .help("Rename the file")
     }
 
-    /// A file just created asks for its title to take focus, ready to type a name.
+    /// A file just created asks for its title to take focus, selected, ready to type a name.
     private func takeFocusIfAsked() {
         guard model.titleFocus == document.path else { return }
         model.titleFocus = nil
+        selection = TextSelection(range: draft.startIndex..<draft.endIndex)
         focused = true
     }
 

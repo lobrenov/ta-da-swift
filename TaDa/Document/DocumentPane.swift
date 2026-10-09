@@ -1,4 +1,5 @@
 // The document column: a breadcrumb bar over the selected file, or a prompt when nothing is selected.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -77,3 +78,4 @@ private struct DocumentBar: View {
         .frame(height: 46)
     }
 }
+#endif

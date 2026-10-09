@@ -107,6 +107,13 @@ struct PropertyPickerTests {
         #expect(MonthGrid(LocalDate("2027-02-01")!, calendar: mondayFirst).weeks == 4, "February 2027 starts on a Monday")
     }
 
+    @Test func thisWeekendIsTheComingSaturdayOrToday() {
+        #expect(CalendarPickerModel.thisWeekend(after: LocalDate("2026-10-02")!) == LocalDate("2026-10-03")!)
+        #expect(CalendarPickerModel.thisWeekend(after: LocalDate("2026-10-03")!) == LocalDate("2026-10-03")!)
+        #expect(CalendarPickerModel.thisWeekend(after: LocalDate("2026-10-04")!) == LocalDate("2026-10-04")!)
+        #expect(CalendarPickerModel.thisWeekend(after: LocalDate("2026-10-05")!) == LocalDate("2026-10-10")!)
+    }
+
     @Test func nextWeekIsTheFirstDayOfTheFollowingWeek() {
         #expect(CalendarPickerModel.nextWeek(after: LocalDate("2026-10-02")!, calendar: mondayFirst) == LocalDate("2026-10-05")!)
         #expect(CalendarPickerModel.nextWeek(after: LocalDate("2026-10-05")!, calendar: mondayFirst) == LocalDate("2026-10-12")!)

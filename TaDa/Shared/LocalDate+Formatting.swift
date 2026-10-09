@@ -27,6 +27,13 @@ extension LocalDate {
         }
     }
 
+    /// A later month's heading in Upcoming: "Later in October" for the rest of this month, then "November", or
+    /// "January 2027" in another year.
+    func agendaMonthTitle(today: LocalDate) -> String {
+        if self == today.startOfMonth { return "Later in \(formatted(.month))" }
+        return year == today.year ? formatted(.month) : formatted(.monthYear)
+    }
+
     /// The first day of this day's month.
     var startOfMonth: LocalDate { LocalDate(year: year, month: month, day: 1)! }
 

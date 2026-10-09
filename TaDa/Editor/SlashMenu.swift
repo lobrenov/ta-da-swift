@@ -1,5 +1,6 @@
 // The slash menu: markdown formats in a popup menu under the `/`.
 // The editor engine tracks the `/query` and routes the keys; LiveEditor bridges the two.
+#if os(macOS)
 import SwiftUI
 import AppKit
 import TaDaCore
@@ -110,3 +111,4 @@ private struct SlashCommandIcon: View {
         }
     }
 }
+#endif

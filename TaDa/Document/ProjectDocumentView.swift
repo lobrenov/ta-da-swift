@@ -1,4 +1,5 @@
 // A project's own page: title, properties, the description in the live editor, and the tasks that link to it.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -242,3 +243,4 @@ struct NewLinkedTaskButton: View {
         Task { await model.newTask() }
     }
 }
+#endif

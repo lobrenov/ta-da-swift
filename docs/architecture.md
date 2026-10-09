@@ -5,24 +5,25 @@ How the app is built. The file format and writing rules are in `docs/file-format
 ## Layers
 
 - **TaDaCore** (`Packages/TaDaCore`, local package): the model, parsing, surgical writes, the index, queries and storage. Foundation, swift-markdown 0.9.0 and Yams 6.2.2 only; no UI.
-- **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 minimum, App Sandbox with user-selected read/write.
-- **MarkdownEngine** (`libs/swift-markdown-engine`): our fork of swift-markdown-engine 0.13.0, the Live editor. Changes are listed in its `FORK.md`.
+- **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 and iOS 26 minimum; on the Mac, App Sandbox with user-selected read/write. The model, theme, live editor, folder handling and the document's title, body, banner and footer build for both; the Mac's views are behind `#if os(macOS)` and the iPhone's are in `TaDa/iOS/`.
+- **TaDaMarkdown** (`Packages/TaDaMarkdown`, local package): the Live editor, from swift-markdown-engine 0.13.0 under Apache-2.0, for macOS and iOS. Parsing, styling, layout, input and the text-delegate path are shared; `Platform/Platform.swift` names the AppKit and UIKit types, and `TextView/iOS/` holds the iOS editor. Its `ORIGIN.md` lists the changes.
 
-The workspace `TaDa.xcworkspace` holds the project and TaDaCore; the test plan `TaDa.xctestplan` runs TaDaTests, TaDaCoreTests and TaDaUITests.
+The workspace `TaDa.xcworkspace` holds the project, TaDaCore and TaDaMarkdown; the test plan `TaDa.xctestplan` runs TaDaTests, TaDaCoreTests and TaDaUITests.
 
 ## Files
 
 ```
 TaDa/
-├── TaDaApp.swift              one main window plus Settings, sharing one AppModel; AppDelegate owns it and handles activation, quitting and day changes
-├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace; applies the theme
+├── TaDaApp.swift              one main window plus Settings, sharing one AppModel; AppDelegate owns it and handles activation, quitting and day changes.
+│                              On iOS, one window group that refreshes when the scene becomes active and saves when it leaves
+├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace (on iOS, PhoneRootView); applies the theme
 ├── AppModel.swift             root state: folder, index, domain, selection, open document, theme set and appearance; refresh, save, outside-change handling
 ├── OpenDocument.swift         the selected file's whole text; edits reparse it
 ├── SettingsStore.swift        where AppModel keeps its settings: UserDefaults, or a test's in-memory store
 ├── Commands.swift             menu commands and shortcuts
 ├── UITestingLaunch.swift      the `-uiTesting` launch: throwaway settings and folder
-├── Theme/                     Theme (15 colour tokens + isDark), ThemeSet, Appearance, the 15 bundled schemes and 8 sets;
-│                              themed(by:) sets \.theme and NSApp.appearance and follows the Mac's appearance
+├── Theme/                     Theme (15 colour tokens + isDark, as `PlatformColor`: NSColor or UIColor), ThemeSet, Appearance, the 15 bundled
+│                              schemes and 8 sets; themed(by:) sets \.theme and the colour scheme and follows the system appearance
 ├── Onboarding/                FolderPickerView
 ├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView, EditorSettingsView
 ├── Sidebar/                   SidebarView: search, domains, projects, folder line, Settings, New buttons
@@ -47,7 +48,7 @@ TaDa/
 │   ├── FileInspector.swift    beside the Source editor
 │   └── DocumentBanner.swift   outside-change choices
 ├── Editor/
-│   ├── LiveEditor.swift       the only file that imports MarkdownEngine
+│   ├── LiveEditor.swift       the only file that imports TaDaMarkdown
 │   ├── Autocomplete.swift     the Live editor's Autocomplete switches
 │   ├── InlineCheckbox.swift   checkbox drawing for the editor and task rows
 │   ├── SourceTextView.swift   Source mode (NSTextView, line numbers)
@@ -56,6 +57,7 @@ TaDa/
 │   ├── CalloutMenu.swift
 │   ├── CalloutIcon.swift      callout icons and tints
 │   └── AddSubtask.swift
+├── iOS/                       the iPhone app (see iPhone below)
 └── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, callout, file and property menus share); FileMenu (right-click on a project or task); TaskDrag (task rows dragged as files onto the sidebar or into other apps, and ⇧⌘M's, ⌘S's and ⌘D's menus under a row); Buttons (the text button style and segmented control); InlineTitleField (a title renamed in place)
 
 Packages/TaDaCore/Sources/TaDaCore/
@@ -76,7 +78,7 @@ TaDaCore has one test file per source file in `Tests/TaDaCoreTests`, with fixtur
 - **Editing**: `OpenDocument` holds the selected file's whole text. Typing, property edits and checkbox clicks change that text, which is reparsed into the index. It saves 600 ms after the last change, and also before switching files, when the app deactivates and on quit. Files load one at a time: each selection waits for the previous load, which is skipped if it hasn't started. `AppModel` does its file work off the main actor through `run`. Quitting, including by closing the window, waits for the save: `AppDelegate.applicationShouldTerminate` returns `.terminateLater`. A checkbox click in a row whose file isn't open does a coordinated read, a surgical edit and an atomic write.
 - **Saving** is guarded: Ta Da writes only if the file still holds the text it last read or wrote.
 - **Trash**: deleting moves a file into `.trash/` in the folder (created when needed); a project takes its linked tasks. `AppModel.trash` lists the Ta Da files there, reloaded on each refresh. Restoring moves files to `tasks/` or `projects/` (a project brings its trashed tasks, relinked if its name changed); Delete Forever and Empty Trash move them to the Mac's Trash. The rules are in `docs/file-format.md`.
-- **Outside changes**: `VaultWatcher` (FSEvents) and app activation both trigger `refresh()`, which compares modification dates with the last scan and reparses only changed files. The open document reloads if it has no unsaved edits. With unsaved edits, `DocumentBanner` offers keep mine / use the file on disk, save again / discard after a deletion, or keep this / use the other iCloud version (`Conflicts` writes the file, marks the conflict resolved and removes the other versions in one coordinated write). Leaving the file or quitting with a choice still open writes the edits to `<title> (unsaved edits).md` beside it. The open file is presented to file coordination (`FilePresenter`): another app's coordinated read or merge, iCloud Drive's uploads among them, first saves the edits, and a coordinated move or rename (Finder, iCloud) is followed. A rename without coordination (Obsidian, Terminal, git) shows as a deletion.
+- **Outside changes**: `VaultWatcher` (FSEvents on the Mac; on iOS, file coordination on the folder) and app activation both trigger `refresh()`, which compares modification dates with the last scan and reparses only changed files. The open document reloads if it has no unsaved edits. With unsaved edits, `DocumentBanner` offers keep mine / use the file on disk, save again / discard after a deletion, or keep this / use the other iCloud version (`Conflicts` writes the file, marks the conflict resolved and removes the other versions in one coordinated write). Leaving the file or quitting with a choice still open writes the edits to `<title> (unsaved edits).md` beside it. The open file is presented to file coordination (`FilePresenter`): another app's coordinated read or merge, iCloud Drive's uploads among them, first saves the edits, and a coordinated move or rename (Finder, iCloud) is followed. A rename without coordination (Obsidian, Terminal, git) shows as a deletion. On iOS, files iCloud Drive hasn't downloaded are hidden `.Name.md.icloud` placeholders; opening the folder and each refresh ask for them (`Vault.downloadPlaceholders()`), and each joins the index once it arrives.
 
 ## Themes
 
@@ -102,6 +104,21 @@ Setting dates: the file menu's Schedule and Set Deadline…, ⌘S and ⌘D act o
 Browser lists share their selection: each registers its rows with `.arrowKeySelection(model, paths:, allowsMultipleSelection:)` (the lists beside the document through `BrowserColumn`, which also sets their header and padding), and rows show `model.isSelected(_:)`, call `model.click(_:)` and add `.fileMenu`. Every list allows several (Search picks tasks only, since a project opens its page): shift-click picks a range and ⌘-click adds or removes a row (`AppModel.multiSelection`, or `trashSelection` in Trash). The document pane shows "N tasks selected", and Upcoming keeps its agenda column while tasks are picked. In Trash a plain click picks one file. The list keys go to a `ListKeyView` behind each list, an AppKit responder that takes the keyboard when the list appears, when nothing has it and when a row is picked, but never from a text view, or for a new file whose title is about to take it.
 
 A project's browser folds its Open and Completed groups from their headers. `AppModel.foldedGroups` keeps the folded ones per project path in the settings and follows a rename; a folded group's rows leave the arrow-key list. Its header shows the project's chips through `PropertyChipRow`, and its title and the project page table's titles are `InlineTitleField`s, which rename with `AppModel.rename(_:to:)`. The table's New linked task calls `AppModel.newLinkedTask(in:)`, which sets `titleFocus` so the new row's title starts editing without opening the task.
+
+## iPhone
+
+`PhoneRootView` is a `TabView` of Today, Upcoming, Loose, Projects and Other, each a `NavigationStack` whose path lives in `PhoneNavigation` (`@Observable`, in the environment), with the date and project sheets over them.
+
+- `PhoneNavigation.swift`: tabs, routes (file, project, settings section, trash), the sheet, picked rows and `Haptic`, played through `.sensoryFeedback` when Settings ▸ Haptics is on (`AppModel.haptics`).
+- `PhoneList.swift`: what every list shares: large title and subtitle, `.searchable` in the navigation bar (pulled down to show; scopes are the list, Everywhere and Titles Only), the floating + and the "…" menu with Select.
+- `PhoneScreens.swift`: Today and Loose (context pills, grouped by project), Upcoming (a week strip over day headers), Projects (Completed folds) and a project's tasks (Open and Completed fold, with `AppModel.isFolded`).
+- `PhoneRows.swift`: task and project rows. Press and hold opens `PhoneFileMenu`: Complete, Today and Tomorrow, Status, Schedule…, Set Deadline…, Move to Project…, Share…, Select and Move to Trash.
+- `PhoneFileScreen.swift`: a file pushed from any list. Title (`TitleField`), chips that open the sheets, the body in `BodyEditor` or the whole file in a Source `TextEditor`, and a project's linked tasks. The top bar has the Live/Source toggle and a More menu (Done while the keyboard is up); the bottom toolbar has Complete, Schedule, Deadline, Move, Share and Trash. It sets `model.selection` while shown.
+- `PhoneSheets.swift`: `PhoneDateSheet` (due date or deadline, quick days and a month grid) and `PhoneProjectSheet` (search, No project, New Project…), for one file or the picked ones. Each writes on ✓.
+- `PhonePicking.swift`: swipe to pick. A `UIPanGestureRecognizer` that begins only for a leftward, mostly horizontal pan slides the row over a tick; letting go past 64 pt picks the row, or unpicks it while picking, and the row springs back. While picking, Select All, the count and Done replace the navigation bar, and the action bar (Complete, Schedule, Move, More, Delete) replaces the tab bar.
+- `PhoneOther.swift`: Other (Trash and Settings rows, the sync line), Settings (Vault, Themes, Editor Autocomplete, Haptics), Trash (pick, restore, empty) and onboarding.
+
+On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a checkbox or callout title opens `CheckboxMenu` or `CalloutMenu` as popovers. Its keyboard bar (`EditorKeyboardBar`, the editor's `inputAccessoryView`) has subtask, heading, bold, italic, code, wikilink, callout, `/`, outdent, indent and hide keyboard; while a slash query is open it shows the matching commands instead.
 
 ## Editors
 

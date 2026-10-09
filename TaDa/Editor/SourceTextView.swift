@@ -1,5 +1,6 @@
 // Source mode: the whole file, frontmatter included, in a plain-text editor with line numbers,
 // a current-line highlight and colouring by role (SourceHighlighter).
+#if os(macOS)
 import AppKit
 import SwiftUI
 import TaDaCore
@@ -232,3 +233,4 @@ final class SourceTextView: NSTextView {
         return max(low, 1)
     }
 }
+#endif

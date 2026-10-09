@@ -1,6 +1,7 @@
 // Trash: the Ta Da files in `.trash/`. A click picks a row; shift- and ⌘-click pick several. Picked files are
 // restored to `tasks/` and `projects/`, and Empty Trash moves everything to the Mac's Trash. A single pane, like
 // the other archive views.
+#if os(macOS)
 import SwiftUI
 import TaDaCore
 
@@ -188,3 +189,4 @@ struct TrashView: View {
         .fileMenu(model, path: entry.id)
     }
 }
+#endif

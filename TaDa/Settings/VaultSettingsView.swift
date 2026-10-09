@@ -1,4 +1,5 @@
 // Settings ▸ Vault: the folder's location, sync and contents, and the folders new files go in.
+#if os(macOS)
 import AppKit
 import SwiftUI
 import TaDaCore
@@ -97,3 +98,4 @@ struct VaultSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
+#endif

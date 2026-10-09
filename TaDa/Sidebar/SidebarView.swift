@@ -3,6 +3,7 @@
 import SwiftUI
 import TaDaCore
 
+#if os(macOS)
 struct SidebarView: View {
     @Bindable var model: AppModel
     @Environment(\.theme) private var theme
@@ -203,6 +204,8 @@ struct SidebarRow<Icon: View, Label: View>: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
+
+#endif
 
 /// A ring with a pie inside that fills clockwise from the top: done/total of a project's tasks.
 struct ProgressRing: View {
