@@ -72,12 +72,38 @@ struct TaDaApp: App {
             switch phase {
             case .active:
                 Task { await model.refresh() }
-            case .inactive, .background:
+            case .inactive:
                 if let document = model.document { Task { await model.save(document) } }
+            case .background:
+                saveInBackground()
             @unknown default:
                 break
             }
         }
+    }
+
+    /// Saves the open file, and keeps unsaved edits in a copy if it changed outside Ta Da, under a background task
+    /// so the system lets it finish after the app is suspended.
+    private func saveInBackground() {
+        guard model.document?.isDirty == true else { return }
+        let application = UIApplication.shared
+        let task = BackgroundTask()
+        task.id = application.beginBackgroundTask(withName: "Save edits") { [task] in task.end() }
+        Task { [model] in
+            await model.saveBeforeQuitting()
+            task.end()
+        }
+    }
+}
+
+/// A background task that ends once, whether its work finishes or the system's time runs out.
+private final class BackgroundTask {
+    var id = UIBackgroundTaskIdentifier.invalid
+
+    func end() {
+        guard id != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        id = .invalid
     }
 }
 #endif

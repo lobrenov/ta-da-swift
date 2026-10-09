@@ -10,6 +10,8 @@ struct PhoneDateSheet: View {
     @State private var kind: AgendaEntry.Kind
     /// The day each kind will be set to; nil clears it. Starts from the day the files agree on.
     @State private var days: [AgendaEntry.Kind: LocalDate?]
+    /// The kinds the user set or cleared here; only these are written.
+    @State private var changed: Set<AgendaEntry.Kind> = []
     @State private var month: LocalDate
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.dismiss) private var dismiss
@@ -155,21 +157,18 @@ struct PhoneDateSheet: View {
 
     private func set(_ date: LocalDate?) {
         days[kind] = .some(date)
+        changed.insert(kind)
         if let date { month = date.startOfMonth }
         nav.play(.pick)
     }
 
     private func apply() {
-        let changes = days
+        let changes = [AgendaEntry.Kind.due, .deadline].filter(changed.contains).map { ($0, days[$0] ?? nil) }
         let paths = paths
         nav.endPicking()
         dismiss()
         Task {
             for (kind, date) in changes {
-                let current = Set(paths.compactMap { model.index[$0]?.properties[keyPath: kind.date] })
-                // Only kinds the sheet changed: several files with different days keep theirs until one is picked.
-                guard current != [date] else { continue }
-                if date == nil, current.count > 1 { continue }
                 await model.setDate(kind, to: date, of: paths)
             }
         }

@@ -46,14 +46,24 @@ final class ListSearch {
 /// The search of the list a navigation stack shows, which the stack draws.
 @Observable
 final class SearchHost {
+    let tab: PhoneTab
     var search: ListSearch?
+
+    init(tab: PhoneTab) {
+        self.tab = tab
+    }
 }
 
 /// A tab's navigation stack, with the search field of its list drawn above the navigation bar, so the field and its
 /// close button in the bar's row take taps.
 struct PhoneSearchStack<Content: View>: View {
+    @State private var host: SearchHost
     @ViewBuilder var content: Content
-    @State private var host = SearchHost()
+
+    init(tab: PhoneTab, @ViewBuilder content: () -> Content) {
+        _host = State(initialValue: SearchHost(tab: tab))
+        self.content = content()
+    }
 
     var body: some View {
         let search = host.search

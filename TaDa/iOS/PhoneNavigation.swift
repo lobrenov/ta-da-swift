@@ -120,6 +120,17 @@ enum Haptic: Equatable {
         play(.pick)
     }
 
+    /// Sets the rows of the list on screen; picked rows it no longer shows are unpicked, and picking ends when that
+    /// leaves none.
+    func setPickable(_ paths: [String]) {
+        pickable = paths
+        let shown = Set(paths)
+        let kept = picked.filter(shown.contains)
+        guard kept.count != picked.count else { return }
+        picked = kept
+        if kept.isEmpty { endPicking() }
+    }
+
     func pickAll() {
         picked = pickable
         play(.pick)

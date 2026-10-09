@@ -17,6 +17,8 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     @ViewBuilder var content: Content
     @State private var search = ListSearch()
     @State private var isDragging = false
+    /// On screen: not in another tab, nor under a pushed screen. Only the list on screen sets what can be picked.
+    @State private var isOnScreen = false
     /// The title has scrolled under the navigation bar, which then shows it.
     @State private var isTitleScrolledAway = false
     @Environment(PhoneNavigation.self) private var nav
@@ -100,14 +102,18 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .pickingBars(model: model)
         .navigationBarBackButtonHidden(search.isOpen || nav.isPicking)
         .onAppear {
-            nav.pickable = pickable
+            isOnScreen = true
+            nav.setPickable(pickable)
             searchHost.search = search
         }
         .onDisappear {
-            search.reset()
+            isOnScreen = false
+            search.isFocused = false
             if searchHost.search === search { searchHost.search = nil }
         }
-        .onChange(of: pickable) { nav.pickable = pickable }
+        .onChange(of: pickable) { if isOnScreen { nav.setPickable(pickable) } }
+        // Search survives a screen pushed over the list, not a switch to another tab.
+        .onChange(of: nav.tab) { if nav.tab != searchHost.tab { search.reset() } }
     }
 
     /// The large title and subtitle, at the top of the list.
