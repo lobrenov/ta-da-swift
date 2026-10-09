@@ -61,15 +61,20 @@ struct ImageDialogText {
         }
     }
 
-    func icon(of item: Item) -> LinkChoice.Icon {
+    func icon(of item: Item) -> LinkChoice.Icon { model.linkIcon(of: item) }
+
+    func count(_ n: Int, _ noun: String) -> String { n == 1 ? "1 \(noun)" : "\(n) \(noun)s" }
+}
+
+extension AppModel {
+    /// The link menu's icon for `item`: its status box, progress ring or area icon.
+    func linkIcon(of item: Item) -> LinkChoice.Icon {
         switch item.properties.kind {
         case .task: .task(item.properties.status)
-        case .project: .project(model.index.progress(of: item).fraction)
+        case .project: .project(index.progress(of: item).fraction)
         case .area: .area
         }
     }
-
-    func count(_ n: Int, _ noun: String) -> String { n == 1 ? "1 \(noun)" : "\(n) \(noun)s" }
 }
 
 /// An image file, scaled down to fill a rounded square.

@@ -146,8 +146,8 @@ struct PhoneFileScreen: View {
                     ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
                 }
                 Button("Move to Trash", systemImage: "trash", role: .destructive) {
-                    // An area asks first, and its screens go once it's deleted.
-                    if item.properties.kind != .area {
+                    // An area, or a file that embeds images, asks first, and its screens go once it's deleted.
+                    if !model.asksBeforeTrashing([item.path]) {
                         nav.play(.trash)
                         nav.pop()
                     }

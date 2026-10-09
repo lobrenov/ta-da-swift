@@ -126,14 +126,32 @@ import TaDaCore
             case date(AgendaEntry.Kind)
         }
     }
-    /// Deleting an area waits here for the user to confirm; `confirmTrash(_:)` goes ahead.
+    /// Deleting an area, or files that embed images, waits here for the user to confirm; `confirmTrash(_:images:)`
+    /// goes ahead.
     var trashConfirmation: TrashConfirmation?
-    struct TrashConfirmation: Equatable {
+    struct TrashConfirmation: Equatable, Identifiable {
         let id = UUID()
         /// The files to delete, as asked.
         let paths: [String]
+        /// Those files, as they were when asked about.
+        let items: [Item]
         /// How many files go: those and everything they take.
         let count: Int
+        /// The images the files embed, each under the first file that embeds it; empty when they embed none.
+        var images: [TrashImageGroup] = []
+    }
+    /// A file going to the trash and the images listed under it.
+    struct TrashImageGroup: Equatable {
+        let item: Item
+        let images: [TrashImage]
+    }
+    /// An image a file going to the trash embeds, with the titles of the other files that embed it.
+    struct TrashImage: Equatable {
+        let path: String
+        /// Files that stay, whose embeds would show it as missing.
+        let keptIn: [String]
+        /// Other files going to the trash.
+        let goingIn: [String]
     }
     /// Whether `VaultWatcher` is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
@@ -923,35 +941,34 @@ import TaDaCore
 
     // MARK: Trash
 
-    /// Moves files to `.trash/`; a project takes its tasks, an area its projects and all their tasks. Deleting an area
-    /// asks first through `trashConfirmation` unless `confirmed`. The selection moves to the next file in the list.
-    func moveToTrash(_ paths: [String], confirmed: Bool = false) async {
+    /// Moves files to `.trash/`; a project takes its tasks, an area its projects and all their tasks, and `images` go to
+    /// `.trash/attachments/`. Unless `confirmed`, deleting an area or files that embed images asks first through
+    /// `trashConfirmation`. The selection moves to the next file in the list.
+    func moveToTrash(_ paths: [String], confirmed: Bool = false, images: [String] = []) async {
         let items = paths.compactMap { index[$0] }
         guard let vault, let item = items.first else { return }
-        let index = index
-        let affected = Array(Set(items.flatMap { item -> [String] in
-            switch item.properties.kind {
-            case .task: [item.path]
-            case .project: [item.path] + index.tasks(in: item).map(\.path)
-            case .area: [item.path] + index.projects(in: item).map(\.path) + index.allTasks(in: item).map(\.path)
-            }
-        }))
-        if !confirmed, items.contains(where: { $0.properties.kind == .area }) {
-            trashConfirmation = TrashConfirmation(paths: paths, count: affected.count)
-            return
-        }
-        if let document, affected.contains(document.path) {
+        let affected = filesTrashed(with: items)
+        if let document, affected.contains(where: { $0.path == document.path }) {
             await save(document)
             guard !document.isDirty else {
                 errorMessage = "“\(Item.title(ofPath: document.path))” changed outside Ta Da. Choose which version to keep before deleting it."
                 return
             }
         }
-        let next = nextSelection(skipping: affected)
+        if !confirmed {
+            let groups = imageGroups(trashedWith: affected)
+            if !groups.isEmpty || items.contains(where: { $0.properties.kind == .area }) {
+                trashConfirmation = TrashConfirmation(paths: paths, items: items, count: affected.count, images: groups)
+                return
+            }
+        }
+        let next = nextSelection(skipping: affected.map(\.path))
+        let index = index
         do {
             let moved = try await Self.run {
                 var moved: [String] = []
                 for item in items where !moved.contains(item.path) { moved += try vault.moveToTrash(item.path, index: index) }
+                _ = try vault.moveAttachmentsToTrash(images)
                 return moved
             }
             updateIndex { for path in moved { $0.remove(path) } }
@@ -968,11 +985,46 @@ import TaDaCore
         await refresh()
     }
 
-    /// Deletes the files `request` asked about. An alert has already cleared `trashConfirmation` by the time its
-    /// button's task runs, so the request comes from the alert.
-    func confirmTrash(_ request: TrashConfirmation) async {
+    /// Deletes the files `request` asked about, and `images`. An alert has already cleared `trashConfirmation` by the
+    /// time its button's task runs, so the request comes from the alert.
+    func confirmTrash(_ request: TrashConfirmation, images: [String] = []) async {
         if trashConfirmation?.id == request.id { trashConfirmation = nil }
-        await moveToTrash(request.paths, confirmed: true)
+        await moveToTrash(request.paths, confirmed: true, images: images)
+    }
+
+    /// Whether deleting `paths` asks first: an area does, and so do files that embed images.
+    func asksBeforeTrashing(_ paths: [String]) -> Bool {
+        let items = paths.compactMap { index[$0] }
+        return items.contains { $0.properties.kind == .area } || !imageGroups(trashedWith: filesTrashed(with: items)).isEmpty
+    }
+
+    /// `items` and the files each takes to the trash: a project its tasks, an area its projects and all their tasks.
+    private func filesTrashed(with items: [Item]) -> [Item] {
+        var files: [Item] = []
+        for item in items {
+            let taken = switch item.properties.kind {
+            case .task: [item]
+            case .project: [item] + index.tasks(in: item)
+            case .area: [item] + index.projects(in: item) + index.allTasks(in: item)
+            }
+            for file in taken where !files.contains(where: { $0.path == file.path }) { files.append(file) }
+        }
+        return files
+    }
+
+    /// The images `files` embed, each under the first file that embeds it, with the other files that embed it.
+    private func imageGroups(trashedWith files: [Item]) -> [TrashImageGroup] {
+        let going = Set(files.map(\.path)), attachments = attachments
+        var listed: Set<String> = []
+        return files.compactMap { item in
+            let paths = item.embeds.compactMap { Vault.attachmentPath(for: $0, in: attachments) }.filter { listed.insert($0).inserted }
+            let images = paths.map { path in
+                let others = index.embedders(ofAttachment: path, among: attachments).map(\.item).filter { $0.path != item.path }
+                return TrashImage(path: path, keptIn: others.filter { !going.contains($0.path) }.map(\.title),
+                                  goingIn: others.filter { going.contains($0.path) }.map(\.title))
+            }
+            return images.isEmpty ? nil : TrashImageGroup(item: item, images: images)
+        }
     }
 
     /// Moves trashed files back to `tasks/`, `projects/` and `areas/`, each bringing back its parents.
@@ -1008,6 +1060,17 @@ import TaDaCore
 
     /// The files and images in `.trash/`.
     var trashCount: Int { trash.count + trashedAttachments.count }
+
+    /// The trashed images that went with each trashed file, by its path: Trash lists them under it. An image two trashed
+    /// files embed is under the first.
+    var trashedAttachmentsByFile: [String: [TrashedAttachment]] {
+        var listed: Set<TrashedAttachment> = [], byFile: [String: [TrashedAttachment]] = [:]
+        for entry in trash {
+            let images = TrashedAttachment.attachments(of: entry.item, in: trashedAttachments).filter { listed.insert($0).inserted }
+            if !images.isEmpty { byFile[entry.id] = images }
+        }
+        return byFile
+    }
 
     /// Trashed images that no trashed file embeds: Trash lists them on their own.
     var looseTrashedAttachments: [TrashedAttachment] {

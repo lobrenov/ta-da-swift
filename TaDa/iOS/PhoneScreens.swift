@@ -307,8 +307,10 @@ struct PhoneProjectScreen: View {
                       pickable: shown.map(\.path), add: { await newTask(in: project) }) {
                 Button("Open Project File", systemImage: "doc") { nav.push(.file(path)) }
                 Button("Move to Trash", systemImage: "trash", role: .destructive) {
-                    nav.play(.trash)
-                    nav.pop()
+                    if !model.asksBeforeTrashing([path]) {
+                        nav.play(.trash)
+                        nav.pop()
+                    }
                     Task { await model.moveToTrash([path]) }
                 }
             } content: {

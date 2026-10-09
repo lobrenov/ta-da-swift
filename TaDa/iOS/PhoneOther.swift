@@ -208,8 +208,10 @@ struct PhoneTrashScreen: View {
                 Text(note).scaledFont(size: 13).foregroundStyle(theme.color(\.done))
                     .listRowBackground(Color.clear)
             }
+            let byFile = model.trashedAttachmentsByFile
             ForEach(model.trash) { trashed in
                 row(trashed)
+                ForEach(byFile[trashed.id] ?? []) { imageRow($0, wentWith: trashed) }
             }
             ForEach(model.looseTrashedAttachments) { trashed in
                 imageRow(trashed)
@@ -259,8 +261,10 @@ struct PhoneTrashScreen: View {
     private var count: Int { model.trashCount }
     private var isEmpty: Bool { count == 0 }
 
-    private func imageRow(_ trashed: TrashedAttachment) -> some View {
-        let isPicked = picked.contains(trashed.id)
+    /// An image deleted on its own, or (`wentWith`) one that went with a trashed file: it sits under the file, picked
+    /// with it.
+    private func imageRow(_ trashed: TrashedAttachment, wentWith file: TrashedItem? = nil) -> some View {
+        let isPicked = picked.contains(trashed.id) || file.map { picked.contains($0.id) } == true
         return Button {
             if isPicked { picked.remove(trashed.id) } else { picked.insert(trashed.id) }
             nav.play(.pick)
@@ -273,15 +277,17 @@ struct PhoneTrashScreen: View {
                     .padding(.top, 2)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(trashed.name).scaledFont(size: 17).foregroundStyle(theme.color(\.fg))
-                    Text([model.embeddersSummary(of: trashed) ?? "Image",
-                          trashed.deleted.map { "Deleted \(LocalDate($0).formatted(.weekdayDayMonth))" }]
-                        .compactMap { $0 }.joined(separator: " · "))
+                    Text(file.map { "Went with \($0.item.title)" }
+                         ?? [model.embeddersSummary(of: trashed) ?? "Image",
+                             trashed.deleted.map { "Deleted \(LocalDate($0).formatted(.weekdayDayMonth))" }]
+                            .compactMap { $0 }.joined(separator: " · "))
                         .scaledFont(size: 13).foregroundStyle(theme.color(\.muted))
                 }
             }
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .padding(.leading, file == nil ? 0 : 28)
         .listRowBackground(isPicked ? theme.color(\.accent).opacity(theme.isDark ? 0.16 : 0.1) : Color.clear)
         .accessibilityAddTraits(isPicked ? .isSelected : [])
     }

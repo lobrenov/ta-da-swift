@@ -1,6 +1,7 @@
-// Trash: the Ta Da files in `.trash/`, then the images in `.trash/attachments/` that no trashed file embeds. A click picks a row; shift- and ⌘-click pick several. Picked files are
-// restored to `tasks/`, `projects/` and `areas/` with their parents, and Empty Trash moves everything to the Mac's Trash. A single pane, like
-// the other archive views.
+// Trash: the Ta Da files in `.trash/`, each with the images in `.trash/attachments/` that went with it, then the images
+// that no trashed file embeds. A click picks a row; shift- and ⌘-click pick several. Picked files are restored to
+// `tasks/`, `projects/` and `areas/` with their parents and images, and Empty Trash moves everything to the Mac's Trash.
+// A single pane, like the other archive views.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -27,8 +28,12 @@ struct TrashView: View {
                                    message: "Deleted tasks, projects, areas and images wait here.")
                             .padding(.top, 40)
                     } else {
+                        let byFile = model.trashedAttachmentsByFile
                         VStack(alignment: .leading, spacing: 2) {
-                            ForEach(model.trash) { row($0) }
+                            ForEach(model.trash) { entry in
+                                row(entry)
+                                ForEach(byFile[entry.id] ?? []) { imageRow($0, wentWith: entry) }
+                            }
                             ForEach(model.looseTrashedAttachments) { imageRow($0) }
                         }
                         .accessibilityElement(children: .contain)
@@ -41,12 +46,17 @@ struct TrashView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .arrowKeySelection(model, paths: model.trash.map(\.id) + model.looseTrashedAttachments.map(\.id),
-                           allowsMultipleSelection: true)
+        .arrowKeySelection(model, paths: rowPaths, allowsMultipleSelection: true)
         .onChange(of: isEmpty) { if isEmpty { isConfirmingEmpty = false } }
     }
 
     private var isEmpty: Bool { model.trashCount == 0 }
+
+    /// The rows' paths, top to bottom.
+    private var rowPaths: [String] {
+        let byFile = model.trashedAttachmentsByFile
+        return model.trash.flatMap { [$0.id] + (byFile[$0.id] ?? []).map(\.id) } + model.looseTrashedAttachments.map(\.id)
+    }
 
     /// "Ta Da / .trash", as the document pane shows a file's place.
     private var pathBar: some View {
@@ -201,8 +211,10 @@ struct TrashView: View {
         .fileMenu(model, path: entry.id)
     }
 
-    private func imageRow(_ entry: TrashedAttachment) -> some View {
-        let isPicked = model.isSelected(entry.id)
+    /// An image deleted on its own, or (`wentWith`) one that went with a trashed file: it sits under the file, picked
+    /// with it.
+    private func imageRow(_ entry: TrashedAttachment, wentWith file: TrashedItem? = nil) -> some View {
+        let isPicked = model.isSelected(entry.id) || file.map { model.isSelected($0.id) } == true
         return Button {
             model.click(entry.id)
             model.trashNote = nil
@@ -214,7 +226,7 @@ struct TrashView: View {
                     Text(entry.name)
                         .font(.system(size: 13.5))
                         .foregroundStyle(theme.color(isPicked ? \.strong : \.fg))
-                    Text(model.embeddersSummary(of: entry) ?? "Image")
+                    Text(file.map { "Went with \($0.item.title)" } ?? model.embeddersSummary(of: entry) ?? "Image")
                         .font(.system(size: 11.5))
                         .foregroundStyle(theme.color(\.muted))
                 }
@@ -236,6 +248,7 @@ struct TrashView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .padding(.leading, file == nil ? 0 : 28)
         .accessibilityAddTraits(isPicked ? .isSelected : [])
         .fileMenu(model, path: entry.id)
     }
