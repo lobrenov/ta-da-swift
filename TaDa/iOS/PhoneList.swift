@@ -67,6 +67,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                 isDragging = phase == .interacting
                 if !isDragging, search.isArmed, !search.isOpen { search.open() }
             }
+            .accessibilityAction(named: "Search") { search.open() }
             .overlay {
                 if search.isOpen, !search.isSearching {
                     Color.clear
@@ -97,6 +98,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             menu
+                            Button("Search", systemImage: "magnifyingglass") { search.open() }
                             if !pickable.isEmpty {
                                 Button("Select", systemImage: "checkmark.circle") { nav.startPicking() }
                             }
