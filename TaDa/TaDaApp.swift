@@ -1,5 +1,5 @@
 // App entry. On the Mac: one main window plus Settings, sharing one AppModel, which the app delegate owns.
-// On iOS: one window group; the model refreshes when the scene becomes active and saves when it leaves.
+// On iOS: one window group; the model refreshes (and takes the date) when the scene becomes active and saves when it leaves.
 import Combine
 import SwiftUI
 import TaDaCore
@@ -71,6 +71,8 @@ struct TaDaApp: App {
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
+                // A suspended app can miss the day change.
+                model.today = LocalDate(Date())
                 Task { await model.refresh() }
             case .inactive:
                 if let document = model.document { Task { await model.save(document) } }

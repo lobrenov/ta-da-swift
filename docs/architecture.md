@@ -15,7 +15,7 @@ The workspace `TaDa.xcworkspace` holds the project, TaDaCore and TaDaMarkdown; t
 ```
 TaDa/
 ├── TaDaApp.swift              one main window plus Settings, sharing one AppModel; AppDelegate owns it and handles activation, quitting and day changes.
-│                              On iOS, one window group that refreshes when the scene becomes active and saves when it leaves
+│                              On iOS, one window group that refreshes, and takes the date, when the scene becomes active and saves when it leaves
 ├── ContentView.swift          folder picker until a folder is open, then sidebar + workspace (on iOS, PhoneRootView); applies the theme
 ├── AppModel.swift             root state: folder, index, domain, selection, open document, theme set and appearance; refresh, save, outside-change handling
 ├── OpenDocument.swift         the selected file's whole text; edits reparse it
