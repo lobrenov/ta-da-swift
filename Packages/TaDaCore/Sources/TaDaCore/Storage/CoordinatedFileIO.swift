@@ -67,12 +67,22 @@ public enum CoordinatedFileIO {
         }
     }
 
-    /// Moves a file to the system Trash, telling other coordinated clients it's going.
+    /// Moves a file to the system Trash, or deletes it where trashing isn't supported (on iOS, outside iCloud Drive),
+    /// telling other coordinated clients it's going.
     public static func moveToSystemTrash(_ url: URL) throws {
         try coordinate { coordinator, error, body in
             coordinator.coordinate(writingItemAt: url, options: .forDeleting, error: error) { url in
-                body { try FileManager.default.trashItem(at: url, resultingItemURL: nil) }
+                body { try trashOrDelete(url) }
             }
+        }
+    }
+
+    /// Trashes the file with `trash`; if that's unsupported for it, deletes it.
+    static func trashOrDelete(_ url: URL, trash: (URL) throws -> Void = { try FileManager.default.trashItem(at: $0, resultingItemURL: nil) }) throws {
+        do {
+            try trash(url)
+        } catch let error as CocoaError where error.code == .featureUnsupported {
+            try FileManager.default.removeItem(at: url)
         }
     }
 

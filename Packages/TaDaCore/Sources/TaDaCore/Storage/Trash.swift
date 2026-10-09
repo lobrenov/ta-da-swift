@@ -18,8 +18,18 @@ public struct TrashedItem: Hashable, Sendable, Identifiable {
     }
 }
 
+/// Some trashed files couldn't be removed; the rest were.
+public struct DiscardError: LocalizedError {
+    public let failed: [String]
+    public let firstError: any Error
+
+    public var errorDescription: String? {
+        "\(failed.count) \(failed.count == 1 ? "file wasn’t" : "files weren’t") removed: \(firstError.localizedDescription)"
+    }
+}
+
 /// Deleting moves a file into `.trash/` (the folder Obsidian also uses), restoring moves it to `tasks/` or
-/// `projects/`, and discarding moves it to the system Trash. A project takes its linked tasks each way.
+/// `projects/`, and discarding moves it to the system Trash (or deletes it where that isn't supported). A project takes its linked tasks each way.
 extension Vault {
     public static let trashFolder = ".trash"
 
@@ -81,15 +91,24 @@ extension Vault {
         return restored
     }
 
-    /// Removes trashed files with `remove` (by default, a move to the system Trash). A project takes its
-    /// trashed tasks.
+    /// Removes trashed files with `remove` (by default, a move to the system Trash, or a delete where that isn't
+    /// supported). A project takes its trashed tasks. A file that can't be removed doesn't stop the others;
+    /// afterwards it throws `DiscardError` naming the ones that failed.
     public func discard(_ paths: [String], remove: (URL) throws -> Void = CoordinatedFileIO.moveToSystemTrash) throws {
         let trashed = trashedItems()
         var all = Set(paths)
         for entry in trashed where paths.contains(entry.item.path) && entry.item.properties.kind == .project {
             all.formUnion(TrashedItem.tasks(of: entry.item, in: trashed).map(\.item.path))
         }
-        for path in all.sorted() { try remove(url(for: path)) }
+        var failed: [String] = []
+        var firstError: (any Error)?
+        for path in all.sorted() {
+            do { try remove(url(for: path)) } catch {
+                failed.append(path)
+                firstError = firstError ?? error
+            }
+        }
+        if let firstError { throw DiscardError(failed: failed, firstError: firstError) }
     }
 
     /// Moves a file into `folder`, creating it if needed, keeping its filename unless that's taken.

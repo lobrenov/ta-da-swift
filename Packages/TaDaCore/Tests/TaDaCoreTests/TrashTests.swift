@@ -84,3 +84,35 @@ private func task(in project: String) -> String { "---\ntype: task\nproject: \"[
         #expect(vault.trashedItems().map(\.id) == [".trash/Other.md"])
     }
 }
+
+@Test func discardGoesOnPastAFailureAndReportsIt() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(task, ".trash/A.md", in: folder)
+        try writeFile(task, ".trash/B.md", in: folder)
+        try writeFile(task, ".trash/C.md", in: folder)
+        let error = #expect(throws: DiscardError.self) {
+            try vault.discard([".trash/A.md", ".trash/B.md", ".trash/C.md"]) { url in
+                if url.lastPathComponent == "A.md" { throw CocoaError(.fileWriteNoPermission) }
+                try FileManager.default.removeItem(at: url)
+            }
+        }
+        #expect(error?.failed == [".trash/A.md"])
+        #expect(vault.trashedItems().map(\.id) == [".trash/A.md"])
+    }
+}
+
+@Test func trashingDeletesWhereTheSystemTrashIsUnsupported() async throws {
+    try await withTemporaryFolder { folder in
+        let url = folder.appending(path: "a.md")
+        try CoordinatedFileIO.write("text", to: url)
+        try CoordinatedFileIO.trashOrDelete(url) { _ in throw CocoaError(.featureUnsupported) }
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+
+        try CoordinatedFileIO.write("text", to: url)
+        #expect(throws: CocoaError.self) {
+            try CoordinatedFileIO.trashOrDelete(url) { _ in throw CocoaError(.fileWriteNoPermission) }
+        }
+        #expect(FileManager.default.fileExists(atPath: url.path))
+    }
+}

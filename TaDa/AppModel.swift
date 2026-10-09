@@ -823,14 +823,15 @@ import TaDaCore
         await refresh()
     }
 
-    /// Moves trashed files to the Mac’s Trash; a project takes its trashed tasks.
+    /// Moves trashed files to the system Trash, or deletes them where that isn't supported; a project takes its
+    /// trashed tasks. Files that can't be removed are reported and the rest still go.
     func discard(_ paths: Set<String>) async {
         guard let vault else { return }
         let paths = Array(paths)
         do {
             try await Self.run { try vault.discard(paths) }
         } catch {
-            errorMessage = Self.couldNot("move the files to the Trash", error)
+            errorMessage = Self.couldNot("delete the files", error)
         }
         trashSelection.subtract(paths)
         trashNote = nil
