@@ -174,7 +174,7 @@ final class PropertyPicker {
     }
 
     private func showProjects() {
-        guard let context = projectMenuContext else { return }
+        guard open?.key == "project", let context = projectMenuContext else { return }
         let index = context.model.index
         let existing = Set(index.projects.map { String($0.path.split(separator: "/").last ?? "") })
         let menu = ProjectChoice.menu(index: index, tasks: context.tasks, query: projectMenu.query,
@@ -210,7 +210,7 @@ final class PropertyPicker {
     }
 
     private func showAreas() {
-        guard let context = projectMenuContext else { return }
+        guard open?.key == "area", let context = projectMenuContext else { return }
         let index = context.model.index
         let existing = Set(index.areas.map { String($0.path.split(separator: "/").last ?? "") })
         let menu = AreaChoice.menu(index: index, projects: context.tasks, query: areaMenu.query, naming: context.naming,

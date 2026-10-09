@@ -440,7 +440,11 @@ private struct PopupSearchField<Item: PopupMenuItem>: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(theme.color(\.muted))
                 .accessibilityHidden(true)
-            TextField(prompt, text: Binding { model.query } set: { model.query = $0; model.onSearch($0) },
+            TextField(prompt, text: Binding { model.query } set: { query in
+                guard query != model.query else { return }
+                model.query = query
+                model.onSearch(query)
+            },
                       prompt: Text(prompt).foregroundStyle(theme.color(\.muted)))
                 .textFieldStyle(.plain)
                 .foregroundStyle(theme.color(\.strong))
@@ -451,7 +455,7 @@ private struct PopupSearchField<Item: PopupMenuItem>: View {
         .frame(height: PopupMenuStyle.searchHeight - 4)
         .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
         .padding(2)
-        .onChange(of: model.revision, initial: true) { Task { focused = true } }
+        .onChange(of: model.revision, initial: true) { focused = true }
     }
 }
 
