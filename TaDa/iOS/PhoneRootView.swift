@@ -41,13 +41,15 @@ struct PhoneRootView: View {
     }
 
     private func stack(_ tab: PhoneTab, @ViewBuilder root: () -> some View) -> some View {
-        NavigationStack(path: nav.stack(tab)) {
-            root().navigationDestination(for: PhoneRoute.self) { route in
-                switch route {
-                case let .file(path): PhoneFileScreen(model: model, path: path)
-                case let .project(path): PhoneProjectScreen(model: model, path: path)
-                case let .settings(section): PhoneSettingsScreen(model: model, section: section)
-                case .trash: PhoneTrashScreen(model: model)
+        PhoneSearchStack {
+            NavigationStack(path: nav.stack(tab)) {
+                root().navigationDestination(for: PhoneRoute.self) { route in
+                    switch route {
+                    case let .file(path): PhoneFileScreen(model: model, path: path)
+                    case let .project(path): PhoneProjectScreen(model: model, path: path)
+                    case let .settings(section): PhoneSettingsScreen(model: model, section: section)
+                    case .trash: PhoneTrashScreen(model: model)
+                    }
                 }
             }
         }

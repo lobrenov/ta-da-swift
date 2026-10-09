@@ -1,11 +1,8 @@
-// What every tab's list shares: the title and subtitle, pull to search and its field, the floating +, picking rows,
-// and search results.
+// What every tab's list shares: the title and subtitle, pull to search, the floating +, picking rows, and search
+// results.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
-
-/// How far past the top a list is pulled for search to open when the finger lifts.
-private let searchPullThreshold: CGFloat = 60
 
 /// A tab's list. `pickable` are its rows top to bottom, for picking; `add` is the floating +.
 struct PhoneList<Content: View, MenuItems: View>: View {
@@ -18,29 +15,25 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     var scrollTarget: String? = nil
     @ViewBuilder var menu: MenuItems
     @ViewBuilder var content: Content
-    @State private var query = ""
-    @State private var isSearchOpen = false
-    @FocusState private var isSearchFocused: Bool
-    @State private var pull = SearchPull()
+    @State private var search = ListSearch()
     @State private var isDragging = false
     /// The title has scrolled under the navigation bar, which then shows it.
     @State private var isTitleScrolledAway = false
     @Environment(PhoneNavigation.self) private var nav
+    @Environment(SearchHost.self) private var searchHost
     @Environment(\.theme) private var theme
-
-    private var isSearching: Bool { !query.trimmingCharacters(in: .whitespaces).isEmpty }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    if !isSearchOpen {
+                    if !search.isOpen {
                         header.transition(.asymmetric(
                             insertion: .move(edge: .top).combined(with: .opacity.animation(.easeIn(duration: 0.2).delay(0.12))),
-                            removal: .move(edge: .top).combined(with: .opacity.animation(.easeOut(duration: 0.12)))))
+                            removal: .opacity.animation(.linear(duration: 0.05))))
                     }
-                    if isSearching {
-                        PhoneSearchResults(model: model, query: query)
+                    if search.isSearching {
+                        PhoneSearchResults(model: model, query: search.query)
                     } else {
                         LazyVStack(alignment: .leading, spacing: 0) { content }
                             .padding(.bottom, 96)
@@ -53,27 +46,23 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 geometry.contentOffset.y + geometry.contentInsets.top
             } action: { _, offset in
-                pull.distance = max(0, -offset)
+                search.distance = max(0, -offset)
                 isTitleScrolledAway = offset > 44
-                guard isDragging, !isSearchOpen else { return }
-                let isArmed = pull.distance >= searchPullThreshold
-                if isArmed, !pull.isArmed { nav.play(.press) }
-                pull.isArmed = isArmed
+                guard isDragging, !search.isOpen else { return }
+                let isArmed = search.distance >= ListSearch.threshold
+                if isArmed, !search.isArmed { nav.play(.press) }
+                search.isArmed = isArmed
             }
             .onScrollPhaseChange { _, phase in
                 isDragging = phase == .interacting
-                if !isDragging, pull.isArmed, !isSearchOpen { openSearch() }
+                if !isDragging, search.isArmed, !search.isOpen { search.open() }
             }
             .overlay {
-                if isSearchOpen, !isSearching {
+                if search.isOpen, !search.isSearching {
                     Color.clear
                         .contentShape(.rect)
-                        .onTapGesture { closeSearch() }
+                        .onTapGesture { search.close() }
                 }
-            }
-            .overlay(alignment: .top) {
-                PullSearchField(pull: pull, isOpen: isSearchOpen, query: $query, isFocused: $isSearchFocused,
-                                close: closeSearch)
             }
         }
         .scrollDismissesKeyboard(.interactively)
@@ -81,7 +70,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
-            if let add, !nav.isPicking, !isSearching {
+            if let add, !nav.isPicking, !search.isSearching {
                 FloatingAddButton { Task { await add() } }
             }
         }
@@ -91,10 +80,10 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                     Text(title)
                         .font(.headline)
                         .foregroundStyle(theme.color(\.strong))
-                        .opacity(isTitleScrolledAway && !isSearchOpen ? 1 : 0)
+                        .opacity(isTitleScrolledAway && !search.isOpen ? 1 : 0)
                         .animation(.easeOut(duration: 0.15), value: isTitleScrolledAway)
                 }
-                if !isSearchOpen {
+                if !search.isOpen {
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             menu
@@ -109,7 +98,15 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             }
         }
         .pickingBars(model: model)
-        .onAppear { nav.pickable = pickable }
+        .navigationBarBackButtonHidden(search.isOpen || nav.isPicking)
+        .onAppear {
+            nav.pickable = pickable
+            searchHost.search = search
+        }
+        .onDisappear {
+            search.reset()
+            if searchHost.search === search { searchHost.search = nil }
+        }
         .onChange(of: pickable) { nav.pickable = pickable }
     }
 
@@ -129,114 +126,6 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .padding(.bottom, 8)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
-    }
-
-    private func openSearch() {
-        withAnimation(PullSearchField.morph) { isSearchOpen = true }
-        isSearchFocused = true
-    }
-
-    private func closeSearch() {
-        pull.isArmed = false
-        query = ""
-        isSearchFocused = false
-        withAnimation(PullSearchField.morph) { isSearchOpen = false }
-    }
-}
-
-/// How far a list is pulled past its top, and whether lifting the finger there opens search.
-@Observable
-private final class SearchPull {
-    var distance: CGFloat = 0
-    /// Pulled past `searchPullThreshold` while the finger is down; stays set while search is open.
-    var isArmed = false
-}
-
-/// Pull to search, drawn over the list. In the gap a pull opens above the title, a pill stretches with the pull and
-/// snaps into an accent dot at the threshold; on release the dot grows into the search field in the navigation bar's
-/// row, with a close button where the "…" was.
-private struct PullSearchField: View {
-    let pull: SearchPull
-    let isOpen: Bool
-    @Binding var query: String
-    var isFocused: FocusState<Bool>.Binding
-    let close: () -> Void
-    @Environment(\.theme) private var theme
-
-    static let morph = Animation.spring(response: 0.42, dampingFraction: 0.84)
-    /// The navigation bar's row, above the list's top.
-    private static let barRow: CGFloat = 44
-
-    var body: some View {
-        GeometryReader { geometry in
-            let width = geometry.size.width
-            let isDot = pull.isArmed && !isOpen
-            // At rest it waits as a dot in the bar's row, so closing shrinks the field in place.
-            let isResting = !isOpen && !isDot && pull.distance == 0
-            let size = isOpen ? CGSize(width: width - 16 * 2 - 44 - 8, height: 40)
-                : isDot || isResting ? CGSize(width: 40, height: 40)
-                : CGSize(width: 36, height: max(36, pull.distance - 12))
-            let center = isOpen ? CGPoint(x: 16 + size.width / 2, y: -Self.barRow / 2)
-                : isResting ? CGPoint(x: width / 2, y: -Self.barRow / 2)
-                : isDot ? CGPoint(x: width / 2, y: pull.distance / 2)
-                : CGPoint(x: width / 2, y: 6 + size.height / 2)
-            ZStack {
-                field(size: size, isDot: isDot)
-                    .position(center)
-                    .opacity(isOpen ? 1 : min(1, pull.distance / 28))
-                    .animation(.spring(response: 0.3, dampingFraction: 0.55), value: pull.isArmed)
-                Button("Cancel", systemImage: "xmark", action: close)
-                    .labelStyle(.iconOnly)
-                    .font(.system(size: 17, weight: .medium))
-                    .frame(width: 44, height: 44)
-                    .glassEffect(.regular.interactive(), in: .circle)
-                    .foregroundStyle(theme.color(\.strong))
-                    .position(x: width - 16 - 22, y: -Self.barRow / 2)
-                    .opacity(isOpen ? 1 : 0)
-                    .scaleEffect(isOpen ? 1 : 0.6)
-                    .allowsHitTesting(isOpen)
-            }
-        }
-    }
-
-    private func field(size: CGSize, isDot: Bool) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(theme.color(isDot ? \.bg : \.muted))
-                .accessibilityHidden(true)
-            if isOpen {
-                TextField("Search", text: $query)
-                    .focused(isFocused)
-                    .submitLabel(.search)
-                    .font(.system(size: 17))
-                    .foregroundStyle(theme.color(\.fg))
-                    .transition(.opacity)
-                if !query.isEmpty {
-                    Button("Clear", systemImage: "xmark.circle.fill") { query = "" }
-                        .labelStyle(.iconOnly)
-                        .foregroundStyle(theme.color(\.muted))
-                }
-            }
-        }
-        .padding(.horizontal, isOpen ? 12 : 0)
-        .padding(.bottom, isOpen || isDot ? 0 : 9)
-        .frame(width: size.width, height: size.height,
-               alignment: isOpen ? .leading : isDot ? .center : .bottom)
-        .background(isDot ? theme.color(\.accent) : theme.color(\.surface).opacity(0.5), in: .capsule)
-        .overlay {
-            Circle()
-                .strokeBorder(theme.color(\.accent), lineWidth: 2)
-                .keyframeAnimator(initialValue: 0.0, trigger: pull.isArmed) { ring, phase in
-                    ring.scaleEffect(1 + (1 - phase) * 0.9).opacity(isDot ? phase * 0.6 : 0)
-                } keyframes: { _ in
-                    LinearKeyframe(1.0, duration: 0)
-                    LinearKeyframe(0.0, duration: 0.38)
-                }
-                .frame(width: 40, height: 40)
-                .allowsHitTesting(false)
-        }
-        .allowsHitTesting(isOpen)
     }
 }
 
