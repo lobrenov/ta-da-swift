@@ -1,4 +1,4 @@
-// Dragging task files: task rows drag as their files, onto the sidebar's projects, Loose tasks and Today or into
+// Dragging task files: task rows drag as their files, onto the sidebar's projects, areas, Loose tasks and Today or into
 // other apps as a drag from Finder would, and the project menu or a calendar opens under a row for ⇧⌘M, ⌘S or ⌘D. A drag on a picked row
 // takes every picked task. Other apps get copies: Finder never moves a file out of the folder.
 #if os(macOS)
@@ -24,8 +24,8 @@ extension View {
         .dragPreviewsFormation(.stack)
     }
 
-    /// Takes dropped task rows: a project links them to it, Loose tasks empties their project and Today makes
-    /// them due today. Rings the row while a drag is over it.
+    /// Takes dropped task rows: a project or area files them under it, Loose tasks empties their parent and Today
+    /// makes them due today. An area also takes dropped projects. Rings the row while a drag is over it.
     func taskDrop(_ model: AppModel, onto target: TaskDropTarget, cornerRadius: CGFloat = 7) -> some View {
         modifier(TaskDropZone(model: model, target: target, cornerRadius: cornerRadius))
     }
@@ -43,6 +43,7 @@ struct TaskFile: Transferable {
 
 enum TaskDropTarget {
     case project(Item)
+    case area(Item)
     case loose
     case today
 }
@@ -78,12 +79,14 @@ private struct TaskDropZone: ViewModifier {
     func body(content: Content) -> some View {
         content
             .dropDestination(for: URL.self) { urls, _ in
-                let tasks = urls.compactMap { model.vault?.path(of: $0) }.filter { model.index[$0]?.properties.kind == .task }
-                guard !tasks.isEmpty else { return }
+                let paths = urls.compactMap { model.vault?.path(of: $0) }
+                let tasks = paths.filter { model.index[$0]?.properties.kind == .task }
                 Task {
                     switch target {
-                    case .project(let project): await model.setProject(project, of: tasks)
-                    case .loose: await model.setProject(nil, of: tasks)
+                    case .project(let project): await model.setParent(project, of: tasks)
+                    case .area(let area):
+                        await model.setParent(area, of: paths.filter { [.task, .project].contains(model.index[$0]?.properties.kind) })
+                    case .loose: await model.setParent(nil, of: tasks)
                     case .today: await model.makeDueToday(tasks)
                     }
                 }

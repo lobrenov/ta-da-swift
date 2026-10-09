@@ -289,7 +289,7 @@ struct PhoneProjectSheet: View {
         let paths = paths
         nav.endPicking()
         dismiss()
-        Task { await model.setProject(choice, of: paths) }
+        Task { await model.setParent(choice, of: paths) }
     }
 
     private func create(_ name: String) {

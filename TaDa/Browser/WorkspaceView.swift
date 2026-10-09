@@ -69,6 +69,8 @@ struct WorkspaceView: View {
                 EmptyState(systemImage: "questionmark.folder", title: "Project not found",
                            message: "This project’s file is no longer in the folder.")
             }
+        case .area:
+            DocumentPane(model: model)
         }
     }
 

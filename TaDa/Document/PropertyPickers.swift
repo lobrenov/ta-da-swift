@@ -186,9 +186,9 @@ final class PropertyPicker {
         let model = context.model, paths = context.tasks.map(\.path)
         switch choice {
         case .project(let progress, let isCurrent):
-            if !isCurrent { Task { await model.setProject(progress.project, of: paths) } }
+            if !isCurrent { Task { await model.setParent(progress.project, of: paths) } }
         case .loose(let isCurrent):
-            if !isCurrent { Task { await model.setProject(nil, of: paths) } }
+            if !isCurrent { Task { await model.setParent(nil, of: paths) } }
         case .new(let name, _):
             Task { await model.newProject(named: name, linking: paths) }
         }

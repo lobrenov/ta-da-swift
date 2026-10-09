@@ -392,11 +392,11 @@ struct AppModelTests {
         let before = try folder.read(tasks[0])
         let project = try #require(model.index["projects/Ta Da MVP.md"])
 
-        await model.setProject(project, of: tasks)
+        await model.setParent(project, of: tasks)
         #expect(try folder.read(tasks[0]) == before, "already in the project")
         #expect(try folder.read(tasks[1]) == "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\nproject: \"[[Ta Da MVP]]\"\n---\n")
 
-        await model.setProject(nil, of: tasks)
+        await model.setParent(nil, of: tasks)
         #expect(try folder.read(tasks[0]) == before.replacingOccurrences(of: "project: \"[[Ta Da MVP]]\"", with: "project:"))
         #expect(model.looseTasks.map(\.path).sorted() == tasks.sorted())
 

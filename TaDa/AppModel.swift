@@ -7,6 +7,8 @@ import TaDaCore
         case today, upcoming, loose, trash
         /// A project, by vault-relative path.
         case project(String)
+        /// An area, by vault-relative path.
+        case area(String)
     }
 
     enum VaultState: Equatable {
@@ -106,6 +108,15 @@ import TaDaCore
             case date(AgendaEntry.Kind)
         }
     }
+    /// Deleting an area waits here for the user to confirm; `confirmTrash()` goes ahead.
+    var trashConfirmation: TrashConfirmation?
+    struct TrashConfirmation: Equatable {
+        let id = UUID()
+        /// The files to delete, as asked.
+        let paths: [String]
+        /// How many files go: those and everything they take.
+        let count: Int
+    }
     /// Whether `VaultWatcher` is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
     /// Whether the folder is in iCloud Drive, or in an app's iCloud folder such as Obsidian's.
@@ -144,7 +155,7 @@ import TaDaCore
     var haptics: Bool {
         didSet { defaults.set(!haptics, forKey: Keys.hapticsOff) }
     }
-    /// The task groups folded in each project's browser ("Open", "Completed"), by project path.
+    /// The task groups folded in each project's or area's browser ("Open", "Completed"), by its path.
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
     }
@@ -542,12 +553,27 @@ import TaDaCore
         }
     }
 
-    /// Shows a file: a project opens as its own page in its domain; a task opens beside the current list.
+    /// Shows a file: a project or area opens as its own page in its domain; a task opens beside the current list.
     func open(_ path: String) {
         guard let item = index[path] else { return }
-        if item.properties.kind == .project { domain = .project(path) }
+        switch item.properties.kind {
+        case .project: domain = .project(path)
+        case .area: domain = .area(path)
+        case .task: break
+        }
         selection = path
     }
+
+    /// The path of the project or area whose page is showing.
+    var domainPath: String? {
+        switch domain {
+        case let .project(path), let .area(path): path
+        default: nil
+        }
+    }
+
+    /// The project or area whose page is showing.
+    var domainParent: Item? { domainPath.flatMap { index[$0] } }
 
     // MARK: The open document
 
@@ -733,7 +759,8 @@ import TaDaCore
         await edit(path) { Completion.setStatus(status, in: $0, today: today) }
     }
 
-    /// Renames a file from a new title. Renaming a project also rewrites the `project:` link in its tasks.
+    /// Renames a file from a new title. Renaming a project also rewrites the `project:` link in its tasks; renaming an
+    /// area, the `area:` link in its projects and tasks.
     func rename(_ path: String, to title: String) async {
         guard let vault, Item.title(ofPath: path) != title else { return }
         if let document, document.path == path {
@@ -745,18 +772,21 @@ import TaDaCore
         }
         do {
             let index = index, presenter = presenter
-            // The new path, the renamed file and its relinked tasks as they now are, and the tasks that couldn't be relinked.
+            let kind = index[path]?.properties.kind
+            // The new path, the renamed file and its relinked files as they now are, and the files that couldn't be relinked.
             let (newPath, items, failed) = try await Self.run { () throws -> (String, [Item], [String]) in
-                let result = index[path]?.properties.kind == .project
-                    ? try vault.renameProject(at: path, to: title, index: index)
-                    : (path: try vault.rename(path, to: title), relinked: [], failed: [])
+                let result: (path: String, relinked: [Item], failed: [String]) = switch kind {
+                case .project: try vault.renameProject(at: path, to: title, index: index)
+                case .area: try vault.renameArea(at: path, to: title, index: index)
+                case .task, nil: (path: try vault.rename(path, to: title), relinked: [], failed: [])
+                }
                 return (result.path, try [vault.load(result.path, presenter: presenter)].compactMap { $0 } + result.relinked, result.failed)
             }
             guard newPath != path else { return }
             follow(path, to: newPath, items: items)
             if !failed.isEmpty {
                 let names = failed.map { "“\(Item.title(ofPath: $0))”" }.formatted()
-                errorMessage = "Ta Da renamed “\(Item.title(ofPath: path))” to “\(Item.title(ofPath: newPath))”, but the project link in \(names) still points to the old name."
+                errorMessage = "Ta Da renamed “\(Item.title(ofPath: path))” to “\(Item.title(ofPath: newPath))”, but the \(kind == .area ? "area" : "project") link in \(names) still points to the old name."
             }
         } catch {
             errorMessage = Self.couldNot("rename “\(Item.title(ofPath: path))”", error)
@@ -771,18 +801,30 @@ import TaDaCore
         }
         if let document, document.path == path { document.path = newPath }
         if domain == .project(path) { domain = .project(newPath) }
-        if selection == path || selection == nil && domain == .project(newPath) { selection = newPath }
+        if domain == .area(path) { domain = .area(newPath) }
+        if selection == path || selection == nil && (domain == .project(newPath) || domain == .area(newPath)) { selection = newPath }
         if let folded = foldedGroups.removeValue(forKey: path) { foldedGroups[newPath] = folded }
     }
 
     // MARK: Trash
 
-    /// Moves files to `.trash/`; a project takes its tasks. The selection moves to the next file in the list.
-    func moveToTrash(_ paths: [String]) async {
+    /// Moves files to `.trash/`; a project takes its tasks, an area its projects and all their tasks. Deleting an area
+    /// asks first through `trashConfirmation` unless `confirmed`. The selection moves to the next file in the list.
+    func moveToTrash(_ paths: [String], confirmed: Bool = false) async {
         let items = paths.compactMap { index[$0] }
         guard let vault, let item = items.first else { return }
         let index = index
-        let affected = items.flatMap { [$0.path] + ($0.properties.kind == .project ? index.tasks(in: $0).map(\.path) : []) }
+        let affected = Array(Set(items.flatMap { item -> [String] in
+            switch item.properties.kind {
+            case .task: [item.path]
+            case .project: [item.path] + index.tasks(in: item).map(\.path)
+            case .area: [item.path] + index.projects(in: item).map(\.path) + index.allTasks(in: item).map(\.path)
+            }
+        }))
+        if !confirmed, items.contains(where: { $0.properties.kind == .area }) {
+            trashConfirmation = TrashConfirmation(paths: paths, count: affected.count)
+            return
+        }
         if let document, affected.contains(document.path) {
             await save(document)
             guard !document.isDirty else {
@@ -799,7 +841,7 @@ import TaDaCore
             }
             updateIndex { for path in moved { $0.remove(path) } }
             multiSelection.subtract(moved)
-            if case let .project(path) = domain, moved.contains(path) {
+            if let path = domainPath, moved.contains(path) {
                 domain = .today
             } else if let selection, moved.contains(selection) {
                 self.selection = next
@@ -811,7 +853,14 @@ import TaDaCore
         await refresh()
     }
 
-    /// Moves trashed files back to `tasks/` and `projects/`; a project brings its trashed tasks.
+    /// Deletes the files `trashConfirmation` asked about.
+    func confirmTrash() async {
+        guard let request = trashConfirmation else { return }
+        trashConfirmation = nil
+        await moveToTrash(request.paths, confirmed: true)
+    }
+
+    /// Moves trashed files back to `tasks/`, `projects/` and `areas/`, each bringing back its parents.
     func restore(_ paths: Set<String>) async {
         guard let vault else { return }
         let paths = Array(paths)
@@ -819,7 +868,7 @@ import TaDaCore
             let index = index, today = today
             let restored = try await Self.run { try vault.restore(paths, index: index, today: today) }
             let folders = Set(restored.map { Vault.folder(of: $0) + "/" }).sorted()
-            trashNote = "\(restored.count == 1 ? "1 item" : "\(restored.count) items") restored to \(folders.joined(separator: " and "))"
+            trashNote = "\(restored.count == 1 ? "1 item" : "\(restored.count) items") restored to \(folders.formatted(.list(type: .and)))"
         } catch {
             errorMessage = Self.couldNot("restore the files", error)
         }
@@ -828,7 +877,7 @@ import TaDaCore
     }
 
     /// Moves trashed files to the system Trash, or deletes them where that isn't supported; a project takes its
-    /// trashed tasks. Files that can't be removed are reported and the rest still go.
+    /// trashed tasks, an area its trashed projects and tasks. Files that can't be removed are reported and the rest still go.
     func discard(_ paths: Set<String>) async {
         guard let vault else { return }
         let paths = Array(paths)
@@ -913,18 +962,24 @@ import TaDaCore
         propertyMenuRequest = PropertyMenuRequest(menu: menu, paths: paths, anchor: first, onChip: selection == first)
     }
 
-    /// Links the tasks at `paths` to `project`, or empties their `project:` when it's nil. Tasks already there
-    /// aren't written.
-    func setProject(_ project: Item?, of paths: [String]) async {
+    /// Files the tasks or projects at `paths` under `parent` (a project or an area), or under nothing when it's nil.
+    /// A project only goes under an area. Files already there aren't written.
+    func setParent(_ parent: Item?, of paths: [String]) async {
+        let target: Parent? = switch parent?.properties.kind {
+        case .project: .project(parent!.title)
+        case .area: .area(parent!.title)
+        case .task, nil: nil
+        }
+        guard parent == nil || target != nil else { return }
         for path in paths {
-            guard let task = index[path] else { continue }
-            if let project {
-                if index.project(of: task)?.path != project.path {
-                    await setProperty("project", to: .link(title: project.title), in: path)
-                }
-            } else if task.properties.project != nil {
-                await setProperty("project", to: nil, in: path)
+            guard let item = index[path], item.properties.kind != .area else { continue }
+            if item.properties.kind == .project, case .project = target { continue }
+            if let parent {
+                guard index.parent(of: item)?.path != parent.path else { continue }
+            } else {
+                guard item.properties.project != nil || item.properties.area != nil else { continue }
             }
+            await edit(path) { Parent.set(target, in: $0) }
         }
     }
 
@@ -947,40 +1002,65 @@ import TaDaCore
 
     // MARK: New files
 
-    /// Creates an untitled task and selects it with its title ready to type. In a project it's linked to the
-    /// project; in Today it's due today; anywhere else it opens in Loose tasks.
+    /// Creates an untitled task and selects it with its title ready to type. On a project's or area's page it's filed
+    /// there; in Today it's due today; anywhere else it opens in Loose tasks.
     func newTask() async {
-        var project: Item?
-        if case let .project(path) = domain { project = index[path] }
-        var text = NewFile.task(project: project?.title, today: today)
-        if project == nil, domain == .today { text = FrontmatterEditor.set("dueDate", to: .date(today), in: text) }
+        let parent = domainParent
+        var text = Self.newTask(in: parent, today: today)
+        if parent == nil, domain == .today { text = FrontmatterEditor.set("dueDate", to: .date(today), in: text) }
         guard let path = await create(text, in: Vault.taskFolder) else { return }
         titleFocus = path
-        if project == nil, domain != .today { domain = .loose }
+        if parent == nil, domain != .today { domain = .loose }
         selection = path
     }
 
-    /// Creates a task linked to `project` without opening it, its title ready to type in the project page's table.
-    /// Returns the new file's path.
+    /// Creates a task filed under `parent` (a project or an area) without opening it, its title ready to type in the
+    /// page's list. Returns the new file's path.
     @discardableResult
-    func newLinkedTask(in project: Item) async -> String? {
-        guard let path = await create(NewFile.task(project: project.title, today: today), in: Vault.taskFolder) else { return nil }
+    func newLinkedTask(in parent: Item) async -> String? {
+        guard let path = await create(Self.newTask(in: parent, today: today), in: Vault.taskFolder) else { return nil }
         titleFocus = path
         return path
     }
 
-    /// Creates an untitled project and opens its page with its title ready to type.
+    private static func newTask(in parent: Item?, today: LocalDate) -> String {
+        switch parent?.properties.kind {
+        case .project: NewFile.task(project: parent?.title, today: today)
+        case .area: NewFile.task(area: parent?.title, today: today)
+        case .task, nil: NewFile.task(today: today)
+        }
+    }
+
+    /// Creates an untitled project, in the area whose page is showing, and opens its page with its title ready to type.
     func newProject() async {
-        guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder) else { return }
+        let area = domainParent.flatMap { $0.properties.kind == .area ? $0 : nil }
+        guard let path = await create(NewFile.project(area: area?.title, today: today), in: Vault.projectFolder) else { return }
         titleFocus = path
         open(path)
     }
 
-    /// Creates a project called `title` and links the tasks at `paths` to it.
+    /// Creates a project called `title` and files the tasks at `paths` under it.
     func newProject(named title: String, linking paths: [String]) async {
         guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title),
               let project = index[path] else { return }
-        await setProject(project, of: paths)
+        await setParent(project, of: paths)
+    }
+
+    /// Creates an untitled area and opens its page with its title ready to type.
+    func newArea() async {
+        guard let path = await create(NewFile.area(today: today), in: Vault.areaFolder) else { return }
+        titleFocus = path
+        open(path)
+    }
+
+    /// Creates an area called `title`, which resolves every file that names it, and files the files at `paths` under
+    /// it. Returns its path.
+    @discardableResult
+    func newArea(named title: String, filing paths: [String] = []) async -> String? {
+        guard let path = await create(NewFile.area(today: today), in: Vault.areaFolder, title: title),
+              let area = index[path] else { return nil }
+        await setParent(area, of: paths)
+        return path
     }
 
     private func create(_ text: String, in folder: String, title: String = "Untitled") async -> String? {
@@ -1003,6 +1083,10 @@ import TaDaCore
     private(set) var upcoming: [AgendaEntry] = []
     /// Active projects with their progress.
     private(set) var projects: [ProjectProgress] = []
+    /// Active projects without an area.
+    private(set) var looseProjects: [ProjectProgress] = []
+    /// Every area, with its active projects.
+    private(set) var areas: [AreaProjects] = []
 
     var todayCount: Int { todayTasks.count { $0.properties.status != .done } }
     var looseCount: Int { looseTasks.count }
@@ -1022,6 +1106,11 @@ import TaDaCore
         if let i = looseTasks.firstIndex(where: { $0.path == item.path }) { looseTasks[i] = item }
         for i in upcoming.indices where upcoming[i].item.path == item.path { upcoming[i].item = item }
         if let i = projects.firstIndex(where: { $0.project.path == item.path }) { projects[i].project = item }
+        if let i = looseProjects.firstIndex(where: { $0.project.path == item.path }) { looseProjects[i].project = item }
+        for i in areas.indices {
+            if areas[i].area.path == item.path { areas[i].area = item }
+            if let j = areas[i].projects.firstIndex(where: { $0.project.path == item.path }) { areas[i].projects[j].project = item }
+        }
     }
 
     /// Assigning a list equal to the old one doesn't notify the views that show it.
@@ -1030,6 +1119,8 @@ import TaDaCore
         looseTasks = index.loose()
         upcoming = index.upcoming(after: today)
         projects = index.activeProjects()
+        looseProjects = index.looseProjects()
+        areas = index.areaProjects()
     }
 
     var folderDisplayName: String { vault.map { Self.displayName(for: $0.root) } ?? "" }
