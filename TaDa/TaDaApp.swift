@@ -83,7 +83,7 @@ struct TaDaApp: App {
     }
 
     /// Saves the open file, and keeps unsaved edits in a copy if it changed outside Ta Da, under a background task
-    /// so the system lets it finish after the app is suspended.
+    /// so the app isn't suspended before it finishes.
     private func saveInBackground() {
         guard model.document?.isDirty == true else { return }
         let application = UIApplication.shared

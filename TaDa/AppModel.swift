@@ -647,7 +647,7 @@ import TaDaCore
         }
     }
 
-    /// Saves the open document before the app quits, after any save already under way.
+    /// Saves the open document before the app quits or goes to the background, after any save already under way.
     /// If another app changed or removed the file meanwhile, the edits go to a copy instead.
     func saveBeforeQuitting() async {
         guard let document else { return }

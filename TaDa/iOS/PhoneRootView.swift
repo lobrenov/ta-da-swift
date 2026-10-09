@@ -41,7 +41,7 @@ struct PhoneRootView: View {
     }
 
     private func stack(_ tab: PhoneTab, @ViewBuilder root: () -> some View) -> some View {
-        PhoneSearchStack(tab: tab) {
+        PhoneSearchStack {
             NavigationStack(path: nav.stack(tab)) {
                 root().navigationDestination(for: PhoneRoute.self) { route in
                     switch route {

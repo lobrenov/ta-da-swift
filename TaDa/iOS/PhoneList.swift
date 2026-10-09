@@ -112,8 +112,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             if searchHost.search === search { searchHost.search = nil }
         }
         .onChange(of: pickable) { if isOnScreen { nav.setPickable(pickable) } }
-        // Search survives a screen pushed over the list, not a switch to another tab.
-        .onChange(of: nav.tab) { if nav.tab != searchHost.tab { search.reset() } }
+        .onChange(of: nav.tab) { search.reset() }
     }
 
     /// The large title and subtitle, at the top of the list.
