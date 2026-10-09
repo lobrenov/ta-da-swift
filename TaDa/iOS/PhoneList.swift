@@ -20,8 +20,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     @ViewBuilder var content: Content
     @State private var query = ""
     @FocusState private var isSearchFocused: Bool
-    /// The list is pulled past `searchPullThreshold` while the finger is down.
-    @State private var isPulledToSearch = false
+    @State private var pull = SearchPull()
     @State private var isDragging = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
@@ -41,19 +40,28 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             .onChange(of: scrollTarget) {
                 if let scrollTarget { withAnimation { proxy.scrollTo(scrollTarget, anchor: .top) } }
             }
-            .onScrollGeometryChange(for: Bool.self) { geometry in
-                geometry.contentOffset.y < -geometry.contentInsets.top - searchPullThreshold
-            } action: { _, isPulled in
-                if isDragging { isPulledToSearch = isPulled }
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                max(0, -geometry.contentOffset.y - geometry.contentInsets.top)
+            } action: { _, distance in
+                pull.distance = distance
+                if distance == 0 { pull.isOpening = false }
+                guard isDragging else { return }
+                let isArmed = distance >= searchPullThreshold
+                if isArmed, !pull.isArmed { nav.play(.press) }
+                pull.isArmed = isArmed
             }
             .onScrollPhaseChange { _, phase in
                 isDragging = phase == .interacting
-                if !isDragging, isPulledToSearch {
-                    isPulledToSearch = false
-                    nav.play(.press)
+                if !isDragging, pull.isArmed {
+                    pull.isArmed = false
+                    pull.isOpening = true
                     isSearchFocused = true
                 }
             }
+            .overlay(alignment: .top) {
+                PullToSearchIndicator(pull: pull).ignoresSafeArea(.container, edges: .top)
+            }
+            .overlay { SearchDismissal(hasQuery: isSearching) }
         }
         .scrollDismissesKeyboard(.interactively)
         .background(theme.color(\.bg))
@@ -83,6 +91,72 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .pickingBars(model: model)
         .onAppear { nav.pickable = pickable }
         .onChange(of: pickable) { nav.pickable = pickable }
+    }
+}
+
+/// How far a list is pulled past its top, and whether lifting the finger there opens search.
+@Observable
+private final class SearchPull {
+    var distance: CGFloat = 0
+    /// Pulled past `searchPullThreshold` while the finger is down.
+    var isArmed = false
+    /// Released while armed; true until the list settles back.
+    var isOpening = false
+}
+
+/// In the gap a pull opens under the toolbar row, above the large title: a pill that stretches with the pull, snaps into an accent dot at the
+/// threshold, and swells away as search opens.
+private struct PullToSearchIndicator: View {
+    let pull: SearchPull
+    @Environment(\.theme) private var theme
+
+    /// The gap's top: the status bar, then the 44pt toolbar row.
+    private var gapTop: CGFloat {
+        let window = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
+        return (window?.safeAreaInsets.top ?? 0) + 44
+    }
+
+    var body: some View {
+        let isDot = pull.isArmed || pull.isOpening
+        let height = isDot ? 40 : max(36, pull.distance - 12)
+        Image(systemName: "magnifyingglass")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(theme.color(isDot ? \.bg : \.muted))
+            .padding(.bottom, isDot ? 12 : 9)
+            .frame(width: isDot ? 40 : 36, height: height, alignment: .bottom)
+            .background(theme.color(isDot ? \.accent : \.surface), in: .capsule)
+            .overlay {
+                Circle()
+                    .strokeBorder(theme.color(\.accent), lineWidth: 2)
+                    .keyframeAnimator(initialValue: 0.0, trigger: pull.isArmed) { ring, phase in
+                        ring.scaleEffect(1 + (1 - phase) * 0.9).opacity(pull.isArmed ? phase * 0.6 : 0)
+                    } keyframes: { _ in
+                        LinearKeyframe(1.0, duration: 0)
+                        LinearKeyframe(0.0, duration: 0.38)
+                    }
+            }
+            .scaleEffect(pull.isOpening ? 1.6 : 1)
+            .opacity(pull.isOpening ? 0 : min(1, pull.distance / 28))
+            .offset(y: gapTop + (isDot ? pull.distance / 2 - 20 : 6))
+            .animation(.spring(response: 0.3, dampingFraction: 0.55), value: pull.isArmed)
+            .animation(.easeOut(duration: 0.25), value: pull.isOpening)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// While search is active with an empty field, a tap anywhere on the list leaves search.
+private struct SearchDismissal: View {
+    let hasQuery: Bool
+    @Environment(\.isSearching) private var isSearching
+    @Environment(\.dismissSearch) private var dismissSearch
+
+    var body: some View {
+        if isSearching, !hasQuery {
+            Color.clear
+                .contentShape(.rect)
+                .onTapGesture { dismissSearch() }
+        }
     }
 }
 
