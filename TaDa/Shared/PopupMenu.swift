@@ -451,7 +451,7 @@ private struct PopupSearchField<Item: PopupMenuItem>: View {
         .frame(height: PopupMenuStyle.searchHeight - 4)
         .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
         .padding(2)
-        .onChange(of: model.revision, initial: true) { focused = true }
+        .onChange(of: model.revision, initial: true) { Task { focused = true } }
     }
 }
 
