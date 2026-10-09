@@ -44,7 +44,8 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                 max(0, -geometry.contentOffset.y - geometry.contentInsets.top)
             } action: { _, distance in
                 pull.distance = distance
-                if distance == 0 { pull.isOpening = false }
+                if distance == 0 { pull.isOpened = false }
+                if pull.isOpening, distance < 20 { openSearch() }
                 guard isDragging else { return }
                 let isArmed = distance >= searchPullThreshold
                 if isArmed, !pull.isArmed { nav.play(.press) }
@@ -55,8 +56,8 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                 if !isDragging, pull.isArmed {
                     pull.isArmed = false
                     pull.isOpening = true
-                    isSearchFocused = true
                 }
+                if phase == .idle, pull.isOpening { openSearch() }
             }
             .overlay(alignment: .top) {
                 PullToSearchIndicator(pull: pull).ignoresSafeArea(.container, edges: .top)
@@ -92,6 +93,12 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .onAppear { nav.pickable = pickable }
         .onChange(of: pickable) { nav.pickable = pickable }
     }
+
+    private func openSearch() {
+        pull.isOpening = false
+        pull.isOpened = true
+        isSearchFocused = true
+    }
 }
 
 /// How far a list is pulled past its top, and whether lifting the finger there opens search.
@@ -100,12 +107,14 @@ private final class SearchPull {
     var distance: CGFloat = 0
     /// Pulled past `searchPullThreshold` while the finger is down.
     var isArmed = false
-    /// Released while armed; true until the list settles back.
+    /// Released while armed; true until the list springs back to rest and search takes focus.
     var isOpening = false
+    /// Search took focus; true until the list is back at rest.
+    var isOpened = false
 }
 
 /// In the gap a pull opens under the toolbar row, above the large title: a pill that stretches with the pull, snaps into an accent dot at the
-/// threshold, and swells away as search opens.
+/// threshold, and rides the closing gap back as search opens.
 private struct PullToSearchIndicator: View {
     let pull: SearchPull
     @Environment(\.theme) private var theme
@@ -135,11 +144,10 @@ private struct PullToSearchIndicator: View {
                         LinearKeyframe(0.0, duration: 0.38)
                     }
             }
-            .scaleEffect(pull.isOpening ? 1.6 : 1)
-            .opacity(pull.isOpening ? 0 : min(1, pull.distance / 28))
+            .scaleEffect(pull.isOpening ? min(1, pull.distance / 48) : 1)
+            .opacity(pull.isOpened ? 0 : min(1, pull.distance / 28))
             .offset(y: gapTop + (isDot ? pull.distance / 2 - 20 : 6))
             .animation(.spring(response: 0.3, dampingFraction: 0.55), value: pull.isArmed)
-            .animation(.easeOut(duration: 0.25), value: pull.isOpening)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
