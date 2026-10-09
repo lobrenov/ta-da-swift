@@ -466,6 +466,26 @@ struct SlashCommandTests {
         #expect(tv.string == "Ask [[uat]]")
     }
 
+    @Test func aSlashCommandThatLeavesTheCaretInBracketsOpensALinkQuery() async throws {
+        let recorder = Recorder()
+        let (tv, proxy) = makeEditor("Ask ", recorder)
+        try await type(tv, "/wiki")
+        proxy.insert("[[]]", selecting: NSRange(location: 2, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(tv.string == "Ask [[]]")
+        let state = try #require(recorder.last)
+        #expect(state.trigger == .link && state.query == "" && state.range == NSRange(location: 4, length: 2))
+        proxy.insert("[[Draft]]", selecting: NSRange(location: 9, length: 0))
+        #expect(tv.string == "Ask [[Draft]]")
+
+        let embed = Recorder()
+        let (other, embedProxy) = makeEditor("", embed)
+        try await type(other, "/im")
+        embedProxy.insert("![[]]", selecting: NSRange(location: 3, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(embed.last?.trigger == .embed && embed.last?.range == NSRange(location: 0, length: 3))
+    }
+
     @Test func theProxyChoosesTheTriggers() async throws {
         let recorder = Recorder()
         let (tv, proxy) = makeEditor("", recorder)

@@ -247,6 +247,21 @@ extension NativeTextViewCoordinator {
         tv.undoManager?.setActionName(command.trigger.actionName)
         tv.breakUndoCoalescing()
         tv.setSelectedRange(NSRange(location: range.location + selection.location, length: selection.length))
+        if command.trigger == .slash { openLinkQuery(endingAt: range.location + selection.location, in: tv) }
+    }
+
+    /// A slash command that leaves the caret straight after a `[[` or `![[` opens that link or embed query.
+    private func openLinkQuery(endingAt caret: Int, in tv: PlatformTextView) {
+        let text = tv.string as NSString
+        guard tv.currentSelectedRange == NSRange(location: caret, length: 0), caret >= 2,
+              text.substring(with: NSRange(location: caret - 2, length: 2)) == "[[",
+              caret < 3 || text.character(at: caret - 3) != 0x5B else { return }
+        let isEmbed = caret >= 3 && text.character(at: caret - 3) == 0x21
+        let trigger: SlashCommandState.Trigger = isEmbed ? .embed : .link
+        guard slashTriggers.contains(trigger) else { return }
+        slashAnchor = caret - (isEmbed ? 3 : 2)
+        slashTrigger = trigger
+        updateSlashCommand(in: tv)
     }
 
     /// Deferred so layout has caught up (the anchor rect is current) and SwiftUI isn't mid-update.
