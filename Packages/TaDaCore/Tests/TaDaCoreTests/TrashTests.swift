@@ -102,14 +102,20 @@ private func task(in project: String) -> String { "---\ntype: task\nproject: \"[
     }
 }
 
-@Test func trashingDeletesWhereTheSystemTrashIsUnsupported() async throws {
+@Test func trashingDeletesOnlyOniOSWhereTheSystemTrashIsUnsupported() async throws {
     try await withTemporaryFolder { folder in
         let url = folder.appending(path: "a.md")
         try CoordinatedFileIO.write("text", to: url)
+        #if os(iOS)
         try CoordinatedFileIO.trashOrDelete(url) { _ in throw CocoaError(.featureUnsupported) }
         #expect(!FileManager.default.fileExists(atPath: url.path))
+        #else
+        #expect(throws: CocoaError.self) {
+            try CoordinatedFileIO.trashOrDelete(url) { _ in throw CocoaError(.featureUnsupported) }
+        }
+        #expect(FileManager.default.fileExists(atPath: url.path))
+        #endif
 
-        try CoordinatedFileIO.write("text", to: url)
         #expect(throws: CocoaError.self) {
             try CoordinatedFileIO.trashOrDelete(url) { _ in throw CocoaError(.fileWriteNoPermission) }
         }

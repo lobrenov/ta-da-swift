@@ -80,7 +80,7 @@ Bring the project instruction files in line with how I actually work now.
 - **Loose tasks** are open tasks without a resolvable `project`.
 - **Projects** in the sidebar are those not Done. Progress is done/total of linked tasks.
 - **Deleting** moves the file into `.trash/` in the folder (the folder Obsidian also uses), keeping its filename unless that's taken there. A project takes its linked tasks. The file's contents don't change; the date it was deleted is when it was added to `.trash/`.
-- **Restoring** moves a task to `tasks/` and a project to `projects/`, numbering a taken name. A project brings back the trashed tasks that link to it; if its name had to change, their `project:` links are rewritten. Delete Forever and Empty Trash move the Ta Da files in `.trash/` to the system Trash (deleting them where that isn't supported, as on iOS outside iCloud Drive; a failure doesn't stop the others); other notes there are left alone.
+- **Restoring** moves a task to `tasks/` and a project to `projects/`, numbering a taken name. A project brings back the trashed tasks that link to it; if its name had to change, their `project:` links are rewritten. Delete Forever and Empty Trash move the Ta Da files in `.trash/` to the system Trash (on iOS, deleting them where that isn't supported, outside iCloud Drive; a failure doesn't stop the others); other notes there are left alone.
 
 ## Writing rules (how Ta Da edits files)
 
