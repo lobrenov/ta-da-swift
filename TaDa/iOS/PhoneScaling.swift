@@ -15,7 +15,7 @@ private struct ScaledFont: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        content.scaledFont(size: size, weight: weight, design: design)
+        content.font(.system(size: size, weight: weight, design: design))
     }
 }
 
