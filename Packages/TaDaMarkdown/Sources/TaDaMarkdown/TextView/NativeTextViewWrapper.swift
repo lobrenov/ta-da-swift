@@ -149,6 +149,9 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
     public var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
     /// Ta Da fork: a right-click on a callout's title line. Without it, the line gets the standard menu.
     public var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
+    /// Ta Da fork: with `imageEmbed.selectionRing` set, a right-click on a drawn image (`.menu`), or ⌘C, ⌘X or ⌘⌫
+    /// while one is selected. The embedder copies the image, shows its menu, and so on; a cut calls `remove`.
+    public var onImageEmbed: ((ImageEmbedRequest) -> Void)?
     /// Ta Da fork: ↑/↓ and ↵/⇥ (`.confirm`) while a slash command is open. Return `true`
     /// to consume the key. Esc always closes it.
     public var onSlashCommandKey: ((InlinePreviewKey) -> Bool)?
@@ -185,7 +188,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         onSlashCommandKey: ((InlinePreviewKey) -> Bool)? = nil,
         slashCommandProxy: SlashCommandProxy? = nil,
         onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil,
-        onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil
+        onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil,
+        onImageEmbed: ((ImageEmbedRequest) -> Void)? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -217,6 +221,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         self.slashCommandProxy = slashCommandProxy
         self.onTaskMarkerMenu = onTaskMarkerMenu
         self.onCalloutMenu = onCalloutMenu
+        self.onImageEmbed = onImageEmbed
     }
 
     public func sizeThatFits(
@@ -433,6 +438,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         slashCommandProxy?.coordinator = context.coordinator
         textView.onTaskMarkerMenu = onTaskMarkerMenu
         textView.onCalloutMenu = onCalloutMenu
+        textView.onImageEmbed = onImageEmbed
         reconcileHeader(textView: textView, context: context)
 
         let isNodeSwitch = context.coordinator.documentId != documentId

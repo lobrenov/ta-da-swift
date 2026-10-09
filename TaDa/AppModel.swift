@@ -87,6 +87,21 @@ import TaDaCore
     private(set) var attachments: [String] = []
     /// The Ta Da files in `.trash/`, most recently deleted first.
     private(set) var trash: [TrashedItem] = []
+    /// The images in `.trash/attachments/`, most recently deleted first.
+    private(set) var trashedAttachments: [TrashedAttachment] = []
+    /// The image the embed menu asked to rename or delete; the window shows its dialog.
+    var imageDialog: ImageDialog?
+    enum ImageDialog: Identifiable, Equatable {
+        case rename(String)
+        case delete(String)
+
+        var path: String {
+            switch self {
+            case .rename(let path), .delete(let path): path
+            }
+        }
+        var id: String { "\(self)" }
+    }
     /// The files picked in the Trash list, by path.
     var trashSelection: Set<String> = []
     /// What the last restore did, shown in Trash.
@@ -288,6 +303,7 @@ import TaDaCore
         let loaded = await vault.loadIndex()
         updateIndex { $0 = loaded }
         trash = await Self.run { vault.trashedItems() }
+        trashedAttachments = await Self.run { vault.trashedAttachments() }
         attachments = await Self.run { vault.attachmentPaths() }
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         state = .ready
@@ -355,7 +371,8 @@ import TaDaCore
                 fileDates = changes.dates
                 await apply(changes, from: vault)
                 trash = await Self.run { vault.trashedItems() }
-                trashSelection.formIntersection(trash.map(\.id))
+                trashedAttachments = await Self.run { vault.trashedAttachments() }
+                trashSelection.formIntersection(trash.map(\.id) + trashedAttachments.map(\.id))
                 let attachments = await Self.run { vault.attachmentPaths() }
                 if attachments != self.attachments { self.attachments = attachments }
                 multiSelection = multiSelection.filter { index[$0] != nil }
@@ -857,6 +874,53 @@ import TaDaCore
         }
     }
 
+    /// The image an embed shows, from the text between `![[` and `]]`.
+    func attachmentPath(forEmbed name: String) -> String? {
+        WikiLink(inner: name).flatMap { Vault.attachmentPath(for: $0, in: attachments) }
+    }
+
+    /// The files whose embeds show the image at `path`, the open one first, with how many times each embeds it.
+    func embedders(ofAttachment path: String) -> [(item: Item, count: Int)] {
+        let embedders = index.embedders(ofAttachment: path, among: attachments)
+        return embedders.filter { $0.item.path == document?.path } + embedders.filter { $0.item.path != document?.path }
+    }
+
+    /// Renames an image in its folder (keeping its extension) and points every `![[ ]]` that showed it at the new
+    /// name, the open file's in place.
+    func renameAttachment(_ path: String, to name: String) async {
+        guard let vault else { return }
+        let newPath = Vault.renamedAttachment(path, to: name), oldName = Item.title(ofPath: path)
+        guard newPath != path else { return }
+        guard !Vault.attachmentName(of: newPath, isTakenBesides: path, in: attachments) else {
+            errorMessage = "An image named “\(Item.title(ofPath: newPath))” is already in the folder."
+            return
+        }
+        let paths = attachments
+        let files = Set(index.embedders(ofAttachment: path, among: paths).map(\.item.path) + [document?.path].compactMap { $0 })
+        do {
+            try await Self.run { try vault.renameAttachment(path, to: newPath) }
+        } catch {
+            errorMessage = Self.couldNot("rename “\(oldName)”", error)
+            return
+        }
+        attachments = attachments.map { $0 == path ? newPath : $0 }
+        for file in files.sorted() {
+            await edit(file) { Vault.retargetEmbeds(in: $0, from: path, to: newPath, paths: paths) }
+        }
+    }
+
+    /// Moves an image to `.trash/attachments/`. The files that embed it keep their `![[ ]]`, which shows as missing
+    /// until the image is restored.
+    func trashAttachment(_ path: String) async {
+        guard let vault else { return }
+        do {
+            _ = try await Self.run { try vault.moveAttachmentsToTrash([path]) }
+        } catch {
+            errorMessage = Self.couldNot("move “\(Item.title(ofPath: path))” to the trash", error)
+        }
+        await refresh()
+    }
+
     // MARK: Trash
 
     /// Moves files to `.trash/`; a project takes its tasks, an area its projects and all their tasks. Deleting an area
@@ -942,8 +1006,27 @@ import TaDaCore
         await refresh()
     }
 
+    /// The files and images in `.trash/`.
+    var trashCount: Int { trash.count + trashedAttachments.count }
+
+    /// Trashed images that no trashed file embeds: Trash lists them on their own.
+    var looseTrashedAttachments: [TrashedAttachment] {
+        let taken = Set(trash.flatMap { TrashedAttachment.attachments(of: $0.item, in: trashedAttachments) })
+        return trashedAttachments.filter { !taken.contains($0) }
+    }
+
+    /// "In Photograph the Kombi, Kombi service history": the files whose embeds of a trashed image's name show as missing;
+    /// nil when none does.
+    func embeddersSummary(of trashed: TrashedAttachment) -> String? {
+        let name = trashed.name.lowercased(), attachments = attachments
+        let titles = index.embedders(of: trashed.name).filter { entry in
+            entry.item.embeds.contains { $0.attachmentName?.lowercased() == name && Vault.attachmentPath(for: $0, in: attachments) == nil }
+        }.map(\.item.title)
+        return titles.isEmpty ? nil : "In " + titles.joined(separator: ", ")
+    }
+
     func emptyTrash() async {
-        await discard(Set(trash.map(\.id)))
+        await discard(Set(trash.map(\.id) + trashedAttachments.map(\.id)))
     }
 
     /// ⌫ or ⌘⌫ while a list has the keyboard: moves the selected files to the trash. In Trash, ⌘⌫ restores

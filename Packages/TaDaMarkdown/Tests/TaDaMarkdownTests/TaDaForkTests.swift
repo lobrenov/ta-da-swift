@@ -667,6 +667,65 @@ struct ImageEmbedTests {
         #expect(tv.imageEmbedHit(atViewPoint: CGPoint(x: tv.textContainerOrigin.x + 150, y: 60)) == nil, "no button while the source shows")
     }
 
+    private func click(_ type: NSEvent.EventType, at point: CGPoint, in tv: NativeTextView, window: NSWindow) throws -> NSEvent {
+        try #require(NSEvent.mouseEvent(
+            with: type, location: tv.convert(point, to: nil), modifierFlags: [], timestamp: 0,
+            windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+    }
+
+    @Test func aClickSelectsTheImageAndRingsIt() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.configuration.imageEmbed.selectionRing = .systemBlue
+        coordinator.configuration.imageEmbed.selectionRing = .systemBlue
+        let rect = try #require(tv.imageEmbedRect(for: Self.embed))
+        tv.mouseDown(with: try click(.leftMouseDown, at: CGPoint(x: rect.midX, y: rect.midY), in: tv, window: window))
+        #expect(tv.selectedRange() == Self.embed && tv.selectedImageEmbed == Self.embed)
+        #expect(tv.ringsImage(at: Self.embed.location + 3) && isDrawn(tv))
+        tv.setSelectedRange(NSRange(location: Self.embed.location - 1, length: Self.embed.length + 1))
+        #expect(tv.selectedImageEmbed == nil, "a selection reaching past the image doesn't select it")
+        withExtendedLifetime(coordinator) {}
+    }
+
+    @Test func copyCutAndCommandDeleteOnASelectedImageGoToTheEmbedder() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.configuration.imageEmbed.selectionRing = .systemBlue
+        coordinator.configuration.imageEmbed.selectionRing = .systemBlue
+        var requests: [ImageEmbedRequest] = []
+        tv.onImageEmbed = { requests.append($0) }
+        tv.setSelectedRange(NSRange(location: 0, length: 5))
+        #expect(!tv.sendSelectedImageEmbed(.copy) && requests.isEmpty, "text copies as text")
+        tv.setSelectedRange(Self.embed)
+        tv.copy(nil)
+        tv.cut(nil)
+        tv.deleteToBeginningOfLine(nil)
+        #expect(requests.map(\.action) == [.copy, .cut, .delete] && requests.allSatisfy { $0.name == "front.png" })
+        #expect(tv.string == Self.text, "the embedder removes the text")
+        requests[1].remove("Cut Image")
+        #expect(tv.string == "Intro\n\n\n\nAfter ![[frnt.png]]\n" && tv.undoManager?.undoActionName == "Cut Image")
+        requests[1].remove("Cut Image")
+        #expect(tv.string == "Intro\n\n\n\nAfter ![[frnt.png]]\n", "a stale request changes nothing")
+        tv.undoManager?.undo()
+        #expect(tv.string == Self.text)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func aRightClickOnAnImageRingsItForTheEmbeddersMenu() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.configuration.imageEmbed.selectionRing = .systemBlue
+        coordinator.configuration.imageEmbed.selectionRing = .systemBlue
+        var request: ImageEmbedRequest?
+        tv.onImageEmbed = { request = $0 }
+        let rect = try #require(tv.imageEmbedRect(for: Self.embed))
+        #expect(tv.menu(for: try click(.rightMouseDown, at: CGPoint(x: rect.midX, y: rect.midY), in: tv, window: window)) == nil)
+        #expect(request?.action == .menu && tv.imageEmbedMenuTarget == Self.embed && tv.selectedRange() == Self.embed)
+        tv.setSelectedRange(NSRange(location: 0, length: 0))
+        #expect(tv.ringsImage(at: Self.embed.location + 3), "the ring stays while the menu is open")
+        request?.close()
+        #expect(!tv.ringsImage(at: Self.embed.location + 3))
+        request?.revealSource()
+        #expect(coordinator.revealedImageEmbed == Self.embed.location)
+    }
+
     @Test func aMissingImageIsDashed() throws {
         let (tv, _, window, coordinator) = try editor()
         let name = (Self.text as NSString).range(of: "frnt.png")

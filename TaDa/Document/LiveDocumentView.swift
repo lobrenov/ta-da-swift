@@ -57,6 +57,7 @@ struct BodyEditor: View {
             haptics: model.haptics,
             links: LinkMenuSource(index: model.index, vault: model.vault, attachments: model.attachments, recent: model.recentFiles, openPath: document.path),
             embedImage: model.embed,
+            imageActions: model,
             onLinkClick: openLink
         )
         // The editor insets its text by 16pt; line it up with the title.

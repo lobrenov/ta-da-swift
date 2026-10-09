@@ -96,6 +96,11 @@ final class NativeTextView: NSTextView {
     var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
     /// Ta Da fork: the title line location of the callout whose menu is open.
     var calloutMenuTarget: Int?
+    /// Ta Da fork: see ``NativeTextViewWrapper/onImageEmbed``.
+    var onImageEmbed: ((ImageEmbedRequest) -> Void)?
+    /// Ta Da fork: the `![[ ]]` of the selected image, and of the image whose menu is open (`ImageEmbedHits.swift`).
+    var selectedImageEmbed: NSRange?
+    var imageEmbedMenuTarget: NSRange?
 
     // MARK: Wide-table overlay state
     /// Live NSScrollView per wide table; keyed by source-ID hash.
@@ -103,10 +108,11 @@ final class NativeTextView: NSTextView {
     /// Persisted horizontal scroll offset per wide table; survives restyles.
     var tableHorizontalScrollOffsets: [Int: CGFloat] = [:]
 
-    /// Ta Da fork: a right-click on a task box offers its markers. Checked before super,
+    /// Ta Da fork: a right-click on a task box offers its markers; on a drawn image, goes to `onImageEmbed`. Checked before super,
     /// which moves the caret to the click — onto the box's line, revealing the raw `[ ]`.
     override func menu(for event: NSEvent) -> NSMenu? {
         if let hit = taskCheckboxHit(for: event) { return taskMarkerMenu(for: hit) }
+        if showImageEmbedMenuIfHit(event: event) { return nil }
         if let onCalloutMenu, let hit = calloutTitleHit(for: event) {
             showCalloutMenu(for: hit, onCalloutMenu)
             return nil

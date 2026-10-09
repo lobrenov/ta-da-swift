@@ -25,6 +25,9 @@ struct LiveEditor: View {
     var links: LinkMenuSource? = nil
     /// Saves a pasted or dropped image and returns its `![[ ]]`; without it, images paste as the system does.
     var embedImage: ((AppModel.PastedImage) -> String?)? = nil
+    /// Copies, renames, reveals and deletes the images embeds draw, from the embed menu (`EmbedMenu.swift`);
+    /// without it, images have no menu.
+    var imageActions: AppModel? = nil
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
 
@@ -75,7 +78,8 @@ struct LiveEditor: View {
             },
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: showCheckboxMenu,
-            onCalloutMenu: showCalloutMenu
+            onCalloutMenu: showCalloutMenu,
+            onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } }
         )
         .focusedValue(\.editor, slashCommand)
         .onAppear { slashCommand.triggers = links == nil ? [.slash] : [.slash, .link, .embed] }
@@ -114,12 +118,23 @@ struct LiveEditor: View {
             }),
             onPasteImage: embedImage.map { embed in
                 { pasteboard in
+                    if let url = pasteboard.urls?.first(where: { $0.isFileURL && Vault.imageExtensions.contains($0.pathExtension.lowercased()) }) {
+                        return embed(.file(url))
+                    }
                     let types: [(UTType, String)] = [(.png, "png"), (.jpeg, "jpg"), (.heic, "heic"), (.gif, "gif"),
                                                      (.webP, "webp"), (.tiff, "tiff")]
                     for (type, ext) in types {
                         if let data = pasteboard.data(forPasteboardType: type.identifier) { return embed(.data(data, extension: ext)) }
                     }
                     return pasteboard.image?.pngData().flatMap { embed(.data($0, extension: "png")) }
+                }
+            },
+            imageEmbedMenu: imageActions.map { model in
+                { request in
+                    model.attachmentPath(forEmbed: request.name).map { path in
+                        EmbedMenu.menu(for: path, model: model, cut: { request.remove("Cut Image") },
+                                       editMarkdown: request.revealSource)
+                    }
                 }
             }
         )
@@ -197,6 +212,24 @@ struct LiveEditor: View {
             type: request.type, fold: request.fold, anchor: request.anchorRect, theme: theme,
             setType: { request.setType($0.rawValue) }, setFold: request.setFold, close: request.close
         )
+    }
+
+    /// A right-click on an image opens the embed menu; ⌘C, ⌘X and ⌘⌫ on a selected one copy, cut or delete it.
+    private func handleImage(_ request: ImageEmbedRequest, model: AppModel) {
+        guard let path = model.attachmentPath(forEmbed: request.name) else { return request.close() }
+        switch request.action {
+        case .copy:
+            model.copyImage(path)
+        case .cut:
+            model.copyImage(path)
+            request.remove("Cut Image")
+        case .delete:
+            model.imageDialog = .delete(path)
+        case .menu:
+            guard let window = NSApp.keyWindow else { return request.close() }
+            FileMenu.shared.show(FileMenuAction.embedActions(for: path, model: model, cut: { request.remove("Cut Image") }),
+                                 at: request.anchorRect.origin, in: window, theme: theme, onClose: request.close)
+        }
     }
 
     private func showQueryMenu(_ state: SlashCommandState?) {
@@ -301,6 +334,7 @@ struct LiveEditor: View {
         config.imageEmbed.missingText = theme.muted.withAlphaComponent(0.6)
         #if os(macOS)
         config.imageEmbed.cornerRadius = 6
+        config.imageEmbed.selectionRing = theme.accent
         config.imageEmbed.sourceButton = .init(fill: theme.isDark ? theme.side : theme.bg, hoverFill: theme.surface,
                                                ring: theme.surface, tint: theme.fg, hoverTint: theme.accent)
         #else

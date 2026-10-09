@@ -25,6 +25,12 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 - A right-click on a picked row acts on every picked row, and Move, Schedule and Delete name the count: "Move 3 Tasks", "Schedule 3 Tasks", "Delete 3 Tasks". Reveal in Finder selects every picked file in one Finder window. A right-click on any other row acts on that row only.
 - Move opens the project menu, and Schedule and Set Deadline… the date menu, at the pointer in the file menu's place; the row stays ringed until it closes. For several files the date menu fills a date only when they all share it.
 
+## Embed menu
+
+- Opens at the pointer on a right-click on a drawn image, which is selected and gets a 2px `accent` ring while the menu is open. A click selects an image the same way.
+- Items: Copy (⌘C), Cut (⌘X), then Rename…, Reveal in Finder and Delete (⌘⌫). The shortcuts work on a selected image without the menu; ⌫ removes only the `![[ ]]`.
+- On iPhone a press and hold opens Copy, Cut, Edit Markdown, Rename… and Show in Files, then Delete in `deadline`.
+
 ## Callout menu
 
 - Opens under a callout's icon on a right-click or control-click on its title line; the callout gets the same 2px `accent` inset ring (`td-callout.is-target`).

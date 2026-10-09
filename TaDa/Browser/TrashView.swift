@@ -1,4 +1,4 @@
-// Trash: the Ta Da files in `.trash/`. A click picks a row; shift- and ⌘-click pick several. Picked files are
+// Trash: the Ta Da files in `.trash/`, then the images in `.trash/attachments/` that no trashed file embeds. A click picks a row; shift- and ⌘-click pick several. Picked files are
 // restored to `tasks/`, `projects/` and `areas/` with their parents, and Empty Trash moves everything to the Mac's Trash. A single pane, like
 // the other archive views.
 #if os(macOS)
@@ -19,16 +19,17 @@ struct TrashView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         DomainHeader(.trash)
                         buttons
-                        if isConfirmingEmpty, !model.trash.isEmpty { confirmation }
+                        if isConfirmingEmpty, !isEmpty { confirmation }
                         if let note = model.trashNote { toast(note) }
                     }
-                    if model.trash.isEmpty {
+                    if isEmpty {
                         EmptyState(systemImage: AppModel.Domain.trash.systemImage, title: "Trash is empty",
-                                   message: "Deleted tasks, projects and areas wait here.")
+                                   message: "Deleted tasks, projects, areas and images wait here.")
                             .padding(.top, 40)
                     } else {
                         VStack(alignment: .leading, spacing: 2) {
                             ForEach(model.trash) { row($0) }
+                            ForEach(model.looseTrashedAttachments) { imageRow($0) }
                         }
                         .accessibilityElement(children: .contain)
                         .accessibilityLabel("Deleted files")
@@ -40,9 +41,12 @@ struct TrashView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .arrowKeySelection(model, paths: model.trash.map(\.id), allowsMultipleSelection: true)
-        .onChange(of: model.trash.isEmpty) { if model.trash.isEmpty { isConfirmingEmpty = false } }
+        .arrowKeySelection(model, paths: model.trash.map(\.id) + model.looseTrashedAttachments.map(\.id),
+                           allowsMultipleSelection: true)
+        .onChange(of: isEmpty) { if isEmpty { isConfirmingEmpty = false } }
     }
+
+    private var isEmpty: Bool { model.trashCount == 0 }
 
     /// "Ta Da / .trash", as the document pane shows a file's place.
     private var pathBar: some View {
@@ -63,7 +67,6 @@ struct TrashView: View {
 
     private var buttons: some View {
         let picked = model.trashSelection.count
-        let isEmpty = model.trash.isEmpty
         return HStack(spacing: 10) {
             Button("Empty Trash") {
                 isConfirmingEmpty = true
@@ -89,7 +92,7 @@ struct TrashView: View {
     }
 
     private var confirmation: some View {
-        let count = model.trash.count
+        let count = model.trashCount
         return HStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
                 .foregroundStyle(theme.color(\.deadline))
@@ -183,6 +186,45 @@ struct TrashView: View {
                         Text("Deleted \(LocalDate(deleted).formatted(.weekdayDayMonth))")
                     }
                     Text("from \(isProject ? Vault.projectFolder : Vault.taskFolder)/")
+                        .font(.system(size: 11, design: .monospaced))
+                }
+                .font(.system(size: 11.5))
+                .foregroundStyle(theme.color(\.muted))
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(isPicked ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isPicked ? .isSelected : [])
+        .fileMenu(model, path: entry.id)
+    }
+
+    private func imageRow(_ entry: TrashedAttachment) -> some View {
+        let isPicked = model.isSelected(entry.id)
+        return Button {
+            model.click(entry.id)
+            model.trashNote = nil
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                ImageThumbnail(url: model.vault?.url(for: entry.path), side: 16, cornerRadius: 3)
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(entry.name)
+                        .font(.system(size: 13.5))
+                        .foregroundStyle(theme.color(isPicked ? \.strong : \.fg))
+                    Text(model.embeddersSummary(of: entry) ?? "Image")
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(theme.color(\.muted))
+                }
+                .lineLimit(1)
+                Spacer(minLength: 12)
+                VStack(alignment: .trailing, spacing: 1) {
+                    if let deleted = entry.deleted {
+                        Text("Deleted \(LocalDate(deleted).formatted(.weekdayDayMonth))")
+                    }
+                    Text("from \(Vault.attachmentFolder)/")
                         .font(.system(size: 11, design: .monospaced))
                 }
                 .font(.system(size: 11.5))

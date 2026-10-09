@@ -104,6 +104,15 @@ public struct VaultIndex: Sendable {
         }
     }
 
+    /// Items whose body embeds the image at `path`, as `Vault.attachmentPath(for:in:)` finds it among `paths`, with
+    /// how many times each embeds it, sorted by title.
+    public func embedders(ofAttachment path: String, among paths: [String]) -> [(item: Item, count: Int)] {
+        embedders(of: String(path.split(separator: "/").last ?? "")).compactMap { entry in
+            let count = entry.item.embeds.count { Vault.attachmentPath(for: $0, in: paths) == path }
+            return count > 0 ? (entry.item, count) : nil
+        }
+    }
+
     /// The file's own warnings, plus one for a `project` or `area` link that doesn't resolve.
     public func warnings(for item: Item) -> [Warning] {
         var warnings = item.warnings

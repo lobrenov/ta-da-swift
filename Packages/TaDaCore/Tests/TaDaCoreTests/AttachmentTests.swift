@@ -45,3 +45,59 @@ import Testing
     #expect(Vault.embedTarget(for: "notes/front.jpg", in: paths) == "notes/front.jpg")
     #expect(Vault.embedTarget(for: "notes/odometer.png", in: paths) == "odometer.png")
 }
+
+@Test func retargetingEmbedsChangesOnlyThoseThatShowTheImage() {
+    let paths = ["attachments/front.jpg", "notes/front.jpg", "attachments/odometer.png"]
+    let text = """
+    ---
+    type: task
+    cover: "![[front.jpg]]"
+    ---
+    ![[front.jpg]]
+    Then ![[ front.jpg |320]] and ![[attachments/front.jpg]], not ![[notes/front.jpg]] or ![[odometer.png]].
+    `![[front.jpg]]`
+
+        ![[front.jpg]]
+
+    """
+    let expected = """
+    ---
+    type: task
+    cover: "![[front.jpg]]"
+    ---
+    ![[Front side.jpg]]
+    Then ![[ Front side.jpg |320]] and ![[attachments/Front side.jpg]], not ![[notes/front.jpg]] or ![[odometer.png]].
+    `![[front.jpg]]`
+
+        ![[front.jpg]]
+
+    """
+    #expect(Vault.retargetEmbeds(in: text, from: "attachments/front.jpg", to: "attachments/Front side.jpg", paths: paths) == expected)
+}
+
+@Test func renamingAnImageKeepsItsFolderAndExtensionAndRefusesATakenName() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        for path in ["attachments/front.jpg", "notes/odometer.png"] { try writeFile("x", path, in: folder) }
+        let paths = vault.attachmentPaths()
+        let renamed = Vault.renamedAttachment("attachments/front.jpg", to: "Front: side?")
+        #expect(renamed == "attachments/Front - side.jpg")
+        #expect(!Vault.attachmentName(of: renamed, isTakenBesides: "attachments/front.jpg", in: paths))
+        #expect(Vault.attachmentName(of: "attachments/Odometer.PNG", isTakenBesides: "attachments/front.jpg", in: paths))
+        #expect(!Vault.attachmentName(of: "attachments/Front.jpg", isTakenBesides: "attachments/front.jpg", in: paths))
+        try vault.renameAttachment("attachments/front.jpg", to: renamed)
+        try vault.renameAttachment(renamed, to: "attachments/front side.jpg")
+        #expect(Set(vault.attachmentPaths()) == ["attachments/front side.jpg", "notes/odometer.png"])
+        try writeFile("y", "attachments/odometer.png", in: folder)
+        #expect(throws: CocoaError.self) { try vault.renameAttachment("notes/odometer.png", to: "attachments/odometer.png") }
+    }
+}
+
+@Test func anImagesEmbeddersAreTheFilesWhoseEmbedsShowIt() throws {
+    let paths = ["attachments/front.jpg", "notes/front.jpg"]
+    let a = try #require(Item(parsing: "---\ntype: task\n---\n![[front.jpg]] ![[front.jpg]]\n", path: "tasks/A.md"))
+    let b = try #require(Item(parsing: "---\ntype: task\n---\n![[notes/front.jpg]]\n", path: "tasks/B.md"))
+    let index = VaultIndex([a, b])
+    #expect(index.embedders(ofAttachment: "attachments/front.jpg", among: paths).map { "\($0.item.title) \($0.count)" } == ["A 2"])
+    #expect(index.embedders(ofAttachment: "notes/front.jpg", among: paths).map { "\($0.item.title) \($0.count)" } == ["B 1"])
+}

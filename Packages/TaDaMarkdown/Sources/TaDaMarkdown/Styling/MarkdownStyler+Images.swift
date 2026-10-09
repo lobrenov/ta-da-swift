@@ -189,7 +189,7 @@ extension MarkdownStyler {
                 }
                 if !rendered {
                     appendSecondaryMarkers(for: token, to: &attrs, theme: ctx.configuration.theme)
-                } else if imageEmbedConfig.cornerRadius > 0 {
+                } else if imageEmbedConfig.cornerRadius > 0 || imageEmbedConfig.selectionRing != nil {
                     attrs.append((token.range, [.imageCornerRadius: imageEmbedConfig.cornerRadius]))
                 }
             } else {

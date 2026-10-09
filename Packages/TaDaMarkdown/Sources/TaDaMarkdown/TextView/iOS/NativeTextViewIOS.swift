@@ -30,6 +30,11 @@ final class NativeTextView: UITextView {
     var onPasteImage: ((UIPasteboard) -> String?)?
     /// The title line location of the callout whose menu is open.
     var calloutMenuTarget: Int?
+    /// See ``NativeTextViewWrapper/imageEmbedMenu``.
+    var imageEmbedMenu: ((ImageEmbedRequest) -> UIMenu?)?
+    /// The `![[ ]]` of the selected image, and of the image whose menu is open (`ImageEmbedHits.swift`).
+    var selectedImageEmbed: NSRange?
+    var imageEmbedMenuTarget: NSRange?
     /// Skips the next scroll-to-caret, after an edit that places the caret itself.
     var suppressAutoRevealOnce = false
     /// What the selection and text delegates are reacting to: typing or a tap.
@@ -65,6 +70,8 @@ final class NativeTextView: UITextView {
     }
 
     private let gestures = EditorGestures()
+    /// Ta Da fork: shows the image menu (`ImageEmbedMenuButton.swift`).
+    var imageMenuButton: UIButton?
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
@@ -162,12 +169,14 @@ final class NativeTextView: UITextView {
         }
     }
 
-    /// Press and hold on a task box or a callout title line opens its menu.
+    /// Press and hold on a task box, a callout title line or a drawn image opens its menu.
     func handlePress(at point: CGPoint) {
         if let onTaskMarkerMenu, let hit = taskCheckboxHit(atViewPoint: point) {
             onTaskMarkerMenu(taskMarkerMenuRequest(for: hit))
         } else if let onCalloutMenu, let hit = calloutTitleHit(atViewPoint: point) {
             showCalloutMenu(for: hit, onCalloutMenu)
+        } else if let hit = imageEmbedHit(atViewPoint: point), let menu = imageEmbedMenu(for: hit.range) {
+            showImageEmbedMenu(menu, at: point)
         }
     }
 
@@ -177,9 +186,10 @@ final class NativeTextView: UITextView {
         return hit.header.fold.length == 1
     }
 
-    fileprivate func takesPress(at point: CGPoint) -> Bool {
+    func takesPress(at point: CGPoint) -> Bool {
         (onTaskMarkerMenu != nil && taskCheckboxHit(atViewPoint: point) != nil)
             || (onCalloutMenu != nil && calloutTitleHit(atViewPoint: point) != nil)
+            || (imageEmbedMenu != nil && imageEmbedHit(atViewPoint: point) != nil)
     }
 
     // MARK: Layout

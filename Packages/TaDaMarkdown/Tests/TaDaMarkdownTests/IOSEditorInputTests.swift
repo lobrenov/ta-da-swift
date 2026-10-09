@@ -30,7 +30,7 @@ final class IOSEditorHarness {
     let textView: NativeTextView
     let proxy = SlashCommandProxy()
 
-    init(_ text: String) throws {
+    init(_ text: String, configure: (inout MarkdownEditorConfiguration) -> Void = { _ in }) throws {
         let box = Box(text)
         self.box = box
         var configuration = MarkdownEditorConfiguration.default
@@ -39,6 +39,7 @@ final class IOSEditorHarness {
             titleColor: .label, bodyColor: .label, foldColor: .secondaryLabel, targetColor: .systemBlue,
             fillOpacity: 0.09, ringOpacity: 0.24
         )
+        configure(&configuration)
         let binding = Binding(get: { box.text }, set: { box.text = $0 })
         let editor = NativeTextViewWrapper(
             text: binding,
@@ -110,6 +111,16 @@ final class IOSEditorHarness {
     }
 }
 
+private struct TealImage: EmbeddedImageProvider {
+    func image(for request: EmbeddedImageRequest) -> PlatformImage? {
+        request.name == "front.png" ? UIGraphicsImageRenderer(size: CGSize(width: 300, height: 200)).image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 300, height: 200))
+        } : nil
+    }
+    func fingerprint() -> AnyHashable { 1 }
+}
+
 @MainActor
 @Suite(.serialized)
 struct IOSEditorInputTests {
@@ -125,6 +136,27 @@ struct IOSEditorInputTests {
         #expect(pasted == 1)
         #expect(editor.text == "Shots:\n![[Pasted image.png]]")
         UIPasteboard.general.items = []
+    }
+
+    @Test func aPressAndHoldOnAnImageShowsTheEmbeddersMenu() async throws {
+        let editor = try IOSEditorHarness("Shots:\n\n![[front.png]]\n\nAfter") { configuration in
+            configuration.services = MarkdownEditorServices(images: TealImage())
+            configuration.imageEmbed.revealsSourceAtCaret = false
+        }
+        var requests: [ImageEmbedRequest] = []
+        editor.textView.imageEmbedMenu = { requests.append($0); return UIMenu(children: []) }
+        let embed = (editor.textView.string as NSString).range(of: "![[front.png]]")
+        let rect = try #require(editor.textView.imageEmbedRect(for: embed))
+        #expect(rect.size == CGSize(width: 300, height: 200))
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        #expect(editor.textView.takesPress(at: center) && !editor.textView.takesPress(at: CGPoint(x: center.x, y: rect.maxY + 40)))
+        #expect(editor.textView.imageEmbedMenu(for: embed) != nil)
+        #expect(requests.map(\.name) == ["front.png"])
+        requests[0].revealSource()
+        #expect(editor.textView.selectedRange == NSRange(location: NSMaxRange(embed), length: 0))
+        requests[0].remove("Cut Image")
+        await editor.settle()
+        #expect(editor.text == "Shots:\n\n\n\nAfter")
     }
 
     @Test func loadsTheDocument() async throws {

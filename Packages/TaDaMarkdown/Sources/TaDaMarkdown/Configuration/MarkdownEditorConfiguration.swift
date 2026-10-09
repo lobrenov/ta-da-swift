@@ -579,6 +579,9 @@ public struct ImageEmbedStyle: Sendable {
     public var cornerRadius: CGFloat = 0
     /// Ta Da fork: on the Mac, a `</>` button over a hovered image shows its source. No button when nil.
     public var sourceButton: SourceButtonColors?
+    /// Ta Da fork: with a colour, a click on a drawn image selects its `![[ ]]` and rings the image in this colour, as
+    /// does an open image menu.
+    public var selectionRing: PlatformColor?
 
     /// Ta Da fork: the source button's colours, and while the pointer is on it.
     public struct SourceButtonColors: Sendable {

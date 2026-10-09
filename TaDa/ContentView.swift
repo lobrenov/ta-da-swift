@@ -20,6 +20,7 @@ struct ContentView: View {
                 }
             }
         }
+        .imageDialogs(model)
         .themed(by: model)
         // No toolbar fill: each column's own colour runs up under the toolbar (proven in the M1 spike).
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
@@ -60,6 +61,7 @@ struct ContentView: View {
                 PhoneRootView(model: model)
             }
         }
+        .imageDialogs(model)
         .themed(by: model)
         .alert("Ta Da", isPresented: Binding { model.errorMessage != nil } set: { if !$0 { model.errorMessage = nil } }) {
             Button("OK") {}

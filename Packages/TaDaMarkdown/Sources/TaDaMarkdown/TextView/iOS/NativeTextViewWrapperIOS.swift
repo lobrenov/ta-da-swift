@@ -39,6 +39,8 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
     /// Ta Da fork: a paste while the pasteboard has an image. Return the embed to insert on its own line (e.g.
     /// `![[Pasted image.png]]`), or nil to paste as usual.
     public var onPasteImage: ((UIPasteboard) -> String?)?
+    /// Ta Da fork: a press and hold on a drawn image shows this menu there; nil shows none.
+    public var imageEmbedMenu: ((ImageEmbedRequest) -> UIMenu?)?
 
     public init(
         text: Binding<String>,
@@ -57,7 +59,8 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil,
         onTaskCheckboxToggle: ((Character) -> Void)? = nil,
         keyboardBar: AnyView? = nil,
-        onPasteImage: ((UIPasteboard) -> String?)? = nil
+        onPasteImage: ((UIPasteboard) -> String?)? = nil,
+        imageEmbedMenu: ((ImageEmbedRequest) -> UIMenu?)? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -76,6 +79,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         self.onTaskCheckboxToggle = onTaskCheckboxToggle
         self.keyboardBar = keyboardBar
         self.onPasteImage = onPasteImage
+        self.imageEmbedMenu = imageEmbedMenu
     }
 
     public func makeCoordinator() -> Coordinator {
@@ -138,6 +142,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         textView.onCalloutMenu = onCalloutMenu
         textView.onTaskCheckboxToggle = onTaskCheckboxToggle
         textView.onPasteImage = onPasteImage
+        textView.imageEmbedMenu = imageEmbedMenu
         textView.setHeader(header)
         textView.setKeyboardBar(keyboardBar)
         return textView
@@ -162,6 +167,7 @@ public struct NativeTextViewWrapper: UIViewRepresentable {
         textView.onCalloutMenu = onCalloutMenu
         textView.onTaskCheckboxToggle = onTaskCheckboxToggle
         textView.onPasteImage = onPasteImage
+        textView.imageEmbedMenu = imageEmbedMenu
         textView.setHeader(header)
         textView.setKeyboardBar(keyboardBar)
         textView.bodyInsets = insets

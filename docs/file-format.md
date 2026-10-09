@@ -75,6 +75,7 @@ Bring the project instruction files in line with how I actually work now.
 - An attachment is an image file in the folder. Ta Da saves new ones in `attachments/`, which it creates when needed.
 - An embed resolves to its target as a path when that file exists, else to `attachments/<filename>`, else to the first file with that filename by path, ignoring case. Hidden folders, including `.trash`, are skipped. An embed that doesn't resolve is missing.
 - A pasted image without a name is saved as `Pasted image <yyyyMMddHHmmss>.png`, in local time.
+- **Renaming an attachment** keeps its folder and extension; the name can't be another image's filename anywhere in the folder. Every embed in a file's body that resolved to it is rewritten to the new filename (to the new path where it was written as a path); anything after `|` stays, and embeds in code are left alone.
 
 ## Behaviour rules
 

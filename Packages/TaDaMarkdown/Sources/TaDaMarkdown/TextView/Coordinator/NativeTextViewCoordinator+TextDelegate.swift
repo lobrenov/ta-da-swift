@@ -389,6 +389,7 @@ extension NativeTextViewCoordinator {
         if isRebuildingDocument { return }
         // Ta Da fork: keep the slash menu's query in step with the caret, and the caret out of a drawn image.
         snapCaretOutOfImageEmbed(in: tv)
+        updateSelectedImageEmbed(in: tv)
         #if os(macOS)
         (tv as? NativeTextView)?.hideImageSourceButton()
         #endif

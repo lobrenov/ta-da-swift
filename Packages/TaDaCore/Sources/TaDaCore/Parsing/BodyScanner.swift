@@ -22,6 +22,29 @@ public enum BodyScanner {
         return BodyScan(summary: summary, checkboxes: walker.checkboxes, links: walker.links, embeds: walker.embeds)
     }
 
+    /// Where each `![[…]]` that `scan` finds sits in `body`: the range of its target (the text before any `#` or
+    /// `|`, without surrounding spaces), in order.
+    public static func embedTargets(in body: String) -> [(range: Range<String.Index>, link: WikiLink)] {
+        var walker = Walker(bytes: Array(body.utf8), firstLineIndex: 0)
+        walker.visit(Document(parsing: body, options: [.disableSmartOpts]))
+        let utf8 = body.utf8
+        var found: [(range: Range<String.Index>, link: WikiLink)] = []
+        for span in walker.textSpans {
+            let start = utf8.index(utf8.startIndex, offsetBy: span.lowerBound)
+            let end = utf8.index(utf8.startIndex, offsetBy: span.upperBound)
+            for match in body[start..<end].matches(of: #/!\[\[([^\[\]\n]+)\]\]/#) {
+                let inner = match.1
+                guard let link = WikiLink(inner: String(inner)) else { continue }
+                let targetEnd = inner.firstIndex { $0 == "#" || $0 == "|" } ?? inner.endIndex
+                let target = inner[..<targetEnd]
+                let first = target.firstIndex { !$0.isWhitespace } ?? targetEnd
+                let last = target.lastIndex { !$0.isWhitespace }.map { target.index(after: $0) } ?? first
+                found.append((first..<last, link))
+            }
+        }
+        return found
+    }
+
     private struct Walker: MarkupWalker {
         let bytes: [UInt8]
         let firstLineIndex: Int
@@ -30,6 +53,8 @@ public enum BodyScanner {
         var checkboxes: [Checkbox] = []
         var links: [WikiLink] = []
         var embeds: [WikiLink] = []
+        /// Each text node's UTF-8 offsets in `bytes`.
+        var textSpans: [Range<Int>] = []
 
         init(bytes: [UInt8], firstLineIndex: Int) {
             self.bytes = bytes
@@ -46,6 +71,11 @@ public enum BodyScanner {
             let found = WikiLink.scan(text.string)
             links += found.links
             embeds += found.embeds
+            if let range = text.range {
+                let (lineStarts, count) = (lineStarts, bytes.count)
+                let offset = { (location: SourceLocation) in min(lineStarts[location.line - 1] + location.column - 1, count) }
+                textSpans.append(offset(range.lowerBound)..<offset(range.upperBound))
+            }
         }
 
         /// Reads `[c]` from the source after the item's list marker. swift-markdown only recognises
