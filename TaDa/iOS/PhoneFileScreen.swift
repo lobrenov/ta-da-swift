@@ -36,8 +36,21 @@ struct PhoneFileScreen: View {
         .onChange(of: model.document.map(ObjectIdentifier.init), initial: true) {
             if let open = model.document, open === document || open.path == shownPath { document = open }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in isEditing = true }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in isEditing = false }
+        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidBeginEditingNotification)) { editingChanged($0, to: true) }
+        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidEndEditingNotification)) { editingChanged($0, to: false) }
+        .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { editingChanged($0, to: true) }
+        .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidEndEditingNotification)) { editingChanged($0, to: false) }
+    }
+
+    /// Follows the focus of the title, body and source text views; a text field in a sheet or alert over the screen
+    /// doesn't count.
+    private func editingChanged(_ notification: Notification, to editing: Bool) {
+        var responder = notification.object as? UIResponder
+        while let current = responder {
+            if let controller = current as? UIViewController, controller.presentingViewController != nil { return }
+            responder = current.next
+        }
+        isEditing = editing
     }
 
     private func page(_ document: OpenDocument) -> some View {
