@@ -115,8 +115,15 @@ struct FileInspector: View {
     /// The sidebar lists this file shows in, and why.
     private func appearances(of item: Item) -> [Place] {
         let index = model.index, today = model.today, p = item.properties
-        guard p.kind == .task else {
-            return p.status == .done ? [] : [Place(.project(item.path), title: "Projects", reason: "not done")]
+        switch p.kind {
+        case .area:
+            return [Place(.area(item.path), reason: "area")]
+        case .project:
+            guard p.status != .done else { return [] }
+            return [index.area(of: item).map { Place(.area($0.path), reason: "area") }
+                ?? Place(.project(item.path), title: "Projects", reason: "not done")]
+        case .task:
+            break
         }
         var places: [Place] = []
         if index.isInToday(item, today: today) {
@@ -128,10 +135,11 @@ struct FileInspector: View {
         for entry in index.upcomingEntries(of: item, after: today) {
             places.append(Place(.upcoming, title: "Upcoming · \(entry.date.formatted(.weekdayDayMonth))", reason: entry.kind.key))
         }
-        if let project = index.project(of: item) {
-            places.append(Place(.project(project.path), reason: "project"))
+        if let parent = index.parent(of: item) {
+            let isArea = parent.properties.kind == .area
+            places.append(Place(isArea ? .area(parent.path) : .project(parent.path), reason: isArea ? "area" : "project"))
         } else if index.isLoose(item) {
-            places.append(Place(.loose, reason: "no project"))
+            places.append(Place(.loose, reason: "no project or area"))
         }
         return places
     }

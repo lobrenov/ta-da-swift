@@ -1,5 +1,6 @@
-// Sidebar: search, the three domains and Trash with counts, active projects with progress rings, the folder line,
-// Settings and the New buttons. Task rows drop onto Today, Loose tasks and the projects.
+// Sidebar: search, the three domains and Trash with counts, active projects without an area, then each area with its
+// active projects indented under it, the folder line, Settings and the New buttons. Task rows drop onto Today, Loose
+// tasks, the projects and the areas; project rows drop onto the areas.
 import SwiftUI
 import TaDaCore
 
@@ -26,23 +27,27 @@ struct SidebarView: View {
                     row(.trash, count: model.trash.count)
                         .padding(.top, 8)
 
-                    SectionLabel(title: "Projects")
-                        .padding(.horizontal, 10)
-                        .padding(.top, 20)
-                        .padding(.bottom, 6)
-
-                    if model.projects.isEmpty {
+                    Spacer().frame(height: 12)
+                    if model.looseProjects.isEmpty, model.areas.isEmpty {
                         Text("No active projects")
                             .font(.system(size: 12))
                             .foregroundStyle(theme.color(\.muted))
                             .padding(.horizontal, 10)
                     }
-                    ForEach(model.projects) { progress in
-                        projectRow(progress)
+                    ForEach(model.looseProjects) { progress in
+                        projectRow(progress, indent: 0)
+                    }
+                    ForEach(model.areas) { area in
+                        areaRow(area.area)
+                            .padding(.top, 12)
+                        ForEach(area.projects) { progress in
+                            projectRow(progress, indent: 26)
+                        }
                     }
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
+                .taskDragContainer(model)
             }
             folderLine
             settingsRow
@@ -67,9 +72,25 @@ struct SidebarView: View {
         }
     }
 
-    private func projectRow(_ progress: ProjectProgress) -> some View {
+    /// An area: its cube and title, no count. Clicking the open area again goes from its file back to its page.
+    private func areaRow(_ area: Item) -> some View {
+        let path = area.path
+        return SidebarRow(selected: model.domain == .area(path) && !model.isSearching, height: 32, count: nil) {
+            if model.domain == .area(path), model.selection == path { model.selection = nil }
+            model.show(.area(path))
+        } icon: {
+            AreaIcon()
+        } label: {
+            Text(area.title).fontWeight(.semibold).foregroundStyle(theme.color(\.strong))
+        }
+        .fileMenu(model, path: path)
+        .taskDrop(model, onto: .area(area))
+    }
+
+    private func projectRow(_ progress: ProjectProgress, indent: CGFloat) -> some View {
         let path = progress.project.path
-        return SidebarRow(selected: model.domain == .project(path) && !model.isSearching, height: 30, count: progress.open) {
+        return SidebarRow(selected: model.domain == .project(path) && !model.isSearching, height: 30, indent: indent,
+                          count: progress.open) {
             // Clicking the open project again goes from its page back to its tasks.
             if model.domain == .project(path), model.selection == path { model.selection = nil }
             model.show(.project(path))
@@ -83,6 +104,7 @@ struct SidebarView: View {
         .accessibilityValue("\(progress.done) of \(progress.total) tasks done")
         .fileMenu(model, path: path)
         .taskDrop(model, onto: .project(progress.project))
+        .draggable(containerItemID: path)
     }
 
     private var searchField: some View {
@@ -153,25 +175,29 @@ struct SidebarView: View {
 
     private var newButtons: some View {
         HStack(spacing: 6) {
-            newButton("New task") { await model.newTask() }
-            newButton("New project") { await model.newProject() }
+            newButton("Task", label: "New task") { await model.newTask() }
+            newButton("Project", label: "New project") { await model.newProject() }
+            newButton("Area", label: "New area") { await model.newArea() }
         }
         .padding(.horizontal, 10)
         .padding(.bottom, 12)
     }
 
-    private func newButton(_ title: String, action: @escaping () async -> Void) -> some View {
+    private func newButton(_ title: String, label: String, action: @escaping () async -> Void) -> some View {
         Button { Task { await action() } } label: {
             Label(title, systemImage: "plus")
         }
         .buttonStyle(ActionButtonStyle(height: 32, fullWidth: true))
+        .accessibilityLabel(label)
     }
 }
 
-/// One selectable sidebar row: icon, label, optional count; selected rows sit on the surface colour.
+/// One selectable sidebar row: icon, label, optional count; selected rows sit on the surface colour. `indent` moves
+/// the icon and label in, as for an area's projects.
 struct SidebarRow<Icon: View, Label: View>: View {
     let selected: Bool
     let height: CGFloat
+    var indent: CGFloat = 0
     let count: Int?
     let action: () -> Void
     @ViewBuilder let icon: Icon
@@ -196,6 +222,7 @@ struct SidebarRow<Icon: View, Label: View>: View {
             .font(.system(size: 13, weight: selected ? .semibold : .medium))
             .foregroundStyle(theme.color(selected ? \.strong : \.fg))
             .padding(.horizontal, 10)
+            .padding(.leading, indent)
             .frame(height: height)
             .background(selected ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
             .contentShape(.rect)

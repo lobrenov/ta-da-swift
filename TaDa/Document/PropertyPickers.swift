@@ -1,5 +1,5 @@
-// The pickers under the property chips: status and project in popup menus, and dates in a calendar. One is open
-// at a time; its chip keeps an accent ring until it closes.
+// The pickers under the property chips: status, a task's project or area, and a project's area in popup menus, and
+// dates in a calendar. One is open at a time; its chip keeps an accent ring until it closes.
 #if os(macOS)
 import SwiftUI
 import AppKit
@@ -22,31 +22,36 @@ final class PropertyPicker {
                                                            row: StatusChoiceRow.init)
     @ObservationIgnored private let projectMenu = PopupMenu(style: .full(confirm: "Set", maxListHeight: 312), takesKeys: true,
                                                             searchPrompt: ProjectChoice.findPrompt, row: ProjectChoiceRow.init)
+    @ObservationIgnored private let areaMenu = PopupMenu(style: .full(confirm: "Set", maxListHeight: 312), takesKeys: true,
+                                                         searchPrompt: AreaChoice.findPrompt, row: AreaChoiceRow.init)
     @ObservationIgnored private let calendar = CalendarPicker()
     /// The open picker's chip, in screen coordinates.
     @ObservationIgnored private var anchor = CGRect.zero
     /// The chip whose picker a mouse-down on it closed, and when, so the click's own action doesn't reopen it.
     @ObservationIgnored private var closedByClick: (target: Target, time: TimeInterval)?
-    /// What the project menu needs to refresh as its search changes.
+    /// What the project or area menu needs to refresh as its search changes.
     @ObservationIgnored private var projectMenuContext: ProjectMenuContext?
     /// The row the file menu's Move, Schedule or Set Deadline… came from, ringed while the picker is open.
     @ObservationIgnored private var ringed: (model: AppModel, path: String)?
 
     private struct ProjectMenuContext {
+        /// Tasks for the project menu; projects for the area menu.
         let tasks: [Item]
         let model: AppModel
         let anchor: CGRect
         let gap: CGFloat
         let window: NSWindow
-        /// New project… was picked with nothing typed, so the search field takes the name.
+        /// New project… or New Area… was picked with nothing typed, so the search field takes the name.
         var naming = false
     }
 
     private init() {
         statusMenu.onDismiss = { [weak self] in self?.dismiss() }
         projectMenu.onDismiss = { [weak self] in self?.dismiss() }
+        areaMenu.onDismiss = { [weak self] in self?.dismiss() }
         calendar.onDismiss = { [weak self] in self?.dismiss() }
         projectMenu.onSearch = { [weak self] _ in self?.showProjects() }
+        areaMenu.onSearch = { [weak self] _ in self?.showAreas() }
         NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { PropertyPicker.shared.close() }
         }
@@ -84,6 +89,15 @@ final class PropertyPicker {
         showProjects()
     }
 
+    /// Opens the area menu for `projects` under `anchor`, or closes it when it's open.
+    func pickArea(of projects: [Item], model: AppModel, anchor: ScreenAnchor) {
+        guard let window = anchor.window, let first = projects.first, toggle(first.path, "area", anchor: anchor.rect) else { return }
+        projectMenuContext = ProjectMenuContext(tasks: projects, model: model, anchor: anchor.rect, gap: 6, window: window)
+        areaMenu.query = ""
+        areaMenu.searchPrompt = AreaChoice.findPrompt
+        showAreas()
+    }
+
     /// Opens `kind`'s calendar for `items` under `anchor`, or closes it when it's open.
     func pickDate(_ kind: AgendaEntry.Kind, of items: [Item], model: AppModel, anchor: ScreenAnchor, gap: CGFloat = 6) {
         guard let window = anchor.window else { return }
@@ -118,6 +132,7 @@ final class PropertyPicker {
     func close() {
         statusMenu.hide()
         projectMenu.hide()
+        areaMenu.hide()
         calendar.hide()
         if let ringed, ringed.model.menuTarget == ringed.path {
             ringed.model.menuTarget = nil
@@ -161,12 +176,8 @@ final class PropertyPicker {
     private func showProjects() {
         guard let context = projectMenuContext else { return }
         let index = context.model.index
-        // Several tasks have a current project, or are loose, only when they all agree.
-        let projects = Set(context.tasks.map { index.project(of: $0)?.path })
-        let current = projects.count == 1 ? context.tasks.first.flatMap { index.project(of: $0) }.map { index.progress(of: $0) } : nil
         let existing = Set(index.projects.map { String($0.path.split(separator: "/").last ?? "") })
-        let menu = ProjectChoice.menu(projects: context.model.projects, current: current,
-                                      isLoose: context.tasks.allSatisfy { $0.properties.project == nil }, query: projectMenu.query,
+        let menu = ProjectChoice.menu(index: index, tasks: context.tasks, query: projectMenu.query,
                                       naming: context.naming, existing: existing)
         projectMenu.show(menu.sections, highlight: menu.highlight, theme: context.model.theme, below: context.anchor,
                          inset: 0, gap: context.gap, in: context.window) { [weak self] choice in
@@ -185,12 +196,50 @@ final class PropertyPicker {
         close()
         let model = context.model, paths = context.tasks.map(\.path)
         switch choice {
-        case .project(let progress, let isCurrent):
+        case .project(let progress, _, let isCurrent):
             if !isCurrent { Task { await model.setParent(progress.project, of: paths) } }
+        case .area(let area, let isCurrent):
+            if !isCurrent { Task { await model.setParent(area, of: paths) } }
         case .loose(let isCurrent):
             if !isCurrent { Task { await model.setParent(nil, of: paths) } }
+        case .createArea(let name):
+            Task { await model.newArea(named: name) }
         case .new(let name, _):
             Task { await model.newProject(named: name, linking: paths) }
+        }
+    }
+
+    private func showAreas() {
+        guard let context = projectMenuContext else { return }
+        let index = context.model.index
+        let existing = Set(index.areas.map { String($0.path.split(separator: "/").last ?? "") })
+        let menu = AreaChoice.menu(index: index, projects: context.tasks, query: areaMenu.query, naming: context.naming,
+                                   existing: existing)
+        areaMenu.show(menu.sections, highlight: menu.highlight, theme: context.model.theme, below: context.anchor,
+                      inset: 0, gap: context.gap, in: context.window) { [weak self] choice in
+            self?.pickArea(choice)
+        }
+    }
+
+    private func pickArea(_ choice: AreaChoice) {
+        guard let context = projectMenuContext else { return }
+        if case .new(let name, _) = choice, name.isEmpty {
+            projectMenuContext?.naming = true
+            areaMenu.searchPrompt = AreaChoice.namePrompt
+            showAreas()
+            return
+        }
+        close()
+        let model = context.model, paths = context.tasks.map(\.path)
+        switch choice {
+        case .area(let area, _, let isCurrent):
+            if !isCurrent { Task { await model.setParent(area, of: paths) } }
+        case .none(let isCurrent):
+            if !isCurrent { Task { await model.setParent(nil, of: paths) } }
+        case .create(let name):
+            Task { await model.newArea(named: name) }
+        case .new(let name, _):
+            Task { await model.newArea(named: name, filing: paths) }
         }
     }
 }
@@ -262,71 +311,223 @@ private struct StatusChoiceRow: View {
     }
 }
 
-/// A row of the project menu.
+/// A row of the move menu.
 enum ProjectChoice: PopupMenuItem {
-    case project(ProjectProgress, isCurrent: Bool)
-    /// Takes the task out of its project.
+    /// `inArea` indents it under its area's row.
+    case project(ProjectProgress, inArea: Bool, isCurrent: Bool)
+    case area(Item, isCurrent: Bool)
+    /// Takes the task out of its project or area.
     case loose(isCurrent: Bool)
-    /// Creates a project called `name` at `path` and links the task to it; with no name, asks for one.
+    /// Creates the area the tasks name that has no file.
+    case createArea(String)
+    /// Creates a project called `name` at `path` and files the task in it; with no name, asks for one.
     case new(name: String, path: String)
 
-    static let findPrompt = "Find a project"
+    static let findPrompt = "Move to project or area"
     static let namePrompt = "Name the new project"
 
     var title: String {
         switch self {
-        case .project(let progress, _): progress.project.title
-        case .loose: "No project"
+        case .project(let progress, _, _): progress.project.title
+        case .area(let area, _): area.title
+        case .loose: "Loose tasks"
+        case .createArea(let name): "Create Area “\(name)”"
         case .new(let name, _): name.isEmpty ? "New project…" : "New project “\(name)”"
         }
     }
 
     var accessibilityValue: String {
         switch self {
-        case .project(let progress, let isCurrent): (isCurrent ? "Current, " : "") + "\(progress.open) open"
-        case .loose(let isCurrent): (isCurrent ? "Current, " : "") + "loose task"
+        case .project(let progress, _, let isCurrent): (isCurrent ? "Current, " : "") + "\(progress.open) open"
+        case .area(_, let isCurrent): (isCurrent ? "Current, " : "") + "area"
+        case .loose(let isCurrent): isCurrent ? "Current" : ""
+        case .createArea(let name): "\(Vault.areaFolder)/\(FileNaming.sanitise(name)).md"
         case .new(_, let path): path
         }
     }
 
     var isCurrent: Bool {
         switch self {
-        case .project(_, let isCurrent), .loose(let isCurrent): isCurrent
-        case .new: false
+        case .project(_, _, let isCurrent), .area(_, let isCurrent), .loose(let isCurrent): isCurrent
+        case .createArea, .new: false
         }
     }
 
-    /// The menu for what's typed in its search field, and the row to highlight. It lists the active projects,
-    /// and the task's own project when that isn't active, whose titles contain the text; then No project (until
-    /// something's typed) and New project. While naming a new project, New project is the only row. The current
-    /// row is highlighted, or the first when the text doesn't match it.
-    static func menu(projects: [ProjectProgress], current: ProjectProgress?, isLoose: Bool, query: String,
-                     naming: Bool, existing: Set<String>) -> (sections: [PopupMenuSection<ProjectChoice>], highlight: Int?) {
+    /// The move menu for `tasks` and what's typed in its search field, and the row to highlight. Create Area first
+    /// when the tasks all name the same area that has no file; Loose tasks; the active projects without an area; each
+    /// area followed by its active projects; then New project. The tasks' own project is listed when it isn't active.
+    /// Typing keeps the rows whose titles contain the text and drops Create Area and Loose tasks. While naming a new
+    /// project, New project is the only row. The current row is highlighted, or the first when the text doesn't match it.
+    static func menu(index: VaultIndex, tasks: [Item], query: String, naming: Bool, existing: Set<String>)
+        -> (sections: [PopupMenuSection<ProjectChoice>], highlight: Int?) {
         let name = query.trimmingCharacters(in: .whitespaces)
         let path = name.isEmpty ? "" : "\(Vault.projectFolder)/\(FileNaming.filename(for: name, existing: existing))"
         let new = ProjectChoice.new(name: name, path: path)
         if naming { return ([PopupMenuSection(items: [new])], 0) }
 
-        var listed = projects
-        if let current, !listed.contains(where: { $0.project.path == current.project.path }) {
-            listed.append(current)
-            listed.sort { a, b in
-                let order = a.project.title.localizedStandardCompare(b.project.title)
-                return order == .orderedSame ? a.project.path < b.project.path : order == .orderedAscending
+        // Several tasks have a current parent, or are loose, only when they all agree.
+        let parents = Set(tasks.map { index.parent(of: $0)?.path })
+        let current = parents.count == 1 ? tasks.first.flatMap { index.parent(of: $0) } : nil
+        let isLoose = tasks.allSatisfy { $0.properties.project == nil && $0.properties.area == nil }
+        let unresolved = Set(tasks.map { task in
+            task.properties.area.flatMap { index.parent(of: task) == nil ? $0.title : nil }
+        })
+        func matches(_ title: String) -> Bool { name.isEmpty || title.localizedStandardContains(name) }
+        /// The project rows under `area` (nil for those without one), with the current project when it's done.
+        func rows(_ projects: [ProjectProgress], in area: Item?) -> [ProjectChoice] {
+            var projects = projects
+            if let current, current.properties.kind == .project, current.properties.status == .done,
+               index.area(of: current)?.path == area?.path {
+                projects = (projects + [index.progress(of: current)]).sorted { VaultIndex.byTitle($0.project, $1.project) }
             }
+            return projects.filter { matches($0.project.title) }
+                .map { .project($0, inArea: area != nil, isCurrent: $0.project.path == current?.path) }
         }
-        let rows = listed.filter { name.isEmpty || $0.project.title.localizedStandardContains(name) }
-            .map { ProjectChoice.project($0, isCurrent: $0.project.path == current?.project.path) }
-        let others = (name.isEmpty ? [ProjectChoice.loose(isCurrent: isLoose)] : []) + [new]
-        let currentRow = (rows + others).firstIndex(where: \.isCurrent)
-        return ([PopupMenuSection(label: "Projects", items: rows), PopupMenuSection(items: others)],
-                name.isEmpty ? currentRow : currentRow ?? 0)
+
+        var sections: [PopupMenuSection<ProjectChoice>] = []
+        if name.isEmpty, unresolved.count == 1, let area = unresolved.first ?? nil {
+            sections.append(PopupMenuSection(items: [.createArea(area)]))
+        }
+        if name.isEmpty { sections.append(PopupMenuSection(items: [.loose(isCurrent: isLoose)])) }
+        sections.append(PopupMenuSection(items: rows(index.looseProjects(), in: nil)))
+        for entry in index.areaProjects() {
+            let area: [ProjectChoice] = matches(entry.area.title) ? [.area(entry.area, isCurrent: entry.area.path == current?.path)] : []
+            sections.append(PopupMenuSection(items: area + rows(entry.projects, in: entry.area)))
+        }
+        sections.append(PopupMenuSection(items: [new]))
+        sections = sections.filter { !$0.items.isEmpty }
+        let items = sections.flatMap(\.items)
+        let currentRow = items.firstIndex(where: \.isCurrent)
+        return (sections, name.isEmpty ? currentRow : currentRow ?? 0)
     }
 }
 
-/// A project's ring, title and open tasks; No project; or New project with the file it would make.
+/// A project's ring, title and open tasks; an area's cube and title; Loose tasks; Create Area; or New project with
+/// the file it would make.
 private struct ProjectChoiceRow: View {
     let choice: ProjectChoice
+    let isHighlighted: Bool
+    let theme: Theme
+
+    var body: some View {
+        HStack(spacing: 10) {
+            icon.frame(width: 16)
+            Text(choice.title)
+                .fontWeight(isArea ? .semibold : .regular)
+                .foregroundStyle(theme.color(isHighlighted || isArea ? \.strong : \.fg))
+                .lineLimit(1)
+            Spacer(minLength: 8)
+            switch choice {
+            case .project(let progress, _, let isCurrent):
+                if isCurrent { CurrentTick(theme: theme) }
+                Text("\(progress.open)")
+                    .font(.system(size: 12, weight: .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(theme.color(\.muted))
+                    .frame(minWidth: 14, alignment: .trailing)
+            case .area(_, let isCurrent), .loose(let isCurrent):
+                if isCurrent { CurrentTick(theme: theme) }
+            case .createArea:
+                EmptyView()
+            case .new(_, let path):
+                if !path.isEmpty {
+                    Text(path)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(theme.color(\.muted))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+            }
+        }
+        .padding(.leading, isIndented ? 25 : 0)
+    }
+
+    private var isArea: Bool { if case .area = choice { true } else { false } }
+    private var isIndented: Bool { if case .project(_, true, _) = choice { true } else { false } }
+
+    @ViewBuilder private var icon: some View {
+        switch choice {
+        case .project(let progress, _, _):
+            ProgressRing(fraction: progress.fraction).foregroundStyle(theme.color(\.accent))
+        case .area, .createArea:
+            AreaIcon().environment(\.theme, theme)
+        case .loose:
+            Image(systemName: "tray").font(.system(size: 12)).foregroundStyle(theme.color(\.accent))
+        case .new:
+            Image(systemName: "plus").font(.system(size: 12)).foregroundStyle(theme.color(\.muted))
+        }
+    }
+}
+
+/// A row of a project's area menu.
+enum AreaChoice: PopupMenuItem {
+    case area(Item, projects: Int, isCurrent: Bool)
+    /// Takes the project out of its area.
+    case none(isCurrent: Bool)
+    /// Creates the area the projects name that has no file.
+    case create(String)
+    /// Creates an area called `name` at `path` and files the project in it; with no name, asks for one.
+    case new(name: String, path: String)
+
+    static let findPrompt = "Search areas"
+    static let namePrompt = "Name the new area"
+
+    var title: String {
+        switch self {
+        case .area(let area, _, _): area.title
+        case .none: "No area"
+        case .create(let name): "Create Area “\(name)”"
+        case .new(let name, _): name.isEmpty ? "New Area…" : "New Area “\(name)”"
+        }
+    }
+
+    var accessibilityValue: String {
+        switch self {
+        case .area(_, let projects, let isCurrent): (isCurrent ? "Current, " : "") + (projects == 1 ? "1 project" : "\(projects) projects")
+        case .none(let isCurrent): isCurrent ? "Current" : ""
+        case .create(let name): "\(Vault.areaFolder)/\(FileNaming.sanitise(name)).md"
+        case .new(_, let path): path
+        }
+    }
+
+    var isCurrent: Bool {
+        switch self {
+        case .area(_, _, let isCurrent), .none(let isCurrent): isCurrent
+        case .create, .new: false
+        }
+    }
+
+    /// The area menu for `projects`: Create Area when they all name the same area that has no file, the areas whose
+    /// titles contain what's typed, then No area (until something's typed) and New Area. While naming a new area,
+    /// New Area is the only row. The current row is highlighted, or the first when the text doesn't match it.
+    static func menu(index: VaultIndex, projects: [Item], query: String, naming: Bool, existing: Set<String>)
+        -> (sections: [PopupMenuSection<AreaChoice>], highlight: Int?) {
+        let name = query.trimmingCharacters(in: .whitespaces)
+        let path = name.isEmpty ? "" : "\(Vault.areaFolder)/\(FileNaming.filename(for: name, existing: existing))"
+        let new = AreaChoice.new(name: name, path: path)
+        if naming { return ([PopupMenuSection(items: [new])], 0) }
+
+        let areas = Set(projects.map { index.area(of: $0)?.path })
+        let current = areas.count == 1 ? areas.first ?? nil : nil
+        let unresolved = Set(projects.map { project in project.properties.area.flatMap { index.area(of: project) == nil ? $0.title : nil } })
+        let rows = index.areaProjects().filter { name.isEmpty || $0.area.title.localizedStandardContains(name) }
+            .map { AreaChoice.area($0.area, projects: index.projects(in: $0.area).count, isCurrent: $0.area.path == current) }
+        let isNone = projects.allSatisfy { $0.properties.area == nil }
+        var sections: [PopupMenuSection<AreaChoice>] = []
+        if name.isEmpty, unresolved.count == 1, let area = unresolved.first ?? nil {
+            sections.append(PopupMenuSection(items: [.create(area)]))
+        }
+        sections.append(PopupMenuSection(label: "Areas", items: rows))
+        sections.append(PopupMenuSection(items: (name.isEmpty ? [AreaChoice.none(isCurrent: isNone)] : []) + [new]))
+        sections = sections.filter { !$0.items.isEmpty }
+        let currentRow = sections.flatMap(\.items).firstIndex(where: \.isCurrent)
+        return (sections, name.isEmpty ? currentRow : currentRow ?? 0)
+    }
+}
+
+/// An area's cube, title and project count; No area; Create Area; or New Area with the file it would make.
+private struct AreaChoiceRow: View {
+    let choice: AreaChoice
     let isHighlighted: Bool
     let theme: Theme
 
@@ -338,18 +539,18 @@ private struct ProjectChoiceRow: View {
                 .lineLimit(1)
             Spacer(minLength: 8)
             switch choice {
-            case .project(let progress, let isCurrent):
+            case .area(_, let projects, let isCurrent):
+                if projects > 0 {
+                    Text("\(projects)")
+                        .font(.system(size: 12, weight: .medium))
+                        .monospacedDigit()
+                        .foregroundStyle(theme.color(\.muted))
+                }
                 if isCurrent { CurrentTick(theme: theme) }
-                Text("\(progress.open)")
-                    .font(.system(size: 12, weight: .medium))
-                    .monospacedDigit()
-                    .foregroundStyle(theme.color(\.muted))
-                    .frame(minWidth: 14, alignment: .trailing)
-            case .loose(let isCurrent):
+            case .none(let isCurrent):
                 if isCurrent { CurrentTick(theme: theme) }
-                Text("Loose task")
-                    .font(.system(size: 11))
-                    .foregroundStyle(theme.color(\.muted))
+            case .create:
+                EmptyView()
             case .new(_, let path):
                 if !path.isEmpty {
                     Text(path)
@@ -364,10 +565,10 @@ private struct ProjectChoiceRow: View {
 
     @ViewBuilder private var icon: some View {
         switch choice {
-        case .project(let progress, _):
-            ProgressRing(fraction: progress.fraction).foregroundStyle(theme.color(\.accent))
-        case .loose:
-            Image(systemName: "tray").font(.system(size: 12)).foregroundStyle(theme.color(\.muted))
+        case .area, .create:
+            AreaIcon().environment(\.theme, theme)
+        case .none:
+            Image(systemName: "xmark").font(.system(size: 12)).foregroundStyle(theme.color(\.muted))
         case .new:
             Image(systemName: "plus").font(.system(size: 12)).foregroundStyle(theme.color(\.muted))
         }

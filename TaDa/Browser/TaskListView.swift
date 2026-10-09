@@ -1,4 +1,5 @@
-// Today and Loose tasks: a header, loose tasks first, then one group per project.
+// Today and Loose tasks: a header, tasks without a parent first, then loose projects' groups, then each area's own
+// tasks under its heading followed by its projects' groups.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -43,19 +44,47 @@ struct TaskListView: View {
     }
 
     private func list(_ groups: [TaskGroup]) -> some View {
-        ForEach(groups) { group in
+        ForEach(sections(groups), id: \.first?.id) { section in
             VStack(alignment: .leading, spacing: 1) {
-                if let project = group.parent, project.properties.kind == .project {
-                    ProjectGroupHeader(project: project, fraction: model.index.progress(of: project).fraction)
+                ForEach(section) { group in
+                    header(group)
+                    ForEach(group.tasks) { task in
+                        TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,
+                                dates: kind == .today ? .overdueDueAndDeadline : .labelled,
+                                onToggle: { Task { await model.toggleCompletion(task) } },
+                                onSelect: { model.click(task.path) })
+                        .fileMenu(model, path: task.path)
+                        .taskDrag(model, path: task.path)
+                    }
                 }
-                ForEach(group.tasks) { task in
-                    TaskRow(item: task, selected: model.isSelected(task.path), today: model.today,
-                            dates: kind == .today ? .overdueDueAndDeadline : .labelled,
-                            onToggle: { Task { await model.toggleCompletion(task) } },
-                            onSelect: { model.click(task.path) })
-                    .fileMenu(model, path: task.path)
-                    .taskDrag(model, path: task.path)
-                }
+            }
+        }
+    }
+
+    /// The groups split where the list leaves space: an area's projects stay in its section.
+    private func sections(_ groups: [TaskGroup]) -> [[TaskGroup]] {
+        var sections: [[TaskGroup]] = []
+        for group in groups {
+            if let parent = group.parent, parent.properties.kind == .project, model.index.area(of: parent) != nil, !sections.isEmpty {
+                sections[sections.count - 1].append(group)
+            } else {
+                sections.append([group])
+            }
+        }
+        return sections
+    }
+
+    @ViewBuilder private func header(_ group: TaskGroup) -> some View {
+        if let parent = group.parent {
+            switch parent.properties.kind {
+            case .area:
+                AreaGroupHeader(area: parent)
+            case .project where model.index.area(of: parent) != nil:
+                ProjectSubheader(project: parent, fraction: model.index.progress(of: parent).fraction)
+            case .project:
+                ProjectGroupHeader(project: parent, fraction: model.index.progress(of: parent).fraction)
+            case .task:
+                EmptyView()
             }
         }
     }

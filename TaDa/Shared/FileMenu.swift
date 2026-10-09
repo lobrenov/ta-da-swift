@@ -1,6 +1,7 @@
-// The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on a
+// The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on an area,
 // project or task. Rows add it with `.fileMenu(model, path:)`. Move (tasks), Schedule, Set Deadline…, Reveal in
-// Finder and Delete everywhere; Restore, Reveal in Finder and Delete Forever in Trash.
+// Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Reveal in Finder and
+// Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
 #if os(macOS)
 import SwiftUI
 import AppKit
@@ -28,6 +29,9 @@ struct FileMenuAction: PopupMenuItem {
     /// file. Move, Schedule and Set Deadline… open their menu at `point` (screen coordinates) in `window`, else under
     /// the row or the open file's chip.
     static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
+        if let area = model.index[path], area.properties.kind == .area {
+            return areaActions(for: area, model: model)
+        }
         guard path.hasPrefix(Vault.trashFolder + "/") else {
             let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
             let tasks = model.moveTargets(for: path)
@@ -72,6 +76,27 @@ struct FileMenuAction: PopupMenuItem {
             FileMenuAction(title: "Delete Forever", systemImage: "xmark.bin", shortcut: "⌥⌘⌫",
                            isDestructive: true, startsGroup: true) {
                 Task { await model.discard(paths) }
+            },
+        ]
+    }
+
+    /// An area's page opens before a new file is made in it, so the file lands there.
+    private static func areaActions(for area: Item, model: AppModel) -> [FileMenuAction] {
+        [
+            FileMenuAction(title: "New Task in \(area.title)", systemImage: "plus", shortcut: "") {
+                model.show(.area(area.path))
+                Task { await model.newTask() }
+            },
+            FileMenuAction(title: "New Project in \(area.title)", systemImage: "plus", shortcut: "") {
+                model.show(.area(area.path))
+                Task { await model.newProject() }
+            },
+            FileMenuAction(title: "Open Area File", systemImage: "doc", shortcut: "", startsGroup: true) {
+                model.open(area.path)
+            },
+            reveal([area.path], model: model),
+            FileMenuAction(title: "Delete", systemImage: "trash", shortcut: "⌘⌫", startsGroup: true) {
+                Task { await model.moveToTrash([area.path]) }
             },
         ]
     }

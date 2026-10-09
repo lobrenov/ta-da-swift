@@ -12,8 +12,8 @@ extension View {
         modifier(TaskDragSource(model: model, path: path))
     }
 
-    /// Holds the rows `.taskDrag` makes draggable: drags the picked tasks when a picked row is dragged, else the
-    /// dragged row's, as copies of their files.
+    /// Holds the rows `.taskDrag` (or `.draggable(containerItemID:)`, as the sidebar's projects) makes draggable: drags
+    /// the picked tasks when a picked row is dragged, else the dragged row's, as copies of their files.
     func taskDragContainer(_ model: AppModel) -> some View {
         dragContainer(for: TaskFile.self, itemID: \.path) { paths in
             paths.compactMap { path in model.vault.map { TaskFile(path: path, url: $0.url(for: path)) } }

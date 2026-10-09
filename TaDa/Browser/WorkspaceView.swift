@@ -1,5 +1,5 @@
 // The area right of the sidebar: a domain's list beside the selected document, Upcoming's month view
-// when nothing is selected, or a project's own page.
+// when nothing is selected, or a project's or area's own page.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -15,7 +15,7 @@ struct WorkspaceView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if model.index.items.isEmpty, model.domain != .trash {
                 EmptyState(systemImage: "doc.badge.plus", title: "No Ta Da files yet",
-                           message: "Nothing in “\(model.folderDisplayName)” has `type: task` or `type: project` frontmatter.")
+                           message: "Nothing in “\(model.folderDisplayName)” has `type: task`, `type: project` or `type: area` frontmatter.")
             } else {
                 domain
             }
@@ -69,8 +69,17 @@ struct WorkspaceView: View {
                 EmptyState(systemImage: "questionmark.folder", title: "Project not found",
                            message: "This project’s file is no longer in the folder.")
             }
-        case .area:
-            DocumentPane(model: model)
+        case let .area(path):
+            if let area = model.index[path] {
+                if model.selection == path {
+                    DocumentPane(model: model)
+                } else {
+                    split { AreaBrowserView(model: model, area: area) }
+                }
+            } else {
+                EmptyState(systemImage: "questionmark.folder", title: "Area not found",
+                           message: "This area’s file is no longer in the folder.")
+            }
         }
     }
 

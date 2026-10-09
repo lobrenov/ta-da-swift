@@ -88,6 +88,9 @@ struct AreaModelTests {
         await model.moveToTrash(["areas/Home.md"])
         #expect(model.trashConfirmation?.count == 4)
         #expect(model.index["areas/Home.md"] != nil)
+        let text = TrashConfirmationText(model: model)
+        #expect(text.title == "Delete “Home”?")
+        #expect(text.message.hasPrefix("Home, its 1 project and their 1 task, and its 1 own task move to the Trash."))
 
         await model.confirmTrash()
         #expect(model.trashConfirmation == nil && model.domain == .today)

@@ -137,6 +137,45 @@ struct ProjectGroupHeader: View {
     }
 }
 
+/// An area's heading inside a list: its cube and title over a rule.
+struct AreaGroupHeader: View {
+    let area: Item
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 8) {
+                AreaIcon()
+                Text(area.title).fontWeight(.semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+            }
+            .padding(.horizontal, 10)
+            Hairline()
+        }
+        .padding(.bottom, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A project's heading under its area's: its ring and title, smaller and without a rule.
+struct ProjectSubheader: View {
+    let project: Item
+    let fraction: Double
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ProgressRing(fraction: fraction).foregroundStyle(theme.color(\.accent))
+            Text(project.title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(theme.color(\.fg)).lineLimit(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 3)
+        .padding(.top, 8)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
 /// A muted group name with a count on the right, over a rule ("Open 6"). With `isExpanded`, a chevron before the
 /// name points down when the group is open and right when it's folded, and clicking the header folds or opens it.
 struct CountGroupHeader: View {

@@ -53,12 +53,37 @@ struct DesignRenderTests {
                 try await render(model, to: output.appending(path: "\(theme.name)-\(name).png"))
             }
         }
+
+        // Areas, on TaDaCore's AreaVault fixture, in the default dark scheme.
+        let areas = AppModel(defaults: TestSettings())
+        areas.today = LocalDate("2026-10-02")!
+        await areas.choose(URL(filePath: #filePath).deletingLastPathComponent()
+            .appending(path: "../Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/AreaVault").standardized)
+        areas.appearance = .dark
+        let areaScreens: [(String, AppModel.Domain, String?)] = [
+            ("area", .area("areas/Personal.md"), "tasks/Pay rent.md"),
+            ("area-file", .area("areas/Personal.md"), "areas/Personal.md"),
+            ("area-today", .today, "tasks/Build the sidebar.md"),
+            ("area-project", .project("projects/Ta Da.md"), "projects/Ta Da.md"),
+        ]
+        for (name, domain, selection) in areaScreens {
+            areas.domain = domain
+            areas.selection = selection
+            try await render(areas, to: output.appending(path: "\(name).png"))
+        }
+        // The window's sidebar is glass, which doesn't draw here, so the sidebar also renders on its own.
+        areas.domain = .area("areas/Personal.md")
+        try await render(SidebarView(model: areas).themed(by: areas), width: 240, to: output.appending(path: "area-sidebar.png"))
     }
 
     private func render(_ model: AppModel, to url: URL) async throws {
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 800),
+        try await render(ContentView(model: model), width: 1280, to: url)
+    }
+
+    private func render(_ view: some View, width: CGFloat, to url: URL) async throws {
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: 800),
                               styleMask: [.titled, .closable, .resizable, .fullSizeContentView], backing: .buffered, defer: false)
-        window.contentView = NSHostingView(rootView: ContentView(model: model))
+        window.contentView = NSHostingView(rootView: view)
         window.makeKeyAndOrderFront(nil)
         try await Task.sleep(for: .milliseconds(600))
         let view = try #require(window.contentView?.superview ?? window.contentView)

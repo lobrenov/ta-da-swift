@@ -1,5 +1,5 @@
 // Trash: the Ta Da files in `.trash/`. A click picks a row; shift- and ⌘-click pick several. Picked files are
-// restored to `tasks/` and `projects/`, and Empty Trash moves everything to the Mac's Trash. A single pane, like
+// restored to `tasks/`, `projects/` and `areas/` with their parents, and Empty Trash moves everything to the Mac's Trash. A single pane, like
 // the other archive views.
 #if os(macOS)
 import SwiftUI
@@ -24,7 +24,7 @@ struct TrashView: View {
                     }
                     if model.trash.isEmpty {
                         EmptyState(systemImage: AppModel.Domain.trash.systemImage, title: "Trash is empty",
-                                   message: "Deleted tasks and projects wait here.")
+                                   message: "Deleted tasks, projects and areas wait here.")
                             .padding(.top, 40)
                     } else {
                         VStack(alignment: .leading, spacing: 2) {
@@ -81,7 +81,7 @@ struct TrashView: View {
             .disabled(picked == 0)
             .help("Restore (⌘⌫)")
             if !isEmpty {
-                Text(picked == 0 ? "Select files to restore them" : "Restored files return to tasks/ and projects/")
+                Text(picked == 0 ? "Select files to restore them" : "Restored files return to their folders, with their project and area")
                     .font(.system(size: 12))
                     .foregroundStyle(theme.color(\.muted))
             }
@@ -130,15 +130,24 @@ struct TrashView: View {
 
     private func row(_ entry: TrashedItem) -> some View {
         let item = entry.item
-        let isProject = item.properties.kind == .project
+        let p = item.properties
+        let isProject = p.kind == .project
         let isPicked = model.isSelected(entry.id)
         let tasks = isProject ? TrashedItem.tasks(of: item, in: model.trash) : []
+        let contents = p.kind == .area ? TrashedItem.contents(of: item, in: model.trash) : nil
+        let place = switch p.kind {
+        case .area: "Area · deleted with \(count(contents?.projects.count ?? 0, "project")) and \(count(contents?.tasks.count ?? 0, "task"))"
+        case .project: p.area?.title ?? "Project"
+        case .task: p.project?.title ?? p.area?.title ?? "Loose task"
+        }
         return Button {
             model.click(entry.id)
             model.trashNote = nil
         } label: {
             HStack(alignment: .top, spacing: 12) {
-                if isProject {
+                if p.kind == .area {
+                    AreaIcon().padding(.top, 2)
+                } else if isProject {
                     let done = tasks.count { $0.item.properties.status == .done }
                     ProgressRing(fraction: tasks.isEmpty ? 0 : Double(done) / Double(tasks.count))
                         .foregroundStyle(theme.color(\.accent))
@@ -152,7 +161,7 @@ struct TrashView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 8) {
                         Text(item.title)
-                            .font(.system(size: 13.5, weight: isProject ? .semibold : .regular))
+                            .font(.system(size: 13.5, weight: p.kind == .task ? .regular : .semibold))
                             .foregroundStyle(theme.color(isPicked ? \.strong : \.fg))
                         if !tasks.isEmpty {
                             Text("\(tasks.count)")
@@ -163,7 +172,7 @@ struct TrashView: View {
                                 .accessibilityLabel("\(tasks.count) tasks")
                         }
                     }
-                    Text(isProject ? item.properties.area?.title ?? "Project" : item.properties.project?.title ?? "Loose task")
+                    Text(place)
                         .font(.system(size: 11.5))
                         .foregroundStyle(theme.color(\.muted))
                 }
@@ -189,4 +198,5 @@ struct TrashView: View {
         .fileMenu(model, path: entry.id)
     }
 }
+private func count(_ n: Int, _ noun: String) -> String { n == 1 ? "1 \(noun)" : "\(n) \(noun)s" }
 #endif

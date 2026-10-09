@@ -210,14 +210,15 @@ private func columns(_ status: some View, _ title: some View, _ due: some View, 
     .padding(.horizontal, 16)
 }
 
-/// Creates a task linked to the current project and opens it with its title ready to type.
+/// Creates a task filed under the current project or area and opens it with its title ready to type.
 struct NewLinkedTaskButton: View {
     let model: AppModel
+    var title = "New linked task"
     @Environment(\.theme) private var theme
 
     var body: some View {
         Button(action: create) {
-            Label("New linked task", systemImage: "plus")
+            Label(title, systemImage: "plus")
                 .font(.system(size: 12))
                 .foregroundStyle(theme.color(\.muted))
                 .padding(.horizontal, 10)

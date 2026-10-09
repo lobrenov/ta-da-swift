@@ -101,7 +101,7 @@ public struct VaultIndex: Sendable {
         return warnings
     }
 
-    static func byTitle(_ a: Item, _ b: Item) -> Bool {
+    public static func byTitle(_ a: Item, _ b: Item) -> Bool {
         let order = a.title.localizedStandardCompare(b.title)
         return order == .orderedSame ? a.path < b.path : order == .orderedAscending
     }

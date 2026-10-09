@@ -1,4 +1,4 @@
-// Menu commands: ⌘N/⇧⌘N new task/project; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
+// Menu commands: ⌘N/⇧⌘N/⌥⌘N new task/project/area; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on, ⇧⌘M move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline.
 #if os(macOS)
@@ -16,6 +16,9 @@ struct AppCommands: Commands {
                 .disabled(model.state != .ready)
             Button("New Project") { Task { await model.newProject() } }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
+                .disabled(model.state != .ready)
+            Button("New Area") { Task { await model.newArea() } }
+                .keyboardShortcut("n", modifiers: [.command, .option])
                 .disabled(model.state != .ready)
             Divider()
             Button("Reveal in Finder") { model.revealInFinder(model.picked.sorted()) }

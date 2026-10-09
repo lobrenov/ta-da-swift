@@ -41,6 +41,14 @@ struct FileMenuTests {
         #expect(actions.first { $0.title == "Reveal in Finder" }?.shortcut == "")
     }
 
+    @Test func anAreasMenuMakesFilesInItOpensItAndDeletes() async throws {
+        try folder.write("---\ntype: area\n---\n", "areas/Home.md")
+        let model = await folder.model()
+        #expect(titles("areas/Home.md", model) == ["New Task in Home", "New Project in Home", "Open Area File", "Reveal in Finder", "Delete"])
+        FileMenuAction.actions(for: "areas/Home.md", model: model).first { $0.title == "Open Area File" }?.run()
+        #expect(model.domain == .area("areas/Home.md") && model.selection == "areas/Home.md")
+    }
+
     @Test func aDraggedTaskIsItsFile() async throws {
         let model = await folder.model()
         let url = try #require(model.vault?.url(for: "tasks/One.md"))

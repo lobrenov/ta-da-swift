@@ -1,6 +1,7 @@
-// A file's properties under its title, as the canvas's Properties page draws them: status, project (on a task),
-// due date and deadline as chips that open pickers, with a dashed chip for a missing one; then the type and the
-// days the file was created and completed in a quiet line. Area, contexts and repeat aren't shown.
+// A file's properties under its title, as the canvas's Properties page draws them: status, the parent (a task's
+// project or area, a project's area), due date and deadline as chips that open pickers, with a dashed chip for a
+// missing one; then the type, a task's area through its project, and the days the file was created and completed in
+// a quiet line. An area has only the quiet line. Repeat isn't shown.
 import SwiftUI
 import TaDaCore
 #if os(macOS)
@@ -12,7 +13,9 @@ struct PropertyChips: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            PropertyChipRow(model: model, item: item)
+            if item.properties.kind != .area {
+                PropertyChipRow(model: model, item: item)
+            }
             QuietLine(model: model, item: item)
         }
     }
@@ -27,8 +30,10 @@ struct PropertyChipRow<Trailing: View>: View {
     var body: some View {
         WrappingHStack(spacing: 6) {
             StatusPropertyChip(model: model, item: item)
-            if item.properties.kind == .task {
-                ProjectPropertyChip(model: model, task: item)
+            switch item.properties.kind {
+            case .task: ParentPropertyChip(model: model, task: item)
+            case .project: AreaPropertyChip(model: model, project: item)
+            case .area: EmptyView()
             }
             DatePropertyChip(kind: .due, model: model, item: item)
             DatePropertyChip(kind: .deadline, model: model, item: item)
@@ -79,37 +84,46 @@ private struct StatusPropertyChip: View {
     }
 }
 
-/// A task's project with its ring, in `link`; struck through in `muted` when no project has that title.
-/// Clicking or ⇧⌘M picks another; ⌘-click opens the project.
-private struct ProjectPropertyChip: View {
+/// A task's project with its ring, or its area with its cube, in `link`; struck through in `muted` when no file has
+/// that title. Clicking or ⇧⌘M opens the move menu; ⌘-click opens the project or area.
+private struct ParentPropertyChip: View {
     let model: AppModel
     let task: Item
     @State private var anchor = ScreenAnchor()
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let link = task.properties.project
-        let project = model.index.project(of: task)
+        let p = task.properties
+        let parent = model.index.parent(of: task)
+        let link = p.project ?? p.area
+        let isArea = parent.map { $0.properties.kind == .area } ?? (p.project == nil && p.area != nil)
         Button {
-            if let project, NSApp.currentEvent?.modifierFlags.contains(.command) == true {
-                model.open(project.path)
+            if let parent, NSApp.currentEvent?.modifierFlags.contains(.command) == true {
+                model.open(parent.path)
             } else {
                 PropertyPicker.shared.pickProject(of: [task], model: model, anchor: anchor)
             }
         } label: {
-            if let project {
-                HStack(spacing: 7) {
-                    ProgressRing(fraction: model.index.progress(of: project).fraction)
-                        .foregroundStyle(theme.color(\.accent))
-                    Text(project.title)
+            if let parent {
+                HStack(spacing: isArea ? 6 : 7) {
+                    if isArea {
+                        AreaIcon(size: 13)
+                    } else {
+                        ProgressRing(fraction: model.index.progress(of: parent).fraction)
+                            .foregroundStyle(theme.color(\.accent))
+                    }
+                    Text(parent.title)
                 }
             } else if let link {
-                Text(link.title).strikethrough()
+                HStack(spacing: 6) {
+                    if isArea { AreaIcon(size: 13, tint: \.muted) }
+                    Text(link.title).strikethrough()
+                }
             } else {
                 MissingKeyLabel(name: "Project")
             }
         }
-        .buttonStyle(PropertyChipStyle(text: project != nil ? \.link : \.muted, isMissing: link == nil,
+        .buttonStyle(PropertyChipStyle(text: parent != nil ? \.link : \.muted, isMissing: link == nil,
                                        isOpen: PropertyPicker.shared.isOpen(task.path, "project")))
         .background(ScreenAnchorReader(anchor: anchor))
         .onChange(of: model.propertyMenuRequest) { _, request in
@@ -117,20 +131,75 @@ private struct ProjectPropertyChip: View {
             model.propertyMenuRequest = nil
             PropertyPicker.shared.pickProject(of: [task], model: model, anchor: anchor)
         }
-        .help(project.map { "⌘-click to open \($0.title)" } ?? link.map { "No project is called “\($0.title)”" } ?? "")
-        .accessibilityLabel("Project")
-        .accessibilityValue(project?.title ?? link.map { "\($0.title), not found" } ?? "None")
+        .help(parent.map { "⌘-click to open \($0.title)" }
+            ?? link.map { "No \(isArea ? "area" : "project") is called “\($0.title)”" } ?? "")
+        .accessibilityLabel(isArea ? "Area" : "Project")
+        .accessibilityValue(parent?.title ?? link.map { "\($0.title), not found" } ?? "None")
         .accessibilityActions {
-            if let project {
-                Button("Open \(project.title)") { model.open(project.path) }
+            if let parent {
+                Button("Open \(parent.title)") { model.open(parent.path) }
             }
-            ForEach(model.projects.filter { $0.project.path != project?.path }) { other in
-                Button(other.project.title) {
-                    Task { await model.setProperty("project", to: .link(title: other.project.title), in: task.path) }
-                }
+            ForEach(model.projects.filter { $0.project.path != parent?.path }) { other in
+                Button(other.project.title) { Task { await model.setParent(other.project, of: [task.path]) } }
+            }
+            ForEach(model.areas.filter { $0.area.path != parent?.path }) { other in
+                Button(other.area.title) { Task { await model.setParent(other.area, of: [task.path]) } }
             }
             if link != nil {
-                Button("No project") { Task { await model.setProperty("project", to: nil, in: task.path) } }
+                Button("Loose tasks") { Task { await model.setParent(nil, of: [task.path]) } }
+            }
+        }
+    }
+}
+
+/// A project's area with its cube, in `link`, and a chevron; struck through in `muted` when no area has that title.
+/// Clicking opens the area menu; ⌘-click opens the area.
+private struct AreaPropertyChip: View {
+    let model: AppModel
+    let project: Item
+    @State private var anchor = ScreenAnchor()
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let link = project.properties.area
+        let area = model.index.area(of: project)
+        let isOpen = PropertyPicker.shared.isOpen(project.path, "area")
+        Button {
+            if let area, NSApp.currentEvent?.modifierFlags.contains(.command) == true {
+                model.open(area.path)
+            } else {
+                PropertyPicker.shared.pickArea(of: [project], model: model, anchor: anchor)
+            }
+        } label: {
+            if let link {
+                HStack(spacing: 6) {
+                    AreaIcon(size: 13, tint: area != nil ? \.doing : \.muted)
+                    Text(link.title).strikethrough(area == nil)
+                    if area != nil {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(theme.color(isOpen ? \.fg : \.muted))
+                    }
+                }
+            } else {
+                MissingKeyLabel(name: "Area")
+            }
+        }
+        .buttonStyle(PropertyChipStyle(text: area != nil ? \.link : \.muted, isMissing: link == nil, isOpen: isOpen,
+                                       trailing: area != nil ? 9 : 11))
+        .background(ScreenAnchorReader(anchor: anchor))
+        .help(area.map { "⌘-click to open \($0.title)" } ?? link.map { "No area is called “\($0.title)”" } ?? "")
+        .accessibilityLabel("Area")
+        .accessibilityValue(area?.title ?? link.map { "\($0.title), not found" } ?? "None")
+        .accessibilityActions {
+            if let area {
+                Button("Open \(area.title)") { model.open(area.path) }
+            }
+            ForEach(model.areas.filter { $0.area.path != area?.path }) { other in
+                Button(other.area.title) { Task { await model.setParent(other.area, of: [project.path]) } }
+            }
+            if link != nil {
+                Button("No area") { Task { await model.setParent(nil, of: [project.path]) } }
             }
         }
     }
@@ -246,7 +315,8 @@ private struct PropertyChipBody<Label: View>: View {
     }
 }
 
-/// The file's type (a project's with its progress) and the days it was created and completed, in `muted`.
+/// The file's type (a project's with its progress, an area's with its counts), a task's area through its project,
+/// and the days it was created and completed, in `muted`.
 private struct QuietLine: View {
     let model: AppModel
     let item: Item
@@ -256,14 +326,18 @@ private struct QuietLine: View {
         let p = item.properties
         WrappingHStack(spacing: 14) {
             HStack(spacing: 6) {
-                if p.kind == .project {
+                switch p.kind {
+                case .project:
                     let progress = model.index.progress(of: item)
                     ProgressRing(fraction: progress.fraction)
                         .foregroundStyle(theme.color(\.accent))
                         .scaleEffect(12 / 14)
                         .frame(width: 12, height: 12)
                     Text("Project · \(progress.done) of \(progress.total) tasks done")
-                } else {
+                case .area:
+                    AreaIcon(size: 12)
+                    Text("Area · ^[\(model.index.projects(in: item).count) project](inflect: true) · ^[\(model.index.tasks(in: item).count) task](inflect: true)")
+                case .task:
                     RoundedRectangle(cornerRadius: 3)
                         .strokeBorder(theme.color(\.muted), lineWidth: 1.3)
                         .frame(width: 11, height: 11)
@@ -272,6 +346,13 @@ private struct QuietLine: View {
             }
             if let created = p.createdDate {
                 Text("Created \(created.relativeLabel(today: model.today))")
+            }
+            if p.kind == .task, p.project != nil, let area = model.index.area(of: item) {
+                HStack(spacing: 6) {
+                    Text("in")
+                    AreaIcon(size: 12)
+                    Text(area.title)
+                }
             }
             if let completed = p.completedDate {
                 HStack(spacing: 4) {
