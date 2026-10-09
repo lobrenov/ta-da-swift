@@ -16,16 +16,16 @@ Starting point, as checked on 2026-10-09:
 - **Both keys on a task**: `project` wins when it has a value; `area` is ignored, with a warning. Ta Da doesn't rewrite the file.
 - **Unresolved area**: the file counts as having no parent (Loose tasks, or a loose project at the top of the sidebar) and gets a warning. Its chip is struck through, and its menu offers **Create Area "Name"**, which creates `areas/Name.md` and so resolves every file naming it.
 - **Loose**: a task is loose when it has no resolved project and no resolved area. A project is loose when it has no resolved area.
-- **Sidebar**: no section headers. Loose projects first, then each area (title order) with its active projects indented under it. No folding. Areas have no ring and no count. Bottom buttons: Task, Project, Area.
-- **Area page**: icon and title (renames in place), Open area file, then Projects, Tasks (filed straight to the area) and a folded Completed group, folds remembered per area. New task in Personal at the end.
+- **Sidebar**: no section headers. Loose projects first, then each area (title order) with its active projects under it, not indented. No folding. Areas have no ring and no count. Bottom buttons: Task, Project, Area.
+- **Area page**: icon and title (renames in place), Open area file, then Projects (each with its status and progress, then its subtasks, due date and deadline as a task row shows them), Tasks (filed straight to the area) and a folded Completed group, folds remembered per area. New task in Personal at the end.
 - **Today**: tasks with no parent first (no header), then loose projects' groups, then each area: its own tasks, then its projects' groups. No indentation.
-- **Chips**: the parent chip follows status. A project's opens the area menu (areas, No area, New Area…). A task's opens the move menu: Loose tasks, loose projects, then each area followed by its projects. Picking sets one key and clears the other.
+- **Chips**: the parent chip follows status. A project's opens the area menu (areas, No area, New Area…). A task's opens the move menu: Loose tasks, loose projects, then each area followed by its projects, not indented. Picking sets one key and clears the other.
 - **Delete**: deleting an area asks first ("Delete 20 Files"), then moves the area, its projects, their tasks and its own tasks to `.trash/`.
 - **Discard**: Delete Forever on an area also removes its trashed projects and tasks, as a project's removes its trashed tasks.
 - **Restore**: only upward. A task brings back its project and that project's area, or its area. A project brings back its area. An area comes back alone. A parent deleted forever is recreated by name. Restoring a project no longer brings its tasks.
 - **Icon**: the Cube, two-tone (top face filled at 30%), tinted `doing`. Sidebar 16, title 24, chip 13, iPhone row 28.
 - **Contexts**: no longer read or shown. The keys stay in files untouched, as any unknown key does.
-- **Shortcut**: ⌥⌘N New Area.
+- **Shortcut**: ⌥⌘N New Area. Task ▸ Move… (⇧⌘M) opens the move menu.
 
 ## Milestones
 The milestones run in order in one worktree. Each ends with its check passing. TaDaCore checks run on macOS and the iOS Simulator.
@@ -73,7 +73,7 @@ The milestones run in order in one worktree. Each ends with its check passing. T
 - Check: macOS build; `PropertyPickerTests`, `FileMenuTests`, `KeyboardTests`; a `DesignRenderTests` render of the area page and sidebar compared with `AreaBrowser`; UI tests (with permission).
 
 ### M2 — iPhone
-- `PhoneProjectsScreen`: loose projects, then area rows with their projects indented (`AreaIosProjects`).
+- `PhoneProjectsScreen`: loose projects, then area rows with their projects under them, not indented (`AreaIosProjects`).
 - `PhoneAreaScreen` on a new `PhoneRoute.area`; its More menu (New Task, New Project, Area File, Rename, Share…, Move to Trash) and the confirmation (`AreaIosArea`, `AreaIosTrash`).
 - `PhoneProjectSheet` becomes the move sheet grouped by area (`AreaIosMove`); a project's area chip opens an area sheet.
 - `PhoneFileScreen`: the parent chip. `PhoneTaskListScreen`: Today's groups (`AreaIosToday`). `PhoneTrashScreen`: area rows.

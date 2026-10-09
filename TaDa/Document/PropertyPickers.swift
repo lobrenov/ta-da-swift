@@ -196,7 +196,7 @@ final class PropertyPicker {
         close()
         let model = context.model, paths = context.tasks.map(\.path)
         switch choice {
-        case .project(let progress, _, let isCurrent):
+        case .project(let progress, let isCurrent):
             if !isCurrent { Task { await model.setParent(progress.project, of: paths) } }
         case .area(let area, let isCurrent):
             if !isCurrent { Task { await model.setParent(area, of: paths) } }
@@ -313,8 +313,7 @@ private struct StatusChoiceRow: View {
 
 /// A row of the move menu.
 enum ProjectChoice: PopupMenuItem {
-    /// `inArea` indents it under its area's row.
-    case project(ProjectProgress, inArea: Bool, isCurrent: Bool)
+    case project(ProjectProgress, isCurrent: Bool)
     case area(Item, isCurrent: Bool)
     /// Takes the task out of its project or area.
     case loose(isCurrent: Bool)
@@ -328,7 +327,7 @@ enum ProjectChoice: PopupMenuItem {
 
     var title: String {
         switch self {
-        case .project(let progress, _, _): progress.project.title
+        case .project(let progress, _): progress.project.title
         case .area(let area, _): area.title
         case .loose: "Loose tasks"
         case .createArea(let name): "Create Area “\(name)”"
@@ -338,7 +337,7 @@ enum ProjectChoice: PopupMenuItem {
 
     var accessibilityValue: String {
         switch self {
-        case .project(let progress, _, let isCurrent): (isCurrent ? "Current, " : "") + "\(progress.open) open"
+        case .project(let progress, let isCurrent): (isCurrent ? "Current, " : "") + "\(progress.open) open"
         case .area(_, let isCurrent): (isCurrent ? "Current, " : "") + "area"
         case .loose(let isCurrent): isCurrent ? "Current" : ""
         case .createArea(let name): "\(Vault.areaFolder)/\(FileNaming.sanitise(name)).md"
@@ -348,7 +347,7 @@ enum ProjectChoice: PopupMenuItem {
 
     var isCurrent: Bool {
         switch self {
-        case .project(_, _, let isCurrent), .area(_, let isCurrent), .loose(let isCurrent): isCurrent
+        case .project(_, let isCurrent), .area(_, let isCurrent), .loose(let isCurrent): isCurrent
         case .createArea, .new: false
         }
     }
@@ -381,7 +380,7 @@ enum ProjectChoice: PopupMenuItem {
                 projects = (projects + [index.progress(of: current)]).sorted { VaultIndex.byTitle($0.project, $1.project) }
             }
             return projects.filter { matches($0.project.title) }
-                .map { .project($0, inArea: area != nil, isCurrent: $0.project.path == current?.path) }
+                .map { .project($0, isCurrent: $0.project.path == current?.path) }
         }
 
         var sections: [PopupMenuSection<ProjectChoice>] = []
@@ -418,7 +417,7 @@ private struct ProjectChoiceRow: View {
                 .lineLimit(1)
             Spacer(minLength: 8)
             switch choice {
-            case .project(let progress, _, let isCurrent):
+            case .project(let progress, let isCurrent):
                 if isCurrent { CurrentTick(theme: theme) }
                 Text("\(progress.open)")
                     .font(.system(size: 12, weight: .medium))
@@ -439,15 +438,13 @@ private struct ProjectChoiceRow: View {
                 }
             }
         }
-        .padding(.leading, isIndented ? 25 : 0)
     }
 
     private var isArea: Bool { if case .area = choice { true } else { false } }
-    private var isIndented: Bool { if case .project(_, true, _) = choice { true } else { false } }
 
     @ViewBuilder private var icon: some View {
         switch choice {
-        case .project(let progress, _, _):
+        case .project(let progress, _):
             ProgressRing(fraction: progress.fraction).foregroundStyle(theme.color(\.accent))
         case .area, .createArea:
             AreaIcon().environment(\.theme, theme)

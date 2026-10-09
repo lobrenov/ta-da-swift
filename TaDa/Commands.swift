@@ -59,7 +59,7 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut("l")
             .disabled(editor == nil)
-            Button("Move to Project…") { model.showMoveMenu() }
+            Button("Move…") { model.showMoveMenu() }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
                 .disabled(model.isSourceMode || model.moveTargets().isEmpty)
             Button("Schedule…") { model.showDateMenu(.due) }

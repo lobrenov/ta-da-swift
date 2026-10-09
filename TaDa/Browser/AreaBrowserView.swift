@@ -80,12 +80,12 @@ struct AreaBrowserView: View {
             set: { _ in model.toggleFolded(title, in: area.path) }))
     }
 
-    /// A project's ring, title and a line of its status, progress and deadline; clicking opens its page.
+    /// A project's ring, title and a line of its status and progress, then its subtasks, due date and deadline as a
+    /// task row shows them; clicking opens its page.
     private func projectRow(_ progress: ProjectProgress) -> some View {
         let project = progress.project
         let p = project.properties
-        let meta = [p.status.rawValue, "\(progress.done) of \(progress.total) done"]
-            + (p.deadline.map { ["Deadline \($0.relativeLabel(today: model.today))"] } ?? [])
+        let subtasks = project.subtasks
         return Button { model.show(.project(project.path)) } label: {
             HStack(spacing: 10) {
                 ProgressRing(fraction: progress.fraction)
@@ -94,7 +94,23 @@ struct AreaBrowserView: View {
                     .frame(width: 16, height: 16)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(project.title).font(.system(size: 13.5)).foregroundStyle(theme.color(\.fg))
-                    Text(meta.joined(separator: " · ")).font(.system(size: 11.5)).foregroundStyle(theme.color(\.muted))
+                    HStack(spacing: 12) {
+                        Text("\(p.status.rawValue) · \(progress.done) of \(progress.total) done")
+                        if subtasks.total > 0 {
+                            Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                                 spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
+                        }
+                        if p.status != .done {
+                            if let due = p.dueDate {
+                                DateChip(kind: .due, date: due, today: model.today, labelled: false)
+                            }
+                            if let deadline = p.deadline {
+                                DateChip(kind: .deadline, date: deadline, today: model.today, labelled: false)
+                            }
+                        }
+                    }
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(theme.color(\.muted))
                 }
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -1,5 +1,5 @@
 // Sidebar: search, the three domains and Trash with counts, active projects without an area, then each area with its
-// active projects indented under it, the folder line, Settings and the New buttons. Task rows drop onto Today, Loose
+// active projects under it, the folder line, Settings and the New buttons. Task rows drop onto Today, Loose
 // tasks, the projects and the areas; project rows drop onto the areas.
 import SwiftUI
 import TaDaCore
@@ -35,13 +35,13 @@ struct SidebarView: View {
                             .padding(.horizontal, 10)
                     }
                     ForEach(model.looseProjects) { progress in
-                        projectRow(progress, indent: 0)
+                        projectRow(progress)
                     }
                     ForEach(model.areas) { area in
                         areaRow(area.area)
                             .padding(.top, 12)
                         ForEach(area.projects) { progress in
-                            projectRow(progress, indent: 26)
+                            projectRow(progress)
                         }
                     }
                 }
@@ -87,10 +87,9 @@ struct SidebarView: View {
         .taskDrop(model, onto: .area(area))
     }
 
-    private func projectRow(_ progress: ProjectProgress, indent: CGFloat) -> some View {
+    private func projectRow(_ progress: ProjectProgress) -> some View {
         let path = progress.project.path
-        return SidebarRow(selected: model.domain == .project(path) && !model.isSearching, height: 30, indent: indent,
-                          count: progress.open) {
+        return SidebarRow(selected: model.domain == .project(path) && !model.isSearching, height: 30, count: progress.open) {
             // Clicking the open project again goes from its page back to its tasks.
             if model.domain == .project(path), model.selection == path { model.selection = nil }
             model.show(.project(path))
@@ -192,12 +191,10 @@ struct SidebarView: View {
     }
 }
 
-/// One selectable sidebar row: icon, label, optional count; selected rows sit on the surface colour. `indent` moves
-/// the icon and label in, as for an area's projects.
+/// One selectable sidebar row: icon, label, optional count; selected rows sit on the surface colour.
 struct SidebarRow<Icon: View, Label: View>: View {
     let selected: Bool
     let height: CGFloat
-    var indent: CGFloat = 0
     let count: Int?
     let action: () -> Void
     @ViewBuilder let icon: Icon
@@ -222,7 +219,6 @@ struct SidebarRow<Icon: View, Label: View>: View {
             .font(.system(size: 13, weight: selected ? .semibold : .medium))
             .foregroundStyle(theme.color(selected ? \.strong : \.fg))
             .padding(.horizontal, 10)
-            .padding(.leading, indent)
             .frame(height: height)
             .background(selected ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
             .contentShape(.rect)
