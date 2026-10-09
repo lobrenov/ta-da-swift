@@ -31,6 +31,10 @@ func changedLines(_ before: String, _ after: String) -> (removed: [String], adde
 let sampleVault = URL(filePath: #filePath).deletingLastPathComponent()
     .appending(path: "Fixtures/DesignVault").standardized
 
+/// Areas with and without projects, a loose project, area tasks, and both-keys and unresolved cases.
+let areaVault = URL(filePath: #filePath).deletingLastPathComponent()
+    .appending(path: "Fixtures/AreaVault").standardized
+
 func sampleFiles() throws -> [URL] {
     (FileManager.default.enumerator(at: sampleVault, includingPropertiesForKeys: nil)?.allObjects ?? [])
         .compactMap { $0 as? URL }.filter { $0.pathExtension == "md" }

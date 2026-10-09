@@ -23,12 +23,21 @@ public struct ProjectProgress: Hashable, Sendable, Identifiable {
     public var id: String { project.path }
 }
 
-/// Tasks shown under one project heading, or under no heading for loose tasks.
+/// Tasks shown under one project or area heading, or under no heading for tasks without a parent.
+/// An area's group can be empty when only its projects have tasks in the list.
 public struct TaskGroup: Hashable, Sendable, Identifiable {
-    public var project: Item?
+    public var parent: Item?
     public var tasks: [Item]
 
-    public var id: String { project?.path ?? "" }
+    public var id: String { parent?.path ?? "" }
+}
+
+/// A sidebar area and its active projects.
+public struct AreaProjects: Hashable, Sendable, Identifiable {
+    public var area: Item
+    public var projects: [ProjectProgress]
+
+    public var id: String { area.path }
 }
 
 /// The saved queries behind the sidebar domains. `today` is always passed in. Today, Upcoming and
@@ -72,19 +81,31 @@ extension VaultIndex {
             .sorted(by: Self.byAgendaOrder)
     }
 
-    /// Open tasks without a resolvable project, sorted by title.
+    /// Open tasks without a parent that resolves, sorted by title.
     public func loose() -> [Item] {
         tasks.filter { isLoose($0) }.sorted(by: Self.byTitle)
     }
 
-    /// Whether a task is in Loose tasks: open, with a `project` that doesn't resolve or none.
+    /// Whether a task is in Loose tasks: open, with no project or area that resolves.
     public func isLoose(_ item: Item) -> Bool {
-        item.properties.kind == .task && item.properties.status != .done && project(of: item) == nil
+        item.properties.kind == .task && item.properties.status != .done && parent(of: item) == nil
     }
 
     /// Projects that aren't Done, with progress over all their linked tasks, sorted by title.
     public func activeProjects() -> [ProjectProgress] {
         projects.filter { $0.properties.status != .done }.sorted(by: Self.byTitle).map { progress(of: $0) }
+    }
+
+    /// Active projects without an area that resolves, sorted by title.
+    public func looseProjects() -> [ProjectProgress] {
+        activeProjects().filter { area(of: $0.project) == nil }
+    }
+
+    /// Every area by title, each with its active projects by title.
+    public func areaProjects() -> [AreaProjects] {
+        areas.sorted(by: Self.byTitle).map { area in
+            AreaProjects(area: area, projects: projects(in: area).filter { $0.properties.status != .done }.map { progress(of: $0) })
+        }
     }
 
     /// Done/total of the tasks whose `project` resolves to this project.
@@ -93,19 +114,30 @@ extension VaultIndex {
         return ProjectProgress(project: project, done: tasks.count { $0.properties.status == .done }, total: tasks.count)
     }
 
-    /// Splits tasks into the loose group first, then one group per project by title. Order within a group is kept.
+    /// Splits tasks into groups: tasks without a parent first, then loose projects' groups by title, then each area by
+    /// title with its own tasks followed by its projects' groups. Order within a group is kept.
     public func grouped(_ tasks: [Item]) -> [TaskGroup] {
         var loose: [Item] = []
-        var byProject: [String: [Item]] = [:]
+        var byParent: [String: [Item]] = [:]
         for task in tasks {
-            if let project = project(of: task) { byProject[project.path, default: []].append(task) } else { loose.append(task) }
+            if let parent = parent(of: task) { byParent[parent.path, default: []].append(task) } else { loose.append(task) }
         }
-        let projectGroups = byProject.compactMap { path, tasks in items[path].map { TaskGroup(project: $0, tasks: tasks) } }
-            .sorted { Self.byTitle($0.project!, $1.project!) }
-        return (loose.isEmpty ? [] : [TaskGroup(project: nil, tasks: loose)]) + projectGroups
+        let projects = byParent.keys.compactMap { items[$0] }.filter { $0.properties.kind == .project }
+        let looseProjects = projects.filter { area(of: $0) == nil }.sorted(by: Self.byTitle)
+        var areas = Set(byParent.keys.filter { items[$0]?.properties.kind == .area })
+        areas.formUnion(projects.compactMap { area(of: $0)?.path })
+
+        var groups = loose.isEmpty ? [] : [TaskGroup(parent: nil, tasks: loose)]
+        groups += looseProjects.map { TaskGroup(parent: $0, tasks: byParent[$0.path]!) }
+        for area in areas.compactMap({ items[$0] }).sorted(by: Self.byTitle) {
+            groups.append(TaskGroup(parent: area, tasks: byParent[area.path] ?? []))
+            groups += projects.filter { self.area(of: $0)?.path == area.path }.sorted(by: Self.byTitle)
+                .map { TaskGroup(parent: $0, tasks: byParent[$0.path]!) }
+        }
+        return groups
     }
 
-    /// Items whose title, summary or area contain every word of the query,
+    /// Items whose title, summary or area (a task's through its project) contain every word of the query,
     /// ignoring case and diacritics. Titles that match rank first.
     public func search(_ query: String) -> [Item] {
         let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
@@ -114,8 +146,8 @@ extension VaultIndex {
             words.allSatisfy { text.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
         }
         let hits = items.values.filter { item in
-            let p = item.properties
-            return matches([item.title, item.summary ?? "", p.area?.title ?? ""].joined(separator: "\n"))
+            let area = area(of: item)?.title ?? item.properties.area?.title ?? ""
+            return matches([item.title, item.summary ?? "", area].joined(separator: "\n"))
         }
         return hits.sorted { a, b in
             let (ta, tb) = (matches(a.title), matches(b.title))

@@ -45,7 +45,7 @@ struct TaskListView: View {
     private func list(_ groups: [TaskGroup]) -> some View {
         ForEach(groups) { group in
             VStack(alignment: .leading, spacing: 1) {
-                if let project = group.project {
+                if let project = group.parent, project.properties.kind == .project {
                     ProjectGroupHeader(project: project, fraction: model.index.progress(of: project).fraction)
                 }
                 ForEach(group.tasks) { task in

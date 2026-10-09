@@ -69,7 +69,7 @@ private let index = VaultIndex(items)
 
 @Test func groupingPutsLooseFirstThenProjectsByTitle() {
     let groups = index.grouped(index.today(today))
-    #expect(groups.map { $0.project?.title ?? "Loose" } == ["Loose", "Alpha", "Beta"])
+    #expect(groups.map { $0.parent?.title ?? "Loose" } == ["Loose", "Alpha", "Beta"])
     #expect(groups.map { $0.tasks.map(\.title) } == [["Overdue deadline", "Deadline today"], ["Overdue due", "Done today"], ["Due today"]])
     #expect(index.grouped([]).isEmpty)
 }

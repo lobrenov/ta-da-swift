@@ -28,7 +28,7 @@ struct PhoneTaskListScreen: View {
                 empty.padding(.top, 60)
             }
             ForEach(groups) { group in
-                if let project = group.project {
+                if let project = group.parent, project.properties.kind == .project {
                     PhoneProjectHeader(project: project, fraction: model.index.progress(of: project).fraction)
                 }
                 ForEach(group.tasks) { task in
