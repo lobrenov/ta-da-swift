@@ -74,7 +74,7 @@ func tasks(_ count: Int) -> String {
 
 struct PhoneUpcomingScreen: View {
     let model: AppModel
-    @State private var target: String?
+    @State private var target: ScrollRequest?
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -93,8 +93,7 @@ struct PhoneUpcomingScreen: View {
             EmptyView()
         } content: {
             WeekStrip(model: model) { offset in
-                target = nil
-                target = offset == 0 ? "top" : "day-\(offset)"
+                target = ScrollRequest(offset == 0 ? "top" : "day-\(offset)")
             }
             .id("top")
             ForEach(1...Self.days, id: \.self) { offset in

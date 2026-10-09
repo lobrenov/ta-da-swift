@@ -4,6 +4,14 @@
 import SwiftUI
 import TaDaCore
 
+/// A request to scroll to a row id; each request differs from the last, so repeating an id scrolls again.
+struct ScrollRequest: Equatable {
+    let id: String
+    private let serial = UUID()
+
+    init(_ id: String) { self.id = id }
+}
+
 /// A tab's list. `pickable` are its rows top to bottom, for picking; `add` is the floating +.
 struct PhoneList<Content: View, MenuItems: View>: View {
     let model: AppModel
@@ -11,8 +19,8 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     var subtitle = ""
     var pickable: [String] = []
     var add: (() async -> Void)? = nil
-    /// A row id to scroll to the top, as Upcoming's week strip asks.
-    var scrollTarget: String? = nil
+    /// A row to scroll to the top, as Upcoming's week strip asks.
+    var scrollTarget: ScrollRequest? = nil
     @ViewBuilder var menu: MenuItems
     @ViewBuilder var content: Content
     @State private var search = ListSearch()
@@ -43,7 +51,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                 }
             }
             .onChange(of: scrollTarget) {
-                if let scrollTarget { withAnimation { proxy.scrollTo(scrollTarget, anchor: .top) } }
+                if let scrollTarget { withAnimation { proxy.scrollTo(scrollTarget.id, anchor: .top) } }
             }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 geometry.contentOffset.y + geometry.contentInsets.top
