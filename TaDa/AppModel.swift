@@ -599,6 +599,9 @@ import TaDaCore
     private func present(_ document: OpenDocument?) {
         if let presenter { NSFileCoordinator.removeFilePresenter(presenter) }
         presenter = nil
+        #if os(iOS)
+        if isInBackground { return }  // `becomeActive` presents again
+        #endif
         guard let document, let vault else { return }
         let presenter = FilePresenter(
             url: vault.url(for: document.path),
