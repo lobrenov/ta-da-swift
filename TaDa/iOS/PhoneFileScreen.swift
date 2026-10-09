@@ -9,12 +9,14 @@ struct PhoneFileScreen: View {
     let model: AppModel
     let path: String
     /// The file this screen shows once it's read; it follows the file through renames.
-    @State private var document: OpenDocument?
+    @State private var opened: OpenDocument?
     @State private var isSource = false
     @State private var isEditing = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
+    /// The screen shows and edits only the document the model has open.
+    private var document: OpenDocument? { opened === model.document ? opened : nil }
     private var shownPath: String { document?.path ?? path }
 
     var body: some View {
@@ -32,9 +34,17 @@ struct PhoneFileScreen: View {
         .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbar }
         .onAppear { model.selection = shownPath }
-        .onDisappear { if model.selection == shownPath { model.selection = nil } }
+        .onDisappear {
+            // Popping the screen closes the file; a tab switch, or a screen pushed over it, leaves it open.
+            let shown = shownPath
+            Task {
+                if !nav.stacks.values.contains(where: { $0.contains(.file(path)) }), model.selection == shown {
+                    model.selection = nil
+                }
+            }
+        }
         .onChange(of: model.document.map(ObjectIdentifier.init), initial: true) {
-            if let open = model.document, open === document || open.path == shownPath { document = open }
+            if let open = model.document, open === opened || open.path == shownPath { opened = open }
         }
         .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidBeginEditingNotification)) { editingChanged($0, to: true) }
         .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidEndEditingNotification)) { editingChanged($0, to: false) }
