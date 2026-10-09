@@ -59,11 +59,14 @@ struct PhoneSearchStack<Content: View>: View {
         let search = host.search
         content
             .environment(host)
-            .overlay(alignment: .top) {
-                if let search {
-                    PullSearchField(search: search)
-                        .id(ObjectIdentifier(search))
-                        .ignoresSafeArea(.container, edges: .top)
+            .overlay {
+                // Read outside the field's `ignoresSafeArea`, which would zero it.
+                GeometryReader { geometry in
+                    if let search {
+                        PullSearchField(search: search, statusBar: geometry.safeAreaInsets.top)
+                            .id(ObjectIdentifier(search))
+                            .ignoresSafeArea(.container, edges: .top)
+                    }
                 }
             }
     }
@@ -74,16 +77,13 @@ struct PhoneSearchStack<Content: View>: View {
 /// the "…" was.
 private struct PullSearchField: View {
     @Bindable var search: ListSearch
+    /// The height of the status bar, from the stack's top safe area.
+    let statusBar: CGFloat
     @FocusState private var isFocused: Bool
     @Environment(\.theme) private var theme
 
     /// The navigation bar's row, under the status bar.
     private static let barRow: CGFloat = 44
-
-    private var statusBar: CGFloat {
-        let window = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
-        return window?.safeAreaInsets.top ?? 0
-    }
 
     var body: some View {
         GeometryReader { geometry in
