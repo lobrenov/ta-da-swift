@@ -1,5 +1,5 @@
-// The sheets that set a property on one or more files: a due date or deadline from a month calendar, or a project.
-// Each sets nothing until ✓.
+// The sheets that set a property on one or more files: a due date or deadline from a month calendar, or a project or
+// area. Each sets nothing until ✓.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -177,10 +177,15 @@ struct PhoneDateSheet: View {
     }
 }
 
-struct PhoneProjectSheet: View {
+/// The move sheet, which files tasks in a project or an area or makes them loose, or the area sheet, which files
+/// projects in an area or takes them out of one. Either can create the area the files name, or a new project or area.
+struct PhoneMoveSheet: View {
+    enum Kind { case move, area }
+
     let model: AppModel
+    let kind: Kind
     let paths: [String]
-    /// The project picked, or `.some(nil)` for No project; nil while nothing is picked.
+    /// The project or area picked, or `.some(nil)` for Loose tasks or No area; nil while nothing is picked.
     @State private var choice: Item??
     @State private var query = ""
     @State private var isNaming = false
@@ -189,60 +194,42 @@ struct PhoneProjectSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
 
-    init(model: AppModel, paths: [String]) {
+    init(model: AppModel, kind: Kind, paths: [String]) {
         self.model = model
+        self.kind = kind
         self.paths = paths
-        let tasks = paths.compactMap { model.index[$0] }
-        let projects = Set(tasks.map { model.index.project(of: $0)?.path })
-        if projects.count == 1, let path = projects.first {
-            _choice = State(initialValue: .some(path.flatMap { model.index[$0] }))
-        }
+        _choice = State(initialValue: PhoneMoveRow.currentParent(index: model.index, files: paths.compactMap { model.index[$0] }))
     }
 
     var body: some View {
         let name = query.trimmingCharacters(in: .whitespaces)
-        let projects = model.projects.filter { name.isEmpty || $0.project.title.localizedStandardContains(name) }
+        let files = paths.compactMap { model.index[$0] }
+        let groups = kind == .move
+            ? PhoneMoveRow.moveGroups(index: model.index, tasks: files, query: query)
+            : PhoneMoveRow.areaGroups(index: model.index, projects: files, query: query)
+        let noun = kind == .move ? "Project" : "Area"
         NavigationStack {
             List {
-                if name.isEmpty {
+                ForEach(groups.indices, id: \.self) { i in
                     Section {
-                        row(isCurrent: choice == .some(nil)) {
-                            Label("No project", systemImage: "tray")
-                        } trailing: {
-                            EmptyView()
-                        } pick: {
-                            choice = .some(nil)
-                        }
-                    }
-                }
-                Section {
-                    ForEach(projects) { progress in
-                        row(isCurrent: choice??.path == progress.project.path) {
-                            Label {
-                                Text(progress.project.title)
-                            } icon: {
-                                ProgressRing(fraction: progress.fraction).scaleEffect(18 / 14).foregroundStyle(theme.color(\.accent))
-                            }
-                        } trailing: {
-                            Text("\(progress.total)").foregroundStyle(theme.color(\.muted))
-                        } pick: {
-                            choice = .some(progress.project)
-                        }
+                        ForEach(groups[i]) { row($0) }
                     }
                 }
                 Section {
                     Button {
                         if name.isEmpty { isNaming = true } else { create(name) }
                     } label: {
-                        Label(name.isEmpty ? "New Project…" : "New Project “\(name)”", systemImage: "plus")
+                        Label(name.isEmpty ? "New \(noun)…" : "New \(noun) “\(name)”", systemImage: "plus")
                     }
                     .foregroundStyle(theme.color(\.accent))
+                    .listRowBackground(theme.color(\.code))
                 }
             }
             .scrollContentBackground(.hidden)
             .background(theme.color(\.bg))
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search projects")
-            .navigationTitle("Move to Project")
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: kind == .move ? "Search projects and areas" : "Search areas")
+            .navigationTitle(kind == .move ? "Move" : "Area")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -254,7 +241,7 @@ struct PhoneProjectSheet: View {
                         .tint(theme.color(\.accent))
                 }
             }
-            .alert("New Project", isPresented: $isNaming) {
+            .alert("New \(noun)", isPresented: $isNaming) {
                 TextField("Name", text: $newName)
                 Button("Cancel", role: .cancel) {}
                 Button("Create") { create(newName.trimmingCharacters(in: .whitespaces)) }
@@ -263,16 +250,29 @@ struct PhoneProjectSheet: View {
         .presentationDetents([.medium, .large])
     }
 
-    private func row(isCurrent: Bool, @ViewBuilder label: () -> some View, @ViewBuilder trailing: () -> some View,
-                     pick: @escaping () -> Void) -> some View {
-        Button {
-            pick()
+    private func row(_ row: PhoneMoveRow) -> some View {
+        let isCurrent = switch row {
+        case .none: choice == .some(nil)
+        case let .project(progress): choice??.path == progress.project.path
+        case let .area(area): choice??.path == area.path
+        case .createArea: false
+        }
+        return Button {
+            switch row {
+            case .none: choice = .some(nil)
+            case let .project(progress): choice = .some(progress.project)
+            case let .area(area): choice = .some(area)
+            case let .createArea(name): createArea(name)
+            }
             nav.play(.pick)
         } label: {
-            HStack {
-                label().foregroundStyle(theme.color(\.fg))
+            HStack(spacing: 12) {
+                icon(row).frame(width: 22)
+                Text(title(row))
+                    .fontWeight(isArea(row) ? .semibold : .regular)
+                    .foregroundStyle(theme.color(isArea(row) ? \.strong : \.fg))
+                    .lineLimit(1)
                 Spacer()
-                trailing()
                 if isCurrent {
                     Image(systemName: "checkmark").fontWeight(.semibold).foregroundStyle(theme.color(\.accent))
                 }
@@ -284,6 +284,28 @@ struct PhoneProjectSheet: View {
         .accessibilityAddTraits(isCurrent ? .isSelected : [])
     }
 
+    private func title(_ row: PhoneMoveRow) -> String {
+        switch row {
+        case .none: kind == .move ? "Loose tasks" : "No area"
+        case let .project(progress): progress.project.title
+        case let .area(area): area.title
+        case let .createArea(name): "Create Area “\(name)”"
+        }
+    }
+
+    private func isArea(_ row: PhoneMoveRow) -> Bool { if case .area = row { true } else { false } }
+
+    @ViewBuilder private func icon(_ row: PhoneMoveRow) -> some View {
+        switch row {
+        case .none:
+            Image(systemName: kind == .move ? "tray" : "xmark").foregroundStyle(theme.color(kind == .move ? \.accent : \.muted))
+        case let .project(progress):
+            ProgressRing(fraction: progress.fraction).scaleEffect(20 / 14).foregroundStyle(theme.color(\.accent))
+        case .area, .createArea:
+            AreaIcon(size: 20)
+        }
+    }
+
     private func apply() {
         guard let choice else { return }
         let paths = paths
@@ -292,13 +314,25 @@ struct PhoneProjectSheet: View {
         Task { await model.setParent(choice, of: paths) }
     }
 
+    /// Creates the area the files name, which files them in it.
+    private func createArea(_ name: String) {
+        nav.endPicking()
+        dismiss()
+        Task { await model.newArea(named: name) }
+    }
+
     private func create(_ name: String) {
         guard !name.isEmpty else { return }
         let paths = paths
         nav.play(.pick)
         nav.endPicking()
         dismiss()
-        Task { await model.newProject(named: name, linking: paths) }
+        Task {
+            switch kind {
+            case .move: await model.newProject(named: name, linking: paths)
+            case .area: await model.newArea(named: name, filing: paths)
+            }
+        }
     }
 }
 #endif

@@ -1,5 +1,5 @@
-// Rows in the iPhone's lists: a task with its checkbox and chips, a project with its ring, a project's heading in
-// Today and Loose, and the menu a press and hold opens on any of them.
+// Rows in the iPhone's lists: a task with its checkbox and chips, a project with its ring, an area with its cube, an
+// area's and a project's heading in Today, and the menu a press and hold opens on any of them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -151,10 +151,14 @@ struct PhoneTaskRow: View {
     }
 }
 
-/// A project in the Projects tab: its ring, title and progress, opening its tasks.
+/// A project in the Projects tab or on an area's screen: its ring, title and progress, opening its tasks. Under an
+/// area in the Projects tab (`isCompact`) it shows its open tasks' count instead; on an area's screen (`showsDates`)
+/// its subtasks, due date and deadline follow its progress, as a task row shows them.
 struct PhoneProjectRow: View {
     let model: AppModel
     let progress: ProjectProgress
+    var isCompact = false
+    var showsDates = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -172,7 +176,73 @@ struct PhoneProjectRow: View {
                             .scaledFont(size: 17)
                             .foregroundStyle(theme.color(project.properties.status == .done ? \.muted : \.fg))
                             .lineLimit(2)
-                        Text(summary(project))
+                        if !isCompact {
+                            meta(project)
+                                .scaledFont(size: 13)
+                                .foregroundStyle(theme.color(\.muted))
+                                .lineLimit(1)
+                        }
+                    }
+                    Spacer(minLength: 8)
+                    if isCompact, progress.open > 0 {
+                        Text("\(progress.open)").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
+                    }
+                    Image(systemName: "chevron.right")
+                        .scaledFont(size: 14, weight: .semibold)
+                        .foregroundStyle(theme.color(\.muted))
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            PhoneRowSeparator(inset: 52)
+        }
+        .contextMenu { PhoneFileMenu(model: model, item: project) }
+    }
+
+    @ViewBuilder private func meta(_ project: Item) -> some View {
+        let p = project.properties
+        let summary = "\(p.status.rawValue) · \(progress.done) of \(progress.total) done"
+        if showsDates {
+            let subtasks = project.subtasks
+            HStack(spacing: 12) {
+                Text(summary)
+                if subtasks.total > 0 {
+                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                         spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
+                }
+                if p.status != .done {
+                    if let due = p.dueDate { DateChip(kind: .due, date: due, today: model.today, labelled: false) }
+                    if let deadline = p.deadline { DateChip(kind: .deadline, date: deadline, today: model.today, labelled: false) }
+                }
+            }
+        } else {
+            Text(summary + (p.deadline.map { " · Deadline \($0.relativeLabel(today: model.today))" } ?? ""))
+        }
+    }
+}
+
+/// An area in the Projects tab: its cube, title, and how many projects and tasks are filed in it, opening its screen.
+struct PhoneAreaRow: View {
+    let model: AppModel
+    let area: Item
+    @Environment(PhoneNavigation.self) private var nav
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let projects = model.index.projects(in: area).count
+        let open = model.index.tasks(in: area).count { $0.properties.status != .done }
+        VStack(spacing: 0) {
+            Button { nav.push(.area(area.path)) } label: {
+                HStack(spacing: 12) {
+                    AreaIcon(size: 24).frame(width: 24)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(area.title)
+                            .scaledFont(size: 17, weight: .semibold)
+                            .foregroundStyle(theme.color(\.strong))
+                            .lineLimit(2)
+                        Text("\(projects == 1 ? "1 project" : "\(projects) projects") · \(tasks(open))")
                             .scaledFont(size: 13)
                             .foregroundStyle(theme.color(\.muted))
                             .lineLimit(1)
@@ -189,19 +259,32 @@ struct PhoneProjectRow: View {
             .buttonStyle(.plain)
             PhoneRowSeparator(inset: 52)
         }
-        .contextMenu { PhoneFileMenu(model: model, item: project) }
-    }
-
-    private func summary(_ project: Item) -> String {
-        var parts = [project.properties.status.rawValue, "\(progress.done) of \(progress.total) done"]
-        if let deadline = project.properties.deadline {
-            parts.append("Deadline \(deadline.relativeLabel(today: model.today))")
-        }
-        return parts.joined(separator: " · ")
+        .contextMenu { PhoneFileMenu(model: model, item: area) }
     }
 }
 
-/// A project's heading inside Today or Loose: its ring and title.
+/// An area's heading inside Today: its cube and title over a rule. Its own tasks follow, then its projects' groups.
+struct PhoneAreaHeader: View {
+    let area: Item
+    var isFirst = false
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 8) {
+                AreaIcon(size: 16)
+                Text(area.title).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+            }
+            Hairline()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, isFirst ? 6 : 22)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A project's heading inside Today: its ring and title.
 struct PhoneProjectHeader: View {
     let project: Item
     let fraction: Double
@@ -220,8 +303,8 @@ struct PhoneProjectHeader: View {
     }
 }
 
-/// The menu a press and hold opens on a row: complete, today or tomorrow up top; then status, dates, project,
-/// share, select (only in the list on screen) and trash.
+/// The menu a press and hold opens on a row: complete, today or tomorrow up top; then status, dates, move (tasks),
+/// share, select (only in the list on screen) and trash. On an area: its file, share and trash.
 struct PhoneFileMenu: View {
     let model: AppModel
     let item: Item
@@ -230,6 +313,25 @@ struct PhoneFileMenu: View {
     @Environment(PhoneNavigation.self) private var nav
 
     var body: some View {
+        if item.properties.kind == .area {
+            areaItems
+        } else {
+            fileItems
+        }
+    }
+
+    @ViewBuilder private var areaItems: some View {
+        Button("Area File", systemImage: "doc.text") { nav.push(.file(item.path)) }
+        if let url = model.vault?.url(for: item.path) {
+            ShareLink(item: url) { Label("Share…", systemImage: "square.and.arrow.up") }
+        }
+        Divider()
+        Button("Move to Trash", systemImage: "trash", role: .destructive) {
+            Task { await model.moveToTrash([item.path]) }
+        }
+    }
+
+    @ViewBuilder private var fileItems: some View {
         let path = item.path
         let isDone = item.properties.status == .done
         ControlGroup {
@@ -264,7 +366,7 @@ struct PhoneFileMenu: View {
         Button("Schedule…", systemImage: "calendar") { nav.sheet = .date(.due, paths: [path]) }
         Button("Set Deadline…", systemImage: "flag") { nav.sheet = .date(.deadline, paths: [path]) }
         if item.properties.kind == .task {
-            Button("Move to Project…", systemImage: "folder") { nav.sheet = .project(paths: [path]) }
+            Button("Move…", systemImage: "folder") { nav.sheet = .move(paths: [path]) }
         }
         Divider()
         if let url = model.vault?.url(for: path) {

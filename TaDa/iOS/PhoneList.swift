@@ -17,6 +17,8 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     let model: AppModel
     let title: String
     var subtitle = ""
+    /// Before the large title, as an area's cube.
+    var icon: AnyView? = nil
     var pickable: [String] = []
     var add: (() async -> Void)? = nil
     /// A row to scroll to the top, as Upcoming's week strip asks.
@@ -130,10 +132,13 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     /// The large title and subtitle, at the top of the list.
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .scaledFont(size: 34, weight: .bold)
-                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-                .foregroundStyle(theme.color(\.strong))
+            HStack(spacing: 10) {
+                if let icon { icon }
+                Text(title)
+                    .scaledFont(size: 34, weight: .bold)
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                    .foregroundStyle(theme.color(\.strong))
+            }
             if !subtitle.isEmpty {
                 Text(subtitle)
                     .scaledFont(size: 13)
@@ -223,7 +228,7 @@ struct PhoneSearchResults: View {
     }
 
     private func place(of task: Item) -> String {
-        var parts = [model.index.project(of: task)?.title ?? "Loose task"]
+        var parts = [model.index.parent(of: task)?.title ?? "Loose task"]
         let p = task.properties
         if let due = p.dueDate { parts.append("Due \(due.relativeLabel(today: model.today))") }
         if let deadline = p.deadline { parts.append("Deadline \(deadline.relativeLabel(today: model.today))") }

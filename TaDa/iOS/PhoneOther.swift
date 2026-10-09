@@ -84,7 +84,7 @@ struct PhoneSettingsScreen: View {
                 Section("Vault") {
                     value("Folder", model.folderDisplayName, monospaced: true)
                     LabeledContent("Sync") { SyncState(model: model) }
-                    value("Contents", "\(tasks(model.index.tasks.count)) · \(model.index.projects.count) projects")
+                    value("Contents", "\(tasks(model.index.tasks.count)) · \(model.index.projects.count) projects · \(model.index.areas.count) areas")
                     Button("Change Folder…") { isPicking = true }
                         .foregroundStyle(theme.color(\.accent))
                 }
@@ -217,7 +217,7 @@ struct PhoneTrashScreen: View {
         .background(theme.color(\.bg))
         .overlay {
             if model.trash.isEmpty {
-                ContentUnavailableView("Trash is empty", systemImage: "trash", description: Text("Deleted tasks and projects wait here."))
+                ContentUnavailableView("Trash is empty", systemImage: "trash", description: Text("Deleted tasks, projects and areas wait here."))
             }
         }
         .navigationTitle("Trash")
@@ -263,9 +263,13 @@ struct PhoneTrashScreen: View {
                 Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
                     .scaledFont(size: 22)
                     .foregroundStyle(isPicked ? theme.color(\.accent) : theme.color(\.border))
-                Image(systemName: item.properties.kind == .project ? "chart.pie" : "doc.text")
-                    .foregroundStyle(theme.color(\.muted))
-                    .padding(.top, 2)
+                if item.properties.kind == .area {
+                    AreaIcon(size: 18).padding(.top, 2)
+                } else {
+                    Image(systemName: item.properties.kind == .project ? "chart.pie" : "doc.text")
+                        .foregroundStyle(theme.color(\.muted))
+                        .padding(.top, 2)
+                }
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title).scaledFont(size: 17).foregroundStyle(theme.color(\.fg))
                     Text(summary(trashed)).scaledFont(size: 13).foregroundStyle(theme.color(\.muted))
@@ -281,11 +285,15 @@ struct PhoneTrashScreen: View {
     private func summary(_ trashed: TrashedItem) -> String {
         let item = trashed.item
         var parts: [String] = []
-        if item.properties.kind == .project {
+        switch item.properties.kind {
+        case .area:
+            let contents = TrashedItem.contents(of: item, in: model.trash)
+            parts.append("Area · deleted with \(contents.projects.count) project\(contents.projects.count == 1 ? "" : "s") and \(tasks(contents.tasks.count))")
+        case .project:
             let linked = TrashedItem.tasks(of: item, in: model.trash).count
-            parts.append("Project · \(linked) linked task\(linked == 1 ? "" : "s")")
-        } else {
-            parts.append(item.properties.project?.title ?? "Loose task")
+            parts.append("Project · \(linked) linked task\(linked == 1 ? "" : "s")" + (item.properties.area.map { " · \($0.title)" } ?? ""))
+        case .task:
+            parts.append(item.properties.project?.title ?? item.properties.area?.title ?? "Loose task")
         }
         if let deleted = trashed.deleted {
             parts.append("Deleted \(LocalDate(deleted).formatted(.weekdayDayMonth))")

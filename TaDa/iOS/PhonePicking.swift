@@ -179,7 +179,7 @@ private struct PickingBars: ViewModifier {
                 Task { for path in open { await model.setStatus(.done, in: path) } }
             }
             action("Schedule", "calendar") { nav.sheet = .date(.due, paths: paths) }
-            action("Move", "folder") { nav.sheet = .project(paths: tasks) }
+            action("Move", "folder") { nav.sheet = .move(paths: tasks) }
                 .disabled(tasks.isEmpty)
             Menu {
                 Picker(selection: Binding<Status?> { nil } set: { status in

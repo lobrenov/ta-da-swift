@@ -34,7 +34,7 @@ struct ContentView: View {
         .alert(TrashConfirmationText(model: model).title,
                isPresented: Binding { model.trashConfirmation != nil } set: { if !$0 { model.trashConfirmation = nil } },
                presenting: model.trashConfirmation) { request in
-            Button(request.count == 1 ? "Delete 1 File" : "Delete \(request.count) Files", role: .destructive) { Task { await model.confirmTrash() } }
+            Button(request.count == 1 ? "Delete 1 File" : "Delete \(request.count) Files", role: .destructive) { Task { await model.confirmTrash(request) } }
             Button("Cancel", role: .cancel) {}
         } message: { _ in
             Text(TrashConfirmationText(model: model).message)

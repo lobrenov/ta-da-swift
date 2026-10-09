@@ -1,5 +1,5 @@
-// The lists the tabs open on: Today and Loose (grouped by project), Upcoming (a week strip
-// over the days ahead), Projects, and a project's tasks.
+// The lists the tabs open on: Today and Loose (grouped by area and project), Upcoming (a week strip over the days
+// ahead), Projects (with the areas), a project's tasks, and an area's projects and tasks.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -20,7 +20,7 @@ struct PhoneTaskListScreen: View {
         PhoneList(model: model, title: kind == .today ? "Today" : "Loose tasks",
                   subtitle: kind == .today
                       ? "\(model.today.date().formatted(.dateTime.weekday(.wide).day().month(.wide))) · \(tasks(open))"
-                      : "No project · \(tasks(open))",
+                      : "No project or area · \(tasks(open))",
                   pickable: groups.flatMap(\.tasks).map(\.path), add: newTask) {
             EmptyView()
         } content: {
@@ -28,8 +28,12 @@ struct PhoneTaskListScreen: View {
                 empty.padding(.top, 60)
             }
             ForEach(groups) { group in
-                if let project = group.parent, project.properties.kind == .project {
-                    PhoneProjectHeader(project: project, fraction: model.index.progress(of: project).fraction)
+                if let parent = group.parent {
+                    if parent.properties.kind == .area {
+                        PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id)
+                    } else {
+                        PhoneProjectHeader(project: parent, fraction: model.index.progress(of: parent).fraction)
+                    }
                 }
                 ForEach(group.tasks) { task in
                     PhoneTaskRow(model: model, item: task,
@@ -46,7 +50,7 @@ struct PhoneTaskListScreen: View {
                                    description: Text("Tasks due or at their deadline today, or overdue, show here."))
         case .loose:
             ContentUnavailableView("No loose tasks", systemImage: "tray",
-                                   description: Text("Open tasks that don’t belong to a project show here."))
+                                   description: Text("Open tasks that don’t belong to a project or an area show here."))
         }
     }
 
@@ -107,7 +111,7 @@ struct PhoneUpcomingScreen: View {
         let (kind, date): (AgendaEntry.Kind, LocalDate?) = entry.kind == .due ? (.deadline, p.deadline) : (.due, p.dueDate)
         let also = date.map { "\(kind.label) \($0.relativeLabel(today: model.today))" }
         return PhoneTaskRow(model: model, item: entry.item,
-                            meta: .agenda(entry, place: model.index.project(of: entry.item)?.title ?? "Loose task",
+                            meta: .agenda(entry, place: model.index.parent(of: entry.item)?.title ?? "Loose task",
                                           also: also, dated: dated))
     }
 
@@ -198,20 +202,25 @@ struct PhoneProjectsScreen: View {
     @Environment(PhoneNavigation.self) private var nav
 
     var body: some View {
-        let active = model.projects
         let completed = model.index.projects.filter { $0.properties.status == .done }
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
             .map { model.index.progress(of: $0) }
 
-        PhoneList(model: model, title: "Projects", subtitle: "\(active.count) open · \(completed.count) completed",
+        PhoneList(model: model, title: "Projects",
+                  subtitle: "\(model.projects.count) open · \(model.areas.count == 1 ? "1 area" : "\(model.areas.count) areas")",
                   add: newProject) {
-            EmptyView()
+            Button("New Area", systemImage: "cube") { Task { await newArea() } }
         } content: {
-            if active.isEmpty, completed.isEmpty {
+            if model.projects.isEmpty, completed.isEmpty, model.areas.isEmpty {
                 ContentUnavailableView("No projects yet", systemImage: "chart.pie",
-                                       description: Text("Files with `type: project` show here.")).padding(.top, 60)
+                                       description: Text("Files with `type: project` or `type: area` show here.")).padding(.top, 60)
             }
-            ForEach(active) { PhoneProjectRow(model: model, progress: $0) }
+            ForEach(model.looseProjects) { PhoneProjectRow(model: model, progress: $0) }
+            ForEach(model.areas) { entry in
+                PhoneAreaRow(model: model, area: entry.area)
+                    .padding(.top, 14)
+                ForEach(entry.projects) { PhoneProjectRow(model: model, progress: $0, isCompact: true) }
+            }
             if !completed.isEmpty {
                 PhoneFoldHeader(model: model, title: "Completed", count: completed.count, group: "Completed", in: "Projects")
                 if !model.isFolded("Completed", in: "Projects") {
@@ -225,6 +234,11 @@ struct PhoneProjectsScreen: View {
         await model.newProject()
         if let path = model.selection { nav.push(.file(path)) }
     }
+
+    private func newArea() async {
+        await model.newArea()
+        if let path = model.selection { nav.push(.file(path)) }
+    }
 }
 
 /// A group's name and count with a chevron; tapping folds or opens it. Folds are remembered per list.
@@ -234,18 +248,21 @@ struct PhoneFoldHeader: View {
     let count: Int
     let group: String
     let list: String
+    /// Whether it's folded, for a group whose stored fold means something else, as an area's Completed does.
+    let folded: Bool?
     @Environment(\.theme) private var theme
 
-    init(model: AppModel, title: String, count: Int, group: String, in list: String) {
+    init(model: AppModel, title: String, count: Int, group: String, in list: String, isFolded: Bool? = nil) {
         self.model = model
         self.title = title
         self.count = count
         self.group = group
         self.list = list
+        folded = isFolded
     }
 
     var body: some View {
-        let isFolded = model.isFolded(group, in: list)
+        let isFolded = folded ?? model.isFolded(group, in: list)
         Button { withAnimation(.snappy) { model.toggleFolded(group, in: list) } } label: {
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
@@ -345,6 +362,107 @@ struct PhoneProjectScreen: View {
 
     private func newTask(in project: Item) async {
         if let path = await model.newLinkedTask(in: project) { nav.push(.file(path)) }
+    }
+}
+
+// MARK: An area's projects and tasks
+
+struct PhoneAreaScreen: View {
+    let model: AppModel
+    let path: String
+    @State private var isRenaming = false
+    @State private var newTitle = ""
+    @Environment(PhoneNavigation.self) private var nav
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        if let area = model.index[path] {
+            let projects = model.index.projects(in: area).map { model.index.progress(of: $0) }
+            let filed = model.index.tasks(in: area)
+            let open = filed.filter { $0.properties.status != .done }
+            let done = filed.filter { $0.properties.status == .done }
+            let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
+
+            PhoneList(model: model, title: area.title,
+                      subtitle: "\(projects.count == 1 ? "1 project" : "\(projects.count) projects") · \(tasks(open.count))",
+                      icon: AnyView(AreaIcon(size: 30)),
+                      pickable: shown.map(\.path), add: { await newTask(in: area) }) {
+                Button("New Task", systemImage: "plus") { Task { await newTask(in: area) } }
+                Button("New Project", systemImage: "chart.pie") { Task { await newProject() } }
+                Divider()
+                Button("Area File", systemImage: "doc.text") { nav.push(.file(path)) }
+                Button("Rename", systemImage: "pencil") {
+                    newTitle = area.title
+                    isRenaming = true
+                }
+                if let url = model.vault?.url(for: path) {
+                    ShareLink(item: url) { Label("Share…", systemImage: "square.and.arrow.up") }
+                }
+                Divider()
+                Button("Move to Trash", systemImage: "trash", role: .destructive) {
+                    Task { await model.moveToTrash([path]) }
+                }
+            } content: {
+                if !projects.isEmpty {
+                    fold("Projects", count: projects.count)
+                    if !isFolded("Projects") {
+                        ForEach(projects) { PhoneProjectRow(model: model, progress: $0, showsDates: true) }
+                    }
+                }
+                fold("Tasks", count: open.count)
+                if !isFolded("Tasks") {
+                    if open.isEmpty {
+                        Text("No tasks filed straight to \(area.title). Tasks in its projects stay on their project.")
+                            .scaledFont(size: 15)
+                            .foregroundStyle(theme.color(\.muted))
+                            .padding(16)
+                    }
+                    ForEach(open) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
+                }
+                fold("Completed", count: done.count)
+                if !isFolded("Completed") {
+                    ForEach(done) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
+                }
+            }
+            .alert("Rename Area", isPresented: $isRenaming) {
+                TextField("Name", text: $newTitle)
+                Button("Cancel", role: .cancel) {}
+                Button("Rename") { Task { await rename() } }
+            }
+        } else {
+            ContentUnavailableView("Area not found", systemImage: "questionmark.folder",
+                                   description: Text("This area’s file is no longer in the folder."))
+        }
+    }
+
+    /// Completed starts folded: a stored entry for it means it was opened.
+    private func isFolded(_ group: String) -> Bool {
+        model.isFolded(group, in: path) != (group == "Completed")
+    }
+
+    private func fold(_ title: String, count: Int) -> some View {
+        PhoneFoldHeader(model: model, title: title, count: count, group: title, in: path, isFolded: isFolded(title))
+    }
+
+    private func newTask(in area: Item) async {
+        if let path = await model.newLinkedTask(in: area) { nav.push(.file(path)) }
+    }
+
+    private func newProject() async {
+        model.domain = .area(path)
+        await model.newProject()
+        if let path = model.selection { nav.push(.file(path)) }
+    }
+
+    /// Renames the area's file, and this screen follows it to its new path.
+    private func rename() async {
+        let title = newTitle.trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty else { return }
+        model.domain = .area(path)
+        await model.rename(path, to: title)
+        if case let .area(renamed) = model.domain, renamed != path {
+            nav.replace(.area(path), with: .area(renamed))
+        }
     }
 }
 #endif

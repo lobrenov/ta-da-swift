@@ -108,7 +108,7 @@ import TaDaCore
             case date(AgendaEntry.Kind)
         }
     }
-    /// Deleting an area waits here for the user to confirm; `confirmTrash()` goes ahead.
+    /// Deleting an area waits here for the user to confirm; `confirmTrash(_:)` goes ahead.
     var trashConfirmation: TrashConfirmation?
     struct TrashConfirmation: Equatable {
         let id = UUID()
@@ -853,10 +853,10 @@ import TaDaCore
         await refresh()
     }
 
-    /// Deletes the files `trashConfirmation` asked about.
-    func confirmTrash() async {
-        guard let request = trashConfirmation else { return }
-        trashConfirmation = nil
+    /// Deletes the files `request` asked about. An alert has already cleared `trashConfirmation` by the time its
+    /// button's task runs, so the request comes from the alert.
+    func confirmTrash(_ request: TrashConfirmation) async {
+        if trashConfirmation?.id == request.id { trashConfirmation = nil }
         await moveToTrash(request.paths, confirmed: true)
     }
 

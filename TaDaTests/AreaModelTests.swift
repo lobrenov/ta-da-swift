@@ -92,7 +92,10 @@ struct AreaModelTests {
         #expect(text.title == "Delete “Home”?")
         #expect(text.message.hasPrefix("Home, its 1 project and their 1 task, and its 1 own task move to the Trash."))
 
-        await model.confirmTrash()
+        // The alert clears the request as it closes, before its button's task runs.
+        let request = try #require(model.trashConfirmation)
+        model.trashConfirmation = nil
+        await model.confirmTrash(request)
         #expect(model.trashConfirmation == nil && model.domain == .today)
         #expect(model.index.items.keys.sorted() == ["projects/Side.md", "tasks/Loose.md"])
         #expect(model.trash.count == 4)

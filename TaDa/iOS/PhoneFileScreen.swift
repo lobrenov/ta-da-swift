@@ -1,5 +1,6 @@
-// A task's or project's file: title, property chips and a quiet line, then the body in the live editor (or the whole
-// file in Source), and for a project its linked tasks. The tab bar gives way to a toolbar of the file's actions.
+// A task's, project's or area's file: title, property chips (none for an area) and a quiet line, then the body in the
+// live editor (or the whole file in Source), and for a project its linked tasks. The tab bar gives way to a toolbar of
+// the file's actions.
 #if os(iOS)
 import SwiftUI
 import UIKit
@@ -77,7 +78,9 @@ struct PhoneFileScreen: View {
                     .padding(.horizontal, -16)
                 TitleField(model: model, document: document, size: 28)
                 if let item = document.item {
-                    PhoneChips(model: model, item: model.index[item.path] ?? item)
+                    if item.properties.kind != .area {
+                        PhoneChips(model: model, item: model.index[item.path] ?? item)
+                    }
                     QuietLine(model: model, item: item)
                 }
                 WarningList(warnings: document.item.map { model.index[$0.path].map(model.index.warnings(for:)) ?? $0.warnings } ?? [])
@@ -124,25 +127,30 @@ struct PhoneFileScreen: View {
         }
         if let item = document?.item {
             ToolbarItemGroup(placement: .bottomBar) {
-                let isDone = item.properties.status == .done
-                Button {
-                    nav.play(isDone ? .pick : .complete)
-                    Task { await model.toggleCompletion(model.index[item.path] ?? item) }
-                } label: {
-                    Label(isDone ? "Reopen" : "Complete", systemImage: isDone ? "checkmark.circle.fill" : "checkmark.circle")
+                if item.properties.kind != .area {
+                    let isDone = item.properties.status == .done
+                    Button {
+                        nav.play(isDone ? .pick : .complete)
+                        Task { await model.toggleCompletion(model.index[item.path] ?? item) }
+                    } label: {
+                        Label(isDone ? "Reopen" : "Complete", systemImage: isDone ? "checkmark.circle.fill" : "checkmark.circle")
+                    }
+                    .tint(theme.color(\.done))
+                    Button("Schedule", systemImage: "calendar") { nav.sheet = .date(.due, paths: [item.path]) }
+                    Button("Set Deadline", systemImage: "flag") { nav.sheet = .date(.deadline, paths: [item.path]) }
                 }
-                .tint(theme.color(\.done))
-                Button("Schedule", systemImage: "calendar") { nav.sheet = .date(.due, paths: [item.path]) }
-                Button("Set Deadline", systemImage: "flag") { nav.sheet = .date(.deadline, paths: [item.path]) }
                 if item.properties.kind == .task {
-                        Button("Move to Project", systemImage: "folder") { nav.sheet = .project(paths: [item.path]) }
+                    Button("Move", systemImage: "folder") { nav.sheet = .move(paths: [item.path]) }
                 }
                 if let url = model.vault?.url(for: item.path) {
                     ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
                 }
                 Button("Move to Trash", systemImage: "trash", role: .destructive) {
-                    nav.play(.trash)
-                    nav.pop()
+                    // An area asks first, and its screens go once it's deleted.
+                    if item.properties.kind != .area {
+                        nav.play(.trash)
+                        nav.pop()
+                    }
                     Task { await model.moveToTrash([item.path]) }
                 }
                 .tint(theme.color(\.deadline))
@@ -152,11 +160,17 @@ struct PhoneFileScreen: View {
 
     @ViewBuilder private var moreMenu: some View {
         if let item = document?.item {
-            if let project = model.index.project(of: item) {
-                Button("Open \(project.title)", systemImage: "chart.pie") { nav.push(.project(project.path)) }
+            if let parent = model.index.parent(of: item) {
+                let isArea = parent.properties.kind == .area
+                Button("Open \(parent.title)", systemImage: isArea ? "cube" : "chart.pie") {
+                    nav.push(isArea ? .area(parent.path) : .project(parent.path))
+                }
             }
             if item.properties.kind == .project {
                 Button("Show Tasks", systemImage: "list.bullet") { nav.push(.project(item.path)) }
+            }
+            if item.properties.kind == .area {
+                Button("Show Projects and Tasks", systemImage: "list.bullet") { nav.push(.area(item.path)) }
             }
             let backlinks = model.index.backlinks(to: item)
             if !backlinks.isEmpty {
@@ -177,7 +191,7 @@ struct PhoneFileScreen: View {
     }
 }
 
-/// The type, the day the file was created and its progress, under the chips.
+/// The type, a task's area through its project, the day the file was created and its progress, under the chips.
 private struct QuietLine: View {
     let model: AppModel
     let item: Item
@@ -186,6 +200,9 @@ private struct QuietLine: View {
     var body: some View {
         let p = item.properties
         var parts = [p.kind.rawValue]
+        if p.kind == .task, p.project != nil, let area = model.index.area(of: item) {
+            parts.append("in \(area.title)")
+        }
         if let created = p.createdDate {
             parts.append("created \(created.date().formatted(.dateTime.day().month(.abbreviated).year()))")
         }
@@ -195,6 +212,9 @@ private struct QuietLine: View {
         if p.kind == .project {
             let progress = model.index.progress(of: model.index[item.path] ?? item)
             parts.append("\(progress.done) of \(progress.total) tasks done")
+        } else if p.kind == .area {
+            let projects = model.index.projects(in: item).count
+            parts.append("\(projects == 1 ? "1 project" : "\(projects) projects") · \(tasks(model.index.tasks(in: item).count))")
         } else if item.subtasks.total > 0 {
             parts.append("\(item.subtasks.done)/\(item.subtasks.total)")
         }
@@ -204,8 +224,9 @@ private struct QuietLine: View {
     }
 }
 
-/// A file's properties as chips: status opens a menu; project, due date and deadline open their sheets. A missing one
-/// is a dashed chip that adds it.
+/// A file's properties as chips: status opens a menu; a task's project or area (the move sheet), a project's area (the
+/// area sheet), due date and deadline open their sheets. A missing one is a dashed chip that adds it; a project or
+/// area no file has is struck through.
 struct PhoneChips: View {
     let model: AppModel
     let item: Item
@@ -232,23 +253,32 @@ struct PhoneChips: View {
             }
             .accessibilityLabel("Status")
             .accessibilityValue(p.status.rawValue)
-            if p.kind == .task {
-                let project = model.index.project(of: item)
-                Button { nav.sheet = .project(paths: [item.path]) } label: {
-                    if let project {
+            if p.kind == .task || p.kind == .project {
+                let parent = model.index.parent(of: item)
+                let link = p.kind == .task ? p.project ?? p.area : p.area
+                let isArea = parent.map { $0.properties.kind == .area } ?? (p.kind == .project || p.project == nil && p.area != nil)
+                Button { nav.sheet = p.kind == .task ? .move(paths: [item.path]) : .area(paths: [item.path]) } label: {
+                    if let parent {
                         chip(missing: false, text: \.link) {
-                            ProgressRing(fraction: model.index.progress(of: project).fraction).foregroundStyle(theme.color(\.accent))
-                            Text(project.title).lineLimit(1)
+                            if isArea {
+                                AreaIcon(size: 15)
+                            } else {
+                                ProgressRing(fraction: model.index.progress(of: parent).fraction).foregroundStyle(theme.color(\.accent))
+                            }
+                            Text(parent.title).lineLimit(1)
                         }
-                    } else if let link = p.project {
-                        chip(missing: false, text: \.muted) { Text(link.title).strikethrough() }
+                    } else if let link {
+                        chip(missing: false, text: \.muted) {
+                            if isArea { AreaIcon(size: 15, tint: \.muted) }
+                            Text(link.title).strikethrough()
+                        }
                     } else {
-                        missing("Project")
+                        missing(p.kind == .task ? "Project" : "Area")
                     }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Project")
-                .accessibilityValue(project?.title ?? "None")
+                .accessibilityLabel(isArea ? "Area" : "Project")
+                .accessibilityValue(parent?.title ?? link.map { "\($0.title), not found" } ?? "None")
             }
             dateChip(.due, p.dueDate)
             dateChip(.deadline, p.deadline)

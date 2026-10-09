@@ -1,5 +1,6 @@
 // The iPhone's navigation: the five tabs, each tab's pushed screens, the sheet on top, the rows picked by swiping,
-// and the haptic each action plays. Nothing here is iOS-only, so the tests run with the Mac's.
+// the rows the move and area sheets list, and the haptic each action plays. Nothing here is iOS-only, so the tests
+// run with the Mac's.
 import SwiftUI
 import TaDaCore
 
@@ -13,25 +14,109 @@ enum PhoneRoute: Hashable {
     case file(String)
     /// A project's tasks.
     case project(String)
+    /// An area's projects and tasks.
+    case area(String)
     /// Settings, scrolled to a section.
     case settings(SettingsSection)
     case trash
+
+    /// The file the screen shows, if it shows one.
+    var path: String? {
+        switch self {
+        case let .file(path), let .project(path), let .area(path): path
+        case .settings, .trash: nil
+        }
+    }
 }
 
 enum SettingsSection: String, Hashable, CaseIterable {
     case vault, themes, editor, haptics
 }
 
-/// A picker over everything: a due date or deadline, or a project, for one or more files.
+/// A picker over everything: a due date or deadline for one or more files, a project or area for tasks, or an area
+/// for projects.
 enum PhoneSheet: Identifiable {
     case date(AgendaEntry.Kind, paths: [String])
-    case project(paths: [String])
+    case move(paths: [String])
+    case area(paths: [String])
 
     var id: String {
         switch self {
         case let .date(kind, paths): "\(kind)\(paths)"
-        case let .project(paths): "project\(paths)"
+        case let .move(paths): "move\(paths)"
+        case let .area(paths): "area\(paths)"
         }
+    }
+}
+
+/// A row of the move sheet (for tasks) or the area sheet (for projects).
+enum PhoneMoveRow: Hashable, Identifiable {
+    /// Takes the files out of their project or area: Loose tasks, or No area.
+    case none
+    case project(ProjectProgress)
+    case area(Item)
+    /// Creates the area the files all name that has no file.
+    case createArea(String)
+
+    var id: String {
+        switch self {
+        case .none: "none"
+        case let .project(progress): progress.project.path
+        case let .area(area): area.path
+        case let .createArea(name): "create \(name)"
+        }
+    }
+
+    /// The move sheet for `tasks` and what's typed in its search: Create Area when the tasks all name the same area
+    /// that has no file; Loose tasks and the active projects without an area; then each area with its active projects.
+    /// The tasks' own project is listed when it's done. Typing keeps the rows whose titles contain the text and drops
+    /// Create Area and Loose tasks.
+    static func moveGroups(index: VaultIndex, tasks: [Item], query: String) -> [[PhoneMoveRow]] {
+        let name = query.trimmingCharacters(in: .whitespaces)
+        func matches(_ title: String) -> Bool { name.isEmpty || title.localizedStandardContains(name) }
+        let current = currentParent(index: index, files: tasks) ?? nil
+        func projects(_ projects: [ProjectProgress], in area: Item?) -> [PhoneMoveRow] {
+            var projects = projects
+            if let current, current.properties.kind == .project, current.properties.status == .done,
+               index.area(of: current)?.path == area?.path {
+                projects = (projects + [index.progress(of: current)]).sorted { VaultIndex.byTitle($0.project, $1.project) }
+            }
+            return projects.filter { matches($0.project.title) }.map { .project($0) }
+        }
+        var groups: [[PhoneMoveRow]] = []
+        if name.isEmpty, let area = unresolvedArea(index: index, files: tasks) { groups.append([.createArea(area)]) }
+        groups.append((name.isEmpty ? [.none] : []) + projects(index.looseProjects(), in: nil))
+        for entry in index.areaProjects() {
+            groups.append((matches(entry.area.title) ? [.area(entry.area)] : []) + projects(entry.projects, in: entry.area))
+        }
+        return groups.filter { !$0.isEmpty }
+    }
+
+    /// The area sheet for `projects`: Create Area when they all name the same area that has no file; the areas whose
+    /// titles contain what's typed; then No area until something's typed.
+    static func areaGroups(index: VaultIndex, projects: [Item], query: String) -> [[PhoneMoveRow]] {
+        let name = query.trimmingCharacters(in: .whitespaces)
+        var groups: [[PhoneMoveRow]] = []
+        if name.isEmpty, let area = unresolvedArea(index: index, files: projects) { groups.append([.createArea(area)]) }
+        groups.append(index.areas.sorted(by: VaultIndex.byTitle)
+            .filter { name.isEmpty || $0.title.localizedStandardContains(name) }.map { .area($0) })
+        if name.isEmpty { groups.append([.none]) }
+        return groups.filter { !$0.isEmpty }
+    }
+
+    /// The parent `files` share: `.some(parent)`, `.some(nil)` when none of them names a project or area, or nil when
+    /// they differ or name one that has no file.
+    static func currentParent(index: VaultIndex, files: [Item]) -> Item?? {
+        let parents = Set(files.map { index.parent(of: $0)?.path })
+        guard parents.count == 1, let path = parents.first else { return nil }
+        if let path { return .some(index[path]) }
+        return files.allSatisfy { $0.properties.project == nil && $0.properties.area == nil } ? .some(nil) : nil
+    }
+
+    /// The area title every one of `files` names when no area has it.
+    private static func unresolvedArea(index: VaultIndex, files: [Item]) -> String? {
+        let names = Set(files.map { file in file.properties.area.flatMap { index.parent(of: file) == nil ? $0.title : nil } })
+        return names.count == 1 ? names.first ?? nil : nil
     }
 }
 
@@ -89,6 +174,16 @@ enum Haptic: Equatable {
 
     func pop() {
         _ = stacks[tab]?.popLast()
+    }
+
+    /// Points every tab's screens for `route` at `replacement`, as after a rename.
+    func replace(_ route: PhoneRoute, with replacement: PhoneRoute) {
+        stacks = stacks.mapValues { routes in routes.map { $0 == route ? replacement : $0 } }
+    }
+
+    /// Takes the screens for files that are gone out of every tab, as after a delete.
+    func dropScreens(where isGone: (String) -> Bool) {
+        stacks = stacks.mapValues { routes in routes.filter { $0.path.map { !isGone($0) } ?? true } }
     }
 
     func stack(_ tab: PhoneTab) -> Binding<[PhoneRoute]> {

@@ -2,7 +2,8 @@ import Testing
 import TaDaCore
 @testable import TaDa
 
-/// The iPhone's picking and date-sheet rules. They don't touch UIKit, so they run with the Mac's tests.
+/// The iPhone's picking, date-sheet, move-sheet and route rules. They don't touch UIKit, so they run with the Mac's
+/// tests.
 @MainActor
 struct PhoneNavigationTests {
     @Test func swipingPicksInOrderAndUnpickingTheLastEndsPicking() {
@@ -75,5 +76,75 @@ struct PhoneNavigationTests {
         let days: [AgendaEntry.Kind: LocalDate?] = [.due: nil, .deadline: LocalDate("2026-10-09")]
         let changes = AgendaEntry.Kind.changes([.due], in: days)
         #expect(changes.count == 1 && changes[0].0 == .due && changes[0].1 == nil)
+    }
+
+    // MARK: Move and area sheets
+
+    private static let index = VaultIndex([
+        ("areas/Home.md", "---\ntype: area\n---\n"),
+        ("areas/Work.md", "---\ntype: area\n---\n"),
+        ("projects/Garden.md", "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n"),
+        ("projects/Old.md", "---\ntype: project\nstatus: Done\narea: \"[[Home]]\"\n---\n"),
+        ("projects/Side.md", "---\ntype: project\nstatus: Doing\n---\n"),
+        ("projects/Lost.md", "---\ntype: project\nstatus: Doing\narea: \"[[Nowhere]]\"\n---\n"),
+        ("tasks/Weed.md", "---\ntype: task\nproject: \"[[Garden]]\"\n---\n"),
+        ("tasks/Tidy.md", "---\ntype: task\nproject: \"[[Old]]\"\n---\n"),
+        ("tasks/Rent.md", "---\ntype: task\narea: \"[[Home]]\"\n---\n"),
+        ("tasks/Loose.md", "---\ntype: task\n---\n"),
+        ("tasks/Call.md", "---\ntype: task\narea: \"[[Nowhere]]\"\n---\n"),
+    ].compactMap { Item(parsing: $1, path: $0) })
+
+    private func names(_ groups: [[PhoneMoveRow]]) -> [[String]] {
+        groups.map { $0.map { row in
+            switch row {
+            case .none: "none"
+            case let .project(progress): progress.project.title
+            case let .area(area): "[\(area.title)]"
+            case let .createArea(name): "create \(name)"
+            }
+        } }
+    }
+
+    private func items(_ paths: String...) -> [Item] { paths.compactMap { Self.index[$0] } }
+
+    @Test func theMoveSheetListsLooseThenEachAreaWithItsProjects() {
+        let groups = PhoneMoveRow.moveGroups(index: Self.index, tasks: items("tasks/Weed.md"), query: "")
+        #expect(names(groups) == [["none", "Lost", "Side"], ["[Home]", "Garden"], ["[Work]"]])
+        #expect(PhoneMoveRow.currentParent(index: Self.index, files: items("tasks/Weed.md"))??.title == "Garden")
+    }
+
+    @Test func theMoveSheetListsTheTasksDoneProjectAndCreatesTheirMissingArea() {
+        #expect(names(PhoneMoveRow.moveGroups(index: Self.index, tasks: items("tasks/Tidy.md"), query: ""))[1] == ["[Home]", "Garden", "Old"])
+        let groups = PhoneMoveRow.moveGroups(index: Self.index, tasks: items("tasks/Call.md"), query: "")
+        #expect(names(groups).first == ["create Nowhere"])
+        #expect(PhoneMoveRow.currentParent(index: Self.index, files: items("tasks/Call.md")) == nil)
+    }
+
+    @Test func typingKeepsMatchingTitlesAndDropsLooseAndCreate() {
+        #expect(names(PhoneMoveRow.moveGroups(index: Self.index, tasks: items("tasks/Call.md"), query: "o")) == [["Lost"], ["[Home]"], ["[Work]"]])
+        #expect(names(PhoneMoveRow.moveGroups(index: Self.index, tasks: items("tasks/Weed.md"), query: "gar")) == [["Garden"]])
+    }
+
+    @Test func theCurrentParentIsSharedOrLoose() {
+        #expect(PhoneMoveRow.currentParent(index: Self.index, files: items("tasks/Loose.md")) == .some(nil))
+        #expect(PhoneMoveRow.currentParent(index: Self.index, files: items("tasks/Rent.md"))??.title == "Home")
+        #expect(PhoneMoveRow.currentParent(index: Self.index, files: items("tasks/Rent.md", "tasks/Weed.md")) == nil)
+    }
+
+    @Test func theAreaSheetListsAreasThenNoArea() {
+        #expect(names(PhoneMoveRow.areaGroups(index: Self.index, projects: items("projects/Side.md"), query: "")) == [["[Home]", "[Work]"], ["none"]])
+        #expect(names(PhoneMoveRow.areaGroups(index: Self.index, projects: items("projects/Lost.md"), query: "")).first == ["create Nowhere"])
+        #expect(names(PhoneMoveRow.areaGroups(index: Self.index, projects: items("projects/Side.md"), query: "wo")) == [["[Work]"]])
+    }
+
+    // MARK: Routes
+
+    @Test func aRenameAndADeleteUpdateEveryTabsScreens() {
+        let nav = PhoneNavigation()
+        nav.stacks = [.projects: [.area("areas/Home.md"), .file("tasks/Rent.md")], .today: [.file("tasks/Weed.md"), .trash]]
+        nav.replace(.area("areas/Home.md"), with: .area("areas/House.md"))
+        #expect(nav.stacks[.projects] == [.area("areas/House.md"), .file("tasks/Rent.md")])
+        nav.dropScreens { $0 != "tasks/Weed.md" }
+        #expect(nav.stacks[.projects] == [] && nav.stacks[.today] == [.file("tasks/Weed.md"), .trash])
     }
 }
