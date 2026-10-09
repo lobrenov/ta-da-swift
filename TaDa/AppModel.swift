@@ -273,11 +273,40 @@ import TaDaCore
         #if os(iOS)
         await Self.run { vault.downloadPlaceholders() }
         #endif
+        startWatching(vault)
+    }
+
+    private func startWatching(_ vault: Vault) {
         watcher = VaultWatcher(root: vault.root) { [weak self] in
             Task { await self?.refresh() }
         }
         isWatching = watcher != nil
     }
+
+    #if os(iOS)
+    /// Whether the app is in the background, where it can't answer file coordination.
+    @ObservationIgnored private var isInBackground = false
+
+    /// Saves unsaved edits, then stops presenting the folder and the open file, which a suspended app
+    /// couldn't answer for.
+    func enterBackground() async {
+        isInBackground = true
+        if document?.isDirty == true { await saveBeforeQuitting() }
+        guard isInBackground else { return }
+        watcher = nil
+        present(nil)
+    }
+
+    /// Presents the folder and the open file again, and refreshes.
+    func becomeActive() async {
+        isInBackground = false
+        if let vault, state == .ready {
+            if watcher == nil { startWatching(vault) }
+            if presenter == nil { present(document) }
+        }
+        await refresh()
+    }
+    #endif
 
     // MARK: Changes made outside Ta Da
 

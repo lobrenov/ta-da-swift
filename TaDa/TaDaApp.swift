@@ -73,7 +73,7 @@ struct TaDaApp: App {
             case .active:
                 // A suspended app can miss the day change.
                 model.today = LocalDate(Date())
-                Task { await model.refresh() }
+                Task { await model.becomeActive() }
             case .inactive:
                 if let document = model.document { Task { await model.save(document) } }
             case .background:
@@ -84,15 +84,14 @@ struct TaDaApp: App {
         }
     }
 
-    /// Saves the open file, and keeps unsaved edits in a copy if it changed outside Ta Da, under a background task
-    /// so the app isn't suspended before it finishes.
+    /// Saves the open file (keeping unsaved edits in a copy if it changed outside Ta Da) and stops presenting files,
+    /// under a background task so the app isn't suspended before it finishes.
     private func saveInBackground() {
-        guard model.document?.isDirty == true else { return }
         let application = UIApplication.shared
         let task = BackgroundTask()
         task.id = application.beginBackgroundTask(withName: "Save edits") { [task] in task.end() }
         Task { [model] in
-            await model.saveBeforeQuitting()
+            await model.enterBackground()
             task.end()
         }
     }
