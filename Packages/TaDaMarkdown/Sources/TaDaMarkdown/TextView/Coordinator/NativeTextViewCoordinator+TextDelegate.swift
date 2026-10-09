@@ -890,8 +890,9 @@ extension NativeTextViewCoordinator {
             return true
         }
         guard let parsed = preEditParsed else { return true }
-        // Ta Da fork: a typed `/` may open the slash menu.
+        // Ta Da fork: a typed `/`, `[[` or `![[` may open the slash or link menu.
         noteSlashCommandEdit(affectedCharRange, replacement: replacementString, in: preNS, codeTokens: parsed.codeTokens)
+        defer { isOpeningSlashCommand = false }
         pendingPreEditActiveTokenIndices = activeTokenIndices(
             parsed: parsed,
             selection: textView.currentSelectedRange,

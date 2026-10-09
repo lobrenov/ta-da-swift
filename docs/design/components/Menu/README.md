@@ -1,6 +1,6 @@
 # Menu
 
-A themed list of actions in a floating panel. Two densities share one look: the full menu for the slash, checkbox and callout menus in the editor, and the compact file menu for a right-clicked project or task.
+A themed list of actions in a floating panel. Two densities share one look: the full menu for the slash, link, checkbox and callout menus in the editor, and the compact file menu for a right-clicked project or task.
 
 ## Anatomy
 
@@ -16,7 +16,7 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 
 - `is-active` — the highlighted item: `surface` fill, `strong` label, glyph in `accent`. The arrow keys and the pointer move it.
 - `is-danger` — Delete Forever: label and glyph in `deadline`; highlighted, a `deadline` tint (14% on light schemes, 22% on dark).
-- The slash, checkbox and callout menus open with an item highlighted (the first, the current marker or the current type). The file menu opens with none, as macOS context menus do.
+- The slash, link, checkbox and callout menus open with an item highlighted (the first, the current marker or the current type). The file menu opens with none, as macOS context menus do.
 
 ## File menu
 

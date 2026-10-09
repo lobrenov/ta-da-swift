@@ -14,6 +14,22 @@ extension Vault {
         return path
     }
 
+    /// Every image in the folder, most recently changed first. Hidden folders, including `.trash`, are skipped.
+    public func attachmentPaths() -> [String] {
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .contentModificationDateKey]
+        guard let files = FileManager.default.enumerator(
+            at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else { return [] }
+        let rootComponents = root.pathComponents.count
+        var dated: [(path: String, date: Date)] = []
+        for case let url as URL in files where Self.imageExtensions.contains(url.pathExtension.lowercased()) {
+            guard let values = try? url.resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
+            let path = url.standardizedFileURL.pathComponents.dropFirst(rootComponents).joined(separator: "/")
+            dated.append((path, values.contentModificationDate ?? .distantPast))
+        }
+        return dated.sorted { $0.date != $1.date ? $0.date > $1.date : $0.path < $1.path }.map(\.path)
+    }
+
     /// The image an embed shows: the target as a path, else `attachments/<filename>`, else the first file with that
     /// filename by path, ignoring case. Hidden folders, including `.trash`, are skipped. Nil when there's none.
     public func attachmentPath(for embed: WikiLink) -> String? {

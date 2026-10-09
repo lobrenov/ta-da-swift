@@ -421,6 +421,61 @@ struct SlashCommandTests {
         #expect(tv.string == "Intro\n/bo")
     }
 
+    @Test func doubleBracketOpensALinkQueryWithItsCloser() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("Ask ", recorder)
+        try await type(tv, "[[uat")
+        #expect(tv.string == "Ask [[uat]]")
+        let state = try #require(recorder.last)
+        #expect(state.trigger == .link && state.query == "uat")
+        #expect(state.range == NSRange(location: 4, length: 5))
+    }
+
+    @Test func bangDoubleBracketOpensAnEmbedQuery() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("", recorder)
+        try await type(tv, "![[od")
+        let state = try #require(recorder.last)
+        #expect(state.trigger == .embed && state.query == "od")
+        #expect(state.range == NSRange(location: 0, length: 5))
+    }
+
+    @Test func aLinkQueryTakesSpacesAndSlashesAndClosesOnABracket() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("", recorder)
+        try await type(tv, "[[a b/c")
+        #expect(recorder.last?.trigger == .link && recorder.last?.query == "a b/c")
+        try await type(tv, "]")
+        #expect(recorder.states.last! == nil)
+
+        let third = Recorder()
+        let (other, _) = makeEditor("[", third)
+        try await type(other, "[[x")
+        #expect(third.states.isEmpty)
+    }
+
+    @Test func insertReplacesALinkQueryThroughItsCloser() async throws {
+        let recorder = Recorder()
+        let (tv, proxy) = makeEditor("Ask ", recorder)
+        try await type(tv, "[[uat")
+        proxy.insert("[[Draft the UAT scripts]]", selecting: NSRange(location: 25, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(tv.string == "Ask [[Draft the UAT scripts]]")
+        #expect(tv.selectedRange() == NSRange(location: 29, length: 0))
+        tv.undoManager?.undo()
+        #expect(tv.string == "Ask [[uat]]")
+    }
+
+    @Test func theProxyChoosesTheTriggers() async throws {
+        let recorder = Recorder()
+        let (tv, proxy) = makeEditor("", recorder)
+        proxy.triggers = [.link, .embed]
+        try await type(tv, "/h ")
+        #expect(recorder.states.isEmpty)
+        try await type(tv, "[[")
+        #expect(recorder.last?.trigger == .link)
+    }
+
     @Test func slashInsideCodeIsIgnored() async throws {
         let recorder = Recorder()
         let (tv, _) = makeEditor("```\n\n```\n", recorder)

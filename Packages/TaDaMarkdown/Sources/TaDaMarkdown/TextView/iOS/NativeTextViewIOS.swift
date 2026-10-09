@@ -214,19 +214,32 @@ final class NativeTextView: UITextView {
         }
         if let keyboardBarHost {
             keyboardBarHost.rootView = bar
+            fitKeyboardBar()
             return
         }
         let host = UIHostingController(rootView: bar)
         host.view.backgroundColor = .clear
         host.safeAreaRegions = []
-        let container = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 52))
-        container.autoresizingMask = .flexibleWidth
+        let container = KeyboardBarContainer(frame: CGRect(x: 0, y: 0, width: 0, height: 52))
+        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         host.view.frame = container.bounds
         host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         container.addSubview(host.view)
         keyboardBarHost = host
         inputAccessoryView = container
+        fitKeyboardBar()
         if isFirstResponder { reloadInputViews() }
+    }
+
+    /// Ta Da fork: makes the bar's container as tall as its content, which can grow above the bar (a list of
+    /// choices), and keeps the caret above it.
+    private func fitKeyboardBar() {
+        guard let host = keyboardBarHost, let container = inputAccessoryView as? KeyboardBarContainer else { return }
+        let width = container.bounds.width > 0 ? container.bounds.width : window?.bounds.width ?? 390
+        let height = host.sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude)).height.rounded(.up)
+        guard height != container.height else { return }
+        container.height = height
+        revealCaretAboveKeyboardBarSoon()
     }
 
     /// How far the caret stays above the keyboard bar.
@@ -328,5 +341,14 @@ private final class EditorGestures: NSObject, UIGestureRecognizerDelegate {
                            shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
         other.view === textView && other !== tap && other !== press
     }
+}
+
+/// Ta Da fork: the keyboard bar's container. The keyboard sizes it by its intrinsic height.
+private final class KeyboardBarContainer: UIView {
+    var height: CGFloat = 52 {
+        didSet { if height != oldValue { invalidateIntrinsicContentSize() } }
+    }
+
+    override var intrinsicContentSize: CGSize { CGSize(width: UIView.noIntrinsicMetric, height: height) }
 }
 #endif

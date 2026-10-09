@@ -100,6 +100,10 @@ public final class NativeTextViewCoordinator: NSObject {
     var onSlashCommandChange: ((SlashCommandState?) -> Void)?
     var onSlashCommandKey: ((InlinePreviewKey) -> Bool)?
     var slashAnchor: Int?
+    var slashTrigger: SlashCommandState.Trigger = .slash
+    /// True from a typed trigger until the end of its `shouldChangeText`.
+    var isOpeningSlashCommand = false
+    var slashTriggers: Set<SlashCommandState.Trigger> = Set(SlashCommandState.Trigger.allCases)
     var slashCommand: SlashCommandQuery?
     var reportedSlashCommand: SlashCommandState?
     var onCodeBlockSelectionChange: (([CodeBlockSelection]) -> Void)?

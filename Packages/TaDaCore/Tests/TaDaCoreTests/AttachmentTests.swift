@@ -26,3 +26,15 @@ import Testing
         #expect(try path("[[Note]]") == nil)
     }
 }
+
+@Test func attachmentPathsListImagesNewestFirstOutsideHiddenFolders() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        for path in ["attachments/old.png", "notes/new.JPG", ".trash/attachments/gone.png", "notes/readme.md", "notes/report.pdf"] {
+            try writeFile("x", path, in: folder)
+        }
+        try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: -60)],
+                                              ofItemAtPath: vault.url(for: "attachments/old.png").path(percentEncoded: false))
+        #expect(vault.attachmentPaths() == ["notes/new.JPG", "attachments/old.png"])
+    }
+}

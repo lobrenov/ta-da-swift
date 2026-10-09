@@ -19,6 +19,8 @@ struct LiveEditor: View {
     /// Plays a light tap when a task box is toggled (iOS).
     var haptics = false
     var header: AnyView? = nil
+    /// What `[[` and `![[` list; without it, typing them opens no menu.
+    var links: LinkMenuSource? = nil
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
 
@@ -27,7 +29,12 @@ struct LiveEditor: View {
     @State private var slashMenu = SlashMenuController()
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
+    @State private var linkMenu = LinkMenuController()
     #else
+    @State private var linkSearch = LinkMenuSearch()
+    /// The open `[[` or `![[` query's choices, and the one ↵ picks.
+    @State private var linkChoices: [LinkChoice] = []
+    @State private var linkHighlight = 0
     @State private var checkboxMenu: MenuRequest<TaskMarkerMenuRequest>?
     @State private var calloutMenu: MenuRequest<CalloutMenuRequest>?
     @State private var toggles = 0
@@ -44,12 +51,12 @@ struct LiveEditor: View {
             documentId: documentID,
             onLinkClick: onLinkClick,
             header: header,
-            onSlashCommandChange: showSlashMenu,
+            onSlashCommandChange: showQueryMenu,
             onSlashCommandKey: { key in
                 switch key {
-                case .moveUp: slashMenu.handle(.up)
-                case .moveDown: slashMenu.handle(.down)
-                case .confirm: slashMenu.handle(.confirm)
+                case .moveUp: slashMenu.handle(.up) || linkMenu.handle(.up)
+                case .moveDown: slashMenu.handle(.down) || linkMenu.handle(.down)
+                case .confirm: slashMenu.handle(.confirm) || linkMenu.handle(.confirm)
                 case .confirmAndOpen, .cancel: false
                 }
             },
@@ -58,8 +65,10 @@ struct LiveEditor: View {
             onCalloutMenu: showCalloutMenu
         )
         .focusedValue(\.editor, slashCommand)
+        .onAppear { slashCommand.triggers = links == nil ? [.slash] : [.slash, .link, .embed] }
         .onDisappear {
             slashMenu.hide()
+            linkMenu.hide()
             checkboxMenu.hide()
             calloutMenu.hide()
         }
@@ -72,6 +81,8 @@ struct LiveEditor: View {
             documentId: documentID,
             onLinkClick: onLinkClick,
             header: header,
+            onSlashCommandChange: showLinkChoices,
+            onSlashCommandKey: handleLinkKey,
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: {
                 checkboxMenu = MenuRequest($0, anchor: localRect($0.anchorRect))
@@ -82,9 +93,14 @@ struct LiveEditor: View {
                 menuPresses += 1
             },
             onTaskCheckboxToggle: { _ in toggles += 1 },
-            keyboardBar: AnyView(EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks,
-                                                   haptics: haptics))
+            keyboardBar: AnyView(VStack(spacing: 0) {
+                if !linkChoices.isEmpty {
+                    PhoneLinkList(choices: linkChoices, highlight: linkHighlight, search: linkSearch, theme: theme, pick: insertLink)
+                }
+                EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks, haptics: haptics)
+            })
         )
+        .onAppear { slashCommand.triggers = links == nil ? [] : [.link, .embed] }
         .sensoryFeedback(.impact(weight: .light), trigger: toggles) { _, _ in haptics }
         .sensoryFeedback(.impact(weight: .medium), trigger: menuPresses) { _, _ in haptics }
         .popover(item: $checkboxMenu, attachmentAnchor: .rect(.rect(checkboxMenu?.anchor ?? .zero))) { menu in
@@ -106,7 +122,38 @@ struct LiveEditor: View {
         #endif
     }
 
+    /// Replaces the `[[` or `![[` query with the choice's link or embed and puts the caret after it.
+    private func insertLink(_ choice: LinkChoice) {
+        let text = choice.markdown
+        slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
+    }
+
     #if os(iOS)
+    /// Lists the open `[[` or `![[` query's choices above the keyboard bar.
+    private func showLinkChoices(_ state: SlashCommandState?) {
+        guard let state, let links, state.trigger != .slash else {
+            linkChoices = []
+            linkSearch.reset()
+            return
+        }
+        linkSearch.source = links
+        let choices = linkSearch.choices(state.trigger == .link ? .link : .embed, query: state.query).choices
+        if choices != linkChoices { linkHighlight = 0 }
+        linkChoices = choices
+    }
+
+    /// A hardware keyboard's ↑/↓ move through the choices and ↵ picks one.
+    private func handleLinkKey(_ key: InlinePreviewKey) -> Bool {
+        guard !linkChoices.isEmpty else { return false }
+        switch key {
+        case .moveUp: linkHighlight = (linkHighlight + linkChoices.count - 1) % linkChoices.count
+        case .moveDown: linkHighlight = (linkHighlight + 1) % linkChoices.count
+        case .confirm, .confirmAndOpen: insertLink(linkChoices[min(linkHighlight, linkChoices.count - 1)])
+        case .cancel: return false
+        }
+        return true
+    }
+
     /// A window rect from the editor, in this view's coordinates, to anchor a popover.
     private func localRect(_ windowRect: CGRect) -> CGRect {
         guard let textView = slashCommand.textView else { return windowRect }
@@ -130,8 +177,30 @@ struct LiveEditor: View {
         )
     }
 
-    private func showSlashMenu(_ state: SlashCommandState?) {
-        guard let state else { return slashMenu.hide() }
+    private func showQueryMenu(_ state: SlashCommandState?) {
+        switch state?.trigger {
+        case nil:
+            slashMenu.hide()
+            linkMenu.hide()
+        case .slash:
+            linkMenu.hide()
+            showSlashMenu(state!)
+        case .link, .embed:
+            slashMenu.hide()
+            showLinkMenu(state!)
+        }
+    }
+
+    private func showLinkMenu(_ state: SlashCommandState) {
+        guard let links else { return }
+        linkMenu.search.source = links
+        linkMenu.show(
+            state.trigger == .link ? .link : .embed, query: state.query, anchor: state.anchorRect, theme: theme,
+            pick: insertLink, dismiss: { [slashCommand] in slashCommand.dismiss() }
+        )
+    }
+
+    private func showSlashMenu(_ state: SlashCommandState) {
         slashMenu.show(
             query: state.query, atLineStart: state.isAtLineStart, anchor: state.anchorRect, theme: theme,
             pick: { [slashCommand] command in
@@ -464,6 +533,55 @@ private struct EditorKeyboardBar: View {
         let start = textView.selectedRange.location
         textView.insertText(insertion.text)
         textView.selectedRange = NSRange(location: start + insertion.selection.location, length: insertion.selection.length)
+    }
+}
+
+/// The `[[` or `![[` query's choices, above the keyboard bar: a tap picks one.
+private struct PhoneLinkList: View {
+    let choices: [LinkChoice]
+    let highlight: Int
+    let search: LinkMenuSearch
+    let theme: Theme
+    let pick: (LinkChoice) -> Void
+
+    private static let rowHeight: CGFloat = 44
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(Array(choices.enumerated()), id: \.element.id) { offset, choice in
+                    Button { pick(choice) } label: {
+                        HStack(spacing: 12) {
+                            LinkChoiceIcon(icon: choice.icon, search: search, theme: theme, size: 18)
+                                .frame(width: 28, height: 28)
+                            Text(choice.title)
+                                .foregroundStyle(theme.color(offset == highlight ? \.strong : \.fg))
+                                .lineLimit(1)
+                                .layoutPriority(1)
+                            Spacer(minLength: 8)
+                            Text(choice.hint)
+                                .font(.system(size: 13))
+                                .foregroundStyle(theme.color(\.muted))
+                                .lineLimit(1)
+                                .frame(maxWidth: 120, alignment: .trailing)
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(height: Self.rowHeight)
+                        .background(offset == highlight ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 16))
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(choice.hint)
+                }
+            }
+            .padding(4)
+        }
+        .scrollIndicators(.never)
+        .frame(height: min(CGFloat(choices.count) * Self.rowHeight + 8, 162))
+        .font(.system(size: 17))
+        .glassEffect(in: .rect(cornerRadius: 20))
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
     }
 }
 

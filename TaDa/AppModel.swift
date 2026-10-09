@@ -160,6 +160,10 @@ import TaDaCore
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
     }
+    /// The files opened last, most recent first, for the link menu's Recent: eight besides the open one.
+    private(set) var recentFiles: [String] {
+        didSet { defaults.set(recentFiles, forKey: Keys.recentFiles) }
+    }
     /// The system appearance, kept current by `themed(by:)`.
     var systemIsDark = Appearance.systemIsDark
 
@@ -216,6 +220,7 @@ import TaDaCore
         static let foldedGroups = "foldedGroups"
         static let autocomplete = "autocomplete"
         static let hapticsOff = "hapticsOff"
+        static let recentFiles = "recentFiles"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -228,6 +233,7 @@ import TaDaCore
         foldedGroups = defaults.dictionary(forKey: Keys.foldedGroups) as? [String: [String]] ?? [:]
         autocomplete = Autocomplete(defaults.dictionary(forKey: Keys.autocomplete))
         haptics = !defaults.bool(forKey: Keys.hapticsOff)
+        recentFiles = defaults.stringArray(forKey: Keys.recentFiles) ?? []
     }
 
     // MARK: Folder
@@ -599,6 +605,7 @@ import TaDaCore
             }
             self.document = document
             documentError = nil
+            recentFiles = Array(([path] + recentFiles.filter { $0 != path }).prefix(9))
             document.conflicts = await Self.run { Conflicts.versions(of: vault.url(for: path)) }
         } catch {
             guard selection == path else { return }
@@ -805,6 +812,7 @@ import TaDaCore
         if domain == .area(path) { domain = .area(newPath) }
         if selection == path || selection == nil && (domain == .project(newPath) || domain == .area(newPath)) { selection = newPath }
         if let folded = foldedGroups.removeValue(forKey: path) { foldedGroups[newPath] = folded }
+        if recentFiles.contains(path) { recentFiles = recentFiles.map { $0 == path ? newPath : $0 } }
     }
 
     // MARK: Trash
