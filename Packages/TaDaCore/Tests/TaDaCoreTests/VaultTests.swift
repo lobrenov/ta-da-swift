@@ -102,7 +102,7 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
 
         let result = try vault.renameProject(at: "projects/Old Name.md", to: "New: Name", index: index)
         #expect(result.path == "projects/New - Name.md")
-        #expect(result.tasks.map(\.path) == ["tasks/Linked.md", "tasks/Linked CRLF.md"])
+        #expect(result.relinked.map(\.path) == ["tasks/Linked.md", "tasks/Linked CRLF.md"])
         #expect(result.failed.isEmpty)
         let after = try vault.read("tasks/Linked.md")
         #expect(changedLines(linked, after) == (["project: \"[[old name]]\" # keep?"], ["project: \"[[New - Name]]\""]))
@@ -142,7 +142,7 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
         let result = try vault.renameProject(at: "projects/Old.md", to: "New", index: index)
         #expect(result.path == "projects/New.md")
         #expect(result.failed == ["tasks/A.md"])
-        #expect(result.tasks.map(\.path) == ["tasks/B.md"])
+        #expect(result.relinked.map(\.path) == ["tasks/B.md"])
         #expect(try vault.read("tasks/B.md") == linked.replacingOccurrences(of: "[[Old]]", with: "[[New]]"))
     }
 }

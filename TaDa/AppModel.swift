@@ -749,8 +749,8 @@ import TaDaCore
             let (newPath, items, failed) = try await Self.run { () throws -> (String, [Item], [String]) in
                 let result = index[path]?.properties.kind == .project
                     ? try vault.renameProject(at: path, to: title, index: index)
-                    : (path: try vault.rename(path, to: title), tasks: [], failed: [])
-                return (result.path, try [vault.load(result.path, presenter: presenter)].compactMap { $0 } + result.tasks, result.failed)
+                    : (path: try vault.rename(path, to: title), relinked: [], failed: [])
+                return (result.path, try [vault.load(result.path, presenter: presenter)].compactMap { $0 } + result.relinked, result.failed)
             }
             guard newPath != path else { return }
             follow(path, to: newPath, items: items)
@@ -816,7 +816,8 @@ import TaDaCore
         guard let vault else { return }
         let paths = Array(paths)
         do {
-            let restored = try await Self.run { try vault.restore(paths) }
+            let index = index, today = today
+            let restored = try await Self.run { try vault.restore(paths, index: index, today: today) }
             let folders = Set(restored.map { Vault.folder(of: $0) + "/" }).sorted()
             trashNote = "\(restored.count == 1 ? "1 item" : "\(restored.count) items") restored to \(folders.joined(separator: " and "))"
         } catch {

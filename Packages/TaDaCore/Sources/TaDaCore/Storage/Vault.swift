@@ -195,30 +195,43 @@ public struct Vault: Sendable {
     /// Renames a project's file and relinks each of its tasks; a task that can't be relinked doesn't stop the rest.
     /// Returns the project's new path, its tasks as they now are and the paths of the tasks that couldn't be relinked.
     public func renameProject(at path: String, to title: String, index: VaultIndex) throws
-        -> (path: String, tasks: [Item], failed: [String]) {
+        -> (path: String, relinked: [Item], failed: [String]) {
         guard let project = index[path], project.properties.kind == .project else { return (path, [], []) }
-        let tasks = index.tasks(in: project)
-        let newPath = try rename(path, to: title)
+        return try rename(project, to: title, relinking: index.tasks(in: project), key: "project")
+    }
+
+    /// Renames an area's file and relinks its projects and its own tasks, as `renameProject` does.
+    public func renameArea(at path: String, to title: String, index: VaultIndex) throws
+        -> (path: String, relinked: [Item], failed: [String]) {
+        guard let area = index[path], area.properties.kind == .area else { return (path, [], []) }
+        return try rename(area, to: title, relinking: index.projects(in: area) + index.tasks(in: area), key: "area")
+    }
+
+    private func rename(_ parent: Item, to title: String, relinking files: [Item], key: String) throws
+        -> (path: String, relinked: [Item], failed: [String]) {
+        let newPath = try rename(parent.path, to: title)
         let newTitle = Item.title(ofPath: newPath)
-        guard newTitle != project.title else { return (newPath, [], []) }
+        guard newTitle != parent.title else { return (newPath, [], []) }
         var relinked: [Item] = [], failed: [String] = []
-        for task in tasks {
+        for file in files {
             do {
-                if let item = try relink(task.path, from: project.title, to: newTitle) { relinked.append(item) }
+                if let item = try relink(file.path, key: key, from: parent.title, to: newTitle) { relinked.append(item) }
             } catch {
-                failed.append(task.path)
+                failed.append(file.path)
             }
         }
         return (newPath, relinked, failed)
     }
 
-    /// Points a task's `project` link at `new` if it still links to `old`, in one coordinated read and write.
-    /// Returns the task as it now is (nil when it's no longer a Ta Da file).
+    /// Points a file's `key` link (`project` or `area`) at `new` if it still links to `old`, in one coordinated read
+    /// and write. Returns the file as it now is (nil when it's no longer a Ta Da file).
     @discardableResult
-    func relink(_ path: String, from old: String, to new: String) throws -> Item? {
+    func relink(_ path: String, key: String, from old: String, to new: String) throws -> Item? {
         try update(path) { text in
-            guard Item(parsing: text, path: path)?.properties.project?.title.lowercased() == old.lowercased() else { return text }
-            return FrontmatterEditor.set("project", to: .link(title: new), in: text)
+            let properties = Item(parsing: text, path: path)?.properties
+            let link = key == "area" ? properties?.area : properties?.project
+            guard link?.title.lowercased() == old.lowercased() else { return text }
+            return FrontmatterEditor.set(key, to: .link(title: new), in: text)
         }
     }
 

@@ -16,6 +16,17 @@ public struct TrashedItem: Hashable, Sendable, Identifiable {
             .filter { $0.item.properties.kind == .task && $0.item.properties.project?.title.lowercased() == title }
             .sorted { VaultIndex.byTitle($0.item, $1.item) }
     }
+
+    /// Trashed projects whose `area` link names this trashed area, and trashed tasks filed under the area or those
+    /// projects, each sorted by title.
+    public static func contents(of area: Item, in trashed: [TrashedItem]) -> (projects: [TrashedItem], tasks: [TrashedItem]) {
+        let title = area.title.lowercased()
+        let filed = trashed.filter { $0.item.properties.area?.title.lowercased() == title }
+            .sorted { VaultIndex.byTitle($0.item, $1.item) }
+        let projects = filed.filter { $0.item.properties.kind == .project }
+        let tasks = filed.filter { $0.item.properties.kind == .task } + projects.flatMap { Self.tasks(of: $0.item, in: trashed) }
+        return (projects, tasks)
+    }
 }
 
 /// Some trashed files couldn't be removed; the rest were.
@@ -28,17 +39,22 @@ public struct DiscardError: LocalizedError {
     }
 }
 
-/// Deleting moves a file into `.trash/` (the folder Obsidian also uses), restoring moves it to `tasks/` or
-/// `projects/`, and discarding moves it to the system Trash (or deletes it where that isn't supported). A project takes its linked tasks each way.
+/// Deleting moves a file into `.trash/` (the folder Obsidian also uses), restoring moves it to `tasks/`, `projects/` or
+/// `areas/`, and discarding moves it to the system Trash (or deletes it where that isn't supported). Deleting and
+/// discarding take a project's tasks, and an area's projects and tasks; restoring brings back a file's parents.
 extension Vault {
     public static let trashFolder = ".trash"
 
-    /// Moves a file into `.trash/`, creating the folder if needed. A project takes the tasks linked to it.
-    /// Returns the paths that were moved, the file first.
+    /// Moves a file into `.trash/`, creating the folder if needed. A project takes the tasks linked to it; an area
+    /// takes its projects, their tasks and its own tasks. Returns the paths that were moved, the file first.
     public func moveToTrash(_ path: String, index: VaultIndex) throws -> [String] {
         var paths = [path]
-        if let project = index[path], project.properties.kind == .project {
-            paths += index.tasks(in: project).map(\.path)
+        if let item = index[path] {
+            switch item.properties.kind {
+            case .project: paths += index.tasks(in: item).map(\.path)
+            case .area: paths += index.projects(in: item).map(\.path) + index.allTasks(in: item).map(\.path)
+            case .task: break
+            }
         }
         for path in paths { _ = try moveFile(path, into: Self.trashFolder) }
         return paths
@@ -66,39 +82,63 @@ extension Vault {
         }
     }
 
-    /// Moves trashed files back to `tasks/` or `projects/`, numbering names that are taken. A project brings
-    /// its trashed tasks back; if its name had to change, their `project` links follow it.
-    /// Returns the restored files' new paths.
-    public func restore(_ paths: [String]) throws -> [String] {
+    /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, numbering names that are taken. Each brings back
+    /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
+    /// in the vault or `.trash/` is created by name. When a parent's name had to change, the link follows it.
+    /// Created files get `today` as their `createdDate`. Returns the paths of the restored and created files, parents first.
+    public func restore(_ paths: [String], index: VaultIndex, today: LocalDate) throws -> [String] {
         let trashed = trashedItems()
-        let requested = trashed.filter { paths.contains($0.item.path) }
-        let projects = requested.filter { $0.item.properties.kind == .project }
-        var handled = Set<String>()
         var restored: [String] = []
-        for entry in projects + requested.filter({ $0.item.properties.kind != .project }) {
-            guard handled.insert(entry.item.path).inserted else { continue }
-            let isProject = entry.item.properties.kind == .project
-            let newPath = try moveFile(entry.item.path, into: isProject ? Self.projectFolder : Self.taskFolder)
-            restored.append(newPath)
-            guard isProject else { continue }
-            let newTitle = Item.title(ofPath: newPath)
-            for task in TrashedItem.tasks(of: entry.item, in: trashed) where handled.insert(task.item.path).inserted {
-                let taskPath = try moveFile(task.item.path, into: Self.taskFolder)
-                if newTitle != entry.item.title { try relink(taskPath, from: entry.item.title, to: newTitle) }
-                restored.append(taskPath)
+        // Trashed path → the title it was restored under.
+        var titles: [String: String] = [:]
+
+        /// Restores a trashed file after its parent; returns its title in the vault.
+        func bringBack(_ entry: TrashedItem) throws -> String {
+            if let title = titles[entry.item.path] { return title }
+            let properties = entry.item.properties
+            let parent: Parent? = properties.project.map { .project($0.title) } ?? properties.area.map { .area($0.title) }
+            let parentTitle = try parent.map { try bringBack($0) }
+            let kind = properties.kind
+            let path = try moveFile(entry.item.path, into: kind == .area ? Self.areaFolder : kind == .project ? Self.projectFolder : Self.taskFolder)
+            if let parent, let parentTitle, parentTitle != parent.title {
+                try relink(path, key: parent.key, from: parent.title, to: parentTitle)
             }
+            restored.append(path)
+            titles[entry.item.path] = Item.title(ofPath: path)
+            return Item.title(ofPath: path)
         }
+
+        /// The title of `parent` in the vault: as it is, restored from `.trash/`, or created.
+        func bringBack(_ parent: Parent) throws -> String {
+            let kind: Item.Kind = if case .project = parent { .project } else { .area }
+            let matches = { (item: Item) in item.properties.kind == kind && item.title.lowercased() == parent.title.lowercased() }
+            if index.items(titled: parent.title).contains(where: matches) { return parent.title }
+            if let entry = trashed.first(where: { matches($0.item) }) { return try bringBack(entry) }
+            let folder = kind == .project ? Self.projectFolder : Self.areaFolder
+            let text = kind == .project ? NewFile.project(today: today) : NewFile.area(today: today)
+            let path = try create(text, in: folder, title: parent.title)
+            restored.append(path)
+            return Item.title(ofPath: path)
+        }
+
+        for entry in trashed where paths.contains(entry.item.path) { _ = try bringBack(entry) }
         return restored
     }
 
     /// Removes trashed files with `remove` (by default, a move to the system Trash, or a delete where that isn't
-    /// supported). A project takes its trashed tasks. A file that can't be removed doesn't stop the others;
-    /// afterwards it throws `DiscardError` naming the ones that failed.
+    /// supported). A project takes its trashed tasks; an area its trashed projects, their tasks and its own tasks.
+    /// A file that can't be removed doesn't stop the others; afterwards it throws `DiscardError` naming the ones that failed.
     public func discard(_ paths: [String], remove: (URL) throws -> Void = CoordinatedFileIO.moveToSystemTrash) throws {
         let trashed = trashedItems()
         var all = Set(paths)
-        for entry in trashed where paths.contains(entry.item.path) && entry.item.properties.kind == .project {
-            all.formUnion(TrashedItem.tasks(of: entry.item, in: trashed).map(\.item.path))
+        for entry in trashed where paths.contains(entry.item.path) {
+            switch entry.item.properties.kind {
+            case .project: all.formUnion(TrashedItem.tasks(of: entry.item, in: trashed).map(\.item.path))
+            case .area:
+                let contents = TrashedItem.contents(of: entry.item, in: trashed)
+                all.formUnion((contents.projects + contents.tasks).map(\.item.path))
+            case .task: break
+            }
         }
         var failed: [String] = []
         var firstError: (any Error)?

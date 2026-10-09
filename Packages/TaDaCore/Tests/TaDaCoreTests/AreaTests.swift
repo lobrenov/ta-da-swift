@@ -83,3 +83,30 @@ private extension VaultIndex {
     #expect(index.isLoose(index.titled("Pay rent")))
     #expect(index.looseProjects().map(\.project.title) == ["Lost", "Payroll", "Side quest"])
 }
+
+@Test func parentWritesOneKeyAndEmptiesTheOther() {
+    let both = "---\ntype: task\nstatus: Doing\narea: Personal\nproject: \"[[Old]]\"\n---\n"
+    #expect(Parent.set(.area("Work"), in: both) == "---\ntype: task\nstatus: Doing\narea: \"[[Work]]\"\nproject:\n---\n")
+    #expect(Parent.set(.project("New"), in: both) == "---\ntype: task\nstatus: Doing\narea:\nproject: \"[[New]]\"\n---\n")
+    #expect(Parent.set(nil, in: both) == "---\ntype: task\nstatus: Doing\narea:\nproject:\n---\n")
+    let project = "---\ntype: project\nstatus: Doing\n---\n"
+    #expect(Parent.set(.area("Work"), in: project) == "---\ntype: project\nstatus: Doing\narea: \"[[Work]]\"\n---\n")
+}
+
+@Test func renamingAnAreaRelinksItsProjectsAndTasks() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile("---\ntype: area\n---\n", "areas/Home.md", in: folder)
+        try writeFile("---\ntype: project\nstatus: Doing\narea: Home\n---\n", "projects/P.md", in: folder)
+        try writeFile("---\ntype: task\nstatus: Doing\narea: \"[[home]]\"\n---\n", "tasks/Filed.md", in: folder)
+        let other = "---\ntype: task\nstatus: Doing\nproject: \"[[P]]\"\n---\n"
+        try writeFile(other, "tasks/In P.md", in: folder)
+        let vault = Vault(root: folder)
+        let result = try vault.renameArea(at: "areas/Home.md", to: "House", index: await vault.loadIndex())
+        #expect(result.path == "areas/House.md" && result.failed.isEmpty)
+        #expect(result.relinked.map(\.path) == ["projects/P.md", "tasks/Filed.md"])
+        #expect(try vault.read("projects/P.md") == "---\ntype: project\nstatus: Doing\narea: \"[[House]]\"\n---\n")
+        #expect(try vault.read("tasks/In P.md") == other)
+        let index = await vault.loadIndex()
+        #expect(index.allTasks(in: try #require(index["areas/House.md"])).map(\.title) == ["Filed", "In P"])
+    }
+}

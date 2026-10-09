@@ -253,7 +253,7 @@ struct AppModelTests {
         #expect(FileManager.default.fileExists(atPath: folder.url.appending(path: ".trash/Due today.md").path(percentEncoded: false)))
     }
 
-    @Test func aDeletedProjectTakesItsTasksAndComesBackWithThem() async {
+    @Test func aDeletedProjectTakesItsTasksAndTheyBringItBack() async {
         let model = await folder.model()
         model.show(.project("projects/Ta Da MVP.md"))
         await model.moveToTrash(["projects/Ta Da MVP.md"])
@@ -262,7 +262,7 @@ struct AppModelTests {
         #expect(Set(model.trash.map(\.id)) == [".trash/Ta Da MVP.md", ".trash/Due today.md", ".trash/Done.md"])
 
         model.show(.trash)
-        model.trashSelection = [".trash/Ta Da MVP.md"]
+        model.trashSelection = [".trash/Due today.md", ".trash/Done.md"]
         await model.restore(model.trashSelection)
         #expect(model.trash.isEmpty && model.trashSelection.isEmpty)
         #expect(model.index.items.count == 5)
