@@ -306,14 +306,14 @@ struct PhoneOnboardingView: View {
         ScrollView {
             VStack(spacing: 28) {
                 Image(systemName: "checkmark")
-                    .scaledFont(size: 44, weight: .bold)
+                    .font(.system(size: 44, weight: .bold))
                     .foregroundStyle(.white)
                     .frame(width: 96, height: 96)
                     .background(theme.color(\.accent), in: .rect(cornerRadius: 22))
                     .padding(.top, 60)
                     .accessibilityHidden(true)
                 VStack(spacing: 12) {
-                    Text("Ta Da").scaledFont(size: 34, weight: .bold).foregroundStyle(theme.color(\.strong))
+                    Text("Ta Da").scaledFont(size: 34, weight: .bold).dynamicTypeSize(...DynamicTypeSize.xxxLarge).foregroundStyle(theme.color(\.strong))
                     Text("Every task and project is a markdown file in a folder you choose.")
                         .scaledFont(size: 17)
                         .multilineTextAlignment(.center)

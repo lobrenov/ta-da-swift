@@ -115,6 +115,19 @@ private enum PickingBar {
     static let bottom: CGFloat = 22
 }
 
+/// The room at the foot of a list for the picking bar, which grows with the text size up to xxxLarge.
+struct PickingBarClearance: View {
+    var body: some View {
+        Space().dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+    }
+
+    private struct Space: View {
+        @ScaledMetric private var height: CGFloat = 96
+
+        var body: some View { Color.clear.frame(height: height) }
+    }
+}
+
 private struct PickingBars: ViewModifier {
     let model: AppModel
     @Environment(PhoneNavigation.self) private var nav
@@ -143,6 +156,7 @@ private struct PickingBars: ViewModifier {
                 if nav.isPicking {
                     actions
                         .scaledMinHeight(PickingBar.height)
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                         .glassEffect(.regular.interactive(), in: .capsule)
                         .padding(.horizontal, PickingBar.inset)
                         .padding(.bottom, PickingBar.bottom)

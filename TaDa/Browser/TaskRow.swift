@@ -159,7 +159,11 @@ struct Chip: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: systemImage)
+                #if os(iOS)
+                .scaledFont(size: 10, weight: .semibold)
+                #else
                 .font(.system(size: 10, weight: .semibold))
+                #endif
                 .foregroundStyle(tint.map { theme.color($0) } ?? theme.color(\.muted))
             Text(text)
         }

@@ -45,8 +45,10 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                     if search.isSearching {
                         PhoneSearchResults(model: model, query: search.query)
                     } else {
-                        LazyVStack(alignment: .leading, spacing: 0) { content }
-                            .padding(.bottom, 96)
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            content
+                            PickingBarClearance()
+                        }
                     }
                 }
             }
@@ -130,6 +132,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .scaledFont(size: 34, weight: .bold)
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .foregroundStyle(theme.color(\.strong))
             if !subtitle.isEmpty {
                 Text(subtitle)
@@ -252,8 +255,8 @@ struct PhoneSearchResults: View {
                     PhoneTaskRow(model: model, item: task, search: (words, place(of: task)))
                 }
             }
+            PickingBarClearance()
         }
-        .padding(.bottom, 96)
     }
 
     private func place(of task: Item) -> String {

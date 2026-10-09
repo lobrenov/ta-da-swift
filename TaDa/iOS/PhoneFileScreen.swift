@@ -300,6 +300,7 @@ struct PhoneChips: View {
 private struct PhoneLinkedTasks: View {
     let model: AppModel
     let project: Item
+    @ScaledMetric(relativeTo: .body) private var titleSize: CGFloat = 16
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -321,7 +322,7 @@ private struct PhoneLinkedTasks: View {
                     }
                     Button { nav.push(.file(task.path)) } label: {
                         HStack(spacing: 8) {
-                            TaskTitle(item: task, size: 16).lineLimit(1)
+                            TaskTitle(item: task, size: titleSize).lineLimit(1)
                             Spacer(minLength: 8)
                             if let (kind, date) = date(of: task) {
                                 Image(systemName: kind.systemImage).scaledFont(size: 11, weight: .semibold)
