@@ -17,7 +17,7 @@ struct PhoneFileScreen: View {
 
     /// The screen shows and edits only the document the model has open.
     private var document: OpenDocument? { opened === model.document ? opened : nil }
-    private var shownPath: String { document?.path ?? path }
+    private var shownPath: String { opened?.path ?? path }
 
     var body: some View {
         Group {
