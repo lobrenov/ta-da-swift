@@ -11,6 +11,9 @@ Work not yet built.
 - JetBrains Mono as the mono font.
 - Areas in Live mode: the property chips leave `area` out until it's reconsidered.
 - A better design for a project's linked-tasks table (its columns have fixed widths).
-- iOS/iPad, including the choice of editor.
+- iPad: the canvas's iPad POC page, on the iPhone app's code.
+- iPhone: Remove Callout in the callout menu (TaDaMarkdown's `CalloutMenuRequest` has no remove), Create a New Folder in onboarding, and the domain's icon in list titles.
+- iOS UI tests.
+- TestFlight for iPhone, with the paid Apple Developer Program: Personal Team builds expire after 7 days.
 - Alias display in TaDaMarkdown: `[[Target|Alias]]` shows the target name.
 - Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, code blocks, and the caret's line in mono on `code`.

@@ -69,9 +69,8 @@ The milestones run in order in one worktree. Each ends with its check passing.
 - Checked on the Simulator; on device in M1.
 
 ### M1 — On device and docs
-- Install on your iPhone with the Personal Team. Check folder access after relaunch, edits made on the Mac appearing, and files iCloud hasn't downloaded yet.
-- Update `docs/architecture.md` (platform layers), `docs/design/design-framework.md` (iOS in In the app and As built), `CLAUDE.md` (iOS build and test commands, TaDaMarkdown), `docs/backlog.md`.
-- Check: build, tests and docs agree; this plan moves to `docs/archive/`.
+- Installed on an iPhone with the Personal Team (`CLAUDE.md` has the commands). Checked: folder access after relaunch, Mac edits appearing while the app is open, and files iCloud hadn't downloaded appearing once downloaded.
+- Docs: `docs/architecture.md` (iPhone), `docs/design/design-framework.md` (In the app and As built), `CLAUDE.md` (iOS build, test and install commands), `docs/backlog.md` (what's left).
 
 ### Later (outside the POC)
 - iPad: verify the iPad POC page in the iPad Simulator.
