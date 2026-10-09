@@ -68,6 +68,13 @@ Bring the project instruction files in line with how I actually work now.
 
   The other reference markers (`[?] [!] [*] ["] [l] [b] [i] [S] [I] [p] [c] [f] [k] [w] [u] [d]`) are icons only. They render as checkboxes but aren't subtasks.
 - **Links**: `[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]` and `[[folder/Title]]` resolve to the file with that title, case-insensitively. Body links are links only; they never set a parent.
+- **Embeds**: the same with a leading `!`, e.g. `![[front.jpg]]` or `![[front.jpg|300]]`. Embeds aren't links, so they aren't backlinks. An embed whose target ends in an image extension (`avif bmp gif heic jpeg jpg png svg tif tiff webp`, any case) shows that attachment.
+
+## Attachments
+
+- An attachment is an image file in the folder. Ta Da saves new ones in `attachments/`, which it creates when needed.
+- An embed resolves to its target as a path when that file exists, else to `attachments/<filename>`, else to the first file with that filename by path, ignoring case. Hidden folders, including `.trash`, are skipped. An embed that doesn't resolve is missing.
+- A pasted image without a name is saved as `Pasted image <yyyyMMddHHmmss>.png`, in local time.
 
 ## Behaviour rules
 
@@ -79,8 +86,10 @@ Bring the project instruction files in line with how I actually work now.
 - **Loose tasks** are open tasks with no resolvable `project` and no resolvable `area`. A **loose project** has no resolvable `area`.
 - **Projects** in the sidebar are those not Done: loose projects first, then each area with its projects. Progress is done/total of linked tasks.
 - **Deleting** moves the file into `.trash/` in the folder (the folder Obsidian also uses), keeping its filename unless that's taken there. A project takes its linked tasks. An area takes its projects, their tasks and its own tasks, and Ta Da asks first. The file's contents don't change; the date it was deleted is when it was added to `.trash/`.
-- **Restoring** moves a task to `tasks/`, a project to `projects/` and an area to `areas/`, numbering a taken name. Restoring brings back parents, never children: a task brings back its project and that project's area, or its area; a project brings back its area; an area comes back alone. A parent that isn't in the folder or `.trash/` is created by name. If a parent's name had to change, the restored file's link is rewritten.
-- **Delete Forever** on a project also removes its trashed tasks; on an area, its trashed projects, their tasks and its own tasks. Delete Forever and Empty Trash move the Ta Da files in `.trash/` to the system Trash (on iOS, deleting them where that isn't supported, outside iCloud Drive; a failure doesn't stop the others); other notes there are left alone.
+- **Deleting an attachment** moves it into `.trash/attachments/`, keeping its filename unless that's taken there. Attachments go with a deleted file or on their own; embeds of them stay in every file and show as missing.
+- A trashed attachment **went with** each trashed file that embeds it.
+- **Restoring** moves a task to `tasks/`, a project to `projects/` and an area to `areas/`, numbering a taken name. Restoring brings back parents, never children: a task brings back its project and that project's area, or its area; a project brings back its area; an area comes back alone. A parent that isn't in the folder or `.trash/` is created by name. If a parent's name had to change, the restored file's link is rewritten. Each restored file brings back the attachments that went with it, and a trashed attachment can be restored alone; both go to `attachments/`, numbering a taken name.
+- **Delete Forever** on a project also removes its trashed tasks; on an area, its trashed projects, their tasks and its own tasks. Each removed file takes the attachments that went with it. Delete Forever and Empty Trash move the Ta Da files and attachments in `.trash/` to the system Trash (on iOS, deleting them where that isn't supported, outside iCloud Drive; a failure doesn't stop the others); other notes there are left alone.
 
 ## Writing rules (how Ta Da edits files)
 
@@ -90,5 +99,6 @@ Bring the project instruction files in line with how I actually work now.
 - Line endings (LF or CRLF) and all other bytes are preserved.
 - Written values: dates as `YYYY-MM-DD` (unquoted); links quoted as `"[[Title]]"`; lists in block style with quoted items (`[]` when empty); text plain when it starts with a letter and YAML can't misread it (e.g. as `yes`, a comment or a mapping), otherwise double-quoted.
 - Filenames come from titles. Ta Da replaces `/ : \ * ? " < > |` and the Obsidian link-breakers `[ ] # ^ |`: a `:` becomes ` -` (so "Game Jam: Starfall" becomes `Game Jam - Starfall.md`), `/ \ |` become `-`, and the rest are dropped. Leading dots and repeated spaces are removed, names are capped at 200 bytes, and an empty name becomes `Untitled`. If the name is taken (ignoring case), it adds ` 2`, ` 3`, and so on.
+- Attachment filenames follow the same rules on the name before the extension, and keep the extension: a taken `front.jpg` becomes `front 2.jpg`.
 - Moving a file to another parent writes one key and empties the other, in one write.
 - Renaming a project rewrites the `project:` link in each of its tasks as `"[[New title]]"`, and renaming an area rewrites the `area:` link in its projects and its own tasks, in one coordinated read and write per file and only if the file still links to it. Body links aren't changed.

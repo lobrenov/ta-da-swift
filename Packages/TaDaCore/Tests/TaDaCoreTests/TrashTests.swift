@@ -168,6 +168,49 @@ private let today = LocalDate("2026-10-09")!
     }
 }
 
+@Test func imagesGoToTheTrashAloneAndNestUnderTheFilesThatEmbedThem() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("x", "attachments/front.jpg", in: folder)
+        try writeFile("x", "img/front.jpg", in: folder)
+        try writeFile("x", ".trash/attachments/notes.txt", in: folder)
+        try writeFile(task + "![[Front.jpg]] ![[odometer.png]]", ".trash/Photo.md", in: folder)
+        #expect(try vault.moveAttachmentsToTrash(["attachments/front.jpg", "img/front.jpg"])
+                == [".trash/attachments/front.jpg", ".trash/attachments/front 2.jpg"])
+        let attachments = vault.trashedAttachments()
+        #expect(Set(attachments.map(\.id)) == [".trash/attachments/front.jpg", ".trash/attachments/front 2.jpg"])
+        let photo = try #require(vault.trashedItems().first)
+        #expect(TrashedAttachment.attachments(of: photo.item, in: attachments).map(\.name) == ["front.jpg"])
+        #expect(vault.trashedItems().map(\.id) == [".trash/Photo.md"])
+    }
+}
+
+@Test func restoringAFileBringsBackItsImagesAndAnImageComesBackAlone() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(project + "![[board.jpg]]", ".trash/P.md", in: folder)
+        try writeFile(task(in: "P") + "![[sketch.png]] ![[board.jpg]]", ".trash/T.md", in: folder)
+        for name in ["board.jpg", "sketch.png", "odometer.png", "other.png"] { try writeFile("x", ".trash/attachments/\(name)", in: folder) }
+        try writeFile("y", "attachments/odometer.png", in: folder)
+        let restored = try vault.restore([".trash/T.md", ".trash/attachments/odometer.png"], index: await vault.loadIndex(), today: today)
+        #expect(restored.prefix(2) == ["projects/P.md", "tasks/T.md"])
+        #expect(Set(restored.dropFirst(2)) == ["attachments/board.jpg", "attachments/odometer 2.png", "attachments/sketch.png"])
+        #expect(vault.trashedAttachments().map(\.id) == [".trash/attachments/other.png"])
+    }
+}
+
+@Test func discardTakesAFilesImagesAndImagesAlone() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(project, ".trash/P.md", in: folder)
+        try writeFile(task(in: "P") + "![[sketch.png]]", ".trash/T.md", in: folder)
+        for name in ["sketch.png", "odometer.png", "other.png"] { try writeFile("x", ".trash/attachments/\(name)", in: folder) }
+        try vault.discard([".trash/P.md", ".trash/attachments/odometer.png"]) { try FileManager.default.removeItem(at: $0) }
+        #expect(vault.trashedItems().isEmpty)
+        #expect(vault.trashedAttachments().map(\.id) == [".trash/attachments/other.png"])
+    }
+}
+
 @Test func discardGoesOnPastAFailureAndReportsIt() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)

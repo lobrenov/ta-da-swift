@@ -8,6 +8,8 @@ public struct BodyScan: Equatable, Sendable {
     public var checkboxes: [Checkbox]
     /// Every `[[…]]` in the body's text, skipping code and HTML.
     public var links: [WikiLink]
+    /// Every `![[…]]`, as `links` finds them.
+    public var embeds: [WikiLink]
 }
 
 public enum BodyScanner {
@@ -17,7 +19,7 @@ public enum BodyScanner {
         var walker = Walker(bytes: Array(body.utf8), firstLineIndex: firstLineIndex)
         walker.visit(document)
         let summary = document.children.lazy.compactMap { $0 as? Paragraph }.first?.plainText
-        return BodyScan(summary: summary, checkboxes: walker.checkboxes, links: walker.links)
+        return BodyScan(summary: summary, checkboxes: walker.checkboxes, links: walker.links, embeds: walker.embeds)
     }
 
     private struct Walker: MarkupWalker {
@@ -27,6 +29,7 @@ public enum BodyScanner {
         let lineStarts: [Int]
         var checkboxes: [Checkbox] = []
         var links: [WikiLink] = []
+        var embeds: [WikiLink] = []
 
         init(bytes: [UInt8], firstLineIndex: Int) {
             self.bytes = bytes
@@ -40,7 +43,9 @@ public enum BodyScanner {
         }
 
         mutating func visitText(_ text: Text) {
-            links += WikiLink.scan(text.string)
+            let found = WikiLink.scan(text.string)
+            links += found.links
+            embeds += found.embeds
         }
 
         /// Reads `[c]` from the source after the item's list marker. swift-markdown only recognises

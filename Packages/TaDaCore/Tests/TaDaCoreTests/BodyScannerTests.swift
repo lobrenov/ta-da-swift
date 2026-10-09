@@ -102,6 +102,20 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
     #expect(scan.links[1].alias == nil && scan.links[2].alias == "alias" && scan.links[3].heading == "Section")
 }
 
+@Test func scannerFindsEmbedsApartFromLinks() {
+    let body = """
+    Before ![[front.jpg]] and [[Kombi]].
+
+    - [ ] Photo ![[odometer.png]]
+
+    `![[Not Code.png]]`
+
+    """
+    let scan = BodyScanner.scan(body)
+    #expect(scan.links.map(\.target) == ["Kombi"])
+    #expect(scan.embeds.map(\.target) == ["front.jpg", "odometer.png"])
+}
+
 @Test func scannerSummaryIsFirstTopLevelParagraph() {
     #expect(BodyScanner.scan("# Title\n\n- list first\n\nFirst \"quoted\" para\nwraps here.\n\nSecond.\n").summary == "First \"quoted\" para wraps here.")
     #expect(BodyScanner.scan("- [ ] Only a list\n").summary == nil)

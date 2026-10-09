@@ -29,6 +29,24 @@ public struct TrashedItem: Hashable, Sendable, Identifiable {
     }
 }
 
+/// An image in `.trash/attachments/`.
+public struct TrashedAttachment: Hashable, Sendable, Identifiable {
+    /// Its path in `.trash/attachments/`.
+    public var path: String
+    /// When the image was moved into `.trash/attachments/`; nil when the file system doesn't record it.
+    public var deleted: Date?
+
+    public var id: String { path }
+    public var name: String { String(path.split(separator: "/").last ?? "") }
+
+    /// Trashed images this trashed file embeds, sorted by name. They went with it, and come back with it.
+    public static func attachments(of item: Item, in trashed: [TrashedAttachment]) -> [TrashedAttachment] {
+        let names = Set(item.embeds.compactMap { $0.attachmentName?.lowercased() })
+        return trashed.filter { names.contains($0.name.lowercased()) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+}
+
 /// Some trashed files couldn't be removed; the rest were.
 public struct DiscardError: LocalizedError {
     public let failed: [String]
@@ -42,8 +60,11 @@ public struct DiscardError: LocalizedError {
 /// Deleting moves a file into `.trash/` (the folder Obsidian also uses), restoring moves it to `tasks/`, `projects/` or
 /// `areas/`, and discarding moves it to the system Trash (or deletes it where that isn't supported). Deleting and
 /// discarding take a project's tasks, and an area's projects and tasks; restoring brings back a file's parents.
+/// Images go to `.trash/attachments/` and back to `attachments/`; a trashed file's embedded images that are in
+/// `.trash/attachments/` are restored and discarded with it.
 extension Vault {
     public static let trashFolder = ".trash"
+    public static let trashedAttachmentFolder = ".trash/attachments"
 
     /// Moves a file into `.trash/`, creating the folder if needed. A project takes the tasks linked to it; an area
     /// takes its projects, their tasks and its own tasks. Returns the paths that were moved, the file first.
@@ -58,6 +79,28 @@ extension Vault {
         }
         for path in paths { _ = try moveFile(path, into: Self.trashFolder) }
         return paths
+    }
+
+    /// Moves images into `.trash/attachments/`, creating the folder if needed and numbering names that are taken there.
+    /// Returns their new paths.
+    public func moveAttachmentsToTrash(_ paths: [String]) throws -> [String] {
+        try paths.map { try moveFile($0, into: Self.trashedAttachmentFolder) }
+    }
+
+    /// The images in `.trash/attachments/`, most recently deleted first. Other files are left out.
+    public func trashedAttachments() -> [TrashedAttachment] {
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .addedToDirectoryDateKey]
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: url(for: Self.trashedAttachmentFolder).path(percentEncoded: false))) ?? []
+        var trashed: [TrashedAttachment] = []
+        for name in names where !name.hasPrefix(".") && Self.imageExtensions.contains(FileNaming.split(name).ext.lowercased()) {
+            let path = Self.trashedAttachmentFolder + "/" + name
+            guard let values = try? url(for: path).resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
+            trashed.append(TrashedAttachment(path: path, deleted: values.addedToDirectoryDate))
+        }
+        return trashed.sorted { a, b in
+            let (dateA, dateB) = (a.deleted ?? .distantPast, b.deleted ?? .distantPast)
+            return dateA != dateB ? dateA > dateB : a.name.localizedStandardCompare(b.name) == .orderedAscending
+        }
     }
 
     /// The Ta Da files in `.trash/`, most recently deleted first. Other notes and hidden files are left out.
@@ -85,10 +128,14 @@ extension Vault {
     /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, numbering names that are taken. Each brings back
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
     /// in the vault or `.trash/` is created by name. When a parent's name had to change, the link follows it.
-    /// Created files get `today` as their `createdDate`. Returns the paths of the restored and created files, parents first.
+    /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
+    /// back the trashed images it embeds, to `attachments/`. Returns the paths of the restored and created files,
+    /// parents first, then the images.
     public func restore(_ paths: [String], index: VaultIndex, today: LocalDate) throws -> [String] {
         let trashed = trashedItems()
         var restored: [String] = []
+        // Lowercased image filenames the restored files embed.
+        var embeds: Set<String> = []
         // Trashed path → the title it was restored under.
         var titles: [String: String] = [:]
 
@@ -104,6 +151,7 @@ extension Vault {
                 try relink(path, key: parent.key, from: parent.title, to: parentTitle)
             }
             restored.append(path)
+            embeds.formUnion(entry.item.embeds.compactMap { $0.attachmentName?.lowercased() })
             titles[entry.item.path] = Item.title(ofPath: path)
             return Item.title(ofPath: path)
         }
@@ -122,12 +170,15 @@ extension Vault {
         }
 
         for entry in trashed where paths.contains(entry.item.path) { _ = try bringBack(entry) }
+        for attachment in trashedAttachments() where paths.contains(attachment.path) || embeds.contains(attachment.name.lowercased()) {
+            restored.append(try moveFile(attachment.path, into: Self.attachmentFolder))
+        }
         return restored
     }
 
     /// Removes trashed files with `remove` (by default, a move to the system Trash, or a delete where that isn't
-    /// supported). A project takes its trashed tasks; an area its trashed projects, their tasks and its own tasks.
-    /// A file that can't be removed doesn't stop the others; afterwards it throws `DiscardError` naming the ones that failed.
+    /// supported). A project takes its trashed tasks; an area its trashed projects, their tasks and its own tasks. `paths`
+    /// can name trashed images too, and each file takes the trashed images it embeds. A file that can't be removed doesn't stop the others; afterwards it throws `DiscardError` naming the ones that failed.
     public func discard(_ paths: [String], remove: (URL) throws -> Void = CoordinatedFileIO.moveToSystemTrash) throws {
         let trashed = trashedItems()
         var all = Set(paths)
@@ -140,6 +191,8 @@ extension Vault {
             case .task: break
             }
         }
+        let embeds = Set(trashed.filter { all.contains($0.item.path) }.flatMap(\.item.embeds).compactMap { $0.attachmentName?.lowercased() })
+        for attachment in trashedAttachments() where embeds.contains(attachment.name.lowercased()) { all.insert(attachment.path) }
         var failed: [String] = []
         var firstError: (any Error)?
         for path in all.sorted() {
@@ -157,7 +210,8 @@ extension Vault {
         let current = String(path.split(separator: "/").last ?? "")
         let existing = filenames(in: folder)
         let isTaken = existing.contains { $0.lowercased() == current.lowercased() }
-        let filename = isTaken ? FileNaming.filename(for: Item.title(ofPath: path), existing: existing) : current
+        let (base, ext) = FileNaming.split(current)
+        let filename = isTaken ? FileNaming.filename(for: base, extension: ext, existing: existing) : current
         let newPath = folder + "/" + filename
         try FileManager.default.createDirectory(at: root.appending(path: folder, directoryHint: .isDirectory),
                                                 withIntermediateDirectories: true)

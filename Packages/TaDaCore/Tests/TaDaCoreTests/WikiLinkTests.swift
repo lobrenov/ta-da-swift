@@ -30,6 +30,20 @@ import Testing
 }
 
 @Test func wikiLinkScanFindsEveryLink() {
-    let links = WikiLink.scan("See [[A]], [[B|bee]] and [[C#h]]; not [single] or [[broken\nlink]] 🙂 [[Dan’s]]")
-    #expect(links.map(\.target) == ["A", "B", "C", "Dan’s"])
+    let found = WikiLink.scan("See [[A]], [[B|bee]] and [[C#h]]; not [single] or [[broken\nlink]] 🙂 [[Dan’s]]")
+    #expect(found.links.map(\.target) == ["A", "B", "C", "Dan’s"] && found.embeds.isEmpty)
+}
+
+@Test func wikiLinkScanSeparatesEmbeds() {
+    let found = WikiLink.scan("![[front.jpg]] beside [[Kombi]], then![[img/odometer.PNG|300]] and ![[Note]]")
+    #expect(found.links.map(\.target) == ["Kombi"])
+    #expect(found.embeds.map(\.target) == ["front.jpg", "img/odometer.PNG", "Note"])
+    #expect(found.embeds.map(\.attachmentName) == ["front.jpg", "odometer.PNG", nil])
+}
+
+@Test func attachmentNameNeedsAnImageExtension() throws {
+    #expect(try #require(WikiLink("[[Pasted image 20260930101522.png]]")).attachmentName == "Pasted image 20260930101522.png")
+    #expect(try #require(WikiLink("[[report.pdf]]")).attachmentName == nil)
+    #expect(try #require(WikiLink("[[Version 1.2]]")).attachmentName == nil)
+    #expect(try #require(WikiLink("[[.png]]")).attachmentName == ".png")
 }

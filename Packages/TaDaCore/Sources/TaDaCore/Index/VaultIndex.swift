@@ -14,6 +14,8 @@ public struct VaultIndex: Sendable {
     private var filedByAreaTitle: [String: Set<String>] = [:]
     /// Lowercased title of a link in a body → the paths of the items that link to it.
     private var linkersByTitle: [String: Set<String>] = [:]
+    /// Lowercased image filename → the paths of the items that embed it.
+    private var embeddersByName: [String: Set<String>] = [:]
 
     public init(_ items: [Item] = []) {
         for item in items { update(item) }
@@ -93,6 +95,15 @@ public struct VaultIndex: Sendable {
         (linkersByTitle[item.title.lowercased()] ?? []).filter { $0 != item.path }.compactMap { items[$0] }.sorted(by: Self.byTitle)
     }
 
+    /// Items whose body embeds this image filename (e.g. `front.jpg`), ignoring case and folders, with how many times
+    /// each embeds it, sorted by title.
+    public func embedders(of name: String) -> [(item: Item, count: Int)] {
+        let name = name.lowercased()
+        return (embeddersByName[name] ?? []).compactMap { items[$0] }.sorted(by: Self.byTitle).map { item in
+            (item, item.embeds.count { $0.attachmentName?.lowercased() == name })
+        }
+    }
+
     /// The file's own warnings, plus one for a `project` or `area` link that doesn't resolve.
     public func warnings(for item: Item) -> [Warning] {
         var warnings = item.warnings
@@ -147,17 +158,25 @@ public struct VaultIndex: Sendable {
         }
     }
 
-    /// Files the item under the titles it links to: a task's `project`, an `area`, and the links in its body.
+    /// Files the item under the titles it links to (a task's `project`, an `area`, and the links in its body) and the
+    /// images it embeds.
     private mutating func addLinks(of item: Item) {
         if let title = projectTitle(of: item) { tasksByProjectTitle[title, default: []].insert(item.path) }
         if let title = item.properties.area?.title.lowercased() { filedByAreaTitle[title, default: []].insert(item.path) }
         for link in item.links { linkersByTitle[link.title.lowercased(), default: []].insert(item.path) }
+        for name in Self.attachmentNames(of: item) { embeddersByName[name, default: []].insert(item.path) }
     }
 
     private mutating func removeLinks(of item: Item) {
         if let title = projectTitle(of: item) { Self.remove(item.path, at: title, from: &tasksByProjectTitle) }
         if let title = item.properties.area?.title.lowercased() { Self.remove(item.path, at: title, from: &filedByAreaTitle) }
         for link in item.links { Self.remove(item.path, at: link.title.lowercased(), from: &linkersByTitle) }
+        for name in Self.attachmentNames(of: item) { Self.remove(item.path, at: name, from: &embeddersByName) }
+    }
+
+    /// The lowercased image filenames an item embeds.
+    private static func attachmentNames(of item: Item) -> Set<String> {
+        Set(item.embeds.compactMap { $0.attachmentName?.lowercased() })
     }
 
     /// The lowercased title a task's `project` links to; nil for a project or a task without one.
