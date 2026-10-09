@@ -77,7 +77,7 @@ struct PhoneFileScreen: View {
                 Hairline()
                 if isSource {
                     TextEditor(text: Binding { document.text } set: { document.text = $0 })
-                        .font(.system(size: 15, design: .monospaced))
+                        .scaledFont(size: 15, design: .monospaced)
                         .foregroundStyle(theme.color(\.fg))
                         .scrollContentBackground(.hidden)
                         .scrollDisabled(true)
@@ -192,7 +192,7 @@ private struct QuietLine: View {
             parts.append("\(item.subtasks.done)/\(item.subtasks.total)")
         }
         return Text(parts.joined(separator: " · "))
-            .font(.system(size: 13))
+            .scaledFont(size: 13)
             .foregroundStyle(theme.color(\.muted))
     }
 }
@@ -220,7 +220,7 @@ struct PhoneChips: View {
                 chip(missing: false) {
                     InlineCheckboxView(marker: marker, tint: tint, background: theme.bg).frame(width: 16, height: 16)
                     Text(p.status.rawValue)
-                    Image(systemName: "chevron.down").font(.system(size: 11, weight: .semibold)).foregroundStyle(theme.color(\.muted))
+                    Image(systemName: "chevron.down").scaledFont(size: 11, weight: .semibold).foregroundStyle(theme.color(\.muted))
                 }
             }
             .accessibilityLabel("Status")
@@ -246,7 +246,7 @@ struct PhoneChips: View {
             dateChip(.due, p.dueDate)
             dateChip(.deadline, p.deadline)
         }
-        .font(.system(size: 15))
+        .scaledFont(size: 15)
     }
 
     private func dateChip(_ kind: AgendaEntry.Kind, _ date: LocalDate?) -> some View {
@@ -255,7 +255,7 @@ struct PhoneChips: View {
         return Button { nav.sheet = .date(kind, paths: [item.path]) } label: {
             if let date {
                 chip(missing: false, text: isDone ? \.muted : isOverdue ? \.deadline : \.fg) {
-                    Image(systemName: kind.systemImage).font(.system(size: 13, weight: .semibold))
+                    Image(systemName: kind.systemImage).scaledFont(size: 13, weight: .semibold)
                         .foregroundStyle(theme.color(isDone ? \.muted : kind.tint))
                     Text(date.relativeLabel(today: model.today).capitalizedFirst)
                 }
@@ -270,7 +270,7 @@ struct PhoneChips: View {
 
     private func missing(_ name: String) -> some View {
         chip(missing: true, text: \.muted) {
-            Image(systemName: "plus").font(.system(size: 12, weight: .semibold))
+            Image(systemName: "plus").scaledFont(size: 12, weight: .semibold)
             Text(name)
         }
     }
@@ -279,7 +279,7 @@ struct PhoneChips: View {
         HStack(spacing: 6) { label() }
             .foregroundStyle(theme.color(text))
             .padding(.horizontal, 10)
-            .frame(height: 34)
+            .scaledMinHeight(34)
             .background(missing ? .clear : theme.color(\.code), in: .rect(cornerRadius: 9))
             .overlay {
                 RoundedRectangle(cornerRadius: 9)
@@ -301,7 +301,7 @@ private struct PhoneLinkedTasks: View {
         let sorted = tasks.filter { $0.properties.status != .done } + tasks.filter { $0.properties.status == .done }
         VStack(alignment: .leading, spacing: 0) {
             Text("Tasks")
-                .font(.system(size: 22, weight: .bold))
+                .scaledFont(size: 22, weight: .bold)
                 .foregroundStyle(theme.color(\.strong))
                 .padding(.top, 12)
                 .padding(.bottom, 6)
@@ -317,10 +317,10 @@ private struct PhoneLinkedTasks: View {
                             TaskTitle(item: task, size: 16).lineLimit(1)
                             Spacer(minLength: 8)
                             if let (kind, date) = date(of: task) {
-                                Image(systemName: kind.systemImage).font(.system(size: 11, weight: .semibold))
+                                Image(systemName: kind.systemImage).scaledFont(size: 11, weight: .semibold)
                                     .foregroundStyle(theme.color(kind.tint))
                                 Text(date.relativeLabel(today: model.today).capitalizedFirst)
-                                    .font(.system(size: 13))
+                                    .scaledFont(size: 13)
                                     .foregroundStyle(theme.color(\.muted))
                             }
                         }
@@ -335,9 +335,9 @@ private struct PhoneLinkedTasks: View {
                 Task { if let path = await model.newLinkedTask(in: project) { nav.push(.file(path)) } }
             } label: {
                 Label("New Linked Task", systemImage: "plus")
-                    .font(.system(size: 15, weight: .medium))
+                    .scaledFont(size: 15, weight: .medium)
                     .padding(.horizontal, 14)
-                    .frame(height: 38)
+                    .scaledMinHeight(38)
                     .overlay(Capsule().strokeBorder(theme.color(\.border)))
             }
             .buttonStyle(.plain)

@@ -143,10 +143,10 @@ private struct WeekStrip: View {
                 Button { show(offset) } label: {
                     VStack(spacing: 3) {
                         Text(day.date().formatted(.dateTime.weekday(.narrow)))
-                            .font(.system(size: 12, weight: .semibold))
+                            .scaledFont(size: 12, weight: .semibold)
                             .foregroundStyle(theme.color(\.muted))
                         Text("\(day.day)")
-                            .font(.system(size: 20, weight: offset == 0 ? .bold : .regular))
+                            .scaledFont(size: 20, weight: offset == 0 ? .bold : .regular)
                             .foregroundStyle(theme.color(\.strong))
                         HStack(spacing: 3) {
                             if due { Circle().fill(theme.color(\.due)).frame(width: 5, height: 5) }
@@ -165,6 +165,8 @@ private struct WeekStrip: View {
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
+        // Seven columns: past this, the numbers wouldn't fit.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
 
@@ -181,11 +183,11 @@ private struct DayHeader: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 if let number {
                     Text(number)
-                        .font(.system(size: 22, weight: .bold))
+                        .scaledFont(size: 22, weight: .bold)
                         .foregroundStyle(theme.color(empty ? \.muted : \.strong))
                 }
                 Text(label)
-                    .font(.system(size: 15, weight: .semibold))
+                    .scaledFont(size: 15, weight: .semibold)
                     .foregroundStyle(theme.color(empty ? \.muted : number == nil ? \.strong : \.fg))
             }
             .padding(.top, 12)
@@ -256,12 +258,12 @@ struct PhoneFoldHeader: View {
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .bold))
+                        .scaledFont(size: 12, weight: .bold)
                         .rotationEffect(.degrees(isFolded ? 0 : 90))
                         .foregroundStyle(theme.color(\.muted))
-                    Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(theme.color(\.strong))
+                    Text(title).scaledFont(size: 17, weight: .semibold).foregroundStyle(theme.color(\.strong))
                     Spacer()
-                    Text("\(count)").font(.system(size: 15)).foregroundStyle(theme.color(\.muted))
+                    Text("\(count)").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
                 }
                 Hairline()
             }
@@ -305,19 +307,19 @@ struct PhoneProjectScreen: View {
                     PhoneChips(model: model, item: project)
                     Text(((subtasks.total > 0 ? ["Subtasks \(subtasks.done)/\(subtasks.total)"] : [])
                           + ["\(progress.done) of \(progress.total) tasks done"]).joined(separator: " · "))
-                        .font(.system(size: 13))
+                        .scaledFont(size: 13)
                         .foregroundStyle(theme.color(\.muted))
                     Button { nav.push(.file(path)) } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "doc.text").foregroundStyle(theme.color(\.muted))
                             Text("Project file").foregroundStyle(theme.color(\.fg))
                             Spacer()
-                            Image(systemName: "chevron.right").font(.system(size: 14, weight: .semibold))
+                            Image(systemName: "chevron.right").scaledFont(size: 14, weight: .semibold)
                                 .foregroundStyle(theme.color(\.muted))
                         }
-                        .font(.system(size: 17))
+                        .scaledFont(size: 17)
                         .padding(.horizontal, 16)
-                        .frame(height: 48)
+                        .scaledMinHeight(48)
                         .background(theme.color(\.code), in: .rect(cornerRadius: 12))
                         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(theme.color(\.border)))
                         .contentShape(.rect)

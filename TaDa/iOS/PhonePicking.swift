@@ -142,7 +142,7 @@ private struct PickingBars: ViewModifier {
             .overlay(alignment: .bottom) {
                 if nav.isPicking {
                     actions
-                        .frame(height: PickingBar.height)
+                        .scaledMinHeight(PickingBar.height)
                         .glassEffect(.regular.interactive(), in: .capsule)
                         .padding(.horizontal, PickingBar.inset)
                         .padding(.bottom, PickingBar.bottom)
@@ -208,8 +208,8 @@ private struct PickingBars: ViewModifier {
 
     private func actionLabel(_ title: String, _ symbol: String, tint: KeyPath<Theme, PlatformColor>) -> some View {
         VStack(spacing: 3) {
-            Image(systemName: symbol).font(.system(size: 19)).frame(height: 24)
-            Text(title).font(.system(size: 11, weight: .semibold))
+            Image(systemName: symbol).scaledFont(size: 19).scaledMinHeight(24)
+            Text(title).scaledFont(size: 11, weight: .semibold)
         }
         .foregroundStyle(theme.color(tint))
         .frame(maxWidth: .infinity, minHeight: 44)

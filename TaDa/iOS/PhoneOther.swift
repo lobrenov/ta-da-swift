@@ -65,7 +65,7 @@ private struct SyncLine: View {
             Image(systemName: model.isInICloud ? "icloud" : "folder")
                 .foregroundStyle(theme.color(model.isWatching ? \.done : \.blocked))
         }
-        .font(.system(size: 13))
+        .scaledFont(size: 13)
         .foregroundStyle(theme.color(\.muted))
     }
 }
@@ -140,7 +140,7 @@ struct PhoneSettingsScreen: View {
                 Text(title)
                 Spacer()
                 Text(hint)
-                    .font(.system(size: 13, design: .monospaced))
+                    .scaledFont(size: 13, design: .monospaced)
                     .foregroundStyle(theme.color(\.muted))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -205,7 +205,7 @@ struct PhoneTrashScreen: View {
     var body: some View {
         List {
             if let note = model.trashNote {
-                Text(note).font(.system(size: 13)).foregroundStyle(theme.color(\.done))
+                Text(note).scaledFont(size: 13).foregroundStyle(theme.color(\.done))
                     .listRowBackground(Color.clear)
             }
             ForEach(model.trash) { trashed in
@@ -261,14 +261,14 @@ struct PhoneTrashScreen: View {
         } label: {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
+                    .scaledFont(size: 22)
                     .foregroundStyle(isPicked ? theme.color(\.accent) : theme.color(\.border))
                 Image(systemName: item.properties.kind == .project ? "chart.pie" : "doc.text")
                     .foregroundStyle(theme.color(\.muted))
                     .padding(.top, 2)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(item.title).font(.system(size: 17)).foregroundStyle(theme.color(\.fg))
-                    Text(summary(trashed)).font(.system(size: 13)).foregroundStyle(theme.color(\.muted))
+                    Text(item.title).scaledFont(size: 17).foregroundStyle(theme.color(\.fg))
+                    Text(summary(trashed)).scaledFont(size: 13).foregroundStyle(theme.color(\.muted))
                 }
             }
             .contentShape(.rect)
@@ -306,16 +306,16 @@ struct PhoneOnboardingView: View {
         ScrollView {
             VStack(spacing: 28) {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 44, weight: .bold))
+                    .scaledFont(size: 44, weight: .bold)
                     .foregroundStyle(.white)
                     .frame(width: 96, height: 96)
                     .background(theme.color(\.accent), in: .rect(cornerRadius: 22))
                     .padding(.top, 60)
                     .accessibilityHidden(true)
                 VStack(spacing: 12) {
-                    Text("Ta Da").font(.system(size: 34, weight: .bold)).foregroundStyle(theme.color(\.strong))
+                    Text("Ta Da").scaledFont(size: 34, weight: .bold).foregroundStyle(theme.color(\.strong))
                     Text("Every task and project is a markdown file in a folder you choose.")
-                        .font(.system(size: 17))
+                        .scaledFont(size: 17)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(theme.color(\.fg))
                 }
@@ -329,7 +329,7 @@ struct PhoneOnboardingView: View {
                 }
                 if case let .failed(message) = model.state {
                     Text(message)
-                        .font(.system(size: 15))
+                        .scaledFont(size: 15)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(theme.color(\.deadline))
                 }
@@ -338,7 +338,7 @@ struct PhoneOnboardingView: View {
         }
         .safeAreaInset(edge: .bottom) {
             Button { isPicking = true } label: {
-                Text("Choose Folder…").font(.system(size: 17, weight: .semibold)).frame(maxWidth: .infinity, minHeight: 36)
+                Text("Choose Folder…").scaledFont(size: 17, weight: .semibold).frame(maxWidth: .infinity, minHeight: 36)
             }
             .buttonStyle(.glassProminent)
             .tint(theme.color(\.accent))
@@ -357,8 +357,8 @@ struct PhoneOnboardingView: View {
                 .frame(width: 30)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(theme.color(\.strong))
-                Text(text).font(.system(size: 15)).foregroundStyle(theme.color(\.muted))
+                Text(title).scaledFont(size: 17, weight: .semibold).foregroundStyle(theme.color(\.strong))
+                Text(text).scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
             }
         }
     }

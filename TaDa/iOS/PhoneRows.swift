@@ -43,13 +43,13 @@ struct PhoneTaskRow: View {
                         VStack(alignment: .leading, spacing: 3) {
                             title
                             metaLine
-                                .font(.system(size: 13))
+                                .scaledFont(size: 13)
                                 .foregroundStyle(theme.color(\.muted))
                                 .lineLimit(1)
                             if case let .search(words, _) = meta, let summary = item.summary,
                                words.contains(where: { summary.localizedStandardContains($0) }) {
                                 Text(summary.highlighting(words, fill: theme.color(\.due).opacity(theme.isDark ? 0.3 : 0.25)))
-                                    .font(.system(size: 15))
+                                    .scaledFont(size: 15)
                                     .foregroundStyle(theme.color(\.fg))
                                     .lineLimit(2)
                             }
@@ -57,7 +57,7 @@ struct PhoneTaskRow: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         if nav.isPicking {
                             Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 22))
+                                .scaledFont(size: 22)
                                 .foregroundStyle(isPicked ? theme.color(\.accent) : theme.color(\.border))
                                 .accessibilityHidden(true)
                         }
@@ -84,7 +84,7 @@ struct PhoneTaskRow: View {
             AttributedString(item.title)
         }
         return Text(text)
-            .font(.system(size: 17))
+            .scaledFont(size: 17)
             .strikethrough(done)
             .foregroundStyle(theme.color(done ? \.muted : \.fg))
             .lineLimit(2)
@@ -172,17 +172,17 @@ struct PhoneProjectRow: View {
                         .frame(width: 24)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(project.title)
-                            .font(.system(size: 17))
+                            .scaledFont(size: 17)
                             .foregroundStyle(theme.color(project.properties.status == .done ? \.muted : \.fg))
                             .lineLimit(2)
                         Text(summary(project))
-                            .font(.system(size: 13))
+                            .scaledFont(size: 13)
                             .foregroundStyle(theme.color(\.muted))
                             .lineLimit(1)
                     }
                     Spacer(minLength: 8)
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
+                        .scaledFont(size: 14, weight: .semibold)
                         .foregroundStyle(theme.color(\.muted))
                 }
                 .padding(.horizontal, 16)
@@ -213,7 +213,7 @@ struct PhoneProjectHeader: View {
     var body: some View {
         HStack(spacing: 8) {
             ProgressRing(fraction: fraction).foregroundStyle(theme.color(\.accent))
-            Text(project.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+            Text(project.title).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
         }
         .padding(.horizontal, 16)
         .padding(.top, 20)

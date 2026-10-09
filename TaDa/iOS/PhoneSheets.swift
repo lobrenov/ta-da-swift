@@ -46,7 +46,7 @@ struct PhoneDateSheet: View {
                     calendar
                     if day != nil {
                         Button("Clear \(kind == .due ? "Due Date" : "Deadline")", role: .destructive) { set(nil) }
-                            .font(.system(size: 17))
+                            .scaledFont(size: 17)
                             .foregroundStyle(theme.color(\.deadline))
                     }
                 }
@@ -83,10 +83,10 @@ struct PhoneDateSheet: View {
                 ForEach(choices, id: \.0) { title, symbol, date in
                     Button { set(date) } label: {
                         Label(title, systemImage: symbol)
-                            .font(.system(size: 15, weight: .semibold))
+                            .scaledFont(size: 15, weight: .semibold)
                             .foregroundStyle(theme.color(day == date ? \.strong : \.fg))
                             .padding(.horizontal, 12)
-                            .frame(height: 34)
+                            .scaledMinHeight(34)
                             .background(theme.color(day == date ? \.surface : \.code), in: .capsule)
                             .contentShape(.capsule)
                     }
@@ -105,7 +105,7 @@ struct PhoneDateSheet: View {
         return VStack(spacing: 10) {
             HStack {
                 Text(month.formatted(.monthYear))
-                    .font(.system(size: 17, weight: .semibold))
+                    .scaledFont(size: 17, weight: .semibold)
                     .foregroundStyle(theme.color(\.strong))
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
@@ -114,11 +114,11 @@ struct PhoneDateSheet: View {
                 Button { month = month.addingMonths(1) } label: { Image(systemName: "chevron.right").frame(width: 36, height: 36) }
                     .accessibilityLabel("Next Month")
             }
-            .font(.system(size: 17, weight: .semibold))
+            .scaledFont(size: 17, weight: .semibold)
             .foregroundStyle(theme.color(\.accent))
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(grid.weekdaySymbols.indices, id: \.self) { i in
-                    Text(grid.weekdaySymbols[i]).font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.color(\.muted))
+                    Text(grid.weekdaySymbols[i]).scaledFont(size: 13, weight: .semibold).foregroundStyle(theme.color(\.muted))
                 }
                 .accessibilityHidden(true)
                 ForEach(grid.days.indices, id: \.self) { i in
@@ -130,6 +130,8 @@ struct PhoneDateSheet: View {
                 }
             }
         }
+        // Seven columns of fixed-size day circles: past this, the numbers wouldn't fit.
+        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
     private func dayCell(_ date: LocalDate, other: LocalDate?) -> some View {
@@ -138,7 +140,7 @@ struct PhoneDateSheet: View {
         return Button { set(date) } label: {
             VStack(spacing: 2) {
                 Text("\(date.day)")
-                    .font(.system(size: 19, weight: isSet || isToday ? .bold : .regular))
+                    .scaledFont(size: 19, weight: isSet || isToday ? .bold : .regular)
                     .monospacedDigit()
                     .foregroundStyle(isSet ? theme.color(\.bg) : theme.color(isToday ? \.accent : date < model.today ? \.muted : \.fg))
                     .frame(width: 38, height: 38)

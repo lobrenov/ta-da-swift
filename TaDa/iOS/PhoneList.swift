@@ -129,11 +129,11 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.system(size: 34, weight: .bold))
+                .scaledFont(size: 34, weight: .bold)
                 .foregroundStyle(theme.color(\.strong))
             if !subtitle.isEmpty {
                 Text(subtitle)
-                    .font(.system(size: 13))
+                    .scaledFont(size: 13)
                     .foregroundStyle(theme.color(\.muted))
             }
         }
@@ -192,10 +192,10 @@ struct PhoneContextPills: View {
         let on = selection == value
         return Button { selection = value } label: {
             Text(label)
-                .font(.system(size: 15, weight: .semibold))
+                .scaledFont(size: 15, weight: .semibold)
                 .foregroundStyle(theme.color(on ? \.strong : \.fg))
                 .padding(.horizontal, 14)
-                .frame(height: 32)
+                .scaledMinHeight(32)
                 .background(on ? theme.color(\.surface) : .clear, in: .capsule)
                 .overlay { if !on { Capsule().strokeBorder(theme.color(\.border)) } }
                 .contentShape(.capsule)
@@ -231,11 +231,11 @@ struct PhoneSearchResults: View {
                                 .foregroundStyle(theme.color(\.accent))
                                 .frame(width: 24)
                             Text(highlighted(project.title, words))
-                                .font(.system(size: 17))
+                                .scaledFont(size: 17)
                                 .foregroundStyle(theme.color(\.fg))
                             Spacer()
                             Text("\(model.index.tasks(in: project).count) tasks")
-                                .font(.system(size: 15))
+                                .scaledFont(size: 15)
                                 .foregroundStyle(theme.color(\.muted))
                         }
                         .padding(.horizontal, 16)
@@ -296,9 +296,9 @@ struct PhoneSectionHeader: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack {
-                Text(title).font(.system(size: 17, weight: .semibold)).foregroundStyle(theme.color(\.strong))
+                Text(title).scaledFont(size: 17, weight: .semibold).foregroundStyle(theme.color(\.strong))
                 Spacer()
-                if let count { Text("\(count)").font(.system(size: 15)).foregroundStyle(theme.color(\.muted)) }
+                if let count { Text("\(count)").scaledFont(size: 15).foregroundStyle(theme.color(\.muted)) }
             }
             Hairline()
         }
