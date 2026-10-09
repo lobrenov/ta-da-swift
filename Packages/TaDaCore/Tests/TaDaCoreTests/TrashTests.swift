@@ -192,6 +192,7 @@ private let today = LocalDate("2026-10-09")!
         #if os(iOS)
         try CoordinatedFileIO.trashOrDelete(url) { _ in throw CocoaError(.featureUnsupported) }
         #expect(!FileManager.default.fileExists(atPath: url.path))
+        try CoordinatedFileIO.write("text", to: url)
         #else
         #expect(throws: CocoaError.self) {
             try CoordinatedFileIO.trashOrDelete(url) { _ in throw CocoaError(.featureUnsupported) }
