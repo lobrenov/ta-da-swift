@@ -319,7 +319,7 @@ private struct PhoneLinkedTasks: View {
                     .buttonStyle(.plain)
                 }
                 .frame(minHeight: 44)
-                .contextMenu { PhoneFileMenu(model: model, item: task) }
+                .contextMenu { PhoneFileMenu(model: model, item: task, canSelect: false) }
             }
             Button {
                 Task { if let path = await model.newLinkedTask(in: project) { nav.push(.file(path)) } }

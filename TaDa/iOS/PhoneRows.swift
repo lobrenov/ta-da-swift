@@ -224,10 +224,12 @@ struct PhoneProjectHeader: View {
 }
 
 /// The menu a press and hold opens on a row: complete, today or tomorrow up top; then status, dates, project,
-/// share, select and trash.
+/// share, select (only in the list on screen) and trash.
 struct PhoneFileMenu: View {
     let model: AppModel
     let item: Item
+    /// False for a row that isn't in the list on screen, which has no picking to join.
+    var canSelect = true
     @Environment(PhoneNavigation.self) private var nav
 
     var body: some View {
@@ -271,7 +273,7 @@ struct PhoneFileMenu: View {
         if let url = model.vault?.url(for: path) {
             ShareLink(item: url) { Label("Share…", systemImage: "square.and.arrow.up") }
         }
-        if nav.pickable.contains(path) {
+        if canSelect, nav.pickable.contains(path) {
             Button("Select", systemImage: "checkmark.circle") { nav.startPicking(path) }
         }
         Divider()
