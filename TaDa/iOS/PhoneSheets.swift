@@ -165,7 +165,7 @@ struct PhoneDateSheet: View {
     }
 
     private func apply() {
-        let changes = [AgendaEntry.Kind.due, .deadline].filter(changed.contains).map { ($0, days[$0] ?? nil) }
+        let changes = AgendaEntry.Kind.changes(changed, in: days)
         let paths = paths
         nav.endPicking()
         dismiss()

@@ -1,6 +1,5 @@
 // The iPhone's navigation: the five tabs, each tab's pushed screens, the sheet on top, the rows picked by swiping,
-// and the haptic each action plays.
-#if os(iOS)
+// and the haptic each action plays. Nothing here is iOS-only, so the tests run with the Mac's.
 import SwiftUI
 import TaDaCore
 
@@ -145,4 +144,10 @@ extension View {
         }
     }
 }
-#endif
+
+extension AgendaEntry.Kind {
+    /// What the date sheet writes: the dates of the kinds the user changed, due date first; nil clears one.
+    static func changes(_ changed: Set<Self>, in days: [Self: LocalDate?]) -> [(Self, LocalDate?)] {
+        [Self.due, .deadline].filter(changed.contains).map { ($0, days[$0] ?? nil) }
+    }
+}
