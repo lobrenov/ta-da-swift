@@ -39,7 +39,7 @@ struct PhoneTaskRow: View {
                     .contentShape(.rect.inset(by: -10))
                     .padding(.top, 1)
                 Button { open() } label: {
-                    HStack(alignment: .top, spacing: 8) {
+                    HStack(spacing: 8) {
                         VStack(alignment: .leading, spacing: 3) {
                             title
                             metaLine

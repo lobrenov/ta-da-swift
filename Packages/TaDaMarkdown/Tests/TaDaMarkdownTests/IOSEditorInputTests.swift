@@ -28,6 +28,7 @@ final class IOSEditorHarness {
     var toggles: [Character] { box.toggles }
     let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
     let textView: NativeTextView
+    let proxy = SlashCommandProxy()
 
     init(_ text: String) throws {
         let box = Box(text)
@@ -45,6 +46,7 @@ final class IOSEditorHarness {
             fontName: UIFont.systemFont(ofSize: 17).fontName,
             fontSize: 17,
             documentId: "doc",
+            slashCommandProxy: proxy,
             onTaskMarkerMenu: { box.markerRequests.append($0) },
             onCalloutMenu: { box.calloutRequests.append($0) },
             onTaskCheckboxToggle: { box.toggles.append($0) }
@@ -152,6 +154,17 @@ struct IOSEditorInputTests {
         await editor.type("[", after: "See ")
         await editor.type("[")
         #expect(editor.textView.string == "See [[]]")
+    }
+
+    @Test func typingThroughTheProxyPairsAsTheKeyboardDoes() async throws {
+        let editor = try IOSEditorHarness("See ")
+        editor.textView.selectedRange = NSRange(location: 4, length: 0)
+        editor.proxy.type("[")
+        editor.proxy.type("[")
+        await editor.settle()
+        #expect(editor.textView.string == "See [[]]")
+        #expect(editor.text == "See [[]]")
+        #expect(editor.textView.selectedRange == NSRange(location: 6, length: 0))
     }
 
     @Test func tappingABoxTogglesItAndUndoRestoresIt() async throws {

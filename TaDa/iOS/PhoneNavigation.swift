@@ -109,9 +109,11 @@ enum Haptic: Equatable {
         picked = []
     }
 
+    /// Picks or unpicks a row; unpicking the last one ends picking.
     func togglePicked(_ path: String) {
         if let i = picked.firstIndex(of: path) {
             picked.remove(at: i)
+            if picked.isEmpty { isPicking = false }
         } else {
             picked.append(path)
         }

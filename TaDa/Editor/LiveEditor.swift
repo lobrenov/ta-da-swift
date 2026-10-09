@@ -28,10 +28,10 @@ struct LiveEditor: View {
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
     #else
-    @State private var slash: SlashCommandState?
     @State private var checkboxMenu: MenuRequest<TaskMarkerMenuRequest>?
     @State private var calloutMenu: MenuRequest<CalloutMenuRequest>?
     @State private var toggles = 0
+    @State private var menuPresses = 0
     #endif
 
     var body: some View {
@@ -72,14 +72,21 @@ struct LiveEditor: View {
             documentId: documentID,
             onLinkClick: onLinkClick,
             header: header,
-            onSlashCommandChange: { slash = $0 },
             slashCommandProxy: slashCommand,
-            onTaskMarkerMenu: { checkboxMenu = MenuRequest($0, anchor: localRect($0.anchorRect)) },
-            onCalloutMenu: { calloutMenu = MenuRequest($0, anchor: localRect($0.anchorRect)) },
+            onTaskMarkerMenu: {
+                checkboxMenu = MenuRequest($0, anchor: localRect($0.anchorRect))
+                menuPresses += 1
+            },
+            onCalloutMenu: {
+                calloutMenu = MenuRequest($0, anchor: localRect($0.anchorRect))
+                menuPresses += 1
+            },
             onTaskCheckboxToggle: { _ in toggles += 1 },
-            keyboardBar: AnyView(EditorKeyboardBar(theme: theme, slash: slash, proxy: slashCommand))
+            keyboardBar: AnyView(EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks,
+                                                   haptics: haptics))
         )
         .sensoryFeedback(.impact(weight: .light), trigger: toggles) { _, _ in haptics }
+        .sensoryFeedback(.impact(weight: .medium), trigger: menuPresses) { _, _ in haptics }
         .popover(item: $checkboxMenu, attachmentAnchor: .rect(.rect(checkboxMenu?.anchor ?? .zero))) { menu in
             CheckboxMenu(current: menu.request.marker, theme: theme) { marker in
                 checkboxMenu = nil
@@ -298,7 +305,7 @@ private struct CheckboxMenu: View {
                         .accessibilityAddTraits(marker == current ? .isSelected : [])
                     }
                 }
-                .padding(8)
+                .padding(12)
                 Divider()
                 ForEach(Self.named + (showsAll ? others.map(\.marker) : []), id: \.self) { marker in
                     row(marker, title: items.first { $0.marker == marker }?.title ?? String(marker))
@@ -318,6 +325,7 @@ private struct CheckboxMenu: View {
                     .buttonStyle(.plain)
                 }
             }
+            .padding(.bottom, 12)
         }
         .frame(width: 290)
         .frame(maxHeight: 460)
@@ -363,7 +371,7 @@ private struct CalloutMenu: View {
                     Text("Folded").tag("-")
                 }
                 .pickerStyle(.segmented)
-                .padding(8)
+                .padding(12)
                 Divider()
                 ForEach(CalloutType.allCases, id: \.self) { type in
                     Button {
@@ -387,6 +395,7 @@ private struct CalloutMenu: View {
                     .accessibilityAddTraits(type == current ? .isSelected : [])
                 }
             }
+            .padding(.bottom, 12)
         }
         .frame(width: 270)
         .frame(maxHeight: 520)
@@ -394,64 +403,47 @@ private struct CalloutMenu: View {
     }
 }
 
-/// Above the keyboard: a subtask box, heading, bold, italic, code, wikilink, callout, slash and indent buttons, or,
-/// while a `/` command is typed, the formats that match it. It's hosted outside SwiftUI's environment, so it takes
-/// the theme.
+/// Above the keyboard: subtask box, heading, bold, italic, code, wikilink, callout and indent buttons, and hide
+/// keyboard. It's hosted outside SwiftUI's environment, so it takes the theme.
 private struct EditorKeyboardBar: View {
     let theme: Theme
-    let slash: SlashCommandState?
     let proxy: SlashCommandProxy
+    /// Settings ▸ Editor's Wikilinks switch.
+    let closesWikiLinks: Bool
+    let haptics: Bool
+    @State private var hides = 0
 
     var body: some View {
         HStack(spacing: 0) {
             ScrollView(.horizontal) {
                 HStack(spacing: 2) {
-                    if let slash {
-                        let commands = SlashCommand.matching(slash.query, atLineStart: slash.isAtLineStart)
-                        if commands.isEmpty {
-                            Text("No matching formats").foregroundStyle(theme.color(\.muted)).padding(.horizontal, 10)
-                        }
-                        ForEach(commands, id: \.self) { command in
-                            Button {
-                                let insertion = command.insertion(followsBlankLine: slash.followsBlankLine)
-                                proxy.insert(insertion.text, selecting: insertion.selection)
-                            } label: {
-                                Text(command.title)
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundStyle(theme.color(\.fg))
-                                    .padding(.horizontal, 12)
-                                    .frame(height: 34)
-                                    .background(theme.color(\.surface), in: .capsule)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    } else {
-                        button("Subtask", "checkmark.square") { if let textView = proxy.textView { PhoneSubtask.perform(in: textView) } }
-                        button("Heading", "textformat.size") { proxy.apply(.nextHeading) }
-                        button("Bold", "bold") { proxy.apply(.bold) }
-                        button("Italic", "italic") { proxy.apply(.italic) }
-                        button("Code", "chevron.left.forwardslash.chevron.right") { proxy.apply(.inlineCode) }
-                        button("Wikilink", "link") {
-                            proxy.textView?.insertText("[")
-                            proxy.textView?.insertText("[")
-                        }
-                        button("Callout", "text.bubble") { insert(SlashCommand.callout.insertion()) }
-                        button("Formats", "slash.circle") { proxy.textView?.insertText("/") }
-                        button("Outdent", "decrease.indent") { proxy.outdent() }
-                        button("Indent", "increase.indent") { proxy.indent() }
+                    button("Subtask", "checkmark.square") { if let textView = proxy.textView { PhoneSubtask.perform(in: textView) } }
+                    button("Heading", "textformat.size") { proxy.apply(.nextHeading) }
+                    button("Bold", "bold") { proxy.apply(.bold) }
+                    button("Italic", "italic") { proxy.apply(.italic) }
+                    button("Code", "chevron.left.forwardslash.chevron.right") { proxy.apply(.inlineCode) }
+                    button("Wikilink", "link") {
+                        PhoneWikiLink.perform(with: proxy, closes: closesWikiLinks)
                     }
+                    button("Callout", "text.bubble") { insert(SlashCommand.callout.insertion()) }
+                    button("Outdent", "decrease.indent") { proxy.outdent() }
+                    button("Indent", "increase.indent") { proxy.indent() }
                 }
                 .padding(.horizontal, 6)
             }
             .scrollIndicators(.never)
             Divider().frame(height: 24)
-            button("Hide Keyboard", "keyboard.chevron.compact.down") { proxy.textView?.resignFirstResponder() }
-                .padding(.horizontal, 4)
+            button("Hide Keyboard", "keyboard.chevron.compact.down") {
+                hides += 1
+                proxy.textView?.resignFirstResponder()
+            }
+            .padding(.horizontal, 4)
         }
         .frame(height: 44)
         .glassEffect(in: .capsule)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
+        .sensoryFeedback(.impact(weight: .light), trigger: hides) { _, _ in haptics }
     }
 
     private func button(_ title: String, _ symbol: String, action: @escaping () -> Void) -> some View {
@@ -472,6 +464,25 @@ private struct EditorKeyboardBar: View {
         let start = textView.selectedRange.location
         textView.insertText(insertion.text)
         textView.selectedRange = NSRange(location: start + insertion.selection.location, length: insertion.selection.length)
+    }
+}
+
+/// The wikilink button: types `[[` as the keyboard does, so Autocomplete's switches apply; with Wikilinks on, a
+/// selection becomes the link's text, and right before a `]]` the caret steps over it.
+private enum PhoneWikiLink {
+    static func perform(with proxy: SlashCommandProxy, closes: Bool) {
+        guard let textView = proxy.textView else { return }
+        let string = textView.text as NSString
+        let selection = textView.selectedRange
+        if closes, selection.length > 0 {
+            proxy.type("[[\(string.substring(with: selection))]]")
+        } else if closes, NSMaxRange(selection) + 2 <= string.length,
+                  string.substring(with: NSRange(location: selection.location, length: 2)) == "]]" {
+            textView.selectedRange = NSRange(location: selection.location + 2, length: 0)
+        } else {
+            proxy.type("[")
+            proxy.type("[")
+        }
     }
 }
 

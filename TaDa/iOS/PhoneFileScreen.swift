@@ -69,7 +69,8 @@ struct PhoneFileScreen: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 4)
-            .padding(.bottom, 40)
+            // While editing, room for the last line to scroll above the keyboard bar.
+            .padding(.bottom, isEditing ? 100 : 40)
         }
         .scrollDismissesKeyboard(.interactively)
     }

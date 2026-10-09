@@ -58,6 +58,15 @@ public final class SlashCommandProxy {
         _ = coordinator.handleBacktab(textView)
     }
 
+    #if os(iOS)
+    /// Ta Da fork: replaces the selection with `text` as typing does, so a typed opener pairs (and a typed closer
+    /// steps over one) as Autocomplete's switches say. UIKit's `insertText` bypasses the editor's input handling.
+    public func type(_ text: String) {
+        guard let textView = coordinator?.textView else { return }
+        textView.replaceCharacters(in: textView.selectedRange, with: text)
+    }
+    #endif
+
     /// Closes the menu until the next `/` is typed.
     public func dismiss() {
         coordinator?.dismissSlashCommand()

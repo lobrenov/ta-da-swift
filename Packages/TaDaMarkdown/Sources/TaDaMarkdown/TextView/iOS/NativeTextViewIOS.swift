@@ -58,6 +58,8 @@ final class NativeTextView: UITextView {
             recognizer.delegate = gestures
             addGestureRecognizer(recognizer)
         }
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow),
+                                               name: UIResponder.keyboardDidShowNotification, object: nil)
     }
 
     private let gestures = EditorGestures()
@@ -216,6 +218,7 @@ final class NativeTextView: UITextView {
         }
         let host = UIHostingController(rootView: bar)
         host.view.backgroundColor = .clear
+        host.safeAreaRegions = []
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 52))
         container.autoresizingMask = .flexibleWidth
         host.view.frame = container.bounds
@@ -224,6 +227,35 @@ final class NativeTextView: UITextView {
         keyboardBarHost = host
         inputAccessoryView = container
         if isFirstResponder { reloadInputViews() }
+    }
+
+    /// How far the caret stays above the keyboard bar.
+    private static let keyboardBarMargin: CGFloat = 12
+
+    @objc private func keyboardDidShow() {
+        revealCaretAboveKeyboardBar()
+    }
+
+    /// After the caret moves or the text changes, once UIKit has scrolled the caret into view.
+    func revealCaretAboveKeyboardBarSoon() {
+        DispatchQueue.main.async { [weak self] in self?.revealCaretAboveKeyboardBar() }
+    }
+
+    /// Scrolls the text, or the scroll view it sits in, so the caret clears the keyboard bar, which floats over
+    /// the text above the keyboard.
+    func revealCaretAboveKeyboardBar() {
+        guard isFirstResponder, let bar = keyboardBarHost?.view, let barScreen = bar.window?.screen,
+              let screen = window?.screen, let caret = selectedTextRange?.end else { return }
+        var view: UIView? = isScrollEnabled ? self : superview
+        while let candidate = view, !(candidate is UIScrollView) { view = candidate.superview }
+        guard let scrollView = view as? UIScrollView else { return }
+        let caretRect = convert(caretRect(for: caret), to: screen.coordinateSpace)
+        let barTop = bar.convert(bar.bounds, to: barScreen.coordinateSpace).minY
+        let overlap = caretRect.maxY + Self.keyboardBarMargin - barTop
+        guard overlap > 0 else { return }
+        let maxOffset = scrollView.contentSize.height + scrollView.adjustedContentInset.bottom - scrollView.bounds.height
+        let y = min(scrollView.contentOffset.y + overlap, max(maxOffset, scrollView.contentOffset.y))
+        scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: y), animated: false)
     }
 
     // MARK: Header

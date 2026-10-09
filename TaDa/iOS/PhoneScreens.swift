@@ -25,7 +25,6 @@ struct PhoneTaskListScreen: View {
                   subtitle: kind == .today
                       ? "\(model.today.date().formatted(.dateTime.weekday(.wide).day().month(.wide))) · \(tasks(open))"
                       : "No project · \(tasks(open))",
-                  scopeName: kind == .today ? "Today" : "Loose", scopePaths: Set(all.map(\.path)),
                   pickable: groups.flatMap(\.tasks).map(\.path), add: newTask) {
             EmptyView()
         } content: {
@@ -89,7 +88,7 @@ struct PhoneUpcomingScreen: View {
         var seen = Set<String>()
         let paths = entries.map(\.item.path).filter { seen.insert($0).inserted }
 
-        PhoneList(model: model, title: "Upcoming", scopeName: "Upcoming", scopePaths: Set(paths), pickable: paths,
+        PhoneList(model: model, title: "Upcoming", pickable: paths,
                   add: newTask, scrollTarget: target) {
             EmptyView()
         } content: {
@@ -210,10 +209,9 @@ struct PhoneProjectsScreen: View {
         let completed = model.index.projects.filter { $0.properties.status == .done }
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
             .map { model.index.progress(of: $0) }
-        let paths = Set(model.index.projects.flatMap { [$0.path] + model.index.tasks(in: $0).map(\.path) })
 
         PhoneList(model: model, title: "Projects", subtitle: "\(active.count) open · \(completed.count) completed",
-                  scopeName: "Projects", scopePaths: paths, add: newProject) {
+                  add: newProject) {
             EmptyView()
         } content: {
             if active.isEmpty, completed.isEmpty {
@@ -295,7 +293,7 @@ struct PhoneProjectScreen: View {
             let progress = model.index.progress(of: project)
             let subtasks = project.subtasks
 
-            PhoneList(model: model, title: project.title, scopeName: project.title, scopePaths: Set(tasks.map(\.path)),
+            PhoneList(model: model, title: project.title,
                       pickable: shown.map(\.path), add: { await newTask(in: project) }) {
                 Button("Open Project File", systemImage: "doc") { nav.push(.file(path)) }
                 Button("Move to Trash", systemImage: "trash", role: .destructive) {

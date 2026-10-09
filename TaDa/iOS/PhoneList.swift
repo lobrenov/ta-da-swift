@@ -1,22 +1,17 @@
-// What every tab's list shares: the large title and subtitle, the search field a pull down reveals, the floating +,
-// picking rows, and search results.
+// What every tab's list shares: the large title and subtitle, the search field a pull down reveals (and, pulled
+// further, focuses), the floating +, picking rows, and search results.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
 
-/// Where a search looks: the list it was started from, everything, or every title.
-enum PhoneSearchScope: Hashable {
-    case list, everywhere, titles
-}
+/// How far past the top a list is pulled for its search field to take the keyboard when the finger lifts.
+private let searchPullThreshold: CGFloat = 60
 
-/// A tab's list. `scopeName` and `scopePaths` say what searching from it looks through first; `pickable` are its rows
-/// top to bottom, for picking; `add` is the floating +.
+/// A tab's list. `pickable` are its rows top to bottom, for picking; `add` is the floating +.
 struct PhoneList<Content: View, MenuItems: View>: View {
     let model: AppModel
     let title: String
     var subtitle = ""
-    let scopeName: String
-    var scopePaths: Set<String>? = nil
     var pickable: [String] = []
     var add: (() async -> Void)? = nil
     /// A row id to scroll to the top, as Upcoming's week strip asks.
@@ -24,7 +19,10 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     @ViewBuilder var menu: MenuItems
     @ViewBuilder var content: Content
     @State private var query = ""
-    @State private var scope = PhoneSearchScope.list
+    @FocusState private var isSearchFocused: Bool
+    /// The list is pulled past `searchPullThreshold` while the finger is down.
+    @State private var isPulledToSearch = false
+    @State private var isDragging = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -34,8 +32,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         ScrollViewReader { proxy in
             ScrollView {
                 if isSearching {
-                    PhoneSearchResults(model: model, query: query,
-                                       scopePaths: scope == .list ? scopePaths : nil, titlesOnly: scope == .titles)
+                    PhoneSearchResults(model: model, query: query)
                 } else {
                     LazyVStack(alignment: .leading, spacing: 0) { content }
                         .padding(.bottom, 96)
@@ -44,17 +41,26 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             .onChange(of: scrollTarget) {
                 if let scrollTarget { withAnimation { proxy.scrollTo(scrollTarget, anchor: .top) } }
             }
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y < -geometry.contentInsets.top - searchPullThreshold
+            } action: { _, isPulled in
+                if isDragging { isPulledToSearch = isPulled }
+            }
+            .onScrollPhaseChange { _, phase in
+                isDragging = phase == .interacting
+                if !isDragging, isPulledToSearch {
+                    isPulledToSearch = false
+                    nav.play(.press)
+                    isSearchFocused = true
+                }
+            }
         }
         .scrollDismissesKeyboard(.interactively)
         .background(theme.color(\.bg))
         .navigationTitle(title)
         .navigationSubtitle(subtitle)
-        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search \(scopeName)")
-        .searchScopes($scope, activation: .onSearchPresentation) {
-            Text(scopeName).tag(PhoneSearchScope.list)
-            Text("Everywhere").tag(PhoneSearchScope.everywhere)
-            Text("Titles Only").tag(PhoneSearchScope.titles)
-        }
+        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search")
+        .searchFocused($isSearchFocused)
         .overlay(alignment: .bottomTrailing) {
             if let add, !nav.isPicking, !isSearching {
                 FloatingAddButton { Task { await add() } }
@@ -145,17 +151,12 @@ struct PhoneContextPills: View {
 struct PhoneSearchResults: View {
     let model: AppModel
     let query: String
-    /// The list searched from; nil searches everything.
-    let scopePaths: Set<String>?
-    let titlesOnly: Bool
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
         let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
-        let results = model.index.search(query).filter { item in
-            (scopePaths?.contains(item.path) ?? true) && (!titlesOnly || words.allSatisfy { item.title.localizedStandardContains($0) })
-        }
+        let results = model.index.search(query)
         let projects = results.filter { $0.properties.kind == .project }
         let tasks = results.filter { $0.properties.kind == .task }
         LazyVStack(alignment: .leading, spacing: 0) {

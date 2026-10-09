@@ -12,10 +12,12 @@ import UIKit
 extension NativeTextViewCoordinator: UITextViewDelegate {
     public func textViewDidChange(_ textView: UITextView) {
         textDidChange(in: textView)
+        (textView as? NativeTextView)?.revealCaretAboveKeyboardBarSoon()
     }
 
     public func textViewDidChangeSelection(_ textView: UITextView) {
         selectionDidChange(in: textView)
+        (textView as? NativeTextView)?.revealCaretAboveKeyboardBarSoon()
     }
 
     public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

@@ -107,6 +107,14 @@ private struct PickPan: UIGestureRecognizerRepresentable {
     }
 }
 
+/// The action bar's place: where the iPhone's tab bar sits, so one stands in for the other.
+private enum PickingBar {
+    static let height: CGFloat = 62
+    static let inset: CGFloat = 21
+    /// From the screen's bottom edge.
+    static let bottom: CGFloat = 22
+}
+
 private struct PickingBars: ViewModifier {
     let model: AppModel
     @Environment(PhoneNavigation.self) private var nav
@@ -129,11 +137,20 @@ private struct PickingBars: ViewModifier {
                             .buttonStyle(.glassProminent)
                             .tint(theme.color(\.accent))
                     }
-                    ToolbarItem(placement: .bottomBar) {
-                        actions
-                    }
                 }
             }
+            .overlay(alignment: .bottom) {
+                if nav.isPicking {
+                    actions
+                        .frame(height: PickingBar.height)
+                        .glassEffect(.regular.interactive(), in: .capsule)
+                        .padding(.horizontal, PickingBar.inset)
+                        .padding(.bottom, PickingBar.bottom)
+                        .ignoresSafeArea(.container, edges: .bottom)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.snappy, value: nav.isPicking)
     }
 
     private var tasks: [String] { nav.picked.filter { model.index[$0]?.properties.kind == .task } }
@@ -195,7 +212,7 @@ private struct PickingBars: ViewModifier {
             Text(title).font(.system(size: 11, weight: .semibold))
         }
         .foregroundStyle(theme.color(tint))
-        .frame(minWidth: 64, minHeight: 44)
+        .frame(maxWidth: .infinity, minHeight: 44)
         .contentShape(.rect)
     }
 }
