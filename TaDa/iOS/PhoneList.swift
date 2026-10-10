@@ -81,7 +81,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             }
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(theme.color(\.bg))
+        .background { theme.color(\.bg).ignoresSafeArea() }
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
