@@ -130,3 +130,15 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
     #expect(BodyScanner.scan("- [ ] Only a list\n").summary == nil)
     #expect(BodyScanner.scan("").summary == nil)
 }
+
+@Test func targetsStayRightAfterABackslashHardBreak() {
+    let body = "Note:\\\n`[[Old]]` is the syntax\nsee [[Old]] here\n\n- x\\\n  ![[a.png]] `![[a.png]]`\n  ![[a.png]]\n  [[Old]]\\\n  [[Old]]\n  [[Old]]"
+    func edited(_ text: String) -> String {
+        Vault.retargetLinks(in: Vault.retargetEmbeds(in: text, from: "attachments/a.png", to: "attachments/b.png", paths: ["attachments/a.png"]),
+                            from: "Old", to: "New")
+    }
+    #expect(BodyScanner.linkTargets(in: body).count == 4)
+    #expect(BodyScanner.embedTargets(in: body).count == 2)
+    #expect(edited(body) == "Note:\\\n`[[Old]]` is the syntax\nsee [[New]] here\n\n- x\\\n  ![[b.png]] `![[a.png]]`\n  ![[b.png]]\n  [[New]]\\\n  [[New]]\n  [[New]]")
+    #expect(edited("a\\\nb\\\n![[a.png]] `![[a.png]]`\n![[a.png]]") == "a\\\nb\\\n![[b.png]] `![[a.png]]`\n![[b.png]]")
+}

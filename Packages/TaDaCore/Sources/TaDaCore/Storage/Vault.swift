@@ -77,8 +77,8 @@ public struct Vault: Sendable {
         return dates
     }
 
-    /// Markdown files that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show as
-    /// hidden `.Name.md.icloud` placeholders, which the scan skips. Hidden folders are skipped.
+    /// Markdown files and images that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show
+    /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders are skipped.
     public func placeholderPaths() -> [String] {
         guard let files = FileManager.default.enumerator(
             at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsPackageDescendants]
@@ -90,17 +90,20 @@ public struct Vault: Sendable {
                 files.skipDescendants()
                 continue
             }
-            let name = url.lastPathComponent
-            guard name.hasSuffix(".icloud") else { continue }
-            let original = String(name.dropFirst().dropLast(".icloud".count))
-            guard original.lowercased().hasSuffix(".md") else { continue }
+            guard let original = Self.placeholderOriginal(url.lastPathComponent),
+                  original.lowercased().hasSuffix(".md") || Self.isImage(original) else { continue }
             let folder = url.deletingLastPathComponent().standardizedFileURL.pathComponents.dropFirst(rootComponents)
             paths.append((folder + [original]).joined(separator: "/"))
         }
         return paths.sorted()
     }
 
-    /// Asks iCloud Drive to download each placeholder. Each file joins the scan once it arrives.
+    /// `Name.png` for the placeholder file `.Name.png.icloud`; nil for any other name.
+    static func placeholderOriginal(_ name: String) -> String? {
+        name.hasPrefix(".") && name.hasSuffix(".icloud") ? String(name.dropFirst().dropLast(".icloud".count)) : nil
+    }
+
+    /// Asks iCloud Drive to download each placeholder. Each file joins the scans once it arrives.
     public func downloadPlaceholders() {
         for path in placeholderPaths() {
             try? FileManager.default.startDownloadingUbiquitousItem(at: url(for: path))

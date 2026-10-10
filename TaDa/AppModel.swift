@@ -54,6 +54,9 @@ import TaDaCore
     /// The load the last selection change started. Each cancels the one before, which then doesn't start, and
     /// waits for it, so loads never overlap.
     @ObservationIgnored private(set) var loading: Task<Void, Never>?
+    /// The last pasted image's save, which waits for the ones before it.
+    @ObservationIgnored private(set) var savingImage: Task<Void, Never>?
+    @ObservationIgnored private var imageSaves = 0
     /// Two or more tasks picked with shift- or ⌘-click in a project's list. While it's set, `selection` is nil.
     private(set) var multiSelection: Set<String> = []
     /// Where a shift-click range starts: the last task clicked on its own or ⌘-clicked.
@@ -836,6 +839,7 @@ import TaDaCore
             }
         }
         let linkers = index[path].map { index.backlinks(to: $0).map(\.path) } ?? []
+        let linksToItself = index[path]?.links.contains { $0.title.lowercased() == Item.title(ofPath: path).lowercased() } == true
         do {
             let index = index, presenter = presenter
             let kind = index[path]?.properties.kind
@@ -851,7 +855,7 @@ import TaDaCore
             guard newPath != path else { return }
             follow(path, to: newPath, items: items)
             if let document, items.contains(where: { $0.path == document.path }) { await reload(document, from: vault) }
-            await relinkBodies(linkers, from: Item.title(ofPath: path), to: Item.title(ofPath: newPath))
+            await relinkBodies(linkers + (linksToItself ? [newPath] : []), from: Item.title(ofPath: path), to: Item.title(ofPath: newPath))
             if !failed.isEmpty {
                 let names = failed.map { "“\(Item.title(ofPath: $0))”" }.formatted()
                 errorMessage = "Ta Da renamed “\(Item.title(ofPath: path))” to “\(Item.title(ofPath: newPath))”, but the \(kind == .area ? "area" : "project") link in \(names) still points to the old name."
@@ -861,10 +865,12 @@ import TaDaCore
         }
     }
 
-    /// Points the `[[ ]]` links to `old` in `paths`' bodies at `new`, the open file's in place, unless another file is
-    /// still titled `old`.
+    /// Points the `[[ ]]` links to `old` in `paths`' bodies at `new`, the open file's in place, unless another file in
+    /// the folder, Ta Da's or not, is still named `old`.
     private func relinkBodies(_ paths: [String], from old: String, to new: String) async {
-        guard old.lowercased() != new.lowercased(), index.items(titled: old).isEmpty else { return }
+        guard let vault, old.lowercased() != new.lowercased(), index.items(titled: old).isEmpty else { return }
+        let named = await Self.run { vault.markdownPaths().contains { Item.title(ofPath: $0).lowercased() == old.lowercased() } }
+        guard !named else { return }
         for path in paths {
             await edit(path) { Vault.retargetLinks(in: $0, from: old, to: new) }
         }
@@ -895,30 +901,45 @@ import TaDaCore
     }
 
     /// Saves a pasted or dropped image into `attachments/`, numbering a taken name, and returns its `![[ ]]`. An image
-    /// already in the folder isn't copied. Nil when it can't be saved, with the reason in `errorMessage`.
+    /// already in the folder isn't copied. The file is written off the main actor, in order (`savingImage` finishes
+    /// when they all are). Nil when it can't be saved, with the reason in `errorMessage`.
     func embed(_ image: PastedImage) -> String? {
         guard let vault else { return nil }
-        do {
-            let path: String
-            switch image {
-            case .file(let url):
-                let root = vault.root.resolvingSymlinksInPath().pathComponents
-                let components = url.resolvingSymlinksInPath().pathComponents
-                let relative = components.dropFirst(root.count)
-                if components.starts(with: root), !relative.isEmpty, !relative.contains(where: { $0.hasPrefix(".") }) {
-                    path = relative.joined(separator: "/")
-                } else {
-                    path = try vault.saveAttachment(Data(contentsOf: url), as: url.lastPathComponent)
-                }
-            case .data(let data, let ext):
-                path = try vault.saveAttachment(data, as: FileNaming.pastedImage(at: Date(), extension: ext))
+        let taken = Set(attachments.filter { Vault.folder(of: $0) == Vault.attachmentFolder }.map { String($0.split(separator: "/").last ?? "") })
+        let path: String
+        var save: (@Sendable () throws -> Void)?
+        switch image {
+        case .file(let url):
+            let root = vault.root.resolvingSymlinksInPath().pathComponents
+            let components = url.resolvingSymlinksInPath().pathComponents
+            let relative = components.dropFirst(root.count)
+            if components.starts(with: root), !relative.isEmpty, !relative.contains(where: { $0.hasPrefix(".") }) {
+                path = relative.joined(separator: "/")
+            } else {
+                path = Vault.attachmentPath(named: url.lastPathComponent, avoiding: taken)
+                save = { try vault.saveAttachment(Data(contentsOf: url), at: path) }
             }
-            if !attachments.contains(path) { attachments.insert(path, at: 0) }
-            return "![[\(Vault.embedTarget(for: path, in: attachments))]]"
-        } catch {
-            errorMessage = Self.couldNot("save the image", error)
-            return nil
+        case .data(let data, let ext):
+            path = Vault.attachmentPath(named: FileNaming.pastedImage(at: Date(), extension: ext), avoiding: taken)
+            save = { try vault.saveAttachment(data, at: path) }
         }
+        if !attachments.contains(path) { attachments.insert(path, at: 0) }
+        if let save {
+            let previous = savingImage
+            imageSaves += 1
+            savingImage = Task {
+                await previous?.value
+                do {
+                    try await Self.run(save)
+                } catch {
+                    attachments.removeAll { $0 == path }
+                    errorMessage = Self.couldNot("save the image", error)
+                }
+                imageSaves -= 1
+                if imageSaves == 0 { attachments = await Self.run { vault.attachmentPaths() } }
+            }
+        }
+        return "![[\(Vault.embedTarget(for: path, in: attachments))]]"
     }
 
     /// The image an embed shows, from the text between `![[` and `]]`.
@@ -997,7 +1018,6 @@ import TaDaCore
             let moved = try await Self.run {
                 var moved: [String] = []
                 for item in items where !moved.contains(item.path) { moved += try vault.moveToTrash(item.path, index: index) }
-                _ = try vault.moveAttachmentsToTrash(images)
                 return moved
             }
             updateIndex { for path in moved { $0.remove(path) } }
@@ -1006,6 +1026,11 @@ import TaDaCore
                 domain = .today
             } else if let selection, moved.contains(selection) {
                 self.selection = next
+            }
+            do {
+                _ = try await Self.run { try vault.moveAttachmentsToTrash(images) }
+            } catch {
+                errorMessage = Self.couldNot("move the images to the trash", error)
             }
         } catch {
             let name = items.count == 1 ? "“\(item.title)”" : "the files"
@@ -1078,7 +1103,8 @@ import TaDaCore
         guard let vault else { return }
         let paths = Array(paths)
         do {
-            try await Self.run { try vault.discard(paths) }
+            let index = index
+            try await Self.run { try vault.discard(paths, index: index) }
         } catch {
             errorMessage = Self.couldNot("delete the files", error)
         }
@@ -1090,20 +1116,21 @@ import TaDaCore
     /// The files and images in `.trash/`.
     var trashCount: Int { trash.count + trashedAttachments.count }
 
-    /// The trashed images that went with each trashed file, by its path: Trash lists them under it. An image two trashed
-    /// files embed is under the first.
+    /// The trashed images that go with each trashed file, by its path: Trash lists them under it. An image that another
+    /// trashed file or a file in the folder embeds goes with none of them.
     var trashedAttachmentsByFile: [String: [TrashedAttachment]] {
-        var listed: Set<TrashedAttachment> = [], byFile: [String: [TrashedAttachment]] = [:]
+        let live = Set(index.items.values.flatMap(\.embeds).compactMap { $0.attachmentName?.lowercased() })
+        var byFile: [String: [TrashedAttachment]] = [:]
         for entry in trash {
-            let images = TrashedAttachment.attachments(of: entry.item, in: trashedAttachments).filter { listed.insert($0).inserted }
+            let images = TrashedAttachment.attachments(of: [entry], in: trashedAttachments, others: trash, live: live)
             if !images.isEmpty { byFile[entry.id] = images }
         }
         return byFile
     }
 
-    /// Trashed images that no trashed file embeds: Trash lists them on their own.
+    /// Trashed images that go with no trashed file: Trash lists them on their own.
     var looseTrashedAttachments: [TrashedAttachment] {
-        let taken = Set(trash.flatMap { TrashedAttachment.attachments(of: $0.item, in: trashedAttachments) })
+        let taken = Set(trashedAttachmentsByFile.values.joined())
         return trashedAttachments.filter { !taken.contains($0) }
     }
 

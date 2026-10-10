@@ -56,6 +56,13 @@ struct DeleteFilesTests {
         #expect(model.trashCount == 0)
     }
 
+    @Test func anImageThatWontMoveDoesntUndoTheFilesThatDid() async throws {
+        let model = await folder.model()
+        await model.moveToTrash(["tasks/Photograph the Kombi.md"], confirmed: true, images: ["attachments/gone.jpg"])
+        #expect(model.index["tasks/Photograph the Kombi.md"] == nil && model.trash.map(\.id) == [".trash/Photograph the Kombi.md"])
+        #expect(model.errorMessage?.contains("move the images to the trash") == true)
+    }
+
     @Test func aProjectListsEachImageUnderTheFirstFileThatEmbedsIt() async throws {
         let model = await folder.model()
         await model.moveToTrash(["projects/Sell the Kombi.md"])

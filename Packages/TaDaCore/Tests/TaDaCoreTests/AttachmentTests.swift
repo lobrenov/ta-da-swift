@@ -39,6 +39,17 @@ import Testing
     }
 }
 
+@Test func attachmentPathsListNotYetDownloadedImagesUnderTheirRealNames() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        for path in ["attachments/here.png", "notes/.Waiting.JPG.icloud", ".trash/attachments/.Gone.png.icloud", "notes/.Hidden.txt", ".Top.png.icloud"] {
+            try writeFile("x", path, in: folder)
+        }
+        #expect(vault.attachmentPaths() == ["attachments/here.png", "Top.png", "notes/Waiting.JPG"])
+        #expect(vault.attachmentPath(for: try #require(WikiLink("[[waiting.jpg]]"))) == "notes/Waiting.JPG")
+    }
+}
+
 @Test func anEmbedNamesAnImageByItsFilenameUnlessAnotherComesFirst() {
     let paths = ["attachments/front.jpg", "notes/front.jpg", "notes/odometer.png"]
     #expect(Vault.embedTarget(for: "attachments/front.jpg", in: paths) == "front.jpg")
@@ -82,6 +93,8 @@ import Testing
         let paths = vault.attachmentPaths()
         let renamed = Vault.renamedAttachment("attachments/front.jpg", to: "Front: side?")
         #expect(renamed == "attachments/Front - side.jpg")
+        #expect(Vault.renamedAttachment("attachments/front.jpg", to: "back.JPG") == "attachments/back.jpg")
+        #expect(Vault.renamedAttachment("attachments/front.jpg", to: "back.png") == "attachments/back.png.jpg")
         #expect(!Vault.attachmentName(of: renamed, isTakenBesides: "attachments/front.jpg", in: paths))
         #expect(Vault.attachmentName(of: "attachments/Odometer.PNG", isTakenBesides: "attachments/front.jpg", in: paths))
         #expect(!Vault.attachmentName(of: "attachments/Front.jpg", isTakenBesides: "attachments/front.jpg", in: paths))

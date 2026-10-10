@@ -131,7 +131,7 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(project, ".trash/P.md", in: folder)
         try writeFile(task(in: "P"), ".trash/One.md", in: folder)
         try writeFile(task, ".trash/Other.md", in: folder)
-        try vault.discard([".trash/P.md"]) { try FileManager.default.removeItem(at: $0) }
+        try vault.discard([".trash/P.md"], index: VaultIndex()) { try FileManager.default.removeItem(at: $0) }
         #expect(vault.trashedItems().map(\.id) == [".trash/Other.md"])
     }
 }
@@ -163,7 +163,7 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(task(in: "P"), ".trash/One.md", in: folder)
         try writeFile(filed("task", in: "Home"), ".trash/Filed.md", in: folder)
         try writeFile(task, ".trash/Other.md", in: folder)
-        try vault.discard([".trash/Home.md"]) { try FileManager.default.removeItem(at: $0) }
+        try vault.discard([".trash/Home.md"], index: VaultIndex()) { try FileManager.default.removeItem(at: $0) }
         #expect(vault.trashedItems().map(\.id) == [".trash/Other.md"])
     }
 }
@@ -180,7 +180,7 @@ private let today = LocalDate("2026-10-09")!
         let attachments = vault.trashedAttachments()
         #expect(Set(attachments.map(\.id)) == [".trash/attachments/front.jpg", ".trash/attachments/front 2.jpg"])
         let photo = try #require(vault.trashedItems().first)
-        #expect(TrashedAttachment.attachments(of: photo.item, in: attachments).map(\.name) == ["front.jpg"])
+        #expect(TrashedAttachment.attachments(of: [photo], in: attachments, others: [photo], live: []).map(\.name) == ["front.jpg"])
         #expect(vault.trashedItems().map(\.id) == [".trash/Photo.md"])
     }
 }
@@ -205,7 +205,7 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(project, ".trash/P.md", in: folder)
         try writeFile(task(in: "P") + "![[sketch.png]]", ".trash/T.md", in: folder)
         for name in ["sketch.png", "odometer.png", "other.png"] { try writeFile("x", ".trash/attachments/\(name)", in: folder) }
-        try vault.discard([".trash/P.md", ".trash/attachments/odometer.png"]) { try FileManager.default.removeItem(at: $0) }
+        try vault.discard([".trash/P.md", ".trash/attachments/odometer.png"], index: VaultIndex()) { try FileManager.default.removeItem(at: $0) }
         #expect(vault.trashedItems().isEmpty)
         #expect(vault.trashedAttachments().map(\.id) == [".trash/attachments/other.png"])
     }
@@ -218,7 +218,7 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(task, ".trash/B.md", in: folder)
         try writeFile(task, ".trash/C.md", in: folder)
         let error = #expect(throws: DiscardError.self) {
-            try vault.discard([".trash/A.md", ".trash/B.md", ".trash/C.md"]) { url in
+            try vault.discard([".trash/A.md", ".trash/B.md", ".trash/C.md"], index: VaultIndex()) { url in
                 if url.lastPathComponent == "A.md" { throw CocoaError(.fileWriteNoPermission) }
                 try FileManager.default.removeItem(at: url)
             }
@@ -247,5 +247,56 @@ private let today = LocalDate("2026-10-09")!
             try CoordinatedFileIO.trashOrDelete(url) { _ in throw CocoaError(.fileWriteNoPermission) }
         }
         #expect(FileManager.default.fileExists(atPath: url.path))
+    }
+}
+
+@Test func discardKeepsImagesThatAnotherFileStillEmbeds() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(task + "![[shared.png]] ![[mine.png]] ![[live.png]]", ".trash/F.md", in: folder)
+        try writeFile(task + "![[shared.png]] ![[both.png]]", ".trash/G.md", in: folder)
+        try writeFile(task + "![[both.png]]", ".trash/H.md", in: folder)
+        for name in ["shared.png", "mine.png", "live.png", "both.png"] { try writeFile("x", ".trash/attachments/\(name)", in: folder) }
+        let liveFile = try #require(Item(parsing: task + "![[Live.png]]", path: "tasks/Live.md"))
+        let remove = { (url: URL) in try FileManager.default.removeItem(at: url) }
+        try vault.discard([".trash/F.md"], index: VaultIndex([liveFile]), remove: remove)
+        #expect(Set(vault.trashedAttachments().map(\.name)) == ["shared.png", "live.png", "both.png"])
+        try vault.discard([".trash/G.md"], index: VaultIndex([liveFile]), remove: remove)
+        #expect(Set(vault.trashedAttachments().map(\.name)) == ["live.png", "both.png"])
+        try vault.discard([".trash/H.md"], index: VaultIndex([liveFile]), remove: remove)
+        #expect(vault.trashedAttachments().map(\.name) == ["live.png"])
+        let trashed = vault.trashedItems()
+        #expect(TrashedAttachment.attachments(of: trashed, in: vault.trashedAttachments(), others: trashed, live: ["live.png"]).isEmpty)
+    }
+}
+
+@Test func discardingFilesTogetherTakesTheirSharedImage() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        for name in ["F", "G"] { try writeFile(task + "![[shared.png]]", ".trash/\(name).md", in: folder) }
+        try writeFile("x", ".trash/attachments/shared.png", in: folder)
+        let trashed = vault.trashedItems()
+        #expect(TrashedAttachment.attachments(of: [trashed[0]], in: vault.trashedAttachments(), others: trashed, live: []).isEmpty)
+        try vault.discard([".trash/F.md", ".trash/G.md"], index: VaultIndex()) { try FileManager.default.removeItem(at: $0) }
+        #expect(vault.trashedAttachments().isEmpty)
+    }
+}
+
+@Test func restoringPicksTheImageTrashedWithTheFileAndTheEmbedFollowsItsNewName() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("old", ".trash/attachments/x.png", in: folder)
+        try await Task.sleep(for: .milliseconds(100))
+        try writeFile(task + "![[x.png]] ![[img/y.png]] ![[z.png]]", ".trash/F.md", in: folder)
+        try writeFile("mine", ".trash/attachments/x 2.png", in: folder)
+        try writeFile("y", ".trash/attachments/y.png", in: folder)
+        try writeFile("z", ".trash/attachments/z.png", in: folder)
+        try writeFile("live z", "attachments/z.png", in: folder)
+        let restored = try vault.restore([".trash/F.md"], index: await vault.loadIndex(), today: today)
+        #expect(Set(restored) == ["tasks/F.md", "attachments/x 2.png", "attachments/y.png", "attachments/z 2.png"])
+        #expect(try String(contentsOf: vault.url(for: "attachments/x 2.png"), encoding: .utf8) == "mine")
+        let text = try vault.read("tasks/F.md")
+        #expect(text == task + "![[x 2.png]] ![[img/y.png]] ![[z 2.png]]")
+        #expect(vault.trashedAttachments().map(\.id) == [".trash/attachments/x.png"])
     }
 }

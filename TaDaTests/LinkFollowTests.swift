@@ -45,4 +45,18 @@ struct LinkFollowTests {
         await model.rename("projects/Sell the Kombi.md", to: "Sell the car")
         #expect(try folder.read("tasks/Loose.md").hasPrefix("---\ntype: task\n---\n[[Sell the Kombi]]"))
     }
+
+    @Test func linksStayWhenAPlainNoteKeepsTheOldTitle() async throws {
+        try folder.write("Just a note.\n", "notes/Sell the Kombi.md")
+        let model = await folder.model()
+        await model.rename("projects/Sell the Kombi.md", to: "Sell the car")
+        #expect(try folder.read("tasks/Loose.md").hasPrefix("---\ntype: task\n---\n[[Sell the Kombi]]"))
+    }
+
+    @Test func aFilesLinksToItselfFollowItsRename() async throws {
+        try folder.write("---\ntype: task\n---\nSee [[Loose]] and [[Fix the gate]].\n", "tasks/Loose.md")
+        let model = await folder.model()
+        await model.rename("tasks/Loose.md", to: "Spare")
+        #expect(try folder.read("tasks/Spare.md") == "---\ntype: task\n---\nSee [[Spare]] and [[Fix the gate]].\n")
+    }
 }

@@ -8,26 +8,49 @@ extension Vault {
 
     /// Writes `data` as `attachments/<filename>`, numbering the name if it's taken. Returns the new path.
     public func saveAttachment(_ data: Data, as filename: String) throws -> String {
-        let (base, ext) = FileNaming.split(filename)
-        let path = Self.attachmentFolder + "/" + FileNaming.filename(for: base, extension: ext, existing: filenames(in: Self.attachmentFolder))
-        try CoordinatedFileIO.create(data, at: url(for: path))
+        let path = Self.attachmentPath(named: filename, avoiding: filenames(in: Self.attachmentFolder))
+        try saveAttachment(data, at: path)
         return path
     }
 
-    /// Every image in the folder, most recently changed first. Hidden folders, including `.trash`, are skipped.
+    /// Writes `data` at `path` (from `attachmentPath(named:avoiding:)`), failing if a file is already there.
+    public func saveAttachment(_ data: Data, at path: String) throws {
+        try CoordinatedFileIO.create(data, at: url(for: path))
+    }
+
+    /// `attachments/<filename>`, numbered if the name is among `taken`, the filenames in `attachments/`.
+    public static func attachmentPath(named filename: String, avoiding taken: Set<String>) -> String {
+        let (base, ext) = FileNaming.split(filename)
+        return attachmentFolder + "/" + FileNaming.filename(for: base, extension: ext, existing: taken)
+    }
+
+    /// Every image in the folder, most recently changed first. Hidden folders, including `.trash`, are skipped. An
+    /// image iCloud Drive hasn't downloaded yet is listed under its real name, last.
     public func attachmentPaths() -> [String] {
-        let keys: Set<URLResourceKey> = [.isRegularFileKey, .contentModificationDateKey]
+        let keys: Set<URLResourceKey> = [.isRegularFileKey, .isDirectoryKey, .contentModificationDateKey]
         guard let files = FileManager.default.enumerator(
-            at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles, .skipsPackageDescendants]
+            at: root, includingPropertiesForKeys: Array(keys), options: [.skipsPackageDescendants]
         ) else { return [] }
         let rootComponents = root.pathComponents.count
         var dated: [(path: String, date: Date)] = []
-        for case let url as URL in files where Self.imageExtensions.contains(url.pathExtension.lowercased()) {
-            guard let values = try? url.resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
-            let path = url.standardizedFileURL.pathComponents.dropFirst(rootComponents).joined(separator: "/")
-            dated.append((path, values.contentModificationDate ?? .distantPast))
+        for case let url as URL in files {
+            let values = try? url.resourceValues(forKeys: keys)
+            let name = url.lastPathComponent
+            if name.hasPrefix(".") {
+                if values?.isDirectory == true { files.skipDescendants() }
+                guard values?.isRegularFile == true, let original = Self.placeholderOriginal(name), Self.isImage(original) else { continue }
+                let folder = url.deletingLastPathComponent().standardizedFileURL.pathComponents.dropFirst(rootComponents)
+                dated.append(((folder + [original]).joined(separator: "/"), .distantPast))
+            } else if Self.isImage(name), values?.isRegularFile == true {
+                let path = url.standardizedFileURL.pathComponents.dropFirst(rootComponents).joined(separator: "/")
+                dated.append((path, values?.contentModificationDate ?? .distantPast))
+            }
         }
         return dated.sorted { $0.date != $1.date ? $0.date > $1.date : $0.path < $1.path }.map(\.path)
+    }
+
+    static func isImage(_ filename: String) -> Bool {
+        imageExtensions.contains(FileNaming.split(filename).ext.lowercased())
     }
 
     /// The image an embed shows: the target as a path, else `attachments/<filename>`, else the first file with that
@@ -43,11 +66,14 @@ extension Vault {
         return path
     }
 
-    /// The path an image takes when renamed to `name` (sanitised as a title) in its folder, keeping its extension.
+    /// The path an image takes when renamed to `name` (sanitised as a title, without its extension if typed) in its
+    /// folder, keeping its extension.
     public static func renamedAttachment(_ path: String, to name: String) -> String {
         let folder = folder(of: path)
         let ext = FileNaming.split(String(path.split(separator: "/").last ?? "")).ext
-        return (folder.isEmpty ? "" : folder + "/") + FileNaming.sanitise(name) + (ext.isEmpty ? "" : "." + ext)
+        var title = FileNaming.sanitise(name)
+        if !ext.isEmpty, title.lowercased().hasSuffix("." + ext.lowercased()) { title = FileNaming.sanitise(String(title.dropLast(ext.count + 1))) }
+        return (folder.isEmpty ? "" : folder + "/") + title + (ext.isEmpty ? "" : "." + ext)
     }
 
     /// Whether another image among `paths` already has `newPath`'s filename, ignoring case and folders.

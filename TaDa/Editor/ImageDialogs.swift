@@ -77,19 +77,20 @@ extension AppModel {
     }
 }
 
-/// An image file, scaled down to fill a rounded square.
+/// An image file, scaled down to fill a rounded square. It decodes off the main actor, and `ThumbnailCache` keeps it.
 struct ImageThumbnail: View {
     let url: URL?
     let side: CGFloat
     var cornerRadius: CGFloat = 8
     @Environment(\.theme) private var theme
     @Environment(\.displayScale) private var scale
+    @State private var decoded: CGImage?
 
     var body: some View {
         Color.clear
             .frame(width: side, height: side)
             .overlay {
-                if let url, let image = Self.load(url, pixels: side * scale * 2) {
+                if let image = decoded ?? url.flatMap({ ThumbnailCache.cached($0, pixels: pixels) }) {
                     Image(decorative: image, scale: 1).resizable().scaledToFill()
                 } else {
                     Image(systemName: "photo").font(.system(size: side * 0.4)).foregroundStyle(theme.color(\.muted))
@@ -98,12 +99,45 @@ struct ImageThumbnail: View {
             .background(theme.color(\.code))
         .clipShape(.rect(cornerRadius: cornerRadius))
         .accessibilityHidden(true)
+        .task(id: url) {
+            guard let url else { return }
+            decoded = await ThumbnailCache.load(url, pixels: pixels)
+        }
     }
 
-    private static func load(_ url: URL, pixels: CGFloat) -> CGImage? {
+    private var pixels: CGFloat { side * scale * 2 }
+}
+
+/// Decoded thumbnails by file and size, shared by `ImageThumbnail` and the link menu.
+nonisolated enum ThumbnailCache {
+    private final class Entry {
+        let image: CGImage?
+        init(_ image: CGImage?) { self.image = image }
+    }
+
+    nonisolated(unsafe) private static let entries = NSCache<NSString, Entry>()
+
+    private static func key(_ url: URL, _ pixels: CGFloat) -> NSString { "\(url.absoluteString)@\(Int(pixels))" as NSString }
+
+    /// The thumbnail if it's been decoded already.
+    static func cached(_ url: URL, pixels: CGFloat) -> CGImage? {
+        entries.object(forKey: key(url, pixels))?.image
+    }
+
+    /// The thumbnail, decoded on the calling thread unless it's cached; nil when the file can't be read (SVG, for one).
+    static func decode(_ url: URL, pixels: CGFloat) -> CGImage? {
+        let key = key(url, pixels)
+        if let entry = entries.object(forKey: key) { return entry.image }
         let options = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
                        kCGImageSourceThumbnailMaxPixelSize: pixels] as CFDictionary
-        return CGImageSourceCreateWithURL(url as CFURL, nil).flatMap { CGImageSourceCreateThumbnailAtIndex($0, 0, options) }
+        let image = CGImageSourceCreateWithURL(url as CFURL, nil).flatMap { CGImageSourceCreateThumbnailAtIndex($0, 0, options) }
+        entries.setObject(Entry(image), forKey: key)
+        return image
+    }
+
+    /// `decode`, off the main actor.
+    @concurrent static func load(_ url: URL, pixels: CGFloat) async -> CGImage? {
+        decode(url, pixels: pixels)
     }
 }
 

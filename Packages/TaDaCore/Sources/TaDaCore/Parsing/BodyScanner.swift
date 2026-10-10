@@ -62,8 +62,9 @@ public enum BodyScanner {
         var checkboxes: [Checkbox] = []
         var links: [WikiLink] = []
         var embeds: [WikiLink] = []
-        /// Each text node's UTF-8 offsets in `bytes`.
+        /// The UTF-8 offsets in `bytes` of each text node that holds `[[`.
         var textSpans: [Range<Int>] = []
+        private var spanCursor = 0
 
         init(bytes: [UInt8], firstLineIndex: Int) {
             self.bytes = bytes
@@ -80,11 +81,29 @@ public enum BodyScanner {
             let found = WikiLink.scan(text.string)
             links += found.links
             embeds += found.embeds
-            if let range = text.range {
-                let (lineStarts, count) = (lineStarts, bytes.count)
-                let offset = { (location: SourceLocation) in min(lineStarts[location.line - 1] + location.column - 1, count) }
-                textSpans.append(offset(range.lowerBound)..<offset(range.upperBound))
+            if text.string.contains("[["), let range = text.range { textSpans.append(span(of: text.string, reportedAt: range.lowerBound)) }
+        }
+
+        /// Where `string` sits in `bytes`, from the line and column the parser reported. After a backslash hard break
+        /// the reported line falls behind the real one, and in an indented block its column falls short, so later lines
+        /// are tried, never before the previous span's end: first for the exact column, then for the first match in
+        /// the line. The reported position stands when none match.
+        private mutating func span(of string: String, reportedAt start: SourceLocation) -> Range<Int> {
+            let expected = Array(string.utf8)
+            let (bytes, lineStarts, cursor) = (bytes, lineStarts, spanCursor)
+            func matches(at offset: Int) -> Bool {
+                offset >= cursor && offset + expected.count <= bytes.count && bytes[offset..<offset + expected.count].elementsEqual(expected)
             }
+            let lines = (start.line - 1)..<lineStarts.count
+            let exact = lines.map { lineStarts[$0] + start.column - 1 }.first(where: matches)
+            let found = exact ?? lines.lazy.compactMap { line in
+                let end = line + 1 < lineStarts.count ? lineStarts[line + 1] : bytes.count
+                let from = max(lineStarts[line], cursor)
+                return from < end ? (from..<end).first(where: matches) : nil
+            }.first
+            let offset = found ?? min(lineStarts[start.line - 1] + start.column - 1, bytes.count)
+            if found != nil { spanCursor = offset + expected.count }
+            return offset..<min(offset + expected.count, bytes.count)
         }
 
         /// Reads `[c]` from the source after the item's list marker. swift-markdown only recognises

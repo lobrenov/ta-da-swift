@@ -2,7 +2,6 @@
 // The editor engine tracks the query and routes the keys; LiveEditor shows the choices in a popup menu under the
 // `[[` on the Mac and in a list above the keyboard bar on iPhone.
 import SwiftUI
-import ImageIO
 import TaDaCore
 
 /// What a query lists: files after `[[`, images after `![[`.
@@ -41,19 +40,20 @@ struct LinkChoice: Hashable, Identifiable {
     let title: String
     /// A task's project or area, or Loose task; Project or Area; nothing for an image.
     let hint: String
+    /// What an image's embed names it by: its filename, or its path when the filename finds another image first.
+    var embedTarget: String?
 
     var id: String { path }
 
     /// The text that replaces the query: `[[Title]]` or `![[name.png]]`.
     var markdown: String {
-        if case .image = icon { "![[\(title)]]" } else { "[[\(title)]]" }
+        if case .image = icon { "![[\(embedTarget ?? title)]]" } else { "[[\(title)]]" }
     }
 }
 
 /// The choices for one editor's queries, and the images' thumbnails.
 final class LinkMenuSearch {
     var source = LinkMenuSource()
-    private var thumbnails: [URL: CGImage?] = [:]
 
     /// The most rows a query lists.
     static let limit = 50
@@ -68,14 +68,9 @@ final class LinkMenuSearch {
         }
     }
 
-    /// A small thumbnail of an image file; nil when it can't be read (SVG, for one).
+    /// A small thumbnail of an image file, from `ThumbnailCache`; nil when it can't be read (SVG, for one).
     func thumbnail(_ url: URL) -> CGImage? {
-        if let cached = thumbnails[url] { return cached }
-        let options = [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
-                       kCGImageSourceThumbnailMaxPixelSize: 96] as CFDictionary
-        let image = CGImageSourceCreateWithURL(url as CFURL, nil).flatMap { CGImageSourceCreateThumbnailAtIndex($0, 0, options) }
-        thumbnails[url] = image
-        return image
+        ThumbnailCache.decode(url, pixels: 96)
     }
 
     /// Recent files first, then the rest by title; an empty query lists only the recent ones, or every file when
@@ -94,7 +89,8 @@ final class LinkMenuSearch {
         guard let vault = source.vault else { return (nil, []) }
         let name = { (path: String) in String(path.split(separator: "/").last ?? "") }
         let choices = LinkSearch.rank(source.attachments, query: query, name: name).prefix(Self.limit).map { path in
-            LinkChoice(path: path, icon: .image(vault.url(for: path)), title: name(path), hint: "")
+            LinkChoice(path: path, icon: .image(vault.url(for: path)), title: name(path), hint: "",
+                       embedTarget: Vault.embedTarget(for: path, in: source.attachments))
         }
         return (query.trimmingCharacters(in: .whitespaces).isEmpty ? "Attachments" : nil, choices)
     }

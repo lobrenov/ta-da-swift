@@ -39,10 +39,36 @@ public struct TrashedAttachment: Hashable, Sendable, Identifiable {
     public var id: String { path }
     public var name: String { String(path.split(separator: "/").last ?? "") }
 
-    /// Trashed images this trashed file embeds, sorted by name. They went with it, and come back with it.
-    public static func attachments(of item: Item, in trashed: [TrashedAttachment]) -> [TrashedAttachment] {
-        let names = Set(item.embeds.compactMap { $0.attachmentName?.lowercased() })
-        return trashed.filter { names.contains($0.name.lowercased()) }
+    /// The trashed image an embed of `name` in a file trashed at `deleted` went with: the image named `name`, or that name
+    /// numbered (`front 2.jpg`, when `front.jpg` was taken in `.trash/attachments/`), whichever was trashed nearest
+    /// `deleted`; the exact name wins a tie. Nil when there's none.
+    public static func attachment(named name: String, trashedAt deleted: Date?, in trashed: [TrashedAttachment]) -> TrashedAttachment? {
+        let name = name.lowercased(), (base, ext) = FileNaming.split(name)
+        let candidates = trashed.filter { image in
+            let (candidateBase, candidateExt) = FileNaming.split(image.name.lowercased())
+            return image.name.lowercased() == name
+                || candidateExt == ext && candidateBase.hasPrefix(base + " ") && Int(candidateBase.dropFirst(base.count + 1)) != nil
+        }.sorted { ($0.name.lowercased() == name ? 0 : 1, $0.name) < ($1.name.lowercased() == name ? 0 : 1, $1.name) }
+        let distance = { (image: TrashedAttachment) in
+            guard let deleted, let date = image.deleted else { return Double.infinity }
+            return abs(date.timeIntervalSince(deleted))
+        }
+        return candidates.min { distance($0) < distance($1) }
+    }
+
+    /// Trashed images that go with `files`, sorted by name: those their embeds went with, less any that a file in
+    /// `others` (all the trashed files) not in `files` embeds, or that `live` names (the lowercased image filenames
+    /// that files outside `.trash/` embed).
+    public static func attachments(of files: [TrashedItem], in trashed: [TrashedAttachment], others: [TrashedItem],
+                                   live: Set<String>) -> [TrashedAttachment] {
+        func embedded(by files: [TrashedItem]) -> Set<TrashedAttachment> {
+            Set(files.flatMap { file in
+                file.item.embeds.compactMap { $0.attachmentName }.compactMap { attachment(named: $0, trashedAt: file.deleted, in: trashed) }
+            })
+        }
+        let going = Set(files.map(\.id))
+        let kept = embedded(by: others.filter { !going.contains($0.id) })
+        return embedded(by: files).subtracting(kept).filter { !live.contains($0.name.lowercased()) }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 }
@@ -61,7 +87,7 @@ public struct DiscardError: LocalizedError {
 /// `areas/`, and discarding moves it to the system Trash (or deletes it where that isn't supported). Deleting and
 /// discarding take a project's tasks, and an area's projects and tasks; restoring brings back a file's parents.
 /// Images go to `.trash/attachments/` and back to `attachments/`; a trashed file's embedded images that are in
-/// `.trash/attachments/` are restored and discarded with it.
+/// `.trash/attachments/` are restored with it, and discarded with it unless another file embeds them.
 extension Vault {
     public static let trashFolder = ".trash"
     public static let trashedAttachmentFolder = ".trash/attachments"
@@ -129,13 +155,13 @@ extension Vault {
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
     /// in the vault or `.trash/` is created by name. When a parent's name had to change, the link follows it.
     /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
-    /// back the trashed images it embeds, to `attachments/`. Returns the paths of the restored and created files,
-    /// parents first, then the images.
+    /// back the trashed images it embeds, to `attachments/`, and its embeds follow an image whose name or folder
+    /// changed. Returns the paths of the restored and created files, parents first, then the images.
     public func restore(_ paths: [String], index: VaultIndex, today: LocalDate) throws -> [String] {
         let trashed = trashedItems()
         var restored: [String] = []
-        // Lowercased image filenames the restored files embed.
-        var embeds: Set<String> = []
+        // The restored files, with their trashed entries.
+        var brought: [(path: String, entry: TrashedItem)] = []
         // Trashed path → the title it was restored under.
         var titles: [String: String] = [:]
 
@@ -151,7 +177,7 @@ extension Vault {
                 try relink(path, key: parent.key, from: parent.title, to: parentTitle)
             }
             restored.append(path)
-            embeds.formUnion(entry.item.embeds.compactMap { $0.attachmentName?.lowercased() })
+            brought.append((path, entry))
             titles[entry.item.path] = Item.title(ofPath: path)
             return Item.title(ofPath: path)
         }
@@ -170,16 +196,48 @@ extension Vault {
         }
 
         for entry in trashed where paths.contains(entry.item.path) { _ = try bringBack(entry) }
-        for attachment in trashedAttachments() where paths.contains(attachment.path) || embeds.contains(attachment.name.lowercased()) {
-            restored.append(try moveFile(attachment.path, into: Self.attachmentFolder))
+        let images = trashedAttachments()
+        // Trashed image path → restored path.
+        var movedImages: [String: String] = [:]
+        func bringBack(_ image: TrashedAttachment) throws {
+            guard movedImages[image.path] == nil else { return }
+            let path = try moveFile(image.path, into: Self.attachmentFolder)
+            movedImages[image.path] = path
+            restored.append(path)
+        }
+        func trashedImage(for embed: WikiLink, in entry: TrashedItem) -> TrashedAttachment? {
+            embed.attachmentName.flatMap { TrashedAttachment.attachment(named: $0, trashedAt: entry.deleted, in: images) }
+        }
+        for (_, entry) in brought {
+            for embed in entry.item.embeds {
+                if let image = trashedImage(for: embed, in: entry) { try bringBack(image) }
+            }
+        }
+        for image in images where paths.contains(image.path) { try bringBack(image) }
+        let live = attachmentPaths()
+        for (path, entry) in brought where !movedImages.isEmpty {
+            try update(path) { text in
+                let split = FrontmatterSplitter.split(text)
+                let body = split.body
+                var result = split.block, copied = body.startIndex
+                for (range, link) in BodyScanner.embedTargets(in: body) {
+                    guard let moved = trashedImage(for: link, in: entry).flatMap({ movedImages[$0.path] }),
+                          Self.attachmentPath(for: link, in: live) != moved else { continue }
+                    result += body[copied..<range.lowerBound] + Self.embedTarget(for: moved, in: live)
+                    copied = range.upperBound
+                }
+                return result + body[copied...]
+            }
         }
         return restored
     }
 
     /// Removes trashed files with `remove` (by default, a move to the system Trash, or a delete where that isn't
     /// supported). A project takes its trashed tasks; an area its trashed projects, their tasks and its own tasks. `paths`
-    /// can name trashed images too, and each file takes the trashed images it embeds. A file that can't be removed doesn't stop the others; afterwards it throws `DiscardError` naming the ones that failed.
-    public func discard(_ paths: [String], remove: (URL) throws -> Void = CoordinatedFileIO.moveToSystemTrash) throws {
+    /// can name trashed images too, and the files take the trashed images they embed, except those that a file staying
+    /// in `.trash/` or one in `index` (the files outside it) embeds. A file that can't be removed doesn't stop the others; afterwards it throws `DiscardError` naming the ones that failed.
+    public func discard(_ paths: [String], index: VaultIndex,
+                        remove: (URL) throws -> Void = CoordinatedFileIO.moveToSystemTrash) throws {
         let trashed = trashedItems()
         var all = Set(paths)
         for entry in trashed where paths.contains(entry.item.path) {
@@ -191,8 +249,11 @@ extension Vault {
             case .task: break
             }
         }
-        let embeds = Set(trashed.filter { all.contains($0.item.path) }.flatMap(\.item.embeds).compactMap { $0.attachmentName?.lowercased() })
-        for attachment in trashedAttachments() where embeds.contains(attachment.name.lowercased()) { all.insert(attachment.path) }
+        let live = Set(index.items.values.flatMap(\.embeds).compactMap { $0.attachmentName?.lowercased() })
+        for image in TrashedAttachment.attachments(of: trashed.filter { all.contains($0.item.path) }, in: trashedAttachments(),
+                                                   others: trashed, live: live) {
+            all.insert(image.path)
+        }
         var failed: [String] = []
         var firstError: (any Error)?
         for path in all.sorted() {

@@ -58,8 +58,11 @@ struct LiveEditor: View {
             documentId: documentID,
             onPasteImage: embedImage.map { embed in
                 { pasteboard in
-                    if let url = PasteboardImageReader.imageFileURL(from: pasteboard) { return embed(.file(url)) }
-                    // Rich text can carry a picture of itself; it pastes as text.
+                    if let url = PasteboardImageReader.imageFileURL(from: pasteboard),
+                       Vault.imageExtensions.contains(url.pathExtension.lowercased()) {
+                        return embed(.file(url))
+                    }
+                    // Rich text can carry a picture of itself; it pastes as text. An image file of another type pastes as PNG.
                     guard pasteboard.string(forType: .string) == nil,
                           let data = PasteboardImageReader.imageData(from: pasteboard) else { return nil }
                     return embed(.data(data, extension: "png"))
@@ -221,8 +224,7 @@ struct LiveEditor: View {
         case .copy:
             model.copyImage(path)
         case .cut:
-            model.copyImage(path)
-            request.remove("Cut Image")
+            model.copyImage(path) { request.remove("Cut Image") }
         case .delete:
             model.imageDialog = .delete(path)
         case .menu:
