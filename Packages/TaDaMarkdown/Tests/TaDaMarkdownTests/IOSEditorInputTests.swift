@@ -240,6 +240,24 @@ struct IOSEditorInputTests {
         #expect(editor.textView.selectedRange == NSRange(location: 12, length: 0))
     }
 
+    @Test func oneUndoRevertsAFormattingInsertion() async throws {
+        let editor = try IOSEditorHarness("Intro\nLine")
+        let coordinator = try #require(editor.textView.delegate as? NativeTextViewCoordinator)
+        let actions: [(NativeTextViewCoordinator) -> Void] = [
+            { $0.didMarkdownBlockquote(nil) }, { $0.didMarkdownLink(nil) }, { $0.didMarkdownCodeBlock(nil) },
+            { $0.didMarkdownHorizontalRule(nil) }, { $0.didMarkdownImage(nil) }
+        ]
+        for action in actions {
+            editor.textView.selectedRange = NSRange(location: 8, length: 0)
+            action(coordinator)
+            await editor.settle()
+            #expect(editor.textView.string != "Intro\nLine")
+            editor.textView.undoManager?.undo()
+            await editor.settle()
+            #expect(editor.textView.string == "Intro\nLine")
+        }
+    }
+
     @Test func typingThroughTheProxyPairsAsTheKeyboardDoes() async throws {
         let editor = try IOSEditorHarness("See ")
         editor.textView.selectedRange = NSRange(location: 4, length: 0)
