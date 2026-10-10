@@ -1245,4 +1245,31 @@ struct AutoPairTests {
         #expect(typed("[[a", configure: { $0.autoClosePairsEnabled = false; $0.autoCloseWikiLinksEnabled = false }) == "[[a|")
     }
 }
+
+@MainActor
+@Suite("Ta Da fork — publishing the text")
+struct PublishTests {
+    private final class Box {
+        var text = "a"
+        var syncedWhenWritten: String?
+        weak var coordinator: NativeTextViewCoordinator?
+    }
+
+    /// Writing the binding can update the view at once; it must still find the binding in sync, or it rebuilds
+    /// from the binding's old text and the caret goes to the end.
+    @Test func theBindingIsWrittenBeforeTheTextCountsAsSynced() async throws {
+        let box = Box()
+        let coordinator = NativeTextViewCoordinator(
+            text: Binding(get: { box.text }, set: { box.syncedWhenWritten = box.coordinator?.lastSyncedText; box.text = $0 }),
+            fontName: "SF Pro Text", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        box.coordinator = coordinator
+        coordinator.publish("ab")
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(box.text == "ab")
+        #expect(box.syncedWhenWritten == "a")
+        #expect(coordinator.lastSyncedText == "ab")
+    }
+}
 #endif

@@ -313,13 +313,15 @@ public final class NativeTextViewCoordinator: NSObject {
 
     /// Ta Da fork: write an edit to the binding on the next main-loop turn. The binding
     /// and document are captured NOW, so an edit queued just before a document switch
-    /// can't land in the next document (and can't mark the next one as synced).
+    /// can't land in the next document (and can't mark the next one as synced). The edit counts
+    /// as synced once written: writing can update the view at once, and it must find the binding
+    /// still matching the last synced text rather than rebuild from it.
     func publish(_ storage: String) {
         let binding = _text
         let document = documentId
         DispatchQueue.main.async {
-            if self.documentId == document { self.lastSyncedText = storage }
             binding.wrappedValue = storage
+            if self.documentId == document { self.lastSyncedText = storage }
         }
     }
 

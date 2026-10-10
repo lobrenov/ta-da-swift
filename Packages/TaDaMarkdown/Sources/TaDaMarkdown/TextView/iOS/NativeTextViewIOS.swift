@@ -311,9 +311,17 @@ final class NativeTextView: UITextView {
         revealCaretAboveKeyboardBar()
     }
 
-    /// After the caret moves or the text changes, once UIKit has scrolled the caret into view.
+    private var isRevealPending = false
+
+    /// After the caret moves or the text changes, once UIKit has scrolled the caret into view. Requests made
+    /// before it runs share it.
     func revealCaretAboveKeyboardBarSoon() {
-        DispatchQueue.main.async { [weak self] in self?.revealCaretAboveKeyboardBar() }
+        guard !isRevealPending else { return }
+        isRevealPending = true
+        DispatchQueue.main.async { [weak self] in
+            self?.isRevealPending = false
+            self?.revealCaretAboveKeyboardBar()
+        }
     }
 
     /// Scrolls the text, or the scroll view it sits in, so the caret clears the keyboard bar, which floats over
