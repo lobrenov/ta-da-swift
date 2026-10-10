@@ -159,16 +159,20 @@ final class NativeTextView: UITextView {
     // MARK: Taps and presses
 
     /// A tap on a task box toggles it; on a `[[ ]]` link, goes to `onLinkClick`; on a foldable callout's title row
-    /// (outside its text), folds it.
+    /// (outside its text), folds it. Anywhere else it puts the caret there, as the tap that brings up the keyboard
+    /// must: UIKit's finds the caret's place after the focus restyles the text, which puts it at the end.
     func handleTap(at point: CGPoint) {
         if let hit = taskCheckboxHit(atViewPoint: point) {
             toggleTaskCheckbox(hit)
             onTaskCheckboxToggle?(hit.marker)
         } else if let target = wikiLinkHit(atViewPoint: point) {
             coordinator?.onLinkClick?(target)
-        } else if let hit = calloutTitleHit(atViewPoint: point), !toggleCalloutFold(hit) {
+        } else if let hit = calloutTitleHit(atViewPoint: point), toggleCalloutFold(hit) {
+            return
+        } else {
+            let location = characterIndex(atViewPoint: point)
             if !isFirstResponder { becomeFirstResponder() }
-            setSelectedRange(NSRange(location: characterIndex(atViewPoint: point), length: 0))
+            setSelectedRange(NSRange(location: location, length: 0))
         }
     }
 
@@ -186,8 +190,8 @@ final class NativeTextView: UITextView {
     fileprivate func takesTap(at point: CGPoint) -> Bool {
         if taskCheckboxHit(atViewPoint: point) != nil { return true }
         if coordinator?.onLinkClick != nil, wikiLinkHit(atViewPoint: point) != nil { return true }
-        guard let hit = calloutTitleHit(atViewPoint: point) else { return false }
-        return hit.header.fold.length == 1
+        if let hit = calloutTitleHit(atViewPoint: point), hit.header.fold.length == 1 { return true }
+        return isEditable && !isFirstResponder
     }
 
     /// Ta Da fork: the target of the `[[ ]]` link whose text is under a point. While the caret touches the link (with

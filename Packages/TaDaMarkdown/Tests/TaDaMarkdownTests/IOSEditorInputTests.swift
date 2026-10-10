@@ -269,6 +269,18 @@ struct IOSEditorInputTests {
         #expect(editor.textView.selectedRange == NSRange(location: 6, length: 0))
     }
 
+    @Test func theTapThatBringsUpTheKeyboardPutsTheCaretWhereItLands() async throws {
+        let editor = try IOSEditorHarness("First line\nSecond line\nThird line")
+        _ = editor.textView.resignFirstResponder()
+        editor.textView.selectedRange = NSRange(location: 33, length: 0)
+        await editor.settle()
+        let point = try #require(editor.point(of: "Second"))
+        editor.textView.handleTap(at: point)
+        await editor.settle()
+        #expect(editor.textView.isFirstResponder)
+        #expect((11...17).contains(editor.textView.selectedRange.location))
+    }
+
     @Test func tappingALinkOpensItUnlessTheCaretIsInIt() async throws {
         let editor = try IOSEditorHarness("Body\n\nSee [[Target]] here") {
             $0.services = MarkdownEditorServices(wikiLinks: Titles())
