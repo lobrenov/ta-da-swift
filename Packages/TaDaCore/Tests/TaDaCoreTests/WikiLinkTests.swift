@@ -47,3 +47,32 @@ import Testing
     #expect(try #require(WikiLink("[[Version 1.2]]")).attachmentName == nil)
     #expect(try #require(WikiLink("[[.png]]")).attachmentName == ".png")
 }
+
+@Test func retargetingLinksKeepsTheirFolderHeadingAndAliasAndSkipsEmbedsAndCode() {
+    let text = """
+    ---
+    project: "[[Sell the Kombi]]"
+    ---
+    See [[sell the kombi]], [[projects/Sell the Kombi.md#Plan|the plan]] and [[Sell the Kombi list]].
+    ![[Sell the Kombi.png]] `[[Sell the Kombi]]`
+
+    ```
+    [[Sell the Kombi]]
+    ```
+
+    """
+    let expected = """
+    ---
+    project: "[[Sell the Kombi]]"
+    ---
+    See [[Sell the car]], [[projects/Sell the car.md#Plan|the plan]] and [[Sell the Kombi list]].
+    ![[Sell the Kombi.png]] `[[Sell the Kombi]]`
+
+    ```
+    [[Sell the Kombi]]
+    ```
+
+    """
+    #expect(Vault.retargetLinks(in: text, from: "Sell the Kombi", to: "Sell the car") == expected)
+    #expect(BodyScanner.linkTargets(in: "[[A]] ![[b.png]] [[ C |c]]").map(\.link.target) == ["A", "C"])
+}

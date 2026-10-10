@@ -635,6 +635,23 @@ struct ImageEmbedTests {
         tv.textStorage?.attribute(.latexImage, at: Self.embed.location + 3, effectiveRange: nil) != nil
     }
 
+    @Test func theSlashMenusEmptyEmbedKeepsTheCaretAndOpensAnEmbedQuery() async throws {
+        let (tv, proxy, window, coordinator) = try editor()
+        _ = window
+        var states: [SlashCommandState?] = []
+        coordinator.onSlashCommandChange = { states.append($0) }
+        let end = (tv.string as NSString).length
+        tv.setSelectedRange(NSRange(location: end, length: 0))
+        for character in "/im" { tv.insertText(String(character), replacementRange: tv.selectedRange()) }
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(states.last??.trigger == .slash)
+        proxy.insert("![[]]", selecting: NSRange(location: 3, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(tv.string.hasSuffix("\n![[]]"))
+        #expect(tv.selectedRange() == NSRange(location: end + 3, length: 0))
+        #expect(states.last??.trigger == .embed && states.last??.query == "")
+    }
+
     @Test func theImageStaysDrawnAndTheCaretSkipsItsSource() throws {
         let (tv, _, window, coordinator) = try editor()
         #expect(isDrawn(tv))

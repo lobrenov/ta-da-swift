@@ -611,6 +611,21 @@ import TaDaCore
         selection = path
     }
 
+    /// Follows a link to a file: a project or area opens as its own page; a task opens in its project's or area's
+    /// page, or in Loose tasks.
+    func openLink(to path: String) {
+        guard let item = index[path] else { return }
+        if item.properties.kind == .task {
+            let parent = index.parent(of: item)
+            domain = switch parent?.properties.kind {
+            case .project: .project(parent!.path)
+            case .area: .area(parent!.path)
+            default: .loose
+            }
+        }
+        open(path)
+    }
+
     /// The path of the project or area whose page is showing.
     var domainPath: String? {
         switch domain {
@@ -807,17 +822,20 @@ import TaDaCore
         await edit(path) { Completion.setStatus(status, in: $0, today: today) }
     }
 
-    /// Renames a file from a new title. Renaming a project also rewrites the `project:` link in its tasks; renaming an
-    /// area, the `area:` link in its projects and tasks.
+    /// Renames a file from a new title, and points the `[[ ]]` links to it in other files' bodies at the new title.
+    /// Renaming a project also rewrites the `project:` link in its tasks; renaming an area, the `area:` link in its
+    /// projects and tasks.
     func rename(_ path: String, to title: String) async {
         guard let vault, Item.title(ofPath: path) != title else { return }
-        if let document, document.path == path {
+        // Saved first, so a relink of the open file below reloads it without losing edits.
+        if let document {
             await save(document)
-            guard !document.isDirty else {
+            guard document.path != path || !document.isDirty else {
                 errorMessage = "“\(Item.title(ofPath: path))” changed outside Ta Da. Choose which version to keep before renaming it."
                 return
             }
         }
+        let linkers = index[path].map { index.backlinks(to: $0).map(\.path) } ?? []
         do {
             let index = index, presenter = presenter
             let kind = index[path]?.properties.kind
@@ -832,12 +850,23 @@ import TaDaCore
             }
             guard newPath != path else { return }
             follow(path, to: newPath, items: items)
+            if let document, items.contains(where: { $0.path == document.path }) { await reload(document, from: vault) }
+            await relinkBodies(linkers, from: Item.title(ofPath: path), to: Item.title(ofPath: newPath))
             if !failed.isEmpty {
                 let names = failed.map { "“\(Item.title(ofPath: $0))”" }.formatted()
                 errorMessage = "Ta Da renamed “\(Item.title(ofPath: path))” to “\(Item.title(ofPath: newPath))”, but the \(kind == .area ? "area" : "project") link in \(names) still points to the old name."
             }
         } catch {
             errorMessage = Self.couldNot("rename “\(Item.title(ofPath: path))”", error)
+        }
+    }
+
+    /// Points the `[[ ]]` links to `old` in `paths`' bodies at `new`, the open file's in place, unless another file is
+    /// still titled `old`.
+    private func relinkBodies(_ paths: [String], from old: String, to new: String) async {
+        guard old.lowercased() != new.lowercased(), index.items(titled: old).isEmpty else { return }
+        for path in paths {
+            await edit(path) { Vault.retargetLinks(in: $0, from: old, to: new) }
         }
     }
 

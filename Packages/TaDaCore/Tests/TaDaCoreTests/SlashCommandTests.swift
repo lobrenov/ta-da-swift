@@ -33,6 +33,10 @@ import Testing
 
     let code = SlashCommand.codeBlock.insertion()
     #expect(code.text == "```\n\n```" && code.selection.location == 4)
+
+    let link = SlashCommand.wikiLink.insertion(), image = SlashCommand.image.insertion()
+    #expect(link.text == "[[]]" && link.selection == NSRange(location: 2, length: 0))
+    #expect(image.text == "![[]]" && image.selection == NSRange(location: 3, length: 0))
 }
 
 @Test func dividerAfterAParagraphGetsABlankLine() {

@@ -25,6 +25,15 @@ public enum BodyScanner {
     /// Where each `![[…]]` that `scan` finds sits in `body`: the range of its target (the text before any `#` or
     /// `|`, without surrounding spaces), in order.
     public static func embedTargets(in body: String) -> [(range: Range<String.Index>, link: WikiLink)] {
+        targets(in: body, embeds: true)
+    }
+
+    /// Where each `[[…]]` link (not an embed) that `scan` finds sits in `body`, as `embedTargets(in:)` gives them.
+    public static func linkTargets(in body: String) -> [(range: Range<String.Index>, link: WikiLink)] {
+        targets(in: body, embeds: false)
+    }
+
+    private static func targets(in body: String, embeds: Bool) -> [(range: Range<String.Index>, link: WikiLink)] {
         var walker = Walker(bytes: Array(body.utf8), firstLineIndex: 0)
         walker.visit(Document(parsing: body, options: [.disableSmartOpts]))
         let utf8 = body.utf8
@@ -32,8 +41,8 @@ public enum BodyScanner {
         for span in walker.textSpans {
             let start = utf8.index(utf8.startIndex, offsetBy: span.lowerBound)
             let end = utf8.index(utf8.startIndex, offsetBy: span.upperBound)
-            for match in body[start..<end].matches(of: #/!\[\[([^\[\]\n]+)\]\]/#) {
-                let inner = match.1
+            for match in body[start..<end].matches(of: #/(!?)\[\[([^\[\]\n]+)\]\]/#) where match.1.isEmpty != embeds {
+                let inner = match.2
                 guard let link = WikiLink(inner: String(inner)) else { continue }
                 let targetEnd = inner.firstIndex { $0 == "#" || $0 == "|" } ?? inner.endIndex
                 let target = inner[..<targetEnd]

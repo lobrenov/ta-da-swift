@@ -235,6 +235,22 @@ public struct Vault: Sendable {
         }
     }
 
+    /// Points the `[[ ]]` links in a file's body that name `old` (ignoring case) at `new`, keeping each link's folder,
+    /// `.md`, heading and alias. Embeds, links in code and the frontmatter are untouched.
+    public static func retargetLinks(in text: String, from old: String, to new: String) -> String {
+        let split = FrontmatterSplitter.split(text)
+        let body = split.body
+        var result = split.block, copied = body.startIndex
+        for (range, link) in BodyScanner.linkTargets(in: body) where link.title.lowercased() == old.lowercased() {
+            let target = body[range]
+            let folder = target.lastIndex(of: "/").map { target[...$0] } ?? ""
+            let ext = target.lowercased().hasSuffix(".md") ? target.suffix(3) : ""
+            result += body[copied..<range.lowerBound] + folder + new + ext
+            copied = range.upperBound
+        }
+        return result + body[copied...]
+    }
+
     /// `tasks/Name.md` → `tasks`; `Name.md` → empty.
     public static func folder(of path: String) -> String {
         path.split(separator: "/").dropLast().joined(separator: "/")

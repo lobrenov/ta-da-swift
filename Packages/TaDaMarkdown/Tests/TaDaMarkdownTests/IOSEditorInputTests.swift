@@ -18,6 +18,7 @@ final class IOSEditorHarness {
         var markerRequests: [TaskMarkerMenuRequest] = []
         var calloutRequests: [CalloutMenuRequest] = []
         var toggles: [Character] = []
+        var links: [String] = []
         init(_ text: String) { self.text = text }
     }
 
@@ -26,6 +27,7 @@ final class IOSEditorHarness {
     var markerRequests: [TaskMarkerMenuRequest] { box.markerRequests }
     var calloutRequests: [CalloutMenuRequest] { box.calloutRequests }
     var toggles: [Character] { box.toggles }
+    var links: [String] { box.links }
     let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
     let textView: NativeTextView
     let proxy = SlashCommandProxy()
@@ -47,6 +49,7 @@ final class IOSEditorHarness {
             fontName: UIFont.systemFont(ofSize: 17).fontName,
             fontSize: 17,
             documentId: "doc",
+            onLinkClick: { box.links.append($0) },
             slashCommandProxy: proxy,
             onTaskMarkerMenu: { box.markerRequests.append($0) },
             onCalloutMenu: { box.calloutRequests.append($0) },
@@ -95,6 +98,16 @@ final class IOSEditorHarness {
         await type(typed)
     }
 
+    /// The view point at the middle of `text`'s first occurrence.
+    func point(of text: String) -> CGPoint? {
+        let range = (textView.string as NSString).range(of: text)
+        guard range.location != NSNotFound, let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
+              let end = textView.position(from: start, offset: range.length),
+              let textRange = textView.textRange(from: start, to: end) else { return nil }
+        let rect = textView.firstRect(for: textRange)
+        return CGPoint(x: rect.midX, y: rect.midY)
+    }
+
     /// The view point of the first task box, found by probing along its line.
     func boxPoint() -> CGPoint? {
         guard let storage = textView.optionalTextStorage, let bridge = textView.layoutBridge else { return nil }
@@ -108,6 +121,12 @@ final class IOSEditorHarness {
         return stride(from: CGFloat(0), to: 120, by: 1)
             .map { CGPoint(x: $0, y: y) }
             .first { textView.taskCheckboxHit(atViewPoint: $0) != nil }
+    }
+}
+
+private struct Titles: WikiLinkResolver {
+    func resolve(displayName: String, range: NSRange) -> WikiLinkResolution? {
+        displayName == "Target" ? WikiLinkResolution(id: displayName, exists: true) : nil
     }
 }
 
@@ -211,6 +230,23 @@ struct IOSEditorInputTests {
         #expect(editor.textView.string == "See [[]]")
         #expect(editor.text == "See [[]]")
         #expect(editor.textView.selectedRange == NSRange(location: 6, length: 0))
+    }
+
+    @Test func tappingALinkOpensItUnlessTheCaretIsInIt() async throws {
+        let editor = try IOSEditorHarness("Body\n\nSee [[Target]] here") {
+            $0.services = MarkdownEditorServices(wikiLinks: Titles())
+        }
+        editor.textView.selectedRange = NSRange(location: 0, length: 0)
+        await editor.settle()
+        let point = try #require(editor.point(of: "Target"))
+        #expect(editor.textView.wikiLinkHit(atViewPoint: point) == "Target")
+        editor.textView.handleTap(at: point)
+        #expect(editor.links == ["Target"])
+        #expect(editor.textView.wikiLinkHit(atViewPoint: CGPoint(x: point.x, y: point.y - 60)) == nil)
+
+        editor.textView.selectedRange = NSRange(location: (editor.textView.string as NSString).range(of: "Target").location + 2, length: 0)
+        await editor.settle()
+        #expect(editor.textView.wikiLinkHit(atViewPoint: try #require(editor.point(of: "Target"))) == nil)
     }
 
     @Test func tappingABoxTogglesItAndUndoRestoresIt() async throws {

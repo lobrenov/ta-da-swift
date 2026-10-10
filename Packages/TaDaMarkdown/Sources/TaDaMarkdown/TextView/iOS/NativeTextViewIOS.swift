@@ -158,11 +158,14 @@ final class NativeTextView: UITextView {
 
     // MARK: Taps and presses
 
-    /// A tap on a task box toggles it; on a foldable callout's title row (outside its text), folds it.
+    /// A tap on a task box toggles it; on a `[[ ]]` link, goes to `onLinkClick`; on a foldable callout's title row
+    /// (outside its text), folds it.
     func handleTap(at point: CGPoint) {
         if let hit = taskCheckboxHit(atViewPoint: point) {
             toggleTaskCheckbox(hit)
             onTaskCheckboxToggle?(hit.marker)
+        } else if let target = wikiLinkHit(atViewPoint: point) {
+            coordinator?.onLinkClick?(target)
         } else if let hit = calloutTitleHit(atViewPoint: point), !toggleCalloutFold(hit) {
             if !isFirstResponder { becomeFirstResponder() }
             setSelectedRange(NSRange(location: characterIndex(atViewPoint: point), length: 0))
@@ -182,8 +185,29 @@ final class NativeTextView: UITextView {
 
     fileprivate func takesTap(at point: CGPoint) -> Bool {
         if taskCheckboxHit(atViewPoint: point) != nil { return true }
+        if coordinator?.onLinkClick != nil, wikiLinkHit(atViewPoint: point) != nil { return true }
         guard let hit = calloutTitleHit(atViewPoint: point) else { return false }
         return hit.header.fold.length == 1
+    }
+
+    /// Ta Da fork: the target of the `[[ ]]` link whose text is under a point. While the caret touches the link (with
+    /// the keyboard up), a tap there places the caret instead.
+    func wikiLinkHit(atViewPoint point: CGPoint) -> String? {
+        guard let storage = optionalTextStorage, storage.length > 0 else { return nil }
+        let index = characterIndex(atViewPoint: point)
+        for location in [index, index - 1] where location >= 0 && location < storage.length {
+            var range = NSRange()
+            guard let target = storage.attribute(.link, at: location, effectiveRange: &range) as? String,
+                  !isFirstResponder || selectedRange.location < range.location - 2
+                    || selectedRange.location > NSMaxRange(range) + 2,
+                  let start = position(from: beginningOfDocument, offset: range.location),
+                  let end = position(from: start, offset: range.length),
+                  let textRange = textRange(from: start, to: end) else { continue }
+            if selectionRects(for: textRange).contains(where: { $0.rect.insetBy(dx: 0, dy: -4).contains(point) }) {
+                return target
+            }
+        }
+        return nil
     }
 
     func takesPress(at point: CGPoint) -> Bool {
@@ -350,7 +374,7 @@ final class NativeTextView: UITextView {
     }
 }
 /// The editor's own tap and press, which the text view's gestures wait for: they begin only over a
-/// task box or a callout title line, so everywhere else the text view behaves as usual.
+/// task box, a link, a callout title line or (a press) an image, so everywhere else the text view behaves as usual.
 private final class EditorGestures: NSObject, UIGestureRecognizerDelegate {
     weak var textView: NativeTextView?
     lazy var tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
