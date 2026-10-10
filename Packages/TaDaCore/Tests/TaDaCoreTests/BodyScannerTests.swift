@@ -102,8 +102,43 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
     #expect(scan.links[1].alias == nil && scan.links[2].alias == "alias" && scan.links[3].heading == "Section")
 }
 
+@Test func scannerFindsEmbedsApartFromLinks() {
+    let body = """
+    Before ![[front.jpg]] and [[Kombi]].
+
+    - [ ] Photo ![[odometer.png]]
+
+    `![[Not Code.png]]`
+
+    """
+    let scan = BodyScanner.scan(body)
+    #expect(scan.links.map(\.target) == ["Kombi"])
+    #expect(scan.embeds.map(\.target) == ["front.jpg", "odometer.png"])
+}
+
+@Test func targetsAreTheRangesOfEachLinksOrEmbedsTarget() {
+    let body = "See [[ Kombi #Plan|the plan]] and ![[front.jpg]].\n\n`[[Code]]` [[Kombi]]\n"
+    let links = BodyScanner.linkTargets(in: body)
+    #expect(links.map { String(body[$0.range]) } == ["Kombi", "Kombi"])
+    #expect(links.map(\.link.heading) == ["Plan", nil] && links[0].link.alias == "the plan")
+    let embeds = BodyScanner.embedTargets(in: body)
+    #expect(embeds.map { String(body[$0.range]) } == ["front.jpg"])
+}
+
 @Test func scannerSummaryIsFirstTopLevelParagraph() {
     #expect(BodyScanner.scan("# Title\n\n- list first\n\nFirst \"quoted\" para\nwraps here.\n\nSecond.\n").summary == "First \"quoted\" para wraps here.")
     #expect(BodyScanner.scan("- [ ] Only a list\n").summary == nil)
     #expect(BodyScanner.scan("").summary == nil)
+}
+
+@Test func targetsStayRightAfterABackslashHardBreak() {
+    let body = "Note:\\\n`[[Old]]` is the syntax\nsee [[Old]] here\n\n- x\\\n  ![[a.png]] `![[a.png]]`\n  ![[a.png]]\n  [[Old]]\\\n  [[Old]]\n  [[Old]]"
+    func edited(_ text: String) -> String {
+        Vault.retargetLinks(in: Vault.retargetEmbeds(in: text, from: "attachments/a.png", to: "attachments/b.png", paths: ["attachments/a.png"]),
+                            from: "Old", to: "New")
+    }
+    #expect(BodyScanner.linkTargets(in: body).count == 4)
+    #expect(BodyScanner.embedTargets(in: body).count == 2)
+    #expect(edited(body) == "Note:\\\n`[[Old]]` is the syntax\nsee [[New]] here\n\n- x\\\n  ![[b.png]] `![[a.png]]`\n  ![[b.png]]\n  [[New]]\\\n  [[New]]\n  [[New]]")
+    #expect(edited("a\\\nb\\\n![[a.png]] `![[a.png]]`\n![[a.png]]") == "a\\\nb\\\n![[b.png]] `![[a.png]]`\n![[b.png]]")
 }

@@ -321,7 +321,7 @@ private struct PropertyChipBody<Label: View>: View {
 }
 
 /// The file's type (a project's with its progress, an area's with its counts), a task's area through its project,
-/// and the days it was created and completed, in `muted`.
+/// the days it was created and completed, and the files that link here (a menu of them), in `muted`.
 private struct QuietLine: View {
     let model: AppModel
     let item: Item
@@ -366,10 +366,22 @@ private struct QuietLine: View {
                 }
                 .foregroundStyle(theme.color(\.done))
             }
+            let backlinks = model.index.backlinks(to: item)
+            if !backlinks.isEmpty {
+                Menu(backlinks.count == 1 ? "1 backlink" : "\(backlinks.count) backlinks") {
+                    ForEach(backlinks) { link in
+                        Button(link.title) { model.openLink(to: link.path) }
+                    }
+                }
+                .menuStyle(.button)
+                .buttonStyle(.plain)
+                .menuIndicator(.hidden)
+                .fixedSize()
+            }
         }
         .font(.system(size: 11.5))
         .foregroundStyle(theme.color(\.muted))
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 }
 

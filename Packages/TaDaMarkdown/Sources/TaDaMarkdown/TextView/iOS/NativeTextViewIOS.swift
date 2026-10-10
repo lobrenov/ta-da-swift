@@ -26,8 +26,15 @@ final class NativeTextView: UITextView {
     var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
     /// See ``NativeTextViewWrapper/onTaskCheckboxToggle``.
     var onTaskCheckboxToggle: ((Character) -> Void)?
+    /// See ``NativeTextViewWrapper/onPasteImage``.
+    var onPasteImage: ((UIPasteboard) -> String?)?
     /// The title line location of the callout whose menu is open.
     var calloutMenuTarget: Int?
+    /// See ``NativeTextViewWrapper/imageEmbedMenu``.
+    var imageEmbedMenu: ((ImageEmbedRequest) -> UIMenu?)?
+    /// The `![[ ]]` of the selected image, and of the image whose menu is open (`ImageEmbedHits.swift`).
+    var selectedImageEmbed: NSRange?
+    var imageEmbedMenuTarget: NSRange?
     /// Skips the next scroll-to-caret, after an edit that places the caret itself.
     var suppressAutoRevealOnce = false
     /// What the selection and text delegates are reacting to: typing or a tap.
@@ -63,6 +70,8 @@ final class NativeTextView: UITextView {
     }
 
     private let gestures = EditorGestures()
+    /// Ta Da fork: shows the image menu (`ImageEmbedMenuButton.swift`).
+    var imageMenuButton: UIButton?
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
@@ -149,35 +158,62 @@ final class NativeTextView: UITextView {
 
     // MARK: Taps and presses
 
-    /// A tap on a task box toggles it; on a foldable callout's title row (outside its text), folds it.
+    /// A tap on a task box toggles it; on a `[[ ]]` link, goes to `onLinkClick`; on a foldable callout's title row
+    /// (outside its text), folds it.
     func handleTap(at point: CGPoint) {
         if let hit = taskCheckboxHit(atViewPoint: point) {
             toggleTaskCheckbox(hit)
             onTaskCheckboxToggle?(hit.marker)
+        } else if let target = wikiLinkHit(atViewPoint: point) {
+            coordinator?.onLinkClick?(target)
         } else if let hit = calloutTitleHit(atViewPoint: point), !toggleCalloutFold(hit) {
             if !isFirstResponder { becomeFirstResponder() }
             setSelectedRange(NSRange(location: characterIndex(atViewPoint: point), length: 0))
         }
     }
 
-    /// Press and hold on a task box or a callout title line opens its menu.
+    /// Press and hold on a task box, a callout title line or a drawn image opens its menu.
     func handlePress(at point: CGPoint) {
         if let onTaskMarkerMenu, let hit = taskCheckboxHit(atViewPoint: point) {
             onTaskMarkerMenu(taskMarkerMenuRequest(for: hit))
         } else if let onCalloutMenu, let hit = calloutTitleHit(atViewPoint: point) {
             showCalloutMenu(for: hit, onCalloutMenu)
+        } else if let hit = imageEmbedHit(atViewPoint: point), let menu = imageEmbedMenu(for: hit.range) {
+            showImageEmbedMenu(menu, at: point)
         }
     }
 
     fileprivate func takesTap(at point: CGPoint) -> Bool {
         if taskCheckboxHit(atViewPoint: point) != nil { return true }
+        if coordinator?.onLinkClick != nil, wikiLinkHit(atViewPoint: point) != nil { return true }
         guard let hit = calloutTitleHit(atViewPoint: point) else { return false }
         return hit.header.fold.length == 1
     }
 
-    fileprivate func takesPress(at point: CGPoint) -> Bool {
+    /// Ta Da fork: the target of the `[[ ]]` link whose text is under a point. While the caret touches the link (with
+    /// the keyboard up), a tap there places the caret instead.
+    func wikiLinkHit(atViewPoint point: CGPoint) -> String? {
+        guard let storage = optionalTextStorage, storage.length > 0 else { return nil }
+        let index = characterIndex(atViewPoint: point)
+        for location in [index, index - 1] where location >= 0 && location < storage.length {
+            var range = NSRange()
+            guard let target = storage.attribute(.link, at: location, effectiveRange: &range) as? String,
+                  !isFirstResponder || selectedRange.location < range.location - 2
+                    || selectedRange.location > NSMaxRange(range) + 2,
+                  let start = position(from: beginningOfDocument, offset: range.location),
+                  let end = position(from: start, offset: range.length),
+                  let textRange = textRange(from: start, to: end) else { continue }
+            if selectionRects(for: textRange).contains(where: { $0.rect.insetBy(dx: 0, dy: -4).contains(point) }) {
+                return target
+            }
+        }
+        return nil
+    }
+
+    func takesPress(at point: CGPoint) -> Bool {
         (onTaskMarkerMenu != nil && taskCheckboxHit(atViewPoint: point) != nil)
             || (onCalloutMenu != nil && calloutTitleHit(atViewPoint: point) != nil)
+            || (imageEmbedMenu != nil && imageEmbedHit(atViewPoint: point) != nil)
     }
 
     // MARK: Layout
@@ -198,6 +234,32 @@ final class NativeTextView: UITextView {
     override func layoutSubviews() {
         super.layoutSubviews()
         layoutHeader()
+        // Ta Da fork: images fit the width once it's known.
+        RunLoop.main.perform { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.coordinator?.restyleImageEmbedsIfWidthChanged(in: self)
+            }
+        }
+    }
+
+    // MARK: Ta Da fork: image paste
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if action == #selector(paste(_:)), onPasteImage != nil, isEditable, UIPasteboard.general.hasImages { return true }
+        return super.canPerformAction(action, withSender: sender)
+    }
+
+    /// An image on the pasteboard goes to `onPasteImage`, and its embed goes on its own line.
+    override func paste(_ sender: Any?) {
+        guard let onPasteImage, UIPasteboard.general.hasImages, let embed = onPasteImage(.general), !embed.isEmpty else {
+            return super.paste(sender)
+        }
+        let selection = selectedRange
+        let text = self.text as NSString
+        let before = selection.location > 0 && text.character(at: selection.location - 1) != 0x0A ? "\n" : ""
+        let after = NSMaxRange(selection) < text.length && text.character(at: NSMaxRange(selection)) != 0x0A ? "\n" : ""
+        replaceCharacters(in: selection, with: before + embed + after)
     }
 
     // MARK: Keyboard bar
@@ -214,19 +276,32 @@ final class NativeTextView: UITextView {
         }
         if let keyboardBarHost {
             keyboardBarHost.rootView = bar
+            fitKeyboardBar()
             return
         }
         let host = UIHostingController(rootView: bar)
         host.view.backgroundColor = .clear
         host.safeAreaRegions = []
-        let container = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 52))
-        container.autoresizingMask = .flexibleWidth
+        let container = KeyboardBarContainer(frame: CGRect(x: 0, y: 0, width: 0, height: 52))
+        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         host.view.frame = container.bounds
         host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         container.addSubview(host.view)
         keyboardBarHost = host
         inputAccessoryView = container
+        fitKeyboardBar()
         if isFirstResponder { reloadInputViews() }
+    }
+
+    /// Ta Da fork: makes the bar's container as tall as its content, which can grow above the bar (a list of
+    /// choices), and keeps the caret above it.
+    private func fitKeyboardBar() {
+        guard let host = keyboardBarHost, let container = inputAccessoryView as? KeyboardBarContainer else { return }
+        let width = container.bounds.width > 0 ? container.bounds.width : window?.bounds.width ?? 390
+        let height = host.sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude)).height.rounded(.up)
+        guard height != container.height else { return }
+        container.height = height
+        revealCaretAboveKeyboardBarSoon()
     }
 
     /// How far the caret stays above the keyboard bar.
@@ -299,7 +374,7 @@ final class NativeTextView: UITextView {
     }
 }
 /// The editor's own tap and press, which the text view's gestures wait for: they begin only over a
-/// task box or a callout title line, so everywhere else the text view behaves as usual.
+/// task box, a link, a callout title line or (a press) an image, so everywhere else the text view behaves as usual.
 private final class EditorGestures: NSObject, UIGestureRecognizerDelegate {
     weak var textView: NativeTextView?
     lazy var tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
@@ -328,5 +403,14 @@ private final class EditorGestures: NSObject, UIGestureRecognizerDelegate {
                            shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
         other.view === textView && other !== tap && other !== press
     }
+}
+
+/// Ta Da fork: the keyboard bar's container. The keyboard sizes it by its intrinsic height.
+private final class KeyboardBarContainer: UIView {
+    var height: CGFloat = 52 {
+        didSet { if height != oldValue { invalidateIntrinsicContentSize() } }
+    }
+
+    override var intrinsicContentSize: CGSize { CGSize(width: UIView.noIntrinsicMetric, height: height) }
 }
 #endif

@@ -18,6 +18,7 @@ final class IOSEditorHarness {
         var markerRequests: [TaskMarkerMenuRequest] = []
         var calloutRequests: [CalloutMenuRequest] = []
         var toggles: [Character] = []
+        var links: [String] = []
         init(_ text: String) { self.text = text }
     }
 
@@ -26,11 +27,12 @@ final class IOSEditorHarness {
     var markerRequests: [TaskMarkerMenuRequest] { box.markerRequests }
     var calloutRequests: [CalloutMenuRequest] { box.calloutRequests }
     var toggles: [Character] { box.toggles }
+    var links: [String] { box.links }
     let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
     let textView: NativeTextView
     let proxy = SlashCommandProxy()
 
-    init(_ text: String) throws {
+    init(_ text: String, configure: (inout MarkdownEditorConfiguration) -> Void = { _ in }) throws {
         let box = Box(text)
         self.box = box
         var configuration = MarkdownEditorConfiguration.default
@@ -39,6 +41,7 @@ final class IOSEditorHarness {
             titleColor: .label, bodyColor: .label, foldColor: .secondaryLabel, targetColor: .systemBlue,
             fillOpacity: 0.09, ringOpacity: 0.24
         )
+        configure(&configuration)
         let binding = Binding(get: { box.text }, set: { box.text = $0 })
         let editor = NativeTextViewWrapper(
             text: binding,
@@ -46,6 +49,7 @@ final class IOSEditorHarness {
             fontName: UIFont.systemFont(ofSize: 17).fontName,
             fontSize: 17,
             documentId: "doc",
+            onLinkClick: { box.links.append($0) },
             slashCommandProxy: proxy,
             onTaskMarkerMenu: { box.markerRequests.append($0) },
             onCalloutMenu: { box.calloutRequests.append($0) },
@@ -94,6 +98,16 @@ final class IOSEditorHarness {
         await type(typed)
     }
 
+    /// The view point at the middle of `text`'s first occurrence.
+    func point(of text: String) -> CGPoint? {
+        let range = (textView.string as NSString).range(of: text)
+        guard range.location != NSNotFound, let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
+              let end = textView.position(from: start, offset: range.length),
+              let textRange = textView.textRange(from: start, to: end) else { return nil }
+        let rect = textView.firstRect(for: textRange)
+        return CGPoint(x: rect.midX, y: rect.midY)
+    }
+
     /// The view point of the first task box, found by probing along its line.
     func boxPoint() -> CGPoint? {
         guard let storage = textView.optionalTextStorage, let bridge = textView.layoutBridge else { return nil }
@@ -110,9 +124,60 @@ final class IOSEditorHarness {
     }
 }
 
+private struct Titles: WikiLinkResolver {
+    func resolve(displayName: String, range: NSRange) -> WikiLinkResolution? {
+        displayName == "Target" ? WikiLinkResolution(id: displayName, exists: true) : nil
+    }
+}
+
+private struct TealImage: EmbeddedImageProvider {
+    func image(for request: EmbeddedImageRequest) -> PlatformImage? {
+        request.name == "front.png" ? UIGraphicsImageRenderer(size: CGSize(width: 300, height: 200)).image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 300, height: 200))
+        } : nil
+    }
+    func fingerprint() -> AnyHashable { 1 }
+}
+
 @MainActor
 @Suite(.serialized)
 struct IOSEditorInputTests {
+    @Test func anImageOnThePasteboardPastesAsAnEmbedOnItsOwnLine() async throws {
+        let editor = try IOSEditorHarness("Shots:")
+        var pasted = 0
+        editor.textView.onPasteImage = { _ in pasted += 1; return "![[Pasted image.png]]" }
+        UIPasteboard.general.image = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { _ in }
+        editor.textView.selectedRange = NSRange(location: 6, length: 0)
+        #expect(editor.textView.canPerformAction(#selector(UIResponder.paste(_:)), withSender: nil))
+        editor.textView.paste(nil)
+        await editor.settle()
+        #expect(pasted == 1)
+        #expect(editor.text == "Shots:\n![[Pasted image.png]]")
+        UIPasteboard.general.items = []
+    }
+
+    @Test func aPressAndHoldOnAnImageShowsTheEmbeddersMenu() async throws {
+        let editor = try IOSEditorHarness("Shots:\n\n![[front.png]]\n\nAfter") { configuration in
+            configuration.services = MarkdownEditorServices(images: TealImage())
+            configuration.imageEmbed.revealsSourceAtCaret = false
+        }
+        var requests: [ImageEmbedRequest] = []
+        editor.textView.imageEmbedMenu = { requests.append($0); return UIMenu(children: []) }
+        let embed = (editor.textView.string as NSString).range(of: "![[front.png]]")
+        let rect = try #require(editor.textView.imageEmbedRect(for: embed))
+        #expect(rect.size == CGSize(width: 300, height: 200))
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        #expect(editor.textView.takesPress(at: center) && !editor.textView.takesPress(at: CGPoint(x: center.x, y: rect.maxY + 40)))
+        #expect(editor.textView.imageEmbedMenu(for: embed) != nil)
+        #expect(requests.map(\.name) == ["front.png"])
+        requests[0].revealSource()
+        #expect(editor.textView.selectedRange == NSRange(location: NSMaxRange(embed), length: 0))
+        requests[0].remove("Cut Image")
+        await editor.settle()
+        #expect(editor.text == "Shots:\n\n\n\nAfter")
+    }
+
     @Test func loadsTheDocument() async throws {
         let editor = try IOSEditorHarness("- [ ] First")
         #expect(editor.textView.string == "- [ ] First")
@@ -165,6 +230,23 @@ struct IOSEditorInputTests {
         #expect(editor.textView.string == "See [[]]")
         #expect(editor.text == "See [[]]")
         #expect(editor.textView.selectedRange == NSRange(location: 6, length: 0))
+    }
+
+    @Test func tappingALinkOpensItUnlessTheCaretIsInIt() async throws {
+        let editor = try IOSEditorHarness("Body\n\nSee [[Target]] here") {
+            $0.services = MarkdownEditorServices(wikiLinks: Titles())
+        }
+        editor.textView.selectedRange = NSRange(location: 0, length: 0)
+        await editor.settle()
+        let point = try #require(editor.point(of: "Target"))
+        #expect(editor.textView.wikiLinkHit(atViewPoint: point) == "Target")
+        editor.textView.handleTap(at: point)
+        #expect(editor.links == ["Target"])
+        #expect(editor.textView.wikiLinkHit(atViewPoint: CGPoint(x: point.x, y: point.y - 60)) == nil)
+
+        editor.textView.selectedRange = NSRange(location: (editor.textView.string as NSString).range(of: "Target").location + 2, length: 0)
+        await editor.settle()
+        #expect(editor.textView.wikiLinkHit(atViewPoint: try #require(editor.point(of: "Target"))) == nil)
     }
 
     @Test func tappingABoxTogglesItAndUndoRestoresIt() async throws {

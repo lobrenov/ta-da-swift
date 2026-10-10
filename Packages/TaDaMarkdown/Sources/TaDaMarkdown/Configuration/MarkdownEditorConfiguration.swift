@@ -570,6 +570,28 @@ public struct ImageEmbedStyle: Sendable {
     public var paragraphSpacing: CGFloat
     /// Gap between the source line and the rendered image (visibleSource mode).
     public var imageGap: CGFloat
+    /// Ta Da fork: whether the caret in an image's paragraph shows its `![[ ]]` source. When false, an image shows
+    /// its source only after ``SlashCommandProxy/revealImageEmbed(at:)``, until the caret leaves its paragraph.
+    public var revealsSourceAtCaret = true
+    /// Ta Da fork: the colour of a missing image's name, which gets a dashed underline too. Nil leaves it a link.
+    public var missingText: PlatformColor?
+    /// Ta Da fork: the corner radius images are clipped to.
+    public var cornerRadius: CGFloat = 0
+    /// Ta Da fork: on the Mac, a `</>` button over a hovered image shows its source. No button when nil.
+    public var sourceButton: SourceButtonColors?
+    /// Ta Da fork: with a colour, a click on a drawn image selects its `![[ ]]` and rings the image in this colour, as
+    /// does an open image menu.
+    public var selectionRing: PlatformColor?
+
+    /// Ta Da fork: the source button's colours, and while the pointer is on it.
+    public struct SourceButtonColors: Sendable {
+        public var fill, hoverFill, ring, tint, hoverTint: PlatformColor
+
+        public init(fill: PlatformColor, hoverFill: PlatformColor, ring: PlatformColor, tint: PlatformColor,
+                    hoverTint: PlatformColor) {
+            (self.fill, self.hoverFill, self.ring, self.tint, self.hoverTint) = (fill, hoverFill, ring, tint, hoverTint)
+        }
+    }
 
     public init(
         minimumWidth: CGFloat = 50,

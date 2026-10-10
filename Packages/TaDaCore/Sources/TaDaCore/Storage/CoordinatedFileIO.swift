@@ -45,10 +45,15 @@ public enum CoordinatedFileIO {
 
     /// Writes a new file, creating its folder; fails if the file already exists.
     public static func create(_ text: String, at url: URL) throws {
+        try create(Data(text.utf8), at: url)
+    }
+
+    /// Writes a new file, creating its folder; fails if the file already exists.
+    public static func create(_ data: Data, at url: URL) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try coordinate { coordinator, error, body in
             coordinator.coordinate(writingItemAt: url, options: [], error: error) { url in
-                body { try Data(text.utf8).write(to: url, options: .withoutOverwriting) }
+                body { try data.write(to: url, options: .withoutOverwriting) }
             }
         }
     }

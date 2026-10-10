@@ -8,6 +8,8 @@ public struct BodyScan: Equatable, Sendable {
     public var checkboxes: [Checkbox]
     /// Every `[[…]]` in the body's text, skipping code and HTML.
     public var links: [WikiLink]
+    /// Every `![[…]]`, as `links` finds them.
+    public var embeds: [WikiLink]
 }
 
 public enum BodyScanner {
@@ -17,7 +19,39 @@ public enum BodyScanner {
         var walker = Walker(bytes: Array(body.utf8), firstLineIndex: firstLineIndex)
         walker.visit(document)
         let summary = document.children.lazy.compactMap { $0 as? Paragraph }.first?.plainText
-        return BodyScan(summary: summary, checkboxes: walker.checkboxes, links: walker.links)
+        return BodyScan(summary: summary, checkboxes: walker.checkboxes, links: walker.links, embeds: walker.embeds)
+    }
+
+    /// Where each `![[…]]` that `scan` finds sits in `body`: the range of its target (the text before any `#` or
+    /// `|`, without surrounding spaces), in order.
+    public static func embedTargets(in body: String) -> [(range: Range<String.Index>, link: WikiLink)] {
+        targets(in: body, embeds: true)
+    }
+
+    /// Where each `[[…]]` link (not an embed) that `scan` finds sits in `body`, as `embedTargets(in:)` gives them.
+    public static func linkTargets(in body: String) -> [(range: Range<String.Index>, link: WikiLink)] {
+        targets(in: body, embeds: false)
+    }
+
+    private static func targets(in body: String, embeds: Bool) -> [(range: Range<String.Index>, link: WikiLink)] {
+        var walker = Walker(bytes: Array(body.utf8), firstLineIndex: 0)
+        walker.visit(Document(parsing: body, options: [.disableSmartOpts]))
+        let utf8 = body.utf8
+        var found: [(range: Range<String.Index>, link: WikiLink)] = []
+        for span in walker.textSpans {
+            let start = utf8.index(utf8.startIndex, offsetBy: span.lowerBound)
+            let end = utf8.index(utf8.startIndex, offsetBy: span.upperBound)
+            for match in body[start..<end].matches(of: #/(!?)\[\[([^\[\]\n]+)\]\]/#) where match.1.isEmpty != embeds {
+                let inner = match.2
+                guard let link = WikiLink(inner: String(inner)) else { continue }
+                let targetEnd = inner.firstIndex { $0 == "#" || $0 == "|" } ?? inner.endIndex
+                let target = inner[..<targetEnd]
+                let first = target.firstIndex { !$0.isWhitespace } ?? targetEnd
+                let last = target.lastIndex { !$0.isWhitespace }.map { target.index(after: $0) } ?? first
+                found.append((first..<last, link))
+            }
+        }
+        return found
     }
 
     private struct Walker: MarkupWalker {
@@ -27,6 +61,10 @@ public enum BodyScanner {
         let lineStarts: [Int]
         var checkboxes: [Checkbox] = []
         var links: [WikiLink] = []
+        var embeds: [WikiLink] = []
+        /// The UTF-8 offsets in `bytes` of each text node that holds `[[`.
+        var textSpans: [Range<Int>] = []
+        private var spanCursor = 0
 
         init(bytes: [UInt8], firstLineIndex: Int) {
             self.bytes = bytes
@@ -40,7 +78,32 @@ public enum BodyScanner {
         }
 
         mutating func visitText(_ text: Text) {
-            links += WikiLink.scan(text.string)
+            let found = WikiLink.scan(text.string)
+            links += found.links
+            embeds += found.embeds
+            if text.string.contains("[["), let range = text.range { textSpans.append(span(of: text.string, reportedAt: range.lowerBound)) }
+        }
+
+        /// Where `string` sits in `bytes`, from the line and column the parser reported. After a backslash hard break
+        /// the reported line falls behind the real one, and in an indented block its column falls short, so later lines
+        /// are tried, never before the previous span's end: first for the exact column, then for the first match in
+        /// the line. The reported position stands when none match.
+        private mutating func span(of string: String, reportedAt start: SourceLocation) -> Range<Int> {
+            let expected = Array(string.utf8)
+            let (bytes, lineStarts, cursor) = (bytes, lineStarts, spanCursor)
+            func matches(at offset: Int) -> Bool {
+                offset >= cursor && offset + expected.count <= bytes.count && bytes[offset..<offset + expected.count].elementsEqual(expected)
+            }
+            let lines = (start.line - 1)..<lineStarts.count
+            let exact = lines.map { lineStarts[$0] + start.column - 1 }.first(where: matches)
+            let found = exact ?? lines.lazy.compactMap { line in
+                let end = line + 1 < lineStarts.count ? lineStarts[line + 1] : bytes.count
+                let from = max(lineStarts[line], cursor)
+                return from < end ? (from..<end).first(where: matches) : nil
+            }.first
+            let offset = found ?? min(lineStarts[start.line - 1] + start.column - 1, bytes.count)
+            if found != nil { spanCursor = offset + expected.count }
+            return offset..<min(offset + expected.count, bytes.count)
         }
 
         /// Reads `[c]` from the source after the item's list marker. swift-markdown only recognises

@@ -14,6 +14,8 @@ public struct Item: Hashable, Sendable, Identifiable {
     public var checkboxes: [Checkbox]
     /// Links in the body. They never set project membership.
     public var links: [WikiLink]
+    /// Embeds in the body, such as `![[front.jpg]]`. They aren't links.
+    public var embeds: [WikiLink]
     public var warnings: [Warning]
 
     /// Done and total subtasks. Cancelled boxes are left out of the total; icon-only boxes aren't subtasks.
@@ -42,6 +44,7 @@ public struct Item: Hashable, Sendable, Identifiable {
         summary = body.summary
         checkboxes = body.checkboxes
         links = body.links
+        embeds = body.embeds
         warnings = read.warnings
     }
 }

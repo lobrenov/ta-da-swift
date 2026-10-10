@@ -377,7 +377,7 @@ struct PhoneFileMenu: View {
         }
         Divider()
         Button("Move to Trash", systemImage: "trash", role: .destructive) {
-            nav.play(.trash)
+            if !model.asksBeforeTrashing([path]) { nav.play(.trash) }
             Task { await model.moveToTrash([path]) }
         }
     }

@@ -20,6 +20,12 @@ struct ContentView: View {
                 }
             }
         }
+        .imageDialogs(model)
+        .sheet(item: Binding { model.trashConfirmation.flatMap { $0.images.isEmpty ? nil : $0 } }
+                         set: { if $0 == nil { model.trashConfirmation = nil } }) { request in
+            DeleteFilesDialog(model: model, request: request)
+                .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
+        }
         .themed(by: model)
         // No toolbar fill: each column's own colour runs up under the toolbar (proven in the M1 spike).
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
@@ -32,7 +38,7 @@ struct ContentView: View {
             Text(model.errorMessage ?? "")
         }
         .alert(TrashConfirmationText(model: model).title,
-               isPresented: Binding { model.trashConfirmation != nil } set: { if !$0 { model.trashConfirmation = nil } },
+               isPresented: Binding { model.trashConfirmation?.images.isEmpty == true } set: { if !$0 { model.trashConfirmation = nil } },
                presenting: model.trashConfirmation) { request in
             Button(request.count == 1 ? "Delete 1 File" : "Delete \(request.count) Files", role: .destructive) { Task { await model.confirmTrash(request) } }
             Button("Cancel", role: .cancel) {}
@@ -60,6 +66,7 @@ struct ContentView: View {
                 PhoneRootView(model: model)
             }
         }
+        .imageDialogs(model)
         .themed(by: model)
         .alert("Ta Da", isPresented: Binding { model.errorMessage != nil } set: { if !$0 { model.errorMessage = nil } }) {
             Button("OK") {}

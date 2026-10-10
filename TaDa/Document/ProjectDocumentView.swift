@@ -25,7 +25,7 @@ struct ProjectDocumentView: View {
                         LinkedTasksTable(model: model, project: project, tasks: tasks) { revealed = $0 }
                             .padding(.top, 6)
                         Spacer(minLength: 0)
-                        DocumentFooter(model: model, document: document)
+                        DocumentFooter(document: document)
                     }
                     .padding(.horizontal, 56)
                     .padding(.top, 30)

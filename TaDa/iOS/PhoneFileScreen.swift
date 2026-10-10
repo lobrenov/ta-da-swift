@@ -146,8 +146,8 @@ struct PhoneFileScreen: View {
                     ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
                 }
                 Button("Move to Trash", systemImage: "trash", role: .destructive) {
-                    // An area asks first, and its screens go once it's deleted.
-                    if item.properties.kind != .area {
+                    // An area, or a file that embeds images, asks first, and its screens go once it's deleted.
+                    if !model.asksBeforeTrashing([item.path]) {
                         nav.play(.trash)
                         nav.pop()
                     }
@@ -172,14 +172,6 @@ struct PhoneFileScreen: View {
             if item.properties.kind == .area {
                 Button("Show Projects and Tasks", systemImage: "list.bullet") { nav.push(.area(item.path)) }
             }
-            let backlinks = model.index.backlinks(to: item)
-            if !backlinks.isEmpty {
-                Menu("\(backlinks.count) Backlink\(backlinks.count == 1 ? "" : "s")", systemImage: "link") {
-                    ForEach(backlinks) { link in
-                        Button(link.title) { nav.push(.file(link.path)) }
-                    }
-                }
-            }
             if let modified = document?.modified {
                 Text("Modified \(modified.formatted(.relative(presentation: .named)))")
             }
@@ -191,10 +183,12 @@ struct PhoneFileScreen: View {
     }
 }
 
-/// The type, a task's area through its project, the day the file was created and its progress, under the chips.
+/// The type, a task's area through its project, the day the file was created, its progress and the files that link
+/// here (a menu of them), under the chips.
 private struct QuietLine: View {
     let model: AppModel
     let item: Item
+    @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -218,9 +212,21 @@ private struct QuietLine: View {
         } else if item.subtasks.total > 0 {
             parts.append("\(item.subtasks.done)/\(item.subtasks.total)")
         }
-        return Text(parts.joined(separator: " · "))
-            .scaledFont(size: 13)
-            .foregroundStyle(theme.color(\.muted))
+        let backlinks = model.index.backlinks(to: item)
+        return HStack(alignment: .firstTextBaseline, spacing: 0) {
+            Text(parts.joined(separator: " · "))
+            if !backlinks.isEmpty {
+                Menu {
+                    ForEach(backlinks) { link in
+                        Button(link.title) { nav.push(.file(link.path)) }
+                    }
+                } label: {
+                    Text(" · \(backlinks.count == 1 ? "1 backlink" : "\(backlinks.count) backlinks")")
+                }
+            }
+        }
+        .scaledFont(size: 13)
+        .foregroundStyle(theme.color(\.muted))
     }
 }
 

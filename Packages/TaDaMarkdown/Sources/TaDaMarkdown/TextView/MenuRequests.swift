@@ -35,3 +35,26 @@ public struct CalloutMenuRequest {
     /// Call when the menu closes: the callout drops its ring.
     public let close: @MainActor () -> Void
 }
+
+/// Ta Da fork: a drawn image's `![[ ]]`, for the embedder's image actions: ``NativeTextViewWrapper/onImageEmbed`` on
+/// macOS, ``NativeTextViewWrapper/imageEmbedMenu`` on iOS.
+public struct ImageEmbedRequest {
+    public enum Action: Sendable {
+        /// A right-click (or press and hold) on the image: the embedder shows its menu.
+        case menu
+        /// ⌘C, ⌘X or ⌘⌫ while the image is selected.
+        case copy, cut, delete
+    }
+
+    public let action: Action
+    /// The text between `![[` and `]]`.
+    public let name: String
+    /// Where a right-click landed, else the image; in screen coordinates on macOS and window coordinates on iOS.
+    public let anchorRect: CGRect
+    /// Removes the `![[ ]]` as one undoable edit with this action name. Does nothing once its text has changed.
+    public let remove: @MainActor (_ actionName: String) -> Void
+    /// Shows the `![[ ]]` with the caret after it, until the caret leaves its line.
+    public let revealSource: @MainActor () -> Void
+    /// Call when the menu closes: the image drops its ring unless it's selected.
+    public let close: @MainActor () -> Void
+}

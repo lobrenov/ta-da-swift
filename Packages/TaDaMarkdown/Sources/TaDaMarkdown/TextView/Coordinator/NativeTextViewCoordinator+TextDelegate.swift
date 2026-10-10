@@ -387,7 +387,12 @@ extension NativeTextViewCoordinator {
         // one surviving side effect (updateAutocorrectSettings + selection bookkeeping) at
         // its end.
         if isRebuildingDocument { return }
-        // Ta Da fork: keep the slash menu's query in step with the caret.
+        // Ta Da fork: keep the slash menu's query in step with the caret, and the caret out of a drawn image.
+        snapCaretOutOfImageEmbed(in: tv)
+        updateSelectedImageEmbed(in: tv)
+        #if os(macOS)
+        (tv as? NativeTextView)?.hideImageSourceButton()
+        #endif
         updateSlashCommand(in: tv)
         let selRange = tv.currentSelectedRange
         let currentInput = currentInputKind(of: tv)
@@ -890,8 +895,11 @@ extension NativeTextViewCoordinator {
             return true
         }
         guard let parsed = preEditParsed else { return true }
-        // Ta Da fork: a typed `/` may open the slash menu.
+        // Ta Da fork: a typed `/`, `[[` or `![[` may open the slash or link menu.
         noteSlashCommandEdit(affectedCharRange, replacement: replacementString, in: preNS, codeTokens: parsed.codeTokens)
+        defer { isOpeningSlashCommand = false }
+        // Ta Da fork: ⌫ after a drawn image removes it whole.
+        if deleteImageEmbedIfAdjacent(affectedCharRange, replacement: replacementString, in: textView) { return false }
         pendingPreEditActiveTokenIndices = activeTokenIndices(
             parsed: parsed,
             selection: textView.currentSelectedRange,

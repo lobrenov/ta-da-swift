@@ -24,7 +24,7 @@ struct SidebarView: View {
                     row(.upcoming, count: nil)
                     row(.loose, count: model.looseCount)
                         .taskDrop(model, onto: .loose)
-                    row(.trash, count: model.trash.count)
+                    row(.trash, count: model.trashCount)
                         .padding(.top, 8)
 
                     Spacer().frame(height: 12)

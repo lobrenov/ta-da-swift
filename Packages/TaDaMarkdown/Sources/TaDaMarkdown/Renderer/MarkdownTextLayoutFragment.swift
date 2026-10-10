@@ -22,6 +22,9 @@ extension NSAttributedString.Key {
     static let latexBounds = NSAttributedString.Key("LatexImageBounds")
     static let latexIsBlock = NSAttributedString.Key("LatexIsBlock")
     static let latexBlockOffsetY = NSAttributedString.Key("LatexBlockOffsetY")
+    /// Ta Da fork: CGFloat — the corner radius an embedded image is clipped to; on every embedded image that can be
+    /// selected.
+    static let imageCornerRadius = NSAttributedString.Key("TaDaImageCornerRadius")
     static let thematicBreak = NSAttributedString.Key("ThematicBreak")
     /// String — the mark to draw CENTERED in place of the full-width rule on a
     /// line that already carries `.thematicBreak`. Absent means the rule. The
@@ -94,6 +97,9 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
         // Extend bounds to cover block images that render below the text line
         // (visibleSource mode uses paragraphSpacing to create space for the image).
         for rect in blockImageRects(at: .zero) {
+            bounds = bounds.union(rect)
+        }
+        for rect in inlineImageRingRects(at: .zero) {
             bounds = bounds.union(rect)
         }
         // Line-box fills are taller than the glyphs they sit behind.
@@ -498,8 +504,50 @@ final class MarkdownTextLayoutFragment: NSTextLayoutFragment {
                                   y: pos.baselineY + descent - imageBounds.height,
                                   width: imageBounds.width, height: imageBounds.height)
             }
-            image.draw(in: drawRect)
+            // Ta Da fork: embedded images clip to their corner radius, and a selected one draws a ring.
+            let radius = ts.attribute(.imageCornerRadius, at: attrRange.location, effectiveRange: nil) as? CGFloat ?? 0
+            if radius > 0 {
+                context.saveGState()
+                context.addPath(CGPath(roundedRect: drawRect, cornerWidth: radius, cornerHeight: radius, transform: nil))
+                context.clip()
+                image.draw(in: drawRect)
+                context.restoreGState()
+            } else {
+                image.draw(in: drawRect)
+            }
+            if let textView = textLayoutManager?.textContainer?.textView as? NativeTextView,
+               let ring = textView.configuration.imageEmbed.selectionRing, textView.ringsImage(at: attrRange.location) {
+                let ringRect = drawRect.insetBy(dx: -Self.imageRingWidth / 2, dy: -Self.imageRingWidth / 2)
+                let ringRadius = radius + Self.imageRingWidth / 2
+                context.saveGState()
+                context.addPath(CGPath(roundedRect: ringRect, cornerWidth: ringRadius, cornerHeight: ringRadius, transform: nil))
+                context.setStrokeColor(ring.cgColor)
+                context.setLineWidth(Self.imageRingWidth)
+                context.strokePath()
+                context.restoreGState()
+            }
         }
+    }
+
+    /// Ta Da fork: a selected image's ring, drawn just outside it.
+    static let imageRingWidth: CGFloat = 2
+
+    /// Ta Da fork: with `imageEmbed.selectionRing` set, the inline images' rects (embeds drawn in place of their
+    /// source), grown by their ring, for `renderingSurfaceBounds`.
+    private func inlineImageRingRects(at point: CGPoint) -> [CGRect] {
+        guard (textLayoutManager?.textContainer?.textView as? NativeTextView)?.configuration.imageEmbed.selectionRing != nil,
+              let ts = textStorage, let range = fragmentNSRange, range.length > 0 else { return [] }
+        var rects: [CGRect] = []
+        ts.enumerateAttribute(.latexImage, in: range, options: []) { [weak self] value, attrRange, _ in
+            guard let self, value is PlatformImage,
+                  ts.attribute(.imageCornerRadius, at: attrRange.location, effectiveRange: nil) != nil,
+                  ts.attribute(.latexIsBlock, at: attrRange.location, effectiveRange: nil) as? Bool != true,
+                  let bounds = (ts.attribute(.latexBounds, at: attrRange.location, effectiveRange: nil) as? NSValue)?.rectValue,
+                  let pos = drawPosition(forDocumentCharAt: attrRange.location, point: point) else { return }
+            let rect = CGRect(x: pos.x, y: pos.baselineY + bounds.origin.y - bounds.height, width: bounds.width, height: bounds.height)
+            rects.append(rect.insetBy(dx: -Self.imageRingWidth - 1, dy: -Self.imageRingWidth - 1))
+        }
+        return rects
     }
 
     // MARK: - Thematic Breaks (---, ***, ___)

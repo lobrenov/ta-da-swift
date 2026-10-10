@@ -29,6 +29,20 @@ private let missing = makeItem("tasks/Missing.md", "type: task\nstatus: Doing\np
     #expect(index.backlinks(to: member).map(\.title) == ["Missing"])
 }
 
+@Test func indexCountsEmbedsAndKeepsThemOutOfBacklinks() {
+    let photo = makeItem("tasks/Photograph the Kombi.md", "type: task\nstatus: Doing", body: "![[odometer.png]] ![[Member]]")
+    let history = makeItem("tasks/Kombi service history.md", "type: task\nstatus: Doing",
+                           body: "![[attachments/Odometer.png]]\n\n![[odometer.png|200]] ![[front.jpg]]")
+    var index = VaultIndex([member, photo, history])
+    #expect(index.embedders(of: "ODOMETER.png").map { "\($0.item.title) \($0.count)" } == ["Kombi service history 2", "Photograph the Kombi 1"])
+    #expect(index.embedders(of: "front.jpg").map(\.item.title) == ["Kombi service history"])
+    #expect(index.backlinks(to: member).isEmpty, "an embed isn't a link")
+    index.update(makeItem(history.path, "type: task\nstatus: Doing"))
+    #expect(index.embedders(of: "odometer.png").map(\.item.title) == ["Photograph the Kombi"] && index.embedders(of: "front.jpg").isEmpty)
+    index.remove(photo.path)
+    #expect(index.embedders(of: "odometer.png").isEmpty)
+}
+
 @Test func indexPrefersTheFirstPathWhenTitlesRepeat() {
     let duplicate = makeItem("archive/Ta Da MVP.md", "type: project\nstatus: Done")
     let index = VaultIndex([project, duplicate, member])

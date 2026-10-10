@@ -20,7 +20,7 @@ struct LiveDocumentView: View {
                     Hairline()
                     BodyEditor(model: model, document: document)
                     Spacer(minLength: 0)
-                    DocumentFooter(model: model, document: document)
+                    DocumentFooter(document: document)
                 }
                 .padding(.horizontal, 44)
                 .padding(.top, 30)
@@ -42,7 +42,7 @@ struct LiveDocumentView: View {
 struct BodyEditor: View {
     let model: AppModel
     let document: OpenDocument
-    /// Opens a link's file; by default the model shows it.
+    /// Opens a link's file; by default the model follows it (`AppModel.openLink(to:)`).
     var open: ((String) -> Void)? = nil
     @Environment(\.theme) private var theme
 
@@ -55,6 +55,9 @@ struct BodyEditor: View {
             fitsContent: true,
             autocomplete: model.autocomplete,
             haptics: model.haptics,
+            links: LinkMenuSource(index: model.index, vault: model.vault, attachments: model.attachments, recent: model.recentFiles, openPath: document.path),
+            embedImage: model.embed,
+            imageActions: model,
             onLinkClick: openLink
         )
         // The editor insets its text by 16pt; line it up with the title.
@@ -64,7 +67,7 @@ struct BodyEditor: View {
 
     private func openLink(_ target: String) {
         guard let link = WikiLink(inner: target), let item = model.index.items(titled: link.title).first else { return }
-        if let open { open(item.path) } else { model.open(item.path) }
+        if let open { open(item.path) } else { model.openLink(to: item.path) }
     }
 }
 
@@ -138,39 +141,19 @@ struct TitleField: View {
     }
 }
 
-/// Created and modified dates, and the files that link here.
+/// When the file was last modified. Its created date and backlinks are in the properties' meta line.
 struct DocumentFooter: View {
-    let model: AppModel
     let document: OpenDocument
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let backlinks = document.item.map { model.index.backlinks(to: $0) } ?? []
-        HStack(spacing: 16) {
-            if let created = document.item?.properties.createdDate {
-                Text("Created \(created.description)")
+        if let modified = document.modified {
+            TimelineView(.everyMinute) { _ in
+                Text("Modified \(modified.formatted(.relative(presentation: .named)))")
             }
-            if let modified = document.modified {
-                TimelineView(.everyMinute) { _ in
-                    Text("Modified \(modified.formatted(.relative(presentation: .named)))")
-                }
-            }
-            if backlinks.isEmpty {
-                Text("0 backlinks")
-            } else {
-                Menu("\(backlinks.count) backlink\(backlinks.count == 1 ? "" : "s")") {
-                    ForEach(backlinks) { item in
-                        Button(item.title) { model.open(item.path) }
-                    }
-                }
-                .menuStyle(.button)
-                .buttonStyle(.plain)
-                .menuIndicator(.hidden)
-                .fixedSize()
-            }
+            .font(.system(size: 11.5))
+            .foregroundStyle(theme.color(\.muted))
         }
-        .font(.system(size: 11.5))
-        .foregroundStyle(theme.color(\.muted))
     }
 }
 

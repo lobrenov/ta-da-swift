@@ -421,6 +421,81 @@ struct SlashCommandTests {
         #expect(tv.string == "Intro\n/bo")
     }
 
+    @Test func doubleBracketOpensALinkQueryWithItsCloser() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("Ask ", recorder)
+        try await type(tv, "[[uat")
+        #expect(tv.string == "Ask [[uat]]")
+        let state = try #require(recorder.last)
+        #expect(state.trigger == .link && state.query == "uat")
+        #expect(state.range == NSRange(location: 4, length: 5))
+    }
+
+    @Test func bangDoubleBracketOpensAnEmbedQuery() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("", recorder)
+        try await type(tv, "![[od")
+        let state = try #require(recorder.last)
+        #expect(state.trigger == .embed && state.query == "od")
+        #expect(state.range == NSRange(location: 0, length: 5))
+    }
+
+    @Test func aLinkQueryTakesSpacesAndSlashesAndClosesOnABracket() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("", recorder)
+        try await type(tv, "[[a b/c")
+        #expect(recorder.last?.trigger == .link && recorder.last?.query == "a b/c")
+        try await type(tv, "]")
+        #expect(recorder.states.last! == nil)
+
+        let third = Recorder()
+        let (other, _) = makeEditor("[", third)
+        try await type(other, "[[x")
+        #expect(third.states.isEmpty)
+    }
+
+    @Test func insertReplacesALinkQueryThroughItsCloser() async throws {
+        let recorder = Recorder()
+        let (tv, proxy) = makeEditor("Ask ", recorder)
+        try await type(tv, "[[uat")
+        proxy.insert("[[Draft the UAT scripts]]", selecting: NSRange(location: 25, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(tv.string == "Ask [[Draft the UAT scripts]]")
+        #expect(tv.selectedRange() == NSRange(location: 29, length: 0))
+        tv.undoManager?.undo()
+        #expect(tv.string == "Ask [[uat]]")
+    }
+
+    @Test func aSlashCommandThatLeavesTheCaretInBracketsOpensALinkQuery() async throws {
+        let recorder = Recorder()
+        let (tv, proxy) = makeEditor("Ask ", recorder)
+        try await type(tv, "/wiki")
+        proxy.insert("[[]]", selecting: NSRange(location: 2, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(tv.string == "Ask [[]]")
+        let state = try #require(recorder.last)
+        #expect(state.trigger == .link && state.query == "" && state.range == NSRange(location: 4, length: 2))
+        proxy.insert("[[Draft]]", selecting: NSRange(location: 9, length: 0))
+        #expect(tv.string == "Ask [[Draft]]")
+
+        let embed = Recorder()
+        let (other, embedProxy) = makeEditor("", embed)
+        try await type(other, "/im")
+        embedProxy.insert("![[]]", selecting: NSRange(location: 3, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(embed.last?.trigger == .embed && embed.last?.range == NSRange(location: 0, length: 3))
+    }
+
+    @Test func theProxyChoosesTheTriggers() async throws {
+        let recorder = Recorder()
+        let (tv, proxy) = makeEditor("", recorder)
+        proxy.triggers = [.link, .embed]
+        try await type(tv, "/h ")
+        #expect(recorder.states.isEmpty)
+        try await type(tv, "[[")
+        #expect(recorder.last?.trigger == .link)
+    }
+
     @Test func slashInsideCodeIsIgnored() async throws {
         let recorder = Recorder()
         let (tv, _) = makeEditor("```\n\n```\n", recorder)
@@ -499,6 +574,200 @@ struct TaskMarkerMenuHookTests {
         let (tv, event, window, coordinator) = try editor("Intro\n\n> - [ ] a\n", click: .leftMouseDown)
         #expect(tv.toggleTaskCheckboxIfHit(event: event) == true)
         #expect(tv.string == "Intro\n\n> - [x] a\n")
+        withExtendedLifetime((window, coordinator)) {}
+    }
+}
+
+private struct OneImage: EmbeddedImageProvider {
+    func image(for reference: EmbeddedImageRequest) -> PlatformImage? {
+        guard reference.name == "front.png" else { return nil }
+        return NSImage(size: CGSize(width: 300, height: 200), flipped: false) { rect in
+            NSColor.systemTeal.setFill(); rect.fill(); return true
+        }
+    }
+    func fingerprint() -> AnyHashable { 1 }
+}
+
+@MainActor
+@Suite("Ta Da fork — image embeds")
+struct ImageEmbedTests {
+    static let text = "Intro\n\n![[front.png]]\n\nAfter ![[frnt.png]]\n"
+    static let embed = NSRange(location: 7, length: 14)
+
+    private func editor() throws
+        -> (tv: NativeTextView, proxy: SlashCommandProxy, window: NSWindow, coordinator: NativeTextViewCoordinator) {
+        _ = NSApplication.shared
+        let text = Self.text
+        var configuration = MarkdownEditorConfiguration.default
+        configuration.services = MarkdownEditorServices(images: OneImage())
+        configuration.imageEmbed.revealsSourceAtCaret = false
+        configuration.imageEmbed.missingText = .systemGray
+        configuration.imageEmbed.cornerRadius = 6
+        let coordinator = NativeTextViewCoordinator(
+            text: .constant(text), fontName: "SF Pro", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        coordinator.configuration = configuration
+        let tv = NativeTextView(frame: NSRect(x: 0, y: 0, width: 600, height: 400))
+        tv.configuration = configuration
+        tv.isEditable = true
+        tv.allowsUndo = true
+        tv.delegate = coordinator
+        let scrollView = NSScrollView(frame: tv.frame)
+        scrollView.documentView = tv
+        let window = NSWindow(contentRect: tv.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = scrollView
+        let bridge = LayoutBridge(try #require(tv.textLayoutManager))
+        coordinator.layoutBridge = bridge
+        tv.layoutBridge = bridge
+        coordinator.textView = tv
+        coordinator.rebuildTextStorageAndStyle(tv, from: text)
+        coordinator.lastSyncedText = text
+        coordinator.lastComputedStorage = text
+        coordinator.previousDisplayLength = (text as NSString).length
+        tv.setSelectedRange(NSRange(location: 0, length: 0))
+        let proxy = SlashCommandProxy()
+        proxy.coordinator = coordinator
+        return (tv, proxy, window, coordinator)
+    }
+
+    private func isDrawn(_ tv: NativeTextView) -> Bool {
+        tv.textStorage?.attribute(.latexImage, at: Self.embed.location + 3, effectiveRange: nil) != nil
+    }
+
+    @Test func theSlashMenusEmptyEmbedKeepsTheCaretAndOpensAnEmbedQuery() async throws {
+        let (tv, proxy, window, coordinator) = try editor()
+        _ = window
+        var states: [SlashCommandState?] = []
+        coordinator.onSlashCommandChange = { states.append($0) }
+        let end = (tv.string as NSString).length
+        tv.setSelectedRange(NSRange(location: end, length: 0))
+        for character in "/im" { tv.insertText(String(character), replacementRange: tv.selectedRange()) }
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(states.last??.trigger == .slash)
+        proxy.insert("![[]]", selecting: NSRange(location: 3, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(tv.string.hasSuffix("\n![[]]"))
+        #expect(tv.selectedRange() == NSRange(location: end + 3, length: 0))
+        #expect(states.last??.trigger == .embed && states.last??.query == "")
+    }
+
+    @Test func theImageStaysDrawnAndTheCaretSkipsItsSource() throws {
+        let (tv, _, window, coordinator) = try editor()
+        #expect(isDrawn(tv))
+        #expect(tv.textStorage?.attribute(.imageCornerRadius, at: Self.embed.location + 3, effectiveRange: nil) as? CGFloat == 6)
+        tv.setSelectedRange(NSRange(location: 6, length: 0))
+        tv.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(tv.selectedRange() == NSRange(location: NSMaxRange(Self.embed), length: 0))
+        #expect(isDrawn(tv))
+        tv.setSelectedRange(NSRange(location: 12, length: 0))
+        #expect(tv.selectedRange() == NSRange(location: Self.embed.location, length: 0), "from after it, the caret goes before it")
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
+    @Test func backspaceAfterTheImageRemovesItWhole() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.setSelectedRange(NSRange(location: NSMaxRange(Self.embed), length: 0))
+        tv.deleteBackward(nil)
+        #expect(tv.string == "Intro\n\n\n\nAfter ![[frnt.png]]\n")
+        tv.undoManager?.undo()
+        #expect(tv.string == Self.text)
+        withExtendedLifetime((window, coordinator)) {}
+    }
+
+    @Test func revealShowsTheSourceUntilTheCaretLeaves() throws {
+        let (tv, proxy, window, coordinator) = try editor()
+        proxy.revealImageEmbed(at: Self.embed.location)
+        #expect(tv.selectedRange() == NSRange(location: NSMaxRange(Self.embed), length: 0))
+        tv.setSelectedRange(NSRange(location: 10, length: 0))
+        #expect(tv.selectedRange().location == 10, "a revealed source takes the caret")
+        tv.setSelectedRange(NSRange(location: 2, length: 0))
+        #expect(coordinator.revealedImageEmbed == nil)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func hoveringAnImageShowsTheSourceButtonWhichRevealsIt() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.configuration.imageEmbed.sourceButton = .init(fill: .white, hoverFill: .gray, ring: .gray, tint: .black, hoverTint: .blue)
+        let hit = try #require(tv.imageEmbedHit(atViewPoint: CGPoint(x: tv.textContainerOrigin.x + 150, y: 60)))
+        #expect(hit.range == Self.embed && hit.rect.size == CGSize(width: 300, height: 200))
+        #expect(tv.imageEmbedHit(atViewPoint: CGPoint(x: 500, y: 60)) == nil)
+        let event = try #require(NSEvent.mouseEvent(
+            with: .mouseMoved, location: tv.convert(CGPoint(x: hit.rect.midX, y: hit.rect.midY), to: nil), modifierFlags: [],
+            timestamp: 0, windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 0, pressure: 0))
+        tv.updateImageSourceButton(for: event)
+        let button = try #require(tv.imageSourceButton)
+        #expect(!button.isHidden && button.frame.maxX == hit.rect.maxX - 8 && button.frame.minY == hit.rect.minY + 8)
+        button.onClick(button.embedLocation)
+        #expect(button.isHidden && coordinator.revealedImageEmbed == Self.embed.location)
+        #expect(tv.selectedRange() == NSRange(location: NSMaxRange(Self.embed), length: 0))
+        #expect(tv.imageEmbedHit(atViewPoint: CGPoint(x: tv.textContainerOrigin.x + 150, y: 60)) == nil, "no button while the source shows")
+    }
+
+    private func click(_ type: NSEvent.EventType, at point: CGPoint, in tv: NativeTextView, window: NSWindow) throws -> NSEvent {
+        try #require(NSEvent.mouseEvent(
+            with: type, location: tv.convert(point, to: nil), modifierFlags: [], timestamp: 0,
+            windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1))
+    }
+
+    @Test func aClickSelectsTheImageAndRingsIt() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.configuration.imageEmbed.selectionRing = .systemBlue
+        coordinator.configuration.imageEmbed.selectionRing = .systemBlue
+        let rect = try #require(tv.imageEmbedRect(for: Self.embed))
+        tv.mouseDown(with: try click(.leftMouseDown, at: CGPoint(x: rect.midX, y: rect.midY), in: tv, window: window))
+        #expect(tv.selectedRange() == Self.embed && tv.selectedImageEmbed == Self.embed)
+        #expect(tv.ringsImage(at: Self.embed.location + 3) && isDrawn(tv))
+        tv.setSelectedRange(NSRange(location: Self.embed.location - 1, length: Self.embed.length + 1))
+        #expect(tv.selectedImageEmbed == nil, "a selection reaching past the image doesn't select it")
+        withExtendedLifetime(coordinator) {}
+    }
+
+    @Test func copyCutAndCommandDeleteOnASelectedImageGoToTheEmbedder() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.configuration.imageEmbed.selectionRing = .systemBlue
+        coordinator.configuration.imageEmbed.selectionRing = .systemBlue
+        var requests: [ImageEmbedRequest] = []
+        tv.onImageEmbed = { requests.append($0) }
+        tv.setSelectedRange(NSRange(location: 0, length: 5))
+        #expect(!tv.sendSelectedImageEmbed(.copy) && requests.isEmpty, "text copies as text")
+        tv.setSelectedRange(Self.embed)
+        tv.copy(nil)
+        tv.cut(nil)
+        tv.deleteToBeginningOfLine(nil)
+        #expect(requests.map(\.action) == [.copy, .cut, .delete] && requests.allSatisfy { $0.name == "front.png" })
+        #expect(tv.string == Self.text, "the embedder removes the text")
+        requests[1].remove("Cut Image")
+        #expect(tv.string == "Intro\n\n\n\nAfter ![[frnt.png]]\n" && tv.undoManager?.undoActionName == "Cut Image")
+        requests[1].remove("Cut Image")
+        #expect(tv.string == "Intro\n\n\n\nAfter ![[frnt.png]]\n", "a stale request changes nothing")
+        tv.undoManager?.undo()
+        #expect(tv.string == Self.text)
+        withExtendedLifetime(window) {}
+    }
+
+    @Test func aRightClickOnAnImageRingsItForTheEmbeddersMenu() throws {
+        let (tv, _, window, coordinator) = try editor()
+        tv.configuration.imageEmbed.selectionRing = .systemBlue
+        coordinator.configuration.imageEmbed.selectionRing = .systemBlue
+        var request: ImageEmbedRequest?
+        tv.onImageEmbed = { request = $0 }
+        let rect = try #require(tv.imageEmbedRect(for: Self.embed))
+        #expect(tv.menu(for: try click(.rightMouseDown, at: CGPoint(x: rect.midX, y: rect.midY), in: tv, window: window)) == nil)
+        #expect(request?.action == .menu && tv.imageEmbedMenuTarget == Self.embed && tv.selectedRange() == Self.embed)
+        tv.setSelectedRange(NSRange(location: 0, length: 0))
+        #expect(tv.ringsImage(at: Self.embed.location + 3), "the ring stays while the menu is open")
+        request?.close()
+        #expect(!tv.ringsImage(at: Self.embed.location + 3))
+        request?.revealSource()
+        #expect(coordinator.revealedImageEmbed == Self.embed.location)
+    }
+
+    @Test func aMissingImageIsDashed() throws {
+        let (tv, _, window, coordinator) = try editor()
+        let name = (Self.text as NSString).range(of: "frnt.png")
+        let underline = tv.textStorage?.attribute(.underlineStyle, at: name.location, effectiveRange: nil) as? Int
+        #expect(underline == NSUnderlineStyle.single.union(.patternDash).rawValue)
         withExtendedLifetime((window, coordinator)) {}
     }
 }

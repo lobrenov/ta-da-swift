@@ -1,6 +1,6 @@
 # Menu
 
-A themed list of actions in a floating panel. Two densities share one look: the full menu for the slash, checkbox and callout menus in the editor, and the compact file menu for a right-clicked project or task.
+A themed list of actions in a floating panel. Two densities share one look: the full menu for the slash, link, checkbox and callout menus in the editor, and the compact file menu for a right-clicked project or task.
 
 ## Anatomy
 
@@ -16,7 +16,7 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 
 - `is-active` — the highlighted item: `surface` fill, `strong` label, glyph in `accent`. The arrow keys and the pointer move it.
 - `is-danger` — Delete Forever: label and glyph in `deadline`; highlighted, a `deadline` tint (14% on light schemes, 22% on dark).
-- The slash, checkbox and callout menus open with an item highlighted (the first, the current marker or the current type). The file menu opens with none, as macOS context menus do.
+- The slash, link, checkbox and callout menus open with an item highlighted (the first, the current marker or the current type). The file menu opens with none, as macOS context menus do.
 
 ## File menu
 
@@ -24,6 +24,25 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 - Items: Move (⇧⌘M; the area menu for a project), Schedule (⌘S), Set Deadline… (⌘D), Reveal in Finder (no shortcut) and Delete (⌘⌫) for a file in the folder; Restore (⌘⌫), Reveal in Finder and, after a separator, Delete Forever (⌥⌘⌫) in Trash.
 - A right-click on a picked row acts on every picked row, and Move, Schedule and Delete name the count: "Move 3 Tasks", "Schedule 3 Tasks", "Delete 3 Tasks". Reveal in Finder selects every picked file in one Finder window. A right-click on any other row acts on that row only.
 - Move opens the project menu, and Schedule and Set Deadline… the date menu, at the pointer in the file menu's place; the row stays ringed until it closes. For several files the date menu fills a date only when they all share it.
+
+## Link menu
+
+- Opens under the `[[` (files to link) or `![[` (images to embed) as it's typed, or after the slash menu's Wikilink or Image; the text typed after it is the query. The footer's ↵ says Link or Embed.
+- `[[` rows: a task's status box with its project or area (or Loose task) on the right, a project's ring with Project, an area's cube with Area. An empty query lists up to 8 recently opened files under Recent, leaving out the open file, or every file when none has been opened; a query ranks recent files first, then the rest by title.
+- `![[` rows: each image's thumbnail and filename, newest first, under Attachments while the query is empty.
+- Up to 50 rows. With no matches it says "No matching files" and ↵ goes to the editor. A click elsewhere or a scroll closes it and keeps the typed text.
+- On iPhone the choices are a list above the keyboard bar; a tap picks one.
+
+## Embed menu
+
+- Opens at the pointer on a right-click on a drawn image, which is selected and gets a 2px `accent` ring while the menu is open. A click selects an image the same way.
+- Items: Copy (⌘C), Cut (⌘X), then Rename…, Reveal in Finder and Delete (⌘⌫). The shortcuts work on a selected image without the menu; ⌫ removes only the `![[ ]]`.
+- On iPhone a press and hold opens Copy, Cut, Edit Markdown, Rename… and Show in Files, then Delete in `deadline`.
+
+## Delete dialogs
+
+- **Delete image** (the embed menu's Delete): a 500px sheet with a 64px thumbnail, “Delete “name”?”, what happens to the embeds, and the path and size in mono `muted`. Under an EMBEDDED IN label, each file that embeds it: its icon, title, project or area, a This file badge for the open file and the embed count when it's more than one. Then “Restore in Trash brings it back to every embed.”, Cancel and Delete (`danger`). On iPhone, a sheet ending in Move to Trash.
+- **Delete with attachments** (deleting files that embed images): a 540px sheet listing each file's images, under a header per file when there are several. Each row is a tick (a 16px rounded square; a 24px circle on iPhone), a thumbnail (34px; 44px on iPhone), the name and a note of the other files that embed it. An image another file still embeds starts unticked. A summary counts the files and ticked images; Cancel and Delete (`danger`), or Move to Trash in `deadline` on iPhone. Files without images ask with an alert, or not at all.
 
 ## Callout menu
 

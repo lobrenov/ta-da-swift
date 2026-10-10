@@ -77,8 +77,8 @@ public struct Vault: Sendable {
         return dates
     }
 
-    /// Markdown files that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show as
-    /// hidden `.Name.md.icloud` placeholders, which the scan skips. Hidden folders are skipped.
+    /// Markdown files and images that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show
+    /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders are skipped.
     public func placeholderPaths() -> [String] {
         guard let files = FileManager.default.enumerator(
             at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsPackageDescendants]
@@ -90,17 +90,20 @@ public struct Vault: Sendable {
                 files.skipDescendants()
                 continue
             }
-            let name = url.lastPathComponent
-            guard name.hasSuffix(".icloud") else { continue }
-            let original = String(name.dropFirst().dropLast(".icloud".count))
-            guard original.lowercased().hasSuffix(".md") else { continue }
+            guard let original = Self.placeholderOriginal(url.lastPathComponent),
+                  original.lowercased().hasSuffix(".md") || Self.isImage(original) else { continue }
             let folder = url.deletingLastPathComponent().standardizedFileURL.pathComponents.dropFirst(rootComponents)
             paths.append((folder + [original]).joined(separator: "/"))
         }
         return paths.sorted()
     }
 
-    /// Asks iCloud Drive to download each placeholder. Each file joins the scan once it arrives.
+    /// `Name.png` for the placeholder file `.Name.png.icloud`; nil for any other name.
+    static func placeholderOriginal(_ name: String) -> String? {
+        name.hasPrefix(".") && name.hasSuffix(".icloud") ? String(name.dropFirst().dropLast(".icloud".count)) : nil
+    }
+
+    /// Asks iCloud Drive to download each placeholder. Each file joins the scans once it arrives.
     public func downloadPlaceholders() {
         for path in placeholderPaths() {
             try? FileManager.default.startDownloadingUbiquitousItem(at: url(for: path))
@@ -233,6 +236,22 @@ public struct Vault: Sendable {
             guard link?.title.lowercased() == old.lowercased() else { return text }
             return FrontmatterEditor.set(key, to: .link(title: new), in: text)
         }
+    }
+
+    /// Points the `[[ ]]` links in a file's body that name `old` (ignoring case) at `new`, keeping each link's folder,
+    /// `.md`, heading and alias. Embeds, links in code and the frontmatter are untouched.
+    public static func retargetLinks(in text: String, from old: String, to new: String) -> String {
+        let split = FrontmatterSplitter.split(text)
+        let body = split.body
+        var result = split.block, copied = body.startIndex
+        for (range, link) in BodyScanner.linkTargets(in: body) where link.title.lowercased() == old.lowercased() {
+            let target = body[range]
+            let folder = target.lastIndex(of: "/").map { target[...$0] } ?? ""
+            let ext = target.lowercased().hasSuffix(".md") ? target.suffix(3) : ""
+            result += body[copied..<range.lowerBound] + folder + new + ext
+            copied = range.upperBound
+        }
+        return result + body[copied...]
     }
 
     /// `tasks/Name.md` → `tasks`; `Name.md` → empty.

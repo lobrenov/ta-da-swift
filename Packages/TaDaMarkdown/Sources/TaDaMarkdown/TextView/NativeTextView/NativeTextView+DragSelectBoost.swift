@@ -21,6 +21,8 @@ extension NativeTextView {
             return ts.attribute(.link, at: idx, effectiveRange: nil) != nil
         }()
         if let toggled = toggleTaskCheckboxIfHit(event: event), toggled { return }
+        // Ta Da fork: a click on a drawn image selects it.
+        if selectImageEmbedIfHit(event: event) { return }
         if toggleCalloutFoldIfHit(event: event) { return }
         if remapClickInParagraphSpacing(event: event) { return }
         dragStartMouseScreenLoc = NSEvent.mouseLocation

@@ -7,6 +7,8 @@ import UIKit
 #endif
 import TaDaMarkdown
 import TaDaCore
+import ImageIO
+import UniformTypeIdentifiers
 
 struct LiveEditor: View {
     @Binding var text: String
@@ -19,6 +21,13 @@ struct LiveEditor: View {
     /// Plays a light tap when a task box is toggled (iOS).
     var haptics = false
     var header: AnyView? = nil
+    /// What `[[` and `![[` list and embeds draw; without it, typing them opens no menu.
+    var links: LinkMenuSource? = nil
+    /// Saves a pasted or dropped image and returns its `![[ ]]`; without it, images paste as the system does.
+    var embedImage: ((AppModel.PastedImage) -> String?)? = nil
+    /// Copies, renames, reveals and deletes the images embeds draw, from the embed menu (`EmbedMenu.swift`);
+    /// without it, images have no menu.
+    var imageActions: AppModel? = nil
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
 
@@ -27,7 +36,12 @@ struct LiveEditor: View {
     @State private var slashMenu = SlashMenuController()
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
+    @State private var linkMenu = LinkMenuController()
     #else
+    @State private var linkSearch = LinkMenuSearch()
+    /// The open `[[` or `![[` query's choices, and the one ↵ picks.
+    @State private var linkChoices: [LinkChoice] = []
+    @State private var linkHighlight = 0
     @State private var checkboxMenu: MenuRequest<TaskMarkerMenuRequest>?
     @State private var calloutMenu: MenuRequest<CalloutMenuRequest>?
     @State private var toggles = 0
@@ -42,24 +56,39 @@ struct LiveEditor: View {
             fontName: NSFont.systemFont(ofSize: 14).fontName,
             fontSize: 14,
             documentId: documentID,
+            onPasteImage: embedImage.map { embed in
+                { pasteboard in
+                    if let url = PasteboardImageReader.imageFileURL(from: pasteboard),
+                       Vault.imageExtensions.contains(url.pathExtension.lowercased()) {
+                        return embed(.file(url))
+                    }
+                    // Rich text can carry a picture of itself; it pastes as text. An image file of another type pastes as PNG.
+                    guard pasteboard.string(forType: .string) == nil,
+                          let data = PasteboardImageReader.imageData(from: pasteboard) else { return nil }
+                    return embed(.data(data, extension: "png"))
+                }
+            },
             onLinkClick: onLinkClick,
             header: header,
-            onSlashCommandChange: showSlashMenu,
+            onSlashCommandChange: showQueryMenu,
             onSlashCommandKey: { key in
                 switch key {
-                case .moveUp: slashMenu.handle(.up)
-                case .moveDown: slashMenu.handle(.down)
-                case .confirm: slashMenu.handle(.confirm)
+                case .moveUp: slashMenu.handle(.up) || linkMenu.handle(.up)
+                case .moveDown: slashMenu.handle(.down) || linkMenu.handle(.down)
+                case .confirm: slashMenu.handle(.confirm) || linkMenu.handle(.confirm)
                 case .confirmAndOpen, .cancel: false
                 }
             },
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: showCheckboxMenu,
-            onCalloutMenu: showCalloutMenu
+            onCalloutMenu: showCalloutMenu,
+            onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } }
         )
         .focusedValue(\.editor, slashCommand)
+        .onAppear { slashCommand.triggers = links == nil ? [.slash] : [.slash, .link, .embed] }
         .onDisappear {
             slashMenu.hide()
+            linkMenu.hide()
             checkboxMenu.hide()
             calloutMenu.hide()
         }
@@ -72,6 +101,8 @@ struct LiveEditor: View {
             documentId: documentID,
             onLinkClick: onLinkClick,
             header: header,
+            onSlashCommandChange: showLinkChoices,
+            onSlashCommandKey: handleLinkKey,
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: {
                 checkboxMenu = MenuRequest($0, anchor: localRect($0.anchorRect))
@@ -82,9 +113,36 @@ struct LiveEditor: View {
                 menuPresses += 1
             },
             onTaskCheckboxToggle: { _ in toggles += 1 },
-            keyboardBar: AnyView(EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks,
-                                                   haptics: haptics))
+            keyboardBar: AnyView(VStack(spacing: 0) {
+                if !linkChoices.isEmpty {
+                    PhoneLinkList(choices: linkChoices, highlight: linkHighlight, search: linkSearch, theme: theme, pick: insertLink)
+                }
+                EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks, haptics: haptics)
+            }),
+            onPasteImage: embedImage.map { embed in
+                { pasteboard in
+                    if let url = pasteboard.urls?.first(where: { $0.isFileURL && Vault.imageExtensions.contains($0.pathExtension.lowercased()) }) {
+                        return embed(.file(url))
+                    }
+                    let types: [(UTType, String)] = [(.png, "png"), (.jpeg, "jpg"), (.heic, "heic"), (.gif, "gif"),
+                                                     (.webP, "webp"), (.tiff, "tiff")]
+                    for (type, ext) in types {
+                        if let data = pasteboard.data(forPasteboardType: type.identifier) { return embed(.data(data, extension: ext)) }
+                    }
+                    return pasteboard.image?.pngData().flatMap { embed(.data($0, extension: "png")) }
+                }
+            },
+            imageEmbedMenu: imageActions.map { model in
+                { request in
+                    model.attachmentPath(forEmbed: request.name).map { path in
+                        menuPresses += 1
+                        return EmbedMenu.menu(for: path, model: model, cut: { request.remove("Cut Image") },
+                                              editMarkdown: request.revealSource)
+                    }
+                }
+            }
         )
+        .onAppear { slashCommand.triggers = links == nil ? [] : [.link, .embed] }
         .sensoryFeedback(.impact(weight: .light), trigger: toggles) { _, _ in haptics }
         .sensoryFeedback(.impact(weight: .medium), trigger: menuPresses) { _, _ in haptics }
         .popover(item: $checkboxMenu, attachmentAnchor: .rect(.rect(checkboxMenu?.anchor ?? .zero))) { menu in
@@ -106,7 +164,37 @@ struct LiveEditor: View {
         #endif
     }
 
+    /// Replaces the `[[` or `![[` query with the choice's link or embed and puts the caret after it.
+    private func insertLink(_ choice: LinkChoice) {
+        let text = choice.markdown
+        slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
+    }
+
     #if os(iOS)
+    /// Lists the open `[[` or `![[` query's choices above the keyboard bar.
+    private func showLinkChoices(_ state: SlashCommandState?) {
+        guard let state, let links, state.trigger != .slash else {
+            linkChoices = []
+            return
+        }
+        linkSearch.source = links
+        let choices = linkSearch.choices(state.trigger == .link ? .link : .embed, query: state.query).choices
+        if choices != linkChoices { linkHighlight = 0 }
+        linkChoices = choices
+    }
+
+    /// A hardware keyboard's ↑/↓ move through the choices and ↵ picks one.
+    private func handleLinkKey(_ key: InlinePreviewKey) -> Bool {
+        guard !linkChoices.isEmpty else { return false }
+        switch key {
+        case .moveUp: linkHighlight = (linkHighlight + linkChoices.count - 1) % linkChoices.count
+        case .moveDown: linkHighlight = (linkHighlight + 1) % linkChoices.count
+        case .confirm, .confirmAndOpen: insertLink(linkChoices[min(linkHighlight, linkChoices.count - 1)])
+        case .cancel: return false
+        }
+        return true
+    }
+
     /// A window rect from the editor, in this view's coordinates, to anchor a popover.
     private func localRect(_ windowRect: CGRect) -> CGRect {
         guard let textView = slashCommand.textView else { return windowRect }
@@ -130,8 +218,47 @@ struct LiveEditor: View {
         )
     }
 
-    private func showSlashMenu(_ state: SlashCommandState?) {
-        guard let state else { return slashMenu.hide() }
+    /// A right-click on an image opens the embed menu; ⌘C, ⌘X and ⌘⌫ on a selected one copy, cut or delete it.
+    private func handleImage(_ request: ImageEmbedRequest, model: AppModel) {
+        guard let path = model.attachmentPath(forEmbed: request.name) else { return request.close() }
+        switch request.action {
+        case .copy:
+            model.copyImage(path)
+        case .cut:
+            model.copyImage(path) { request.remove("Cut Image") }
+        case .delete:
+            model.imageDialog = .delete(path)
+        case .menu:
+            guard let window = NSApp.keyWindow else { return request.close() }
+            FileMenu.shared.show(FileMenuAction.embedActions(for: path, model: model, cut: { request.remove("Cut Image") }),
+                                 at: request.anchorRect.origin, in: window, theme: theme, onClose: request.close)
+        }
+    }
+
+    private func showQueryMenu(_ state: SlashCommandState?) {
+        switch state?.trigger {
+        case nil:
+            slashMenu.hide()
+            linkMenu.hide()
+        case .slash:
+            linkMenu.hide()
+            showSlashMenu(state!)
+        case .link, .embed:
+            slashMenu.hide()
+            showLinkMenu(state!)
+        }
+    }
+
+    private func showLinkMenu(_ state: SlashCommandState) {
+        guard let links else { return }
+        linkMenu.search.source = links
+        linkMenu.show(
+            state.trigger == .link ? .link : .embed, query: state.query, anchor: state.anchorRect, theme: theme,
+            pick: insertLink, dismiss: { [slashCommand] in slashCommand.dismiss() }
+        )
+    }
+
+    private func showSlashMenu(_ state: SlashCommandState) {
         slashMenu.show(
             query: state.query, atLineStart: state.isAtLineStart, anchor: state.anchorRect, theme: theme,
             pick: { [slashCommand] command in
@@ -202,8 +329,20 @@ struct LiveEditor: View {
         )
         config.services = MarkdownEditorServices(
             wikiLinks: TitleResolver(titles: linkTargets),
+            images: AttachmentImages(root: links?.vault?.root, paths: links?.attachments ?? []),
             syntaxHighlighter: CodeBlockStyle(background: theme.code)
         )
+        // Images stay drawn as the caret passes; a missing one is muted and dashed, as an unresolved link.
+        config.imageEmbed.revealsSourceAtCaret = false
+        config.imageEmbed.missingText = theme.muted.withAlphaComponent(0.6)
+        #if os(macOS)
+        config.imageEmbed.cornerRadius = 6
+        config.imageEmbed.selectionRing = theme.accent
+        config.imageEmbed.sourceButton = .init(fill: theme.isDark ? theme.side : theme.bg, hoverFill: theme.surface,
+                                               ring: theme.surface, tint: theme.fg, hoverTint: theme.accent)
+        #else
+        config.imageEmbed.cornerRadius = 8
+        #endif
         config.lists.autoClosePairsEnabled = autocomplete.brackets
         config.lists.autoCloseFormattingEnabled = autocomplete.formatting
         config.lists.autoCloseWikiLinksEnabled = autocomplete.wikiLinks
@@ -247,6 +386,41 @@ nonisolated struct TitleResolver: WikiLinkResolver {
     }
 
     func fingerprint() -> AnyHashable { titles }
+}
+
+/// Draws `![[name.png]]` from the folder's images, found as `Vault.attachmentPath(for:in:)` finds them. An image keeps
+/// its pixel size in points, so the editor fits a large one to its width.
+nonisolated struct AttachmentImages: EmbeddedImageProvider {
+    let root: URL?
+    let paths: [String]
+
+    func image(for request: EmbeddedImageRequest) -> PlatformImage? {
+        guard let root, let embed = WikiLink(inner: request.name),
+              let path = Vault.attachmentPath(for: embed, in: paths) else { return nil }
+        return Self.load(Vault(root: root).url(for: path))
+    }
+
+    func fingerprint() -> AnyHashable { [root?.path ?? ""] + paths }
+
+    /// Decodes at most 2048 pixels on the long side.
+    static func load(_ url: URL) -> PlatformImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let pixelWidth = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+              let pixelHeight = properties[kCGImagePropertyPixelHeight] as? CGFloat,
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                  kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceCreateThumbnailWithTransform: true,
+                  kCGImageSourceThumbnailMaxPixelSize: 2048,
+              ] as CFDictionary) else { return nil }
+        // EXIF orientations 5 to 8 turn the image a quarter.
+        let turned = ((properties[kCGImagePropertyOrientation] as? Int) ?? 1) >= 5
+        let width = turned ? pixelHeight : pixelWidth
+        #if os(macOS)
+        return NSImage(cgImage: image, size: CGSize(width: width, height: turned ? pixelWidth : pixelHeight))
+        #else
+        return UIImage(cgImage: image, scale: CGFloat(image.width) / width, orientation: .up)
+        #endif
+    }
 }
 
 nonisolated private struct CodeBlockStyle: SyntaxHighlighter {
@@ -464,6 +638,55 @@ private struct EditorKeyboardBar: View {
         let start = textView.selectedRange.location
         textView.insertText(insertion.text)
         textView.selectedRange = NSRange(location: start + insertion.selection.location, length: insertion.selection.length)
+    }
+}
+
+/// The `[[` or `![[` query's choices, above the keyboard bar: a tap picks one.
+private struct PhoneLinkList: View {
+    let choices: [LinkChoice]
+    let highlight: Int
+    let search: LinkMenuSearch
+    let theme: Theme
+    let pick: (LinkChoice) -> Void
+
+    private static let rowHeight: CGFloat = 44
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(Array(choices.enumerated()), id: \.element.id) { offset, choice in
+                    Button { pick(choice) } label: {
+                        HStack(spacing: 12) {
+                            LinkChoiceIcon(icon: choice.icon, search: search, theme: theme, size: 18)
+                                .frame(width: 28, height: 28)
+                            Text(choice.title)
+                                .foregroundStyle(theme.color(offset == highlight ? \.strong : \.fg))
+                                .lineLimit(1)
+                                .layoutPriority(1)
+                            Spacer(minLength: 8)
+                            Text(choice.hint)
+                                .font(.system(size: 13))
+                                .foregroundStyle(theme.color(\.muted))
+                                .lineLimit(1)
+                                .frame(maxWidth: 120, alignment: .trailing)
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(height: Self.rowHeight)
+                        .background(offset == highlight ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 16))
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(choice.hint)
+                }
+            }
+            .padding(4)
+        }
+        .scrollIndicators(.never)
+        .frame(height: min(CGFloat(choices.count) * Self.rowHeight + 8, 162))
+        .font(.system(size: 17))
+        .glassEffect(in: .rect(cornerRadius: 20))
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
     }
 }
 

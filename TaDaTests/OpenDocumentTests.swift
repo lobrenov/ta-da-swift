@@ -88,7 +88,7 @@ struct OpenDocumentTests {
         #expect(model.index["tasks/Renamed - task.md"] != nil)
         #expect(try folder.read("tasks/Renamed - task.md") == Self.task + "Unsaved.\n", "saved before the move")
         #expect(!FileManager.default.fileExists(atPath: folder.url.appending(path: "tasks/Task.md").path))
-        #expect(try folder.read("tasks/Other.md").contains("See [[Task]]."), "body links aren't rewritten")
+        #expect(try folder.read("tasks/Other.md").contains("See [[Renamed - task]]."), "body links follow the rename")
     }
 
     @Test func renamingAProjectRelinksItsTasks() async throws {

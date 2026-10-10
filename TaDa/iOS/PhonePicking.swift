@@ -206,7 +206,7 @@ private struct PickingBars: ViewModifier {
             .menuStyle(.button)
             .buttonStyle(.plain)
             action("Delete", "trash", tint: \.deadline) {
-                nav.play(.trash)
+                if !model.asksBeforeTrashing(paths) { nav.play(.trash) }
                 nav.endPicking()
                 Task { await model.moveToTrash(paths) }
             }

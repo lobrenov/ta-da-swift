@@ -11,7 +11,7 @@ struct PhoneOtherScreen: View {
         List {
             Section {
                 NavigationLink(value: PhoneRoute.trash) {
-                    row("Trash", "trash", tint: \.muted, value: "\(model.trash.count)")
+                    row("Trash", "trash", tint: \.muted, value: "\(model.trashCount)")
                 }
             }
             Section {
@@ -208,20 +208,25 @@ struct PhoneTrashScreen: View {
                 Text(note).scaledFont(size: 13).foregroundStyle(theme.color(\.done))
                     .listRowBackground(Color.clear)
             }
+            let byFile = model.trashedAttachmentsByFile
             ForEach(model.trash) { trashed in
                 row(trashed)
+                ForEach(byFile[trashed.id] ?? []) { imageRow($0, wentWith: trashed) }
+            }
+            ForEach(model.looseTrashedAttachments) { trashed in
+                imageRow(trashed)
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(theme.color(\.bg))
         .overlay {
-            if model.trash.isEmpty {
-                ContentUnavailableView("Trash is empty", systemImage: "trash", description: Text("Deleted tasks, projects and areas wait here."))
+            if isEmpty {
+                ContentUnavailableView("Trash is empty", systemImage: "trash", description: Text("Deleted tasks, projects, areas and images wait here."))
             }
         }
         .navigationTitle("Trash")
-        .navigationSubtitle("\(model.trash.count) file\(model.trash.count == 1 ? "" : "s") in .trash/\(picked.isEmpty ? "" : " · \(picked.count) selected")")
+        .navigationSubtitle("\(count) file\(count == 1 ? "" : "s") in .trash/\(picked.isEmpty ? "" : " · \(picked.count) selected")")
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
             ToolbarItemGroup(placement: .bottomBar) {
@@ -235,7 +240,7 @@ struct PhoneTrashScreen: View {
                 Button("Empty Trash", role: .destructive) { isConfirmingEmpty = true }
                     .buttonStyle(.glassProminent)
                     .tint(theme.color(\.deadline))
-                    .disabled(model.trash.isEmpty)
+                    .disabled(isEmpty)
                     .confirmationDialog("Empty the trash?", isPresented: $isConfirmingEmpty, titleVisibility: .visible) {
                         Button("Empty Trash", role: .destructive) {
                             nav.play(.emptyTrash)
@@ -243,13 +248,48 @@ struct PhoneTrashScreen: View {
                             Task { await model.emptyTrash() }
                         }
                     } message: {
-                        Text(model.trash.count == 1
+                        Text(count == 1
                              ? "The file goes to iCloud Drive’s Recently Deleted, or is deleted."
-                             : "The \(model.trash.count) files go to iCloud Drive’s Recently Deleted, or are deleted.")
+                             : "The \(count) files go to iCloud Drive’s Recently Deleted, or are deleted.")
                     }
             }
         }
-        .onChange(of: model.trash) { picked.formIntersection(model.trash.map(\.id)) }
+        .onChange(of: model.trash) { picked.formIntersection(model.trash.map(\.id) + model.trashedAttachments.map(\.id)) }
+        .onChange(of: model.trashedAttachments) { picked.formIntersection(model.trash.map(\.id) + model.trashedAttachments.map(\.id)) }
+    }
+
+    private var count: Int { model.trashCount }
+    private var isEmpty: Bool { count == 0 }
+
+    /// An image deleted on its own, or (`wentWith`) one that went with a trashed file: it sits under the file, picked
+    /// with it.
+    private func imageRow(_ trashed: TrashedAttachment, wentWith file: TrashedItem? = nil) -> some View {
+        let isPicked = picked.contains(trashed.id) || file.map { picked.contains($0.id) } == true
+        return Button {
+            if isPicked { picked.remove(trashed.id) } else { picked.insert(trashed.id) }
+            nav.play(.pick)
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
+                    .scaledFont(size: 22)
+                    .foregroundStyle(isPicked ? theme.color(\.accent) : theme.color(\.border))
+                ImageThumbnail(url: model.vault?.url(for: trashed.path), side: 18, cornerRadius: 4)
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(trashed.name).scaledFont(size: 17).foregroundStyle(theme.color(\.fg))
+                    Text(file.map { "Went with \($0.item.title)" }
+                         ?? [model.embeddersSummary(of: trashed) ?? "Image",
+                             trashed.deleted.map { "Deleted \(LocalDate($0).formatted(.weekdayDayMonth))" }]
+                            .compactMap { $0 }.joined(separator: " · "))
+                        .scaledFont(size: 13).foregroundStyle(theme.color(\.muted))
+                }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.leading, file == nil ? 0 : 28)
+        .listRowBackground(isPicked ? theme.color(\.accent).opacity(theme.isDark ? 0.16 : 0.1) : Color.clear)
+        .accessibilityAddTraits(isPicked ? .isSelected : [])
     }
 
     private func row(_ trashed: TrashedItem) -> some View {

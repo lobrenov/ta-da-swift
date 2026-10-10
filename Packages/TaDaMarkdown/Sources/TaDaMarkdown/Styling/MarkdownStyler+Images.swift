@@ -189,10 +189,19 @@ extension MarkdownStyler {
                 }
                 if !rendered {
                     appendSecondaryMarkers(for: token, to: &attrs, theme: ctx.configuration.theme)
+                } else if imageEmbedConfig.cornerRadius > 0 || imageEmbedConfig.selectionRing != nil {
+                    attrs.append((token.range, [.imageCornerRadius: imageEmbedConfig.cornerRadius]))
                 }
             } else {
                 // Image not found — show syntax with marker coloring (like broken link)
                 appendSecondaryMarkers(for: token, to: &attrs, theme: ctx.configuration.theme)
+                // Ta Da fork: a missing image's name in its own colour, with a dashed underline.
+                if let missing = ctx.configuration.imageEmbed.missingText {
+                    attrs.append((token.contentRange, [
+                        .foregroundColor: missing, .underlineColor: missing,
+                        .underlineStyle: NSUnderlineStyle.single.union(.patternDash).rawValue
+                    ]))
+                }
             }
         }
         return attrs

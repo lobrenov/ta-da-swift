@@ -122,12 +122,14 @@ extension AppModel {
     }
 }
 
-/// Shows the file menu, moves through it and runs its actions. One file menu is open at a time.
+/// Shows the file menu, or the embed menu (`EmbedMenu.swift`), moves through it and runs its actions. One is open at
+/// a time.
 final class FileMenu {
     static let shared = FileMenu()
 
     private let menu = PopupMenu(style: .compact, takesKeys: true, row: FileMenuRow.init)
     private weak var model: AppModel?
+    private var onClose: (() -> Void)?
 
     var isOpen: Bool { menu.isOpen }
 
@@ -140,18 +142,25 @@ final class FileMenu {
 
     /// Opens the menu for `path` with its top-left corner at `point` (screen coordinates) in `window`.
     func show(for path: String, at point: CGPoint, in window: NSWindow, model: AppModel) {
-        hide()
+        show(FileMenuAction.actions(for: path, model: model, at: point, in: window), at: point, in: window, theme: model.theme)
         self.model = model
         model.menuTarget = path
+    }
+
+    /// Opens a menu of `actions` with its top-left corner at `point` (screen coordinates) in `window`. `onClose` runs
+    /// when it closes.
+    func show(_ actions: [FileMenuAction], at point: CGPoint, in window: NSWindow, theme: Theme, onClose: (() -> Void)? = nil) {
+        hide()
+        self.onClose = onClose
         var sections: [PopupMenuSection<FileMenuAction>] = []
-        for action in FileMenuAction.actions(for: path, model: model, at: point, in: window) {
+        for action in actions {
             if action.startsGroup || sections.isEmpty {
                 sections.append(PopupMenuSection(items: [action]))
             } else {
                 sections[sections.count - 1].items.append(action)
             }
         }
-        menu.show(sections, highlight: nil, theme: model.theme, below: CGRect(origin: point, size: .zero),
+        menu.show(sections, highlight: nil, theme: theme, below: CGRect(origin: point, size: .zero),
                   inset: 0, gap: 0, in: window) { [weak self] action in
             self?.hide()
             action.run()
@@ -161,6 +170,10 @@ final class FileMenu {
     func hide() {
         menu.hide()
         model?.menuTarget = nil
+        model = nil
+        let onClose = onClose
+        self.onClose = nil
+        onClose?()
     }
 }
 

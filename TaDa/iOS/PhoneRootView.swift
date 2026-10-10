@@ -36,22 +36,32 @@ struct PhoneRootView: View {
             case let .area(paths): PhoneMoveSheet(model: model, kind: .area, paths: paths)
             }
         }
-        .alert(trashTitle, isPresented: Binding { model.trashConfirmation != nil } set: { if !$0 { model.trashConfirmation = nil } },
+        .alert(trashTitle, isPresented: Binding { model.trashConfirmation?.images.isEmpty == true }
+                                                set: { if !$0 { model.trashConfirmation = nil } },
                presenting: model.trashConfirmation) { request in
             Button("Move \(request.count == 1 ? "1 File" : "\(request.count) Files") to Trash", role: .destructive) {
-                nav.play(.trash)
-                Task {
-                    await model.confirmTrash(request)
-                    nav.dropScreens { model.index[$0] == nil }
-                }
+                trash(request)
             }
             Button("Cancel", role: .cancel) {}
         } message: { _ in
             Text(TrashConfirmationText(model: model).message)
         }
+        .sheet(item: Binding { model.trashConfirmation.flatMap { $0.images.isEmpty ? nil : $0 } }
+                         set: { if $0 == nil { model.trashConfirmation = nil } }) { request in
+            PhoneDeleteFilesSheet(model: model, request: request) { trash(request, images: $0) }
+        }
         .environment(nav)
         .phoneHaptics(nav, enabled: model.haptics)
         .onChange(of: nav.tab) { nav.endPicking() }
+    }
+
+    /// Deletes what `request` asked about, and `images`, then drops the screens of the files that went.
+    private func trash(_ request: AppModel.TrashConfirmation, images: [String] = []) {
+        nav.play(.trash)
+        Task {
+            await model.confirmTrash(request, images: images)
+            nav.dropScreens { model.index[$0] == nil }
+        }
     }
 
     /// "Move “Personal” to Trash?", or the number of files.
