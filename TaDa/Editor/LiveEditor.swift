@@ -135,8 +135,9 @@ struct LiveEditor: View {
             imageEmbedMenu: imageActions.map { model in
                 { request in
                     model.attachmentPath(forEmbed: request.name).map { path in
-                        EmbedMenu.menu(for: path, model: model, cut: { request.remove("Cut Image") },
-                                       editMarkdown: request.revealSource)
+                        menuPresses += 1
+                        return EmbedMenu.menu(for: path, model: model, cut: { request.remove("Cut Image") },
+                                              editMarkdown: request.revealSource)
                     }
                 }
             }
