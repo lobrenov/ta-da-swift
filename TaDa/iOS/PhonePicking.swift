@@ -31,30 +31,32 @@ private struct SwipeToPick: ViewModifier {
     /// How far the row has moved left.
     @State private var shift: CGFloat = 0
     @State private var isPastThreshold = false
+    /// Whether this swipe unpicks the row, fixed when it starts so the pill keeps its symbol as it closes.
+    @State private var unpicks = false
 
     func body(content: Content) -> some View {
         content
             .offset(x: -shift)
             .background(alignment: .trailing) {
-                if shift > 0 {
-                    // A small pill in the gap the row leaves, showing what letting go does.
-                    Image(systemName: nav.picked.contains(path) ? "xmark" : "checkmark")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white.opacity(isPastThreshold ? 1 : 0.5))
-                        .frame(width: max(shift - 8, 0))
-                        .frame(maxHeight: .infinity)
-                        .background(theme.color(\.accent), in: .rect(cornerRadius: 10))
-                        .clipShape(.rect(cornerRadius: 10))
-                        .padding(.vertical, 4)
-                        .padding(.trailing, 4)
-                        .accessibilityHidden(true)
-                }
+                // A small pill in the gap the row leaves, showing what letting go does. It closes with the gap.
+                Image(systemName: unpicks ? "xmark" : "checkmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white.opacity(isPastThreshold ? 1 : 0.5))
+                    .frame(width: max(shift - 8, 0))
+                    .frame(maxHeight: .infinity)
+                    .background(theme.color(\.accent), in: .rect(cornerRadius: 10))
+                    .clipShape(.rect(cornerRadius: 10))
+                    .padding(.vertical, 4)
+                    .padding(.trailing, 4)
+                    .opacity(shift > 0 ? 1 : 0)
+                    .accessibilityHidden(true)
             }
             .gesture(PickPan(changed: changed, ended: ended))
             .accessibilityAction(named: "Pick") { nav.pick(path) }
     }
 
     private func changed(_ translation: CGFloat) {
+        if shift == 0 { unpicks = nav.picked.contains(path) }
         let x = max(-translation, 0)
         shift = x <= PickSwipe.reach ? x : PickSwipe.reach + (x - PickSwipe.reach) / 4
         isPastThreshold = x >= PickSwipe.threshold
@@ -63,7 +65,6 @@ private struct SwipeToPick: ViewModifier {
     /// Springs the row back and picks or unpicks it in the same animation, so everything settles together.
     private func ended(_ isCancelled: Bool) {
         let picks = isPastThreshold && !isCancelled
-        isPastThreshold = false
         withAnimation(PhoneNavigation.pickSpring) {
             shift = 0
             if picks { nav.pick(path) }

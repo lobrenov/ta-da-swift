@@ -194,6 +194,8 @@ enum Haptic: Equatable {
 
     /// The spring every picking change shares: a swiped row's return, its highlight, the circles and the bars.
     static let pickSpring = Animation.spring(duration: 0.25, bounce: 0.3)
+    /// How a row's highlight and circle fade in and out over that spring.
+    static let pickFade = Animation.easeOut(duration: 0.25)
 
     func startPicking(_ path: String? = nil) {
         withAnimation(Self.pickSpring) {

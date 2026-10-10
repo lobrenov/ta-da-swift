@@ -61,7 +61,7 @@ struct PhoneTaskRow: View {
                                 .foregroundStyle(isPicked ? theme.color(\.accent) : theme.color(\.border))
                                 // No height of its own, so the row keeps its height while picking.
                                 .frame(height: 0)
-                                .transition(.opacity)
+                                .transition(.opacity.animation(PhoneNavigation.pickFade))
                                 .accessibilityHidden(true)
                         }
                     }
@@ -79,6 +79,7 @@ struct PhoneTaskRow: View {
             ZStack {
                 theme.color(\.bg)
                 theme.color(\.accent).opacity(isPicked ? (theme.isDark ? 0.16 : 0.1) : 0)
+                    .animation(PhoneNavigation.pickFade, value: isPicked)
             }
         }
         .swipeToPick(item.path)
