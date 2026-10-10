@@ -26,13 +26,11 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     @ViewBuilder var menu: MenuItems
     @ViewBuilder var content: Content
     @State private var search = ListSearch()
-    @State private var isDragging = false
     /// On screen: not in another tab, nor under a pushed screen. Only the list on screen sets what can be picked.
     @State private var isOnScreen = false
     /// The title has scrolled under the navigation bar, which then shows it.
     @State private var isTitleScrolledAway = false
     @Environment(PhoneNavigation.self) private var nav
-    @Environment(SearchHost.self) private var searchHost
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -57,28 +55,12 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             .onChange(of: scrollTarget) {
                 if let scrollTarget { withAnimation { proxy.scrollTo(scrollTarget.id, anchor: .top) } }
             }
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                geometry.contentOffset.y + geometry.contentInsets.top
-            } action: { _, offset in
-                search.distance = max(0, -offset)
-                isTitleScrolledAway = offset > 44
-                guard isDragging, !search.isOpen else { return }
-                let isArmed = search.distance >= ListSearch.threshold
-                if isArmed, !search.isArmed { nav.play(.press) }
-                search.isArmed = isArmed
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top > 44
+            } action: { _, isScrolledAway in
+                isTitleScrolledAway = isScrolledAway
             }
-            .onScrollPhaseChange { _, phase in
-                isDragging = phase == .interacting
-                if !isDragging, search.isArmed, !search.isOpen { search.open() }
-            }
-            .accessibilityAction(named: "Search") { search.open() }
-            .overlay {
-                if search.isOpen, !search.isSearching {
-                    Color.clear
-                        .contentShape(.rect)
-                        .onTapGesture { search.close() }
-                }
-            }
+            .pullToSearch(search)
         }
         .scrollDismissesKeyboard(.interactively)
         .background { theme.color(\.bg).ignoresSafeArea() }
@@ -118,15 +100,9 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .onAppear {
             isOnScreen = true
             nav.setPickable(pickable)
-            searchHost.search = search
         }
-        .onDisappear {
-            isOnScreen = false
-            search.isFocused = false
-            if searchHost.search === search { searchHost.search = nil }
-        }
+        .onDisappear { isOnScreen = false }
         .onChange(of: pickable) { if isOnScreen { nav.setPickable(pickable) } }
-        .onChange(of: nav.tab) { search.reset() }
     }
 
     /// The large title and subtitle, at the top of the list.

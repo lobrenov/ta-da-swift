@@ -14,6 +14,7 @@ struct PhoneFileScreen: View {
     @State private var isSource = false
     @State private var isEditing = false
     @State private var isVisible = false
+    @State private var search = ListSearch()
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -34,7 +35,8 @@ struct PhoneFileScreen: View {
         .background { theme.color(\.bg).ignoresSafeArea() }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .toolbar { toolbar }
+        .toolbar { if !search.isOpen { toolbar } }
+        .navigationBarBackButtonHidden(search.isOpen)
         .onAppear {
             isVisible = true
             model.selection = shownPath
@@ -73,39 +75,48 @@ struct PhoneFileScreen: View {
 
     private func page(_ document: OpenDocument) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                DocumentBanner(model: model, document: document)
-                    .padding(.horizontal, -16)
-                TitleField(model: model, document: document, size: 28)
-                if let item = document.item {
-                    if item.properties.kind != .area {
-                        PhoneChips(model: model, item: model.index[item.path] ?? item)
-                    }
-                    QuietLine(model: model, item: item)
-                }
-                WarningList(warnings: document.item.map { model.index[$0.path].map(model.index.warnings(for:)) ?? $0.warnings } ?? [])
-                Hairline()
-                if isSource {
-                    TextEditor(text: Binding { document.text } set: { document.text = $0 })
-                        .scaledFont(size: 15, design: .monospaced)
-                        .foregroundStyle(theme.color(\.fg))
-                        .scrollContentBackground(.hidden)
-                        .scrollDisabled(true)
-                        .frame(minHeight: 320)
-                        .padding(.horizontal, -5)
-                } else {
-                    BodyEditor(model: model, document: document) { nav.push(.file($0)) }
-                }
-                if let item = document.item, item.properties.kind == .project {
-                    PhoneLinkedTasks(model: model, project: model.index[item.path] ?? item)
-                }
+            if search.isSearching {
+                PhoneSearchResults(model: model, query: search.query)
+            } else {
+                fileContent(document)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 4)
-            // While editing, room for the last line to scroll above the keyboard bar.
-            .padding(.bottom, isEditing ? 100 : 40)
         }
         .scrollDismissesKeyboard(.interactively)
+        .pullToSearch(search)
+    }
+
+    private func fileContent(_ document: OpenDocument) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            DocumentBanner(model: model, document: document)
+                .padding(.horizontal, -16)
+            TitleField(model: model, document: document, size: 28)
+            if let item = document.item {
+                if item.properties.kind != .area {
+                    PhoneChips(model: model, item: model.index[item.path] ?? item)
+                }
+                QuietLine(model: model, item: item)
+            }
+            WarningList(warnings: document.item.map { model.index[$0.path].map(model.index.warnings(for:)) ?? $0.warnings } ?? [])
+            Hairline()
+            if isSource {
+                TextEditor(text: Binding { document.text } set: { document.text = $0 })
+                    .scaledFont(size: 15, design: .monospaced)
+                    .foregroundStyle(theme.color(\.fg))
+                    .scrollContentBackground(.hidden)
+                    .scrollDisabled(true)
+                    .frame(minHeight: 320)
+                    .padding(.horizontal, -5)
+            } else {
+                BodyEditor(model: model, document: document) { nav.push(.file($0)) }
+            }
+            if let item = document.item, item.properties.kind == .project {
+                PhoneLinkedTasks(model: model, project: model.index[item.path] ?? item)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        // While editing, room for the last line to scroll above the keyboard bar.
+        .padding(.bottom, isEditing ? 100 : 40)
     }
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
