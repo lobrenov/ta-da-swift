@@ -192,26 +192,40 @@ enum Haptic: Equatable {
 
     // MARK: Picking
 
+    /// The spring every picking change shares: a swiped row's return, its highlight, the circles and the bars.
+    static let pickSpring = Animation.spring(duration: 0.25, bounce: 0.3)
+
     func startPicking(_ path: String? = nil) {
-        isPicking = true
-        picked = path.map { [$0] } ?? []
+        withAnimation(Self.pickSpring) {
+            isPicking = true
+            picked = path.map { [$0] } ?? []
+        }
         if path != nil { play(.pick) }
     }
 
     func endPicking() {
-        isPicking = false
-        picked = []
+        withAnimation(Self.pickSpring) {
+            isPicking = false
+            picked = []
+        }
     }
 
     /// Picks or unpicks a row; unpicking the last one ends picking.
     func togglePicked(_ path: String) {
-        if let i = picked.firstIndex(of: path) {
-            picked.remove(at: i)
-            if picked.isEmpty { isPicking = false }
-        } else {
-            picked.append(path)
+        withAnimation(Self.pickSpring) {
+            if let i = picked.firstIndex(of: path) {
+                picked.remove(at: i)
+                if picked.isEmpty { isPicking = false }
+            } else {
+                picked.append(path)
+            }
         }
         play(.pick)
+    }
+
+    /// Picks or unpicks a row, starting picking if it hasn't started.
+    func pick(_ path: String) {
+        isPicking ? togglePicked(path) : startPicking(path)
     }
 
     /// Sets the rows of the list on screen; picked rows it no longer shows are unpicked, and picking ends when that
@@ -226,7 +240,7 @@ enum Haptic: Equatable {
     }
 
     func pickAll() {
-        picked = pickable
+        withAnimation(Self.pickSpring) { picked = pickable }
         play(.pick)
     }
 }

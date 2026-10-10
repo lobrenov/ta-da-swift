@@ -7,9 +7,9 @@ import TaDaCore
 
 enum PickSwipe {
     /// How far left a row must move to be picked on release.
-    static let threshold: CGFloat = 64
+    static let threshold: CGFloat = 26
     /// How far the row moves with the finger before it resists.
-    static let reach: CGFloat = 88
+    static let reach: CGFloat = 34
 }
 
 extension View {
@@ -37,37 +37,37 @@ private struct SwipeToPick: ViewModifier {
             .offset(x: -shift)
             .background(alignment: .trailing) {
                 if shift > 0 {
-                    Image(systemName: "checkmark.circle")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                    .frame(width: max(shift, PickSwipe.threshold))
-                    .frame(maxHeight: .infinity)
-                    .background(theme.color(\.accent).opacity(isPastThreshold ? 1 : 0.6))
-                    .frame(width: shift, alignment: .leading)
-                    .clipped()
-                    .accessibilityHidden(true)
+                    // A small pill in the gap the row leaves, showing what letting go does.
+                    Image(systemName: nav.picked.contains(path) ? "xmark" : "checkmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white.opacity(isPastThreshold ? 1 : 0.5))
+                        .frame(width: max(shift - 8, 0))
+                        .frame(maxHeight: .infinity)
+                        .background(theme.color(\.accent), in: .rect(cornerRadius: 10))
+                        .clipShape(.rect(cornerRadius: 10))
+                        .padding(.vertical, 4)
+                        .padding(.trailing, 4)
+                        .accessibilityHidden(true)
                 }
             }
             .gesture(PickPan(changed: changed, ended: ended))
-            .accessibilityAction(named: "Pick") { nav.isPicking ? nav.togglePicked(path) : nav.startPicking(path) }
+            .accessibilityAction(named: "Pick") { nav.pick(path) }
     }
 
     private func changed(_ translation: CGFloat) {
         let x = max(-translation, 0)
         shift = x <= PickSwipe.reach ? x : PickSwipe.reach + (x - PickSwipe.reach) / 4
-        let isPast = x >= PickSwipe.threshold
-        if isPast != isPastThreshold {
-            isPastThreshold = isPast
-            if isPast { nav.play(.press) }
-        }
+        isPastThreshold = x >= PickSwipe.threshold
     }
 
+    /// Springs the row back and picks or unpicks it in the same animation, so everything settles together.
     private func ended(_ isCancelled: Bool) {
-        if isPastThreshold, !isCancelled {
-            nav.isPicking ? nav.togglePicked(path) : nav.startPicking(path)
-        }
+        let picks = isPastThreshold && !isCancelled
         isPastThreshold = false
-        withAnimation(.spring(duration: 0.35, bounce: 0.3)) { shift = 0 }
+        withAnimation(PhoneNavigation.pickSpring) {
+            shift = 0
+            if picks { nav.pick(path) }
+        }
     }
 }
 
@@ -164,7 +164,6 @@ private struct PickingBars: ViewModifier {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(.snappy, value: nav.isPicking)
     }
 
     private var tasks: [String] { nav.picked.filter { model.index[$0]?.properties.kind == .task } }
