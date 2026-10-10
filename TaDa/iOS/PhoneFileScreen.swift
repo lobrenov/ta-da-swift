@@ -128,14 +128,24 @@ struct PhoneFileScreen: View {
         if let item = document?.item {
             ToolbarItemGroup(placement: .bottomBar) {
                 if item.properties.kind != .area {
-                    let isDone = item.properties.status == .done
-                    Button {
-                        nav.play(isDone ? .pick : .complete)
+                    let status = item.properties.status
+                    // A tap completes or reopens; a press and hold opens the statuses.
+                    Menu {
+                        Picker("Status", selection: Binding { status } set: { status in
+                            nav.play(.pick)
+                            Task { await model.setStatus(status, in: item.path) }
+                        }) {
+                            ForEach(Status.menuOrder, id: \.self) { option in
+                                Label { Text(option.rawValue) } icon: { Image(uiImage: statusImage(option)) }
+                                    .tag(option)
+                            }
+                        }                    } label: {
+                        Label { Text(status == .done ? "Reopen" : "Complete") } icon: { Image(uiImage: statusImage(status)) }
+                    } primaryAction: {
+                        nav.play(status == .done ? .pick : .complete)
                         Task { await model.toggleCompletion(model.index[item.path] ?? item) }
-                    } label: {
-                        Label(isDone ? "Reopen" : "Complete", systemImage: isDone ? "checkmark.circle.fill" : "checkmark.circle")
                     }
-                    .tint(theme.color(\.done))
+                    .accessibilityValue(status.rawValue)
                     Button("Schedule", systemImage: "calendar") { nav.sheet = .date(.due, paths: [item.path]) }
                     Button("Set Deadline", systemImage: "flag") { nav.sheet = .date(.deadline, paths: [item.path]) }
                 }
@@ -181,10 +191,20 @@ struct PhoneFileScreen: View {
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
+
+    /// A status's checkbox as an image in its own colours, for the toolbar and its menu, which show only images.
+    private func statusImage(_ status: Status) -> UIImage {
+        let (marker, tint) = StatusCheckbox.box(for: status, theme: theme)
+        let rect = CGRect(x: 0, y: 0, width: 22, height: 22)
+        return UIGraphicsImageRenderer(bounds: rect).image { context in
+            InlineCheckbox.draw(marker, in: rect, tint: tint, background: theme.bg, context: context.cgContext)
+        }
+        .withRenderingMode(.alwaysOriginal)
+    }
 }
 
-/// The type, a task's area through its project, the day the file was created, its progress and the files that link
-/// here (a menu of them), under the chips.
+/// The type, the status, a task's area through its project, the day the file was created, its progress and the files
+/// that link here (a menu of them), under the chips.
 private struct QuietLine: View {
     let model: AppModel
     let item: Item
@@ -194,6 +214,7 @@ private struct QuietLine: View {
     var body: some View {
         let p = item.properties
         var parts = [p.kind.rawValue]
+        if p.kind != .area { parts.append(p.status.rawValue) }
         if p.kind == .task, p.project != nil, let area = model.index.area(of: item) {
             parts.append("in \(area.title)")
         }
@@ -230,9 +251,9 @@ private struct QuietLine: View {
     }
 }
 
-/// A file's properties as chips: status opens a menu; a task's project or area (the move sheet), a project's area (the
-/// area sheet), due date and deadline open their sheets. A missing one is a dashed chip that adds it; a project or
-/// area no file has is struck through.
+/// A file's properties as chips: a task's project or area (the move sheet), a project's area (the area sheet), due date
+/// and deadline open their sheets; the status is the toolbar's checkbox. A missing one is a dashed chip that adds it; a
+/// project or area no file has is struck through.
 struct PhoneChips: View {
     let model: AppModel
     let item: Item
@@ -242,23 +263,6 @@ struct PhoneChips: View {
     var body: some View {
         let p = item.properties
         WrappingHStack(spacing: 8) {
-            Menu {
-                Picker("Status", selection: Binding { p.status } set: { status in
-                    nav.play(.pick)
-                    Task { await model.setStatus(status, in: item.path) }
-                }) {
-                    ForEach(Status.menuOrder, id: \.self) { Text($0.rawValue).tag($0) }
-                }
-            } label: {
-                let (marker, tint) = StatusCheckbox.box(for: p.status, theme: theme)
-                chip(missing: false) {
-                    InlineCheckboxView(marker: marker, tint: tint, background: theme.bg).frame(width: 16, height: 16)
-                    Text(p.status.rawValue)
-                    Image(systemName: "chevron.down").scaledFont(size: 11, weight: .semibold).foregroundStyle(theme.color(\.muted))
-                }
-            }
-            .accessibilityLabel("Status")
-            .accessibilityValue(p.status.rawValue)
             if p.kind == .task || p.kind == .project {
                 let parent = model.index.parent(of: item)
                 let link = p.kind == .task ? p.project ?? p.area : p.area
