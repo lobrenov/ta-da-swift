@@ -229,7 +229,14 @@ struct PhoneTrashScreen: View {
         .navigationSubtitle(search.isOpen ? "" : "\(count) file\(count == 1 ? "" : "s") in .trash/\(picked.isEmpty ? "" : " · \(picked.count) selected")")
         .navigationBarBackButtonHidden(search.isOpen)
         .toolbar(.hidden, for: .tabBar)
-        .toolbar { if !search.isOpen { actions } }
+        .toolbar {
+            if search.isOpen {
+                // Keeps the navigation bar, so the rows stay below the search field in its row.
+                ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) }
+            } else {
+                actions
+            }
+        }
         .onChange(of: model.trash) { picked.formIntersection(model.trash.map(\.id) + model.trashedAttachments.map(\.id)) }
         .onChange(of: model.trashedAttachments) { picked.formIntersection(model.trash.map(\.id) + model.trashedAttachments.map(\.id)) }
     }
