@@ -31,7 +31,7 @@ struct PhoneFileScreen: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .background(theme.color(\.bg))
+        .background { theme.color(\.bg).ignoresSafeArea() }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbar }
