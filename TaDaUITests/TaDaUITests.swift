@@ -1,5 +1,6 @@
 // Smoke tests through the real UI, on the throwaway folder `-uiTesting` sets up. They need the
 // Accessibility permission for Xcode's test runner (System Settings ▸ Privacy & Security ▸ Accessibility).
+import AppKit
 import XCTest
 
 @MainActor
@@ -239,5 +240,22 @@ final class TaDaUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Mark not done: Alpha"].waitForExistence(timeout: 5))
         app.typeKey("k", modifierFlags: .command)
         XCTAssertTrue(app.buttons["Complete: Alpha"].waitForExistence(timeout: 5))
+    }
+
+    func testPastingAnImageEmbedsIt() throws {
+        let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 4, pixelsHigh: 4, bitsPerSample: 8, samplesPerPixel: 4,
+                                      hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)
+        let png = try XCTUnwrap(bitmap?.representation(using: .png, properties: [:]))
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setData(png, forType: .png)
+
+        app.buttons["Alpha"].click()
+        waitForTitle("Alpha")
+        body.click()
+        app.typeKey(.downArrow, modifierFlags: .command)
+        app.typeKey("v", modifierFlags: .command)
+        let embed = NSPredicate(format: "value MATCHES %@", #"(?s)First line\.\n+!\[\[Pasted image \d{14}\.png\]\]\n*"#)
+        let pasted = XCTNSPredicateExpectation(predicate: embed, object: body)
+        XCTAssertEqual(XCTWaiter.wait(for: [pasted], timeout: 5), .completed, "⌘V saves the image and embeds it on a line of its own")
     }
 }
