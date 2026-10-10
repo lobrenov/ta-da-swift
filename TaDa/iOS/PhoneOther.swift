@@ -199,63 +199,81 @@ struct PhoneTrashScreen: View {
     let model: AppModel
     @State private var picked: Set<String> = []
     @State private var isConfirmingEmpty = false
+    @State private var search = ListSearch()
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
         List {
-            if let note = model.trashNote {
-                Text(note).scaledFont(size: 13).foregroundStyle(theme.color(\.done))
+            if search.isSearching {
+                PhoneSearchResults(model: model, query: search.query)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
-            }
-            let byFile = model.trashedAttachmentsByFile
-            ForEach(model.trash) { trashed in
-                row(trashed)
-                ForEach(byFile[trashed.id] ?? []) { imageRow($0, wentWith: trashed) }
-            }
-            ForEach(model.looseTrashedAttachments) { trashed in
-                imageRow(trashed)
+            } else {
+                trashRows
             }
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .background(theme.color(\.bg))
+        .scrollDismissesKeyboard(.interactively)
+        .pullToSearch(search)
+        .background { theme.color(\.bg).ignoresSafeArea() }
         .overlay {
-            if isEmpty {
+            if isEmpty, !search.isSearching {
                 ContentUnavailableView("Trash is empty", systemImage: "trash", description: Text("Deleted tasks, projects, areas and images wait here."))
             }
         }
-        .navigationTitle("Trash")
-        .navigationSubtitle("\(count) file\(count == 1 ? "" : "s") in .trash/\(picked.isEmpty ? "" : " · \(picked.count) selected")")
+        // While search is open its field takes the navigation bar's row.
+        .navigationTitle(search.isOpen ? "" : "Trash")
+        .navigationSubtitle(search.isOpen ? "" : "\(count) file\(count == 1 ? "" : "s") in .trash/\(picked.isEmpty ? "" : " · \(picked.count) selected")")
+        .navigationBarBackButtonHidden(search.isOpen)
         .toolbar(.hidden, for: .tabBar)
-        .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button("Restore \(picked.count == 1 ? "1 Item" : "\(picked.count) Items")") {
-                    let paths = picked
-                    picked = []
-                    Task { await model.restore(paths) }
-                }
-                .disabled(picked.isEmpty)
-                Spacer()
-                Button("Empty Trash", role: .destructive) { isConfirmingEmpty = true }
-                    .buttonStyle(.glassProminent)
-                    .tint(theme.color(\.deadline))
-                    .disabled(isEmpty)
-                    .confirmationDialog("Empty the trash?", isPresented: $isConfirmingEmpty, titleVisibility: .visible) {
-                        Button("Empty Trash", role: .destructive) {
-                            nav.play(.emptyTrash)
-                            picked = []
-                            Task { await model.emptyTrash() }
-                        }
-                    } message: {
-                        Text(count == 1
-                             ? "The file goes to iCloud Drive’s Recently Deleted, or is deleted."
-                             : "The \(count) files go to iCloud Drive’s Recently Deleted, or are deleted.")
-                    }
-            }
-        }
+        .toolbar { if !search.isOpen { actions } }
         .onChange(of: model.trash) { picked.formIntersection(model.trash.map(\.id) + model.trashedAttachments.map(\.id)) }
         .onChange(of: model.trashedAttachments) { picked.formIntersection(model.trash.map(\.id) + model.trashedAttachments.map(\.id)) }
+    }
+
+    @ViewBuilder private var trashRows: some View {
+        if let note = model.trashNote {
+            Text(note).scaledFont(size: 13).foregroundStyle(theme.color(\.done))
+                .listRowBackground(Color.clear)
+        }
+        let byFile = model.trashedAttachmentsByFile
+        ForEach(model.trash) { trashed in
+            row(trashed)
+            ForEach(byFile[trashed.id] ?? []) { imageRow($0, wentWith: trashed) }
+        }
+        ForEach(model.looseTrashedAttachments) { trashed in
+            imageRow(trashed)
+        }
+    }
+
+    @ToolbarContentBuilder private var actions: some ToolbarContent {
+        ToolbarItemGroup(placement: .bottomBar) {
+            Button("Restore \(picked.count == 1 ? "1 Item" : "\(picked.count) Items")") {
+                let paths = picked
+                picked = []
+                Task { await model.restore(paths) }
+            }
+            .disabled(picked.isEmpty)
+            Spacer()
+            Button("Empty Trash", role: .destructive) { isConfirmingEmpty = true }
+                .buttonStyle(.glassProminent)
+                .tint(theme.color(\.deadline))
+                .disabled(isEmpty)
+                .confirmationDialog("Empty the trash?", isPresented: $isConfirmingEmpty, titleVisibility: .visible) {
+                    Button("Empty Trash", role: .destructive) {
+                        nav.play(.emptyTrash)
+                        picked = []
+                        Task { await model.emptyTrash() }
+                    }
+                } message: {
+                    Text(count == 1
+                         ? "The file goes to iCloud Drive’s Recently Deleted, or is deleted."
+                         : "The \(count) files go to iCloud Drive’s Recently Deleted, or are deleted.")
+                }
+        }
     }
 
     private var count: Int { model.trashCount }
