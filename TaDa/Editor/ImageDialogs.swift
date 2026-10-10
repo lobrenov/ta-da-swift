@@ -1,7 +1,6 @@
 // The image dialogs the embed menu opens through `model.imageDialog`. Rename changes the image's name (its extension
 // stays) and every `![[ ]]` that shows it. Delete lists the files that embed the image and moves it to Trash; their
-// embeds show as missing until it's restored. On the Mac both are sheets; on iPhone, Rename is an alert and Delete a
-// sheet.
+// embeds show as missing until it's restored. Both are sheets.
 import SwiftUI
 import ImageIO
 import TaDaCore
@@ -143,13 +142,10 @@ nonisolated enum ThumbnailCache {
 
 private struct ImageDialogPresenter: ViewModifier {
     @Bindable var model: AppModel
-    #if os(iOS)
-    @State private var newName = ""
-    #endif
 
     func body(content: Content) -> some View {
-        #if os(macOS)
         content.sheet(item: $model.imageDialog) { dialog in
+            #if os(macOS)
             Group {
                 switch dialog {
                 case .rename(let path): RenameImageDialog(model: model, path: path)
@@ -157,32 +153,13 @@ private struct ImageDialogPresenter: ViewModifier {
                 }
             }
             .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
+            #else
+            switch dialog {
+            case .rename(let path): PhoneRenameImageSheet(model: model, path: path)
+            case .delete(let path): PhoneDeleteImageSheet(model: model, path: path)
+            }
+            #endif
         }
-        #else
-        let text = ImageDialogText(model: model, path: model.imageDialog?.path ?? "")
-        let newPath = Vault.renamedAttachment(text.path, to: newName)
-        content
-            .sheet(item: Binding { model.imageDialog.flatMap { if case .delete = $0 { $0 } else { nil } } }
-                         set: { if $0 == nil { model.imageDialog = nil } }) { dialog in
-                PhoneDeleteImageSheet(model: model, path: dialog.path)
-            }
-            .alert("Rename Image", isPresented: Binding { if case .rename = model.imageDialog { true } else { false } }
-                                                     set: { if !$0 { model.imageDialog = nil } }) {
-                TextField("Name", text: $newName)
-                Button("Rename") {
-                    let path = text.path, name = newName
-                    Task { await model.renameAttachment(path, to: name) }
-                }
-                .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty || newPath == text.path || text.isTaken(newPath))
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text(text.isTaken(newPath) ? "An image named “\(Item.title(ofPath: newPath))” is already in the folder."
-                     : "Keeps .\(FileNaming.split(text.name).ext). \(text.renameSummary)")
-            }
-            .onChange(of: model.imageDialog) {
-                if case .rename(let path) = model.imageDialog { newName = FileNaming.split(Item.title(ofPath: path)).base }
-            }
-        #endif
     }
 }
 
@@ -359,6 +336,88 @@ private struct DeleteImageDialog: View {
     }
 }
 #else
+/// The iPhone's rename sheet: the image, its name without the extension, and what it updates.
+private struct PhoneRenameImageSheet: View {
+    let model: AppModel
+    let path: String
+    @State private var name = ""
+    @FocusState private var isFocused: Bool
+    @Environment(\.theme) private var theme
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        let text = ImageDialogText(model: model, path: path)
+        let ext = FileNaming.split(text.name).ext
+        let newPath = Vault.renamedAttachment(path, to: name)
+        let isTaken = text.isTaken(newPath)
+        VStack(spacing: 0) {
+            HStack {
+                Button("Cancel") { dismiss() }.buttonStyle(.glass)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            VStack(spacing: 16) {
+                VStack(spacing: 10) {
+                    ImageThumbnail(url: model.vault?.url(for: path), side: 88, cornerRadius: 14)
+                    Text("Rename Image")
+                        .scaledFont(size: 22, weight: .bold)
+                        .foregroundStyle(theme.color(\.strong))
+                }
+                HStack(spacing: 4) {
+                    TextField("Name", text: $name)
+                        .scaledFont(size: 17)
+                        .foregroundStyle(theme.color(\.strong))
+                        .focused($isFocused)
+                        .submitLabel(.done)
+                        .onSubmit { rename(newPath, isTaken: isTaken) }
+                    if !ext.isEmpty { Text(".\(ext)").scaledFont(size: 17).foregroundStyle(theme.color(\.muted)) }
+                }
+                .padding(.horizontal, 14)
+                .frame(minHeight: 50)
+                .background(theme.color(theme.isDark ? \.code : \.side), in: .rect(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(theme.color(\.deadline), lineWidth: isTaken ? 1 : 0))
+                Text(isTaken ? "An image named “\(Item.title(ofPath: newPath))” is already in the folder." : text.renameSummary)
+                    .scaledFont(size: 13)
+                    .foregroundStyle(theme.color(isTaken ? \.deadline : \.muted))
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            Spacer(minLength: 16)
+            Button { rename(newPath, isTaken: isTaken) } label: {
+                Text("Rename")
+                    .scaledFont(size: 17, weight: .semibold)
+                    .foregroundStyle(theme.color(\.bg))
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(theme.color(\.accent), in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .disabled(!canRename(newPath, isTaken: isTaken))
+            .opacity(canRename(newPath, isTaken: isTaken) ? 1 : 0.5)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 12)
+        }
+        .background(theme.color(theme.isDark ? \.side : \.bg))
+        .presentationDetents([.large])
+        .onAppear {
+            name = FileNaming.split(text.name).base
+            isFocused = true
+        }
+    }
+
+    private func canRename(_ newPath: String, isTaken: Bool) -> Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty && newPath != path && !isTaken
+    }
+
+    private func rename(_ newPath: String, isTaken: Bool) {
+        guard canRename(newPath, isTaken: isTaken) else { return }
+        let name = name
+        dismiss()
+        Task { await model.renameAttachment(path, to: name) }
+    }
+}
+
 /// The iPhone's delete sheet: the image, the files that embed it, and Move to Trash.
 private struct PhoneDeleteImageSheet: View {
     let model: AppModel
