@@ -221,6 +221,25 @@ struct IOSEditorInputTests {
         #expect(editor.textView.string == "See [[]]")
     }
 
+    @Test func aTypedCloserStepsOverTheOneTheEditorAdded() async throws {
+        let editor = try IOSEditorHarness("See ")
+        await editor.type("(", after: "See ")
+        for character in "word)" { await editor.type(String(character)) }
+        #expect(editor.textView.string == "See (word)")
+        #expect(editor.textView.selectedRange == NSRange(location: 10, length: 0))
+    }
+
+    @Test func aFormattingButtonTappedAgainStepsOverItsCloser() async throws {
+        let editor = try IOSEditorHarness("See ")
+        editor.textView.selectedRange = NSRange(location: 4, length: 0)
+        let coordinator = try #require(editor.textView.delegate as? NativeTextViewCoordinator)
+        coordinator.didMarkdownBold(nil)
+        for character in "word" { await editor.type(String(character)) }
+        coordinator.didMarkdownBold(nil)
+        #expect(editor.textView.string == "See **word**")
+        #expect(editor.textView.selectedRange == NSRange(location: 12, length: 0))
+    }
+
     @Test func typingThroughTheProxyPairsAsTheKeyboardDoes() async throws {
         let editor = try IOSEditorHarness("See ")
         editor.textView.selectedRange = NSRange(location: 4, length: 0)

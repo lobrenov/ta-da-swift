@@ -254,7 +254,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownBold(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("**") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingBoldToken(for: range, in: tv.string) {
@@ -279,7 +279,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownItalic(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("*") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingItalicToken(for: range, in: tv.string) {
@@ -304,7 +304,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownHighlight(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("==") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingHighlightToken(for: range, in: tv.string) {
@@ -321,7 +321,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownStrikethrough(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("~~") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingToken(of: .extensionSpan(StrikethroughExtension.identifier), for: range, in: tv.string) {
@@ -344,7 +344,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownInlineCode(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("`") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingToken(of: .inlineCode, for: range, in: tv.string) {
@@ -480,15 +480,28 @@ extension NativeTextViewWrapper.Coordinator {
         tv.setSelectedRange(NSRange(location: range.location + marker.count + cursorOffset, length: 0))
     }
 
+    /// Ta Da fork: inserts an empty pair the editor remembers, so the marker typed or tapped again steps over its closer.
     private func insertEmptyMarkers(_ marker: String) {
         guard let tv = textView else { return }
         let range = tv.currentSelectedRange
-        let insertion = marker + marker
-        if tv.shouldChangeText(in: range, replacementString: insertion) {
-            tv.replaceCharacters(in: range, with: insertion)
-            tv.didChangeText()
-            tv.setSelectedRange(NSRange(location: range.location + marker.count, length: 0))
-        }
+        let length = (marker as NSString).length
+        MarkdownLists.performEdit(tv, replace: range, with: marker + marker)
+        (tv as? NativeTextView)?.autoPairs.append(AutoPair(opener: NSRange(location: range.location, length: length),
+                                                           closer: NSRange(location: range.location + length, length: length)))
+        tv.setSelectedRange(NSRange(location: range.location + length, length: 0))
+    }
+
+    /// Ta Da fork: with the caret at a `marker` closer the editor added, steps over it as typing it would.
+    private func stepsOverAutoPair(_ marker: String) -> Bool {
+        guard let tv = textView as? NativeTextView, tv.currentSelectedRange.length == 0 else { return false }
+        let location = tv.currentSelectedRange.location
+        let text = tv.string as NSString
+        guard let index = tv.autoPairs.lastIndex(where: { $0.closer.location == location }),
+              NSMaxRange(tv.autoPairs[index].closer) <= text.length,
+              text.substring(with: tv.autoPairs[index].closer) == marker else { return false }
+        let closer = tv.autoPairs.remove(at: index).closer
+        tv.setSelectedRange(NSRange(location: NSMaxRange(closer), length: 0))
+        return true
     }
 
     private func wrapSelection(with marker: String) {
