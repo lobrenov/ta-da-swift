@@ -379,9 +379,9 @@ final class NativeTextView: UITextView {
         }
     }
 
-    private func applyInsets() {
+    func applyInsets() {
         var insets = bodyInsets
-        insets.top += headerHeight
+        insets.top += headerHeight + leadingCalloutPadding
         if textContainerInset != insets { textContainerInset = insets }
     }
 }

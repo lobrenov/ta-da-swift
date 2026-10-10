@@ -570,7 +570,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         // Reading column centers by POSITION (container subview), so the text inset is constant.
         let desiredTextInset = NSSize(
             width: configuration.textInsets.horizontal,
-            height: configuration.textInsets.vertical
+            height: configuration.textInsets.vertical + textView.leadingCalloutPadding
         )
         if abs(textView.textContainerInset.width - desiredTextInset.width) > 0.5
             || abs(textView.textContainerInset.height - desiredTextInset.height) > 0.5 {

@@ -157,6 +157,7 @@ struct TextStylingService {
             to: textView.textStorage
         )
         textView.optionalTextStorage?.endEditing()
+        (textView as? NativeTextView)?.fitLeadingCalloutPadding()
         let attrMs = Double(DispatchTime.now().uptimeNanoseconds - attrT0) / 1_000_000
         // No ensureLayout here:
         let evlT0 = DispatchTime.now().uptimeNanoseconds

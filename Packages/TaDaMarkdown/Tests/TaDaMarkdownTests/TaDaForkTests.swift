@@ -1097,6 +1097,16 @@ struct FragmentGeometryTests {
         withExtendedLifetime((window, coordinator)) {}
     }
 
+    /// TextKit gives the first paragraph no spacing before it, so the text inset holds the panel's top padding.
+    @Test func aCalloutStartingTheDocumentHasRoomForItsTopPadding() throws {
+        for (text, extra) in [("> [!note] T\n> body", testCalloutStyle.paddingTop), ("Intro\n\n> [!note] T", 0)] {
+            let (fragments, keep) = try fragments(text) { $0.callouts = testCalloutStyle }
+            let tv = try #require(fragments.first?.textLayoutManager?.textContainer?.textView as? NativeTextView)
+            #expect(tv.textContainerInset.height == tv.configuration.textInsets.vertical + extra)
+            withExtendedLifetime(keep) {}
+        }
+    }
+
     @Test func aCalloutEndingTheDocumentDrawsItsBottomPadding() throws {
         let (fragments, keep) = try fragments("Intro\n\n> [!note] T\n> body") { $0.callouts = testCalloutStyle }
         let last = try #require(fragments.last)
