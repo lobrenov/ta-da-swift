@@ -501,9 +501,9 @@ private struct CheckboxMenu: View {
             }
             .padding(.bottom, 12)
         }
-        // The popover insets its content on the arrow's side; the menu fills the whole bubble instead.
-        .ignoresSafeArea(.container, edges: .horizontal)
         .frame(width: 294)
+        // The popover lays its content out across the bubble and its arrow; the menu keeps to the bubble.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(maxHeight: 460)
         .font(.system(size: 17))
     }
@@ -573,8 +573,8 @@ private struct CalloutMenu: View {
             }
             .padding(.bottom, 12)
         }
-        .ignoresSafeArea(.container, edges: .horizontal)
         .frame(width: 270)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(maxHeight: 520)
         .font(.system(size: 17))
     }
