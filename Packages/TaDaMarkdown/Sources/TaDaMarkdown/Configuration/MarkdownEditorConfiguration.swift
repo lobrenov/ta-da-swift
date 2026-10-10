@@ -423,7 +423,7 @@ public struct TaskCheckboxStyle: Sendable {
     ]
 
     public static let referenceMenu: [(marker: Character, title: String)] = [
-        (" ", "To do"), ("/", "Incomplete"), ("x", "Done"), ("-", "Cancelled"),
+        (" ", "Not started"), ("/", "Doing"), ("x", "Done"), ("-", "Cancelled"),
         (">", "Forwarded"), ("<", "Scheduling"), ("?", "Question"), ("!", "Important"),
         ("*", "Star"), ("\"", "Quote"), ("l", "Location"), ("b", "Bookmark"), ("i", "Information"),
         ("S", "Savings"), ("I", "Idea"), ("p", "Pros"), ("c", "Cons"), ("f", "Fire"),
