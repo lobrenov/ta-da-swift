@@ -1,7 +1,6 @@
 // The window's sidebar beside the workspace. When the window is too narrow for both, the sidebar hides, and the
 // sidebar button (or View ▸ Toggle Sidebar) floats it over the workspace until a click elsewhere or a pick in it.
-// While the sidebar is hidden, a two-finger swipe to the right floats it too, as does resting the pointer on the
-// window's left edge; the pointer leaving a sidebar floated that way hides it.
+// While the sidebar is hidden, a two-finger swipe to the right floats it too.
 #if os(macOS)
 import SwiftUI
 
@@ -14,9 +13,6 @@ struct SidebarSplitView: View {
     /// The sidebar hid because the window got narrow; it comes back when there's room.
     @State private var sidebarAutoHidden = false
     @State private var sidebarFloats = false
-    /// The floating sidebar came from the pointer on the window's edge, and goes when the pointer leaves it.
-    @State private var floatedByHover = false
-    @State private var edgeHover: Task<Void, Never>?
     @State private var anchor = ScreenAnchor()
     @State private var swipe = SidebarSwipe()
     @State private var swipeMonitor: Any?
@@ -35,7 +31,6 @@ struct SidebarSplitView: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { fit(width: $0) }
         .overlay(alignment: .leading) { floatingSidebar }
         .background(ScreenAnchorReader(anchor: anchor))
-        .onContinuousHover { watchEdge($0) }
         .onAppear { watchSwipes() }
         .onDisappear { stopWatchingSwipes() }
         .onChange(of: columns) { if columns != .detailOnly { sidebarFloats = false } }
@@ -62,7 +57,6 @@ struct SidebarSplitView: View {
                     .background { model.theme.color(\.side).ignoresSafeArea() }
                     .overlay(alignment: .trailing) { Hairline(axis: .vertical).ignoresSafeArea() }
                     .shadow(color: .black.opacity(0.18), radius: 16)
-                    .onHover { if !$0, floatedByHover { hideFloatingSidebar() } }
                     .transition(.move(edge: .leading))
             }
         }
@@ -89,7 +83,6 @@ struct SidebarSplitView: View {
 
     private func toggle() {
         if isNarrow || sidebarFloats {
-            floatedByHover = false
             withAnimation(.snappy(duration: 0.22)) { sidebarFloats.toggle() }
         } else {
             sidebarAutoHidden = false
@@ -105,7 +98,6 @@ struct SidebarSplitView: View {
                 guard event.window === anchor.window, columns == .detailOnly, !sidebarFloats,
                       swipe.track(event.phase, dx: SidebarSwipe.fingersDX(event), dy: event.scrollingDeltaY),
                       !SidebarSwipe.scrollsLeft(event) else { return }
-                floatedByHover = false
                 withAnimation(.snappy(duration: 0.22)) { sidebarFloats = true }
             }
             return event
@@ -117,26 +109,8 @@ struct SidebarSplitView: View {
         swipeMonitor = nil
     }
 
-    /// Floats the hidden sidebar when the pointer rests on the window's left 6pt for 150 ms.
-    private func watchEdge(_ phase: HoverPhase) {
-        guard case let .active(point) = phase, point.x <= 6, columns == .detailOnly, !sidebarFloats else {
-            edgeHover?.cancel()
-            edgeHover = nil
-            return
-        }
-        guard edgeHover == nil else { return }
-        edgeHover = Task {
-            try? await Task.sleep(for: .milliseconds(150))
-            guard !Task.isCancelled else { return }
-            edgeHover = nil
-            floatedByHover = true
-            withAnimation(.snappy(duration: 0.22)) { sidebarFloats = true }
-        }
-    }
-
     private func hideFloatingSidebar() {
         guard sidebarFloats else { return }
-        floatedByHover = false
         withAnimation(.snappy(duration: 0.22)) { sidebarFloats = false }
     }
 }
