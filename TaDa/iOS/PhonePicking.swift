@@ -24,9 +24,15 @@ extension View {
     }
 }
 
+extension EnvironmentValues {
+    /// Rows swipe to pick; off on screens without picking's bars.
+    @Entry var swipesToPick = true
+}
+
 private struct SwipeToPick: ViewModifier {
     let path: String
     @Environment(PhoneNavigation.self) private var nav
+    @Environment(\.swipesToPick) private var swipesToPick
     @Environment(\.theme) private var theme
     /// How far the row has moved left.
     @State private var shift: CGFloat = 0
@@ -34,7 +40,11 @@ private struct SwipeToPick: ViewModifier {
     /// Whether this swipe unpicks the row, fixed when it starts so the pill keeps its symbol as it closes.
     @State private var unpicks = false
 
-    func body(content: Content) -> some View {
+    @ViewBuilder func body(content: Content) -> some View {
+        if swipesToPick { swipeable(content) } else { content }
+    }
+
+    private func swipeable(_ content: Content) -> some View {
         content
             .offset(x: -shift)
             .background(alignment: .trailing) {
