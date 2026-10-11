@@ -221,7 +221,7 @@ extension Vault {
         for image in images where paths.contains(image.path) { try bringBack(image) }
         let live = attachmentPaths()
         for (path, entry) in brought where !movedImages.isEmpty {
-            try update(path) { text in
+            _ = try update(path) { text in
                 let split = FrontmatterSplitter.split(text)
                 let body = split.body
                 var result = split.block, copied = body.startIndex
