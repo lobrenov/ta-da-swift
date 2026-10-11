@@ -129,7 +129,7 @@ struct SidebarSplitView: View {
         stopWatchingSwipes()
         swipeMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
             MainActor.assumeIsolated {
-                guard event.window === anchor.window,
+                guard let window = anchor.window, event.window === window,
                       let direction = swipe.track(event.phase, dx: SidebarSwipe.fingersDX(event), dy: event.scrollingDeltaY)
                 else { return }
                 switch direction {
