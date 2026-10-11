@@ -84,7 +84,7 @@ public enum Warning: Hashable, Sendable {
     case invalidYAML(problem: String, line: Int?)
     /// Missing or empty `status`; read as Not Started.
     case missingStatus
-    /// A `status` that isn't one of the four; read as Not Started.
+    /// A `status` that isn't one of the five; read as Not Started.
     case unknownStatus(String)
     case invalidDate(key: String, value: String)
     /// A `project` value that isn't a `"[[Title]]"` link.

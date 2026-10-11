@@ -104,3 +104,19 @@ private let index = VaultIndex(items)
         }, "\(item.path)")
     }
 }
+
+@Test func cancelledTasksAreClosedAndLeftOutOfProgress() {
+    let index = VaultIndex([
+        makeItem("projects/Gamma.md", "type: project\nstatus: Doing"),
+        makeItem("projects/Dropped.md", "type: project\nstatus: Cancelled"),
+        makeItem("tasks/Cancelled today.md", "type: task\nstatus: Cancelled\ncompletedDate: 2026-10-02\ndueDate: 2026-10-01\nproject: \"[[Gamma]]\""),
+        makeItem("tasks/Cancelled loose.md", "type: task\nstatus: Cancelled\ncompletedDate: 2026-10-01\ndeadline: 2026-10-05"),
+        makeItem("tasks/Done.md", "type: task\nstatus: Done\ncompletedDate: 2026-10-01\nproject: \"[[Gamma]]\""),
+        makeItem("tasks/Open.md", "type: task\nstatus: Doing\nproject: \"[[Gamma]]\""),
+    ])
+    #expect(index.today(today).map(\.title) == ["Cancelled today"])
+    #expect(index.upcoming(after: today).isEmpty)
+    #expect(index.loose().isEmpty)
+    #expect(index.tasks.filter { index.isOverdue($0, today: today) }.isEmpty)
+    #expect(index.activeProjects().map { "\($0.project.title) \($0.done)/\($0.total)" } == ["Gamma 1/2"])
+}

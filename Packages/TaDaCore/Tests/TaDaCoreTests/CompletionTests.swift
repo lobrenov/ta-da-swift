@@ -20,6 +20,16 @@ private let today = LocalDate("2026-10-02")!
     #expect(Completion.setStatus(.blocked, in: text, today: today) == "---\ntype: task\nstatus: Blocked\ncompletedDate:\n---\n")
 }
 
+@Test func cancellingSetsCompletedDate() {
+    let text = "---\ntype: task\nstatus: Doing\n---\n"
+    #expect(Completion.setStatus(.cancelled, in: text, today: today) == "---\ntype: task\nstatus: Cancelled\ncompletedDate: 2026-10-02\n---\n")
+}
+
+@Test func togglingACancelledFileReopensIt() {
+    let text = "---\ntype: task\nstatus: Cancelled\ncompletedDate: 2026-09-27\n---\n"
+    #expect(Completion.toggle(.cancelled, in: text, today: today) == "---\ntype: task\nstatus: Not Started\ncompletedDate:\n---\n")
+}
+
 @Test func nonDoneStatusWithoutCompletedDateTouchesOnlyStatus() {
     let text = "---\ntype: task\nstatus: Doing\n---\n"
     #expect(Completion.setStatus(.blocked, in: text, today: today) == "---\ntype: task\nstatus: Blocked\n---\n")

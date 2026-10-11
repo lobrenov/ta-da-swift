@@ -6,6 +6,10 @@ public enum Status: String, CaseIterable, Sendable {
     case doing = "Doing"
     case done = "Done"
     case blocked = "Blocked"
+    case cancelled = "Cancelled"
+
+    /// Done or Cancelled: completed, with a `completedDate`.
+    public var isClosed: Bool { self == .done || self == .cancelled }
 
     /// Matches a written value case-insensitively, ignoring surrounding whitespace.
     public init?(reading text: String) {
