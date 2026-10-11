@@ -2,7 +2,7 @@ import Foundation
 
 /// Logging moves completed (Done or Cancelled) tasks and projects into `.logbook/<yyyy-MM>/` by their `completedDate`.
 /// Reopening a logged file moves it back to `tasks/` or `projects/`, and a task brings back its logged project as Doing.
-/// Areas are never logged.
+/// A project moved either way is numbered when another project, live or logged, has its title. Areas are never logged.
 extension Vault {
     /// Logged files: completed tasks and projects, in a folder per month.
     public static let logbookFolder = ".logbook"
@@ -13,16 +13,18 @@ extension Vault {
     }
 
     /// Moves files into their month's folder in `.logbook/`, creating it if needed and numbering names that are taken
-    /// there. A file without a `completedDate` goes in `today`'s month. A file that can't be moved (as when another
+    /// there, or by another project for a project. A file without a `completedDate` goes in `today`'s month. A file that can't be moved (as when another
     /// device already has) doesn't stop the rest; the first error is thrown only when nothing moved. When a project's
     /// name had to change, its tasks' links follow it. Returns each moved file's new path by its old one.
     public func log(_ paths: [String], index: VaultIndex, today: LocalDate) throws -> [String: String] {
         var moved: [String: String] = [:]
         var firstError: (any Error)?
+        var named: Set<String> = []
         let items = paths.compactMap { index[$0] }.filter { !$0.isLogged && $0.properties.kind != .area }
         for item in items where moved[item.path] == nil {
             do {
-                moved[item.path] = try moveFile(item.path, into: Self.logbookFolder(for: item.properties.completedDate ?? today))
+                moved[item.path] = try moveFile(item, into: Self.logbookFolder(for: item.properties.completedDate ?? today),
+                                                index: index, named: &named)
             } catch {
                 firstError = firstError ?? error
             }
@@ -32,7 +34,8 @@ extension Vault {
         return moved
     }
 
-    /// Moves logged files back to `tasks/` or `projects/`, numbering names that are taken. A task whose project is
+    /// Moves logged files back to `tasks/` or `projects/`, numbering names that are taken there, or by another project
+    /// for a project. A task whose project is
     /// logged brings it back too, set to Doing. When a project's name had to change, its tasks' links follow it.
     /// Returns each moved file's new path by its old one.
     public func unlog(_ paths: [String], index: VaultIndex, today: LocalDate) throws -> [String: String] {
@@ -44,14 +47,26 @@ extension Vault {
             parents.append(project)
         }
         var moved: [String: String] = [:]
+        var named: Set<String> = []
         for item in parents + items where moved[item.path] == nil {
-            moved[item.path] = try moveFile(item.path, into: item.properties.kind == .project ? Self.projectFolder : Self.taskFolder)
+            moved[item.path] = try moveFile(item, into: item.properties.kind == .project ? Self.projectFolder : Self.taskFolder,
+                                            index: index, named: &named)
         }
         for parent in parents {
             _ = try update(moved[parent.path]!) { Completion.setStatus(.doing, in: $0, today: today) }
         }
         try relinkTasks(of: parents + items, moved: moved, index: index)
         return moved
+    }
+
+    /// Moves a file into `folder`. A project's filename also avoids every other project's title and `named`, the
+    /// projects' filenames chosen so far in this move, which it joins.
+    private func moveFile(_ item: Item, into folder: String, index: VaultIndex, named: inout Set<String>) throws -> String {
+        guard item.properties.kind == .project else { return try moveFile(item.path, into: folder) }
+        let others = index.items.values.filter { $0.properties.kind == .project && $0.path != item.path }.map { $0.title + ".md" }
+        let path = try moveFile(item.path, into: folder, taken: named.union(others))
+        named.insert(String(path.split(separator: "/").last ?? ""))
+        return path
     }
 
     /// Points the `project` link of each moved project's tasks at its new title, where moving it changed its name.

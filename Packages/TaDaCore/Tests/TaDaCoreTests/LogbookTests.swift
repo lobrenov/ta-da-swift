@@ -143,3 +143,32 @@ private func project(_ status: String, completed: String? = nil) -> String {
         #expect(try vault.read(".logbook/2026-09/Sell Kombi.md").contains("area: \"[[House]]\""))
     }
 }
+
+@Test func aProjectIsLoggedUnderATitleNoOtherProjectHas() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(project("Done", completed: "2026-08-31"), ".logbook/2026-08/Accounts.md", in: folder)
+        try writeFile(project("Done", completed: "2026-10-01"), "projects/Accounts.md", in: folder)
+        try writeFile(task("Done", completed: "2026-10-01", project: "Accounts"), "tasks/File them.md", in: folder)
+        try writeFile(project("Done", completed: "2026-09-30"), "work/Accounts.md", in: folder)
+        let index = await vault.loadIndex()
+        let moved = try vault.log(["projects/Accounts.md", "tasks/File them.md", "work/Accounts.md"], index: index, today: today)
+        #expect(moved["projects/Accounts.md"] == ".logbook/2026-10/Accounts 2.md")
+        #expect(moved["work/Accounts.md"] == ".logbook/2026-09/Accounts 3.md")
+        #expect(try vault.read(".logbook/2026-10/File them.md").contains("project: \"[[Accounts 2]]\""))
+    }
+}
+
+@Test func aProjectReopenedFromTheLogbookTakesATitleNoOtherProjectHas() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(project("Done", completed: "2026-08-31"), ".logbook/2026-08/Accounts.md", in: folder)
+        try writeFile(project("Done", completed: "2026-09-30"), ".logbook/2026-09/Accounts.md", in: folder)
+        try writeFile(project("Doing"), "work/Accounts 2.md", in: folder)
+        try writeFile(task("Done", completed: "2026-09-30", project: "Accounts"), ".logbook/2026-08/File them.md", in: folder)
+        let index = await vault.loadIndex()
+        #expect(try vault.unlog([".logbook/2026-08/Accounts.md"], index: index, today: today)
+            == [".logbook/2026-08/Accounts.md": "projects/Accounts 3.md"])
+        #expect(try vault.read(".logbook/2026-08/File them.md").contains("project: \"[[Accounts 3]]\""))
+    }
+}

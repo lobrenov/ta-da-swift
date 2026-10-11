@@ -265,11 +265,11 @@ extension Vault {
         if let firstError { throw DiscardError(failed: failed, firstError: firstError) }
     }
 
-    /// Moves a file into `folder`, creating it if needed, keeping its filename unless that's taken.
-    /// Returns the new path.
-    func moveFile(_ path: String, into folder: String) throws -> String {
+    /// Moves a file into `folder`, creating it if needed, keeping its filename unless that's taken there or among
+    /// `taken`. Returns the new path.
+    func moveFile(_ path: String, into folder: String, taken: Set<String> = []) throws -> String {
         let current = String(path.split(separator: "/").last ?? "")
-        let existing = filenames(in: folder)
+        let existing = filenames(in: folder).union(taken)
         let isTaken = existing.contains { $0.lowercased() == current.lowercased() }
         let (base, ext) = FileNaming.split(current)
         let filename = isTaken ? FileNaming.filename(for: base, extension: ext, existing: existing) : current
