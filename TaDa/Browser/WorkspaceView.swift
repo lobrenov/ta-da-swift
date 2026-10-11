@@ -121,7 +121,7 @@ private struct SplitLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let browser = max(320, min((bounds.width - 1) / 2, 460, bounds.width - 1 - 360))
         var x = bounds.minX
-        for (subview, width) in zip(subviews, [browser, 1, bounds.width - browser - 1]) {
+        for (subview, width) in zip(subviews, [browser, 1, max(0, bounds.width - browser - 1)]) {
             subview.place(at: CGPoint(x: x, y: bounds.minY), proposal: ProposedViewSize(width: width, height: bounds.height))
             x += width
         }
