@@ -148,23 +148,30 @@ struct PhoneFileScreen: View {
             ToolbarItemGroup(placement: .bottomBar) {
                 if item.properties.kind != .area {
                     let status = item.properties.status
-                    // A tap completes or reopens; a press and hold opens the statuses.
+                    let setStatus = { (status: Status) in
+                        nav.play(.pick)
+                        Task { await model.setStatus(status, in: item.path) }
+                    }
+                    // A tap completes or reopens; a press and hold opens the statuses, which VoiceOver lists as actions.
                     Menu {
-                        Picker("Status", selection: Binding { status } set: { status in
-                            nav.play(.pick)
-                            Task { await model.setStatus(status, in: item.path) }
-                        }) {
+                        Picker("Status", selection: Binding(get: { status }, set: setStatus)) {
                             ForEach(Status.menuOrder, id: \.self) { option in
                                 Label { Text(option.rawValue) } icon: { Image(uiImage: statusImage(option)) }
                                     .tag(option)
                             }
-                        }                    } label: {
+                        }
+                    } label: {
                         Label { Text(status == .done ? "Reopen" : "Complete") } icon: { Image(uiImage: statusImage(status)) }
                     } primaryAction: {
                         nav.play(status == .done ? .pick : .complete)
                         Task { await model.toggleCompletion(model.index[item.path] ?? item) }
                     }
                     .accessibilityValue(status.rawValue)
+                    .accessibilityActions {
+                        ForEach(Status.menuOrder.filter { $0 != status }, id: \.self) { option in
+                            Button(option.rawValue) { setStatus(option) }
+                        }
+                    }
                     Button("Schedule", systemImage: "calendar") { nav.sheet = .date(.due, paths: [item.path]) }
                     Button("Set Deadline", systemImage: "flag") { nav.sheet = .date(.deadline, paths: [item.path]) }
                 }
