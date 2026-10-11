@@ -184,7 +184,7 @@ private struct PickingBars: ViewModifier {
         return HStack(spacing: 0) {
             action("Complete", "checkmark.circle", tint: \.done) {
                 nav.play(.complete)
-                let open = paths.filter { model.index[$0]?.properties.status != .done }
+                let open = paths.filter { model.index[$0]?.properties.status.isClosed == false }
                 nav.endPicking()
                 Task { for path in open { await model.setStatus(.done, in: path) } }
             }

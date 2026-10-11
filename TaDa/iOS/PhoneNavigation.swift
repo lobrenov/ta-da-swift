@@ -18,13 +18,14 @@ enum PhoneRoute: Hashable {
     case area(String)
     /// Settings, scrolled to a section.
     case settings(SettingsSection)
+    case logbook
     case trash
 
     /// The file the screen shows, if it shows one.
     var path: String? {
         switch self {
         case let .file(path), let .project(path), let .area(path): path
-        case .settings, .trash: nil
+        case .settings, .logbook, .trash: nil
         }
     }
 }
