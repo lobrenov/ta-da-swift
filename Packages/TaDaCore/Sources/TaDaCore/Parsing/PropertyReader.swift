@@ -44,6 +44,7 @@ public enum PropertyReader {
         properties.dueDate = reader.date("dueDate")
         properties.deadline = reader.date("deadline")
         properties.repeatRule = reader.text("repeat")
+        properties.tags = reader.tags()
         return (properties, reader.warnings)
     }
 
@@ -68,6 +69,21 @@ public enum PropertyReader {
                 return nil
             }
             return date
+        }
+
+        /// `tags:` as a list of strings, or one string split on commas. Other items are skipped.
+        mutating func tags() -> [Tag] {
+            guard let node = root["tags"] else { return [] }
+            let texts: [String]
+            if let sequence = node.sequence {
+                texts = sequence.compactMap { $0.scalar.flatMap { isEmpty($0) ? nil : $0.string } }
+            } else if let scalar = node.scalar {
+                texts = isEmpty(scalar) ? [] : scalar.string.split(separator: ",").map(String.init)
+            } else {
+                warnings.append(.unexpectedValue(key: "tags"))
+                return []
+            }
+            return texts.compactMap(Tag.init).unique
         }
 
         /// Empty, or an unquoted YAML null (`~`, `null`).
