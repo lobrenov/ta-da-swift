@@ -385,8 +385,9 @@ final class NativeTextView: UITextView {
         if textContainerInset != insets { textContainerInset = insets }
     }
 }
-/// The editor's own tap and press, which the text view's gestures wait for: they begin only over a
-/// task box, a link, a callout title line or (a press) an image, so everywhere else the text view behaves as usual.
+/// The editor's own tap and press, which the text view's gestures wait for. The tap begins over a task box, a link or
+/// a callout title line, and anywhere while the editor doesn't have the keyboard; the press begins over a task box, a
+/// callout title line or an image. Everywhere else the text view behaves as usual.
 private final class EditorGestures: NSObject, UIGestureRecognizerDelegate {
     weak var textView: NativeTextView?
     lazy var tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
