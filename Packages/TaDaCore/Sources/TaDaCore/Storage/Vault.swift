@@ -202,19 +202,19 @@ public struct Vault: Sendable {
         return newPath
     }
 
-    /// Renames a project's file and relinks each of its tasks; a task that can't be relinked doesn't stop the rest.
+    /// Renames a project's file and relinks each of its tasks, logged ones too; a task that can't be relinked doesn't stop the rest.
     /// Returns the project's new path, its tasks as they now are and the paths of the tasks that couldn't be relinked.
     public func renameProject(at path: String, to title: String, index: VaultIndex) throws
         -> (path: String, relinked: [Item], failed: [String]) {
         guard let project = index[path], project.properties.kind == .project else { return (path, [], []) }
-        return try rename(project, to: title, relinking: index.tasks(in: project), key: "project")
+        return try rename(project, to: title, relinking: index.tasks(in: project, includingLogged: true), key: "project")
     }
 
-    /// Renames an area's file and relinks its projects and its own tasks, as `renameProject` does.
+    /// Renames an area's file and relinks its projects and its own tasks, logged ones too, as `renameProject` does.
     public func renameArea(at path: String, to title: String, index: VaultIndex) throws
         -> (path: String, relinked: [Item], failed: [String]) {
         guard let area = index[path], area.properties.kind == .area else { return (path, [], []) }
-        return try rename(area, to: title, relinking: index.projects(in: area) + index.tasks(in: area), key: "area")
+        return try rename(area, to: title, relinking: index.projects(in: area, includingLogged: true) + index.tasks(in: area, includingLogged: true), key: "area")
     }
 
     private func rename(_ parent: Item, to title: String, relinking files: [Item], key: String) throws

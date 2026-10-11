@@ -113,3 +113,33 @@ private func project(_ status: String, completed: String? = nil) -> String {
         #expect(vault.markdownPaths() == [".logbook/2026-09/Listing.md"])
     }
 }
+
+@Test func loggingGoesOnPastAFileThatCantMove() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(project("Done", completed: "2026-10-01"), "projects/Timesheet.md", in: folder)
+        try writeFile(task("Done", completed: "2026-10-01", project: "Timesheet"), "tasks/Fill it in.md", in: folder)
+        try writeFile(task("Done", completed: "2026-10-01"), "tasks/Gone.md", in: folder)
+        try writeFile(project("Done", completed: "2026-10-01"), ".logbook/2026-10/Timesheet.md", in: folder)
+        let index = await vault.loadIndex()
+        try FileManager.default.removeItem(at: folder.appending(path: "tasks/Gone.md"))
+        let moved = try vault.log(["tasks/Fill it in.md", "tasks/Gone.md", "projects/Timesheet.md"], index: index, today: today)
+        #expect(moved == ["tasks/Fill it in.md": ".logbook/2026-10/Fill it in.md",
+                          "projects/Timesheet.md": ".logbook/2026-10/Timesheet 2.md"])
+        #expect(try vault.read(".logbook/2026-10/Fill it in.md").contains("project: \"[[Timesheet 2]]\""))
+    }
+}
+
+@Test func renamingAProjectOrAreaRelinksItsLoggedFiles() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("---\ntype: area\n---\n", "areas/Home.md", in: folder)
+        try writeFile("---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\narea: \"[[Home]]\"\n---\n",
+                      ".logbook/2026-09/Kombi.md", in: folder)
+        try writeFile(task("Done", completed: "2026-09-30", project: "Kombi"), ".logbook/2026-09/Listing.md", in: folder)
+        _ = try vault.renameProject(at: ".logbook/2026-09/Kombi.md", to: "Sell Kombi", index: await vault.loadIndex())
+        #expect(try vault.read(".logbook/2026-09/Listing.md").contains("project: \"[[Sell Kombi]]\""))
+        _ = try vault.renameArea(at: "areas/Home.md", to: "House", index: await vault.loadIndex())
+        #expect(try vault.read(".logbook/2026-09/Sell Kombi.md").contains("area: \"[[House]]\""))
+    }
+}

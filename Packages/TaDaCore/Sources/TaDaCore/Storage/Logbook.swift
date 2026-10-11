@@ -13,14 +13,21 @@ extension Vault {
     }
 
     /// Moves files into their month's folder in `.logbook/`, creating it if needed and numbering names that are taken
-    /// there. A file without a `completedDate` goes in `today`'s month. When a project's name had to change, its tasks'
-    /// links follow it. Returns each moved file's new path by its old one.
+    /// there. A file without a `completedDate` goes in `today`'s month. A file that can't be moved (as when another
+    /// device already has) doesn't stop the rest; the first error is thrown only when nothing moved. When a project's
+    /// name had to change, its tasks' links follow it. Returns each moved file's new path by its old one.
     public func log(_ paths: [String], index: VaultIndex, today: LocalDate) throws -> [String: String] {
         var moved: [String: String] = [:]
+        var firstError: (any Error)?
         let items = paths.compactMap { index[$0] }.filter { !$0.isLogged && $0.properties.kind != .area }
         for item in items where moved[item.path] == nil {
-            moved[item.path] = try moveFile(item.path, into: Self.logbookFolder(for: item.properties.completedDate ?? today))
+            do {
+                moved[item.path] = try moveFile(item.path, into: Self.logbookFolder(for: item.properties.completedDate ?? today))
+            } catch {
+                firstError = firstError ?? error
+            }
         }
+        if let firstError, moved.isEmpty { throw firstError }
         try relinkTasks(of: items, moved: moved, index: index)
         return moved
     }

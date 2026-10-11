@@ -1259,45 +1259,48 @@ import TaDaCore
     /// Whether Log Now has anything to log or ask about.
     var hasFilesToLog: Bool { logbook.contains { !$0.isLogged } }
 
-    /// Moves files to `.logbook/`, one at a time, so a file another device has already moved doesn't stop the rest.
+    /// Moves files to `.logbook/`.
     private func log(_ paths: [String]) async {
         guard !paths.isEmpty else { return }
-        await moveFiles("log the files") { vault, index, today in
-            var moved: [String: String] = [:]
-            var firstError: (any Error)?
-            for path in paths {
-                do { moved.merge(try vault.log([path], index: index, today: today)) { $1 } } catch { firstError = firstError ?? error }
-            }
-            if let firstError, moved.isEmpty { throw firstError }
-            return moved
-        }
+        await moveFiles("log the files") { try $0.log(paths, index: $1, today: $2) }
     }
 
     /// A logged file that isn't Done or Cancelled any more goes back to `tasks/` or `projects/`, bringing back its logged
     /// project as Doing. A task reopened from Done or Cancelled sets its Done or Cancelled project to Doing.
     private func reopenParent(of path: String, wasClosed: Bool) async {
-        guard let item = index[path], !item.properties.status.isClosed else { return }
+        guard var item = index[path], !item.properties.status.isClosed else { return }
         if item.isLogged {
-            await moveFiles("put “\(item.title)” back") { try $0.unlog([path], index: $1, today: $2) }
-        } else if wasClosed, let project = index.project(of: item), project.properties.status.isClosed, !project.isLogged {
+            let moved = await moveFiles("put “\(item.title)” back") { try $0.unlog([path], index: $1, today: $2) }
+            guard let back = moved[path].flatMap({ index[$0] }) else { return }
+            item = back
+        } else if !wasClosed {
+            return
+        }
+        if let project = index.project(of: item), project.properties.status.isClosed, !project.isLogged {
             await setStatus(.doing, in: project.path)
         }
     }
 
     /// Saves the open file, moves files with `move` (which returns each new path by its old one), and follows them.
+    /// Returns the moved paths, or none when moving failed.
+    @discardableResult
     private func moveFiles(_ action: String,
-                           _ move: @escaping @Sendable (Vault, VaultIndex, LocalDate) throws -> [String: String]) async {
-        guard let vault else { return }
+                           _ move: @escaping @Sendable (Vault, VaultIndex, LocalDate) throws -> [String: String]) async
+        -> [String: String] {
+        guard let vault else { return [:] }
         if let document { await save(document) }
         let index = index, today = today
+        var result: [String: String] = [:]
         do {
             let moved = try await Self.run { try move(vault, index, today) }
             let items = await Self.run { moved.values.compactMap { try? vault.load($0) } }
             for (old, new) in moved { follow(old, to: new, items: items.filter { $0.path == new }) }
+            result = moved
         } catch {
             errorMessage = Self.couldNot(action, error)
         }
         await refresh()
+        return result
     }
 
     // MARK: Move and dates

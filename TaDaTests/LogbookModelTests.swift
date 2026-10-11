@@ -100,6 +100,26 @@ struct LogbookModelTests {
         #expect(model.index["projects/Kombi.md"]?.properties.status == .done)
     }
 
+    @Test func loggingATaskBeforeItsRenamedProjectRelinksIt() async throws {
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-01\n---\n", ".logbook/2026-10/Timesheet.md")
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-01\n---\n", "projects/Timesheet.md")
+        try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-01\nproject: \"[[Timesheet]]\"\n---\n",
+                         "tasks/Fill it in.md")
+        let model = await folder.model(logging: true)
+        #expect(model.index[".logbook/2026-10/Timesheet 2.md"] != nil)
+        #expect(model.index[".logbook/2026-10/Fill it in.md"]?.properties.project?.title == "Timesheet 2")
+    }
+
+    @Test func reopeningALoggedTaskSetsItsLiveCompletedProjectToDoing() async throws {
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-03\n---\n", "projects/Kombi.md")
+        try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Kombi]]\"\n---\n", ".logbook/2026-09/Tyres.md")
+        try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\nproject: \"[[Kombi]]\"\n---\n", "tasks/Listing.md")
+        let model = await folder.model(logging: true)
+        await model.setStatus(.notStarted, in: ".logbook/2026-09/Tyres.md")
+        #expect(model.index["tasks/Tyres.md"]?.properties.status == .notStarted)
+        #expect(model.index["projects/Kombi.md"]?.properties.status == .doing)
+    }
+
     @Test func aLinkToALoggedFileOpensInTheLogbook() async throws {
         let model = await folder.model(logging: true)
         model.openLink(to: ".logbook/2026-09/Old.md")
