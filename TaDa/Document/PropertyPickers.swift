@@ -1,5 +1,5 @@
-// The pickers under the property chips: status, a task's project or area, and a project's area in popup menus, and
-// dates in a calendar. One is open at a time; its chip keeps an accent ring until it closes.
+// The pickers under the property chips: status, a task's project or area, a project's area and tagMenu in popup
+// menus, and dates in a calendar. One is open at a time; its chip keeps an accent ring until it closes.
 #if os(macOS)
 import SwiftUI
 import AppKit
@@ -24,6 +24,8 @@ final class PropertyPicker {
                                                             searchPrompt: ProjectChoice.findPrompt, row: ProjectChoiceRow.init)
     @ObservationIgnored private let areaMenu = PopupMenu(style: .full(confirm: "Set", maxListHeight: 312), takesKeys: true,
                                                          searchPrompt: AreaChoice.findPrompt, row: AreaChoiceRow.init)
+    @ObservationIgnored private let tagMenu = PopupMenu(style: .full(confirm: "Toggle", maxListHeight: 312), takesKeys: true,
+                                                        searchPrompt: TagChoice.prompt, row: TagChoiceRow.init)
     @ObservationIgnored private let calendar = CalendarPicker()
     /// The open picker's chip, in screen coordinates.
     @ObservationIgnored private var anchor = CGRect.zero
@@ -31,6 +33,8 @@ final class PropertyPicker {
     @ObservationIgnored private var closedByClick: (target: Target, time: TimeInterval)?
     /// What the project or area menu needs to refresh as its search changes.
     @ObservationIgnored private var projectMenuContext: ProjectMenuContext?
+    /// What tagMenu needs to refresh as its search changes and after each pick.
+    @ObservationIgnored private var tagMenuContext: (path: String, model: AppModel, anchor: CGRect, window: NSWindow)?
     /// The row the file menu's Move, Schedule or Set Deadline… came from, ringed while the picker is open.
     @ObservationIgnored private var ringed: (model: AppModel, path: String)?
 
@@ -49,9 +53,11 @@ final class PropertyPicker {
         statusMenu.onDismiss = { [weak self] in self?.dismiss() }
         projectMenu.onDismiss = { [weak self] in self?.dismiss() }
         areaMenu.onDismiss = { [weak self] in self?.dismiss() }
+        tagMenu.onDismiss = { [weak self] in self?.dismiss() }
         calendar.onDismiss = { [weak self] in self?.dismiss() }
         projectMenu.onSearch = { [weak self] _ in self?.showProjects() }
         areaMenu.onSearch = { [weak self] _ in self?.showAreas() }
+        tagMenu.onSearch = { [weak self] _ in self?.showTags() }
         NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { PropertyPicker.shared.close() }
         }
@@ -107,6 +113,15 @@ final class PropertyPicker {
         showAreas()
     }
 
+    /// Opens tagMenu for `item` under `anchor`, or closes it when it's open. A pick adds or removes the tag and the menu
+    /// stays open.
+    func pickTags(of item: Item, model: AppModel, anchor: ScreenAnchor) {
+        guard let window = anchor.window, toggle(item.path, "tags", anchor: anchor.rect) else { return }
+        tagMenuContext = (item.path, model, anchor.rect, window)
+        tagMenu.query = ""
+        showTags()
+    }
+
     /// Opens `kind`'s calendar for `items` under `anchor`, or closes it when it's open.
     func pickDate(_ kind: AgendaEntry.Kind, of items: [Item], model: AppModel, anchor: ScreenAnchor, gap: CGFloat = 6) {
         guard let window = anchor.window else { return }
@@ -142,12 +157,14 @@ final class PropertyPicker {
         statusMenu.hide()
         projectMenu.hide()
         areaMenu.hide()
+        tagMenu.hide()
         calendar.hide()
         if let ringed, ringed.model.menuTarget == ringed.path {
             ringed.model.menuTarget = nil
         }
         ringed = nil
         projectMenuContext = nil
+        tagMenuContext = nil
         open = nil
     }
 
@@ -215,6 +232,29 @@ final class PropertyPicker {
             Task { await model.newArea(named: name) }
         case .new(let name, _):
             Task { await model.newProject(named: name, linking: paths) }
+        }
+    }
+
+    private func showTags() {
+        guard open?.key == "tags", let context = tagMenuContext, let item = context.model.index[context.path] else { return }
+        let menu = TagChoice.menu(item: item, tree: context.model.tagTree, query: tagMenu.query)
+        tagMenu.show(menu.sections, highlight: menu.highlight, theme: context.model.theme, below: context.anchor,
+                     inset: 0, gap: 6, in: context.window) { [weak self] choice in
+            self?.pickTag(choice)
+        }
+    }
+
+    private func pickTag(_ choice: TagChoice) {
+        guard let context = tagMenuContext else { return }
+        let model = context.model, path = context.path
+        switch choice {
+        case .tag(_, _, _, true):
+            return
+        case .tag(let tag, _, true, _):
+            Task { await model.removeTag(tag, from: path); showTags() }
+        case .tag(let tag, _, false, _), .create(let tag):
+            tagMenu.query = ""
+            Task { await model.addTag(tag, to: path); showTags() }
         }
     }
 

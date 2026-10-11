@@ -43,6 +43,20 @@ struct TaskRow: View {
                 DateChip(kind: .deadline, date: deadline, today: today, labelled: dates != .iconsOnly)
             }
         }
+        TagCountChip(tags: item.tags)
+    }
+}
+
+/// The tag glyph in `accent` and how many tags the file carries, last on a row's meta line. Hovering lists them and
+/// where each is written. Nothing when the file has none.
+struct TagCountChip: View {
+    let tags: [Item.TagUse]
+
+    var body: some View {
+        if !tags.isEmpty {
+            Chip(systemImage: "tag", tint: \.accent, text: "\(tags.count)", spoken: tags.count == 1 ? "1 tag" : "\(tags.count) tags")
+                .help(tags.map { "#\($0.tag.name)  \($0.inFrontmatter ? "tags:" : "in text")" }.joined(separator: "\n"))
+        }
     }
 }
 

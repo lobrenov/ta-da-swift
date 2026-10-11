@@ -75,6 +75,20 @@ struct DesignRenderTests {
             areas.selection = selection
             try await render(areas, to: output.appending(path: "\(name).png"))
         }
+        // Tags, on TaDaCore's TagVault fixture, in the default dark scheme.
+        let tagVault = URL(filePath: #filePath).deletingLastPathComponent()
+            .appending(path: "../Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/TagVault").standardized
+        AppModel.setLastLogged(tagVault, to: LocalDate("2026-10-02")!, in: defaults)
+        let tags = AppModel(defaults: defaults)
+        tags.today = LocalDate("2026-10-02")!
+        await tags.choose(tagVault)
+        tags.appearance = .dark
+        tags.domain = .project("projects/Garden.md")
+        tags.selection = "tasks/Prune the lemon tree.md"
+        try await render(tags, to: output.appending(path: "tag-task.png"))
+        tags.domain = .area("areas/Home.md")
+        try await render(tags, to: output.appending(path: "tag-area.png"))
+
         // The Logbook, on a copy of the design's data with its completed files logged, one completed and one cancelled
         // today, in the default dark scheme.
         let copy = FileManager.default.temporaryDirectory.appending(path: "DesignVault-\(UUID().uuidString)", directoryHint: .isDirectory)

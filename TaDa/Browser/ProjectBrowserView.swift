@@ -56,6 +56,7 @@ struct ProjectBrowserView: View {
                         .padding(.leading, 6)
                 }
             }
+            TagChipRow(model: model, item: project)
             Text("\(progress.done) of \(progress.total) tasks done")
                 .font(.system(size: 11.5))
                 .foregroundStyle(theme.color(\.muted))

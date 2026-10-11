@@ -1,7 +1,7 @@
 // A file's properties under its title, as the canvas's Properties page draws them: status, the parent (a task's
 // project or area, a project's area), due date and deadline as chips that open pickers, with a dashed chip for a
-// missing one; then the type, a task's area through its project, and the days the file was created and completed in
-// a quiet line. An area has only the quiet line. Repeat isn't shown.
+// missing one; the Tags row; then the type, a task's area through its project, and the days the file was created and
+// completed in a quiet line. An area has the quiet line, then the Tags row. Repeat isn't shown.
 import SwiftUI
 import TaDaCore
 #if os(macOS)
@@ -15,8 +15,12 @@ struct PropertyChips: View {
         VStack(alignment: .leading, spacing: 14) {
             if item.properties.kind != .area {
                 PropertyChipRow(model: model, item: item)
+                TagChipRow(model: model, item: item)
+                QuietLine(model: model, item: item)
+            } else {
+                QuietLine(model: model, item: item)
+                TagChipRow(model: model, item: item)
             }
-            QuietLine(model: model, item: item)
         }
     }
 }
