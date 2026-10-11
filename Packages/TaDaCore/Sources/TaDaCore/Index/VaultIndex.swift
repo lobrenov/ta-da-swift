@@ -21,8 +21,8 @@ public struct VaultIndex: Sendable {
     private var embeddersByName: [String: Set<String>] = [:]
     /// Tag path → the paths of the items that aren't logged and carry it (not counting its children).
     private var pathsByTag: [String: Set<String>] = [:]
-    /// Tag path → the tag as first seen, for each tag in `pathsByTag`.
-    private var tagsByPath: [String: Tag] = [:]
+    /// Tag path → the tag as spelled by the carrier with the first path, and that path, for each tag in `pathsByTag`.
+    private var tagsByPath: [String: (tag: Tag, path: String)] = [:]
 
     public init(_ items: [Item] = []) {
         for item in items { update(item) }
@@ -57,9 +57,9 @@ public struct VaultIndex: Sendable {
     /// Logged tasks and projects.
     public var logged: [Item] { items.values.filter(\.isLogged) }
 
-    /// Every tag carried by an item that isn't logged, spelled as first seen, in no order. Parents carried by no file
-    /// are left out.
-    var carriedTags: [Tag] { Array(tagsByPath.values) }
+    /// Every tag carried by an item that isn't logged, spelled as in the carrier with the first path, in no order.
+    /// Parents carried by no file are left out.
+    var carriedTags: [Tag] { tagsByPath.values.map(\.tag) }
 
     /// The paths of the items that aren't logged and carry this tag path itself, not its children.
     func paths(carrying path: String) -> Set<String> { pathsByTag[path] ?? [] }
@@ -213,7 +213,7 @@ public struct VaultIndex: Sendable {
         guard !item.isLogged else { return }
         for use in item.tags {
             pathsByTag[use.tag.path, default: []].insert(item.path)
-            if tagsByPath[use.tag.path] == nil { tagsByPath[use.tag.path] = use.tag }
+            if tagsByPath[use.tag.path].map({ item.path < $0.path }) ?? true { tagsByPath[use.tag.path] = (use.tag, item.path) }
         }
     }
 
@@ -221,7 +221,10 @@ public struct VaultIndex: Sendable {
         guard !item.isLogged else { return }
         for use in item.tags {
             Self.remove(item.path, at: use.tag.path, from: &pathsByTag)
-            if pathsByTag[use.tag.path] == nil { tagsByPath[use.tag.path] = nil }
+            guard tagsByPath[use.tag.path]?.path == item.path else { continue }
+            tagsByPath[use.tag.path] = pathsByTag[use.tag.path]?.min().flatMap { path in
+                items[path]?.tags.first { $0.tag.path == use.tag.path }.map { ($0.tag, path) }
+            }
         }
     }
 

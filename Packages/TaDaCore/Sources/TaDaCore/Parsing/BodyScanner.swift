@@ -85,7 +85,7 @@ public enum BodyScanner {
             links += found.links
             embeds += found.embeds
             if text.string.contains("#"), !Self.isInLink(text) {
-                tags += InlineTags.scan(text.string, atBoundary: Self.startsAtBoundary(text))
+                tags += InlineTags.scan(source(of: text) ?? text.string, atBoundary: Self.startsAtBoundary(text))
             }
             if text.string.contains("[["), let range = text.range { textSpans.append(span(of: text.string, reportedAt: range.lowerBound)) }
         }
@@ -110,6 +110,19 @@ public enum BodyScanner {
             let offset = found ?? min(lineStarts[start.line - 1] + start.column - 1, bytes.count)
             if found != nil { spanCursor = offset + expected.count }
             return offset..<min(offset + expected.count, bytes.count)
+        }
+
+        /// The text as written, escapes and `#` entities kept, when the parser's reported range holds it.
+        private func source(of text: Text) -> String? {
+            guard let range = text.range, range.lowerBound.line == range.upperBound.line, range.lowerBound.line <= lineStarts.count
+            else { return nil }
+            let lineStart = lineStarts[range.lowerBound.line - 1]
+            let (start, end) = (lineStart + range.lowerBound.column - 1, lineStart + range.upperBound.column - 1)
+            guard start <= end, end <= bytes.count, let source = String(bytes: bytes[start..<end], encoding: .utf8) else { return nil }
+            guard source != text.string else { return source }
+            let decoded = source.replacing(#/\\([!-\/:-@\[-`{-~])/#) { String($0.1) }
+                .replacing("&#35;", with: "#").replacing("&num;", with: "#")
+            return decoded == text.string ? source : nil
         }
 
         /// Whether the text is a link's or an image's text, or an autolink.

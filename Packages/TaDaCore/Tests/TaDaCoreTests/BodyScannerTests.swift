@@ -188,3 +188,8 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
 @Test func scannerReadsTagsAtLineStartsAcrossSoftBreaks() {
     #expect(BodyScanner.scan("One\n#two\r\n#three").tags.map(\.name) == ["two", "three"])
 }
+
+@Test func scannerSkipsEscapedHashes() {
+    let body = "\\#escaped and &#35;entity and &num;named but #real\n\n- [ ] item \\#no #yes\n\nx\\\n#after-break \\#not"
+    #expect(BodyScanner.scan(body).tags.map(\.name) == ["real", "yes", "after-break"])
+}

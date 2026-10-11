@@ -146,7 +146,9 @@ private func tagNames(_ text: String) throws -> [String] {
 }
 
 @Test func addTagTurnsAnEmptyKeyOrAStringIntoAFlowList() throws {
-    for empty in ["tags:", "tags: []", "tags: ~", "tags: # none yet"] {
+    #expect(FrontmatterEditor.addTag(tag("a"), in: "---\ntype: task\ntags: # none yet\n---\n") == "---\ntype: task\ntags: [a] # none yet\n---\n")
+    #expect(FrontmatterEditor.addTag(tag("c"), in: "---\ntype: task\ntags: a, b # old\n---\n") == "---\ntype: task\ntags: [a, b, c] # old\n---\n")
+    for empty in ["tags:", "tags: []", "tags: ~"] {
         #expect(FrontmatterEditor.addTag(tag("a"), in: "---\ntype: task\n\(empty)\n---\n") == "---\ntype: task\ntags: [a]\n---\n", "\(empty)")
     }
     #expect(FrontmatterEditor.addTag(tag("c"), in: "---\ntype: task\ntags: a, b\n---\n") == "---\ntype: task\ntags: [a, b, c]\n---\n")
@@ -186,4 +188,22 @@ func addedAndRemovedTagsReadBack(_ name: String) throws {
         #expect(try tagNames(added) == expected, "\(list)")
         #expect(try tagNames(FrontmatterEditor.removeTag(new, in: added)) == expected.dropLast(), "\(list)")
     }
+}
+
+@Test func tagEditsLeaveValuesTheyCantSpliceAlone() throws {
+    for value in ["tags: [a, # first\n  b]", "tags: [a,\n  # note\n  b]", "tags: a,\n  b", "tags: >-\n  a, b", "tags: |\n  a"] {
+        let text = "---\ntype: task\nstatus: Doing\n\(value)\n---\n"
+        #expect(FrontmatterEditor.addTag(tag("c"), in: text) == text, "\(value)")
+        #expect(FrontmatterEditor.removeTag(tag("a"), in: text) == text, "\(value)")
+    }
+}
+
+@Test func tagEditsReachBlockItemsPastBlankLines() throws {
+    let text = "---\ntype: task\ntags: # mine\n  - a\n\n  - b\n\nstatus: Doing\n---\n"
+    #expect(try tagNames(text) == ["a", "b"])
+    let removed = FrontmatterEditor.removeTag(tag("b"), in: text)
+    #expect(removed == "---\ntype: task\ntags: # mine\n  - a\n\n\nstatus: Doing\n---\n")
+    #expect(FrontmatterEditor.removeTag(tag("a"), in: removed) == "---\ntype: task\ntags: # mine\n\n\nstatus: Doing\n---\n")
+    #expect(FrontmatterEditor.addTag(tag("b"), in: text) == text)
+    #expect(FrontmatterEditor.addTag(tag("c"), in: text) == "---\ntype: task\ntags: # mine\n  - a\n\n  - b\n  - c\n\nstatus: Doing\n---\n")
 }

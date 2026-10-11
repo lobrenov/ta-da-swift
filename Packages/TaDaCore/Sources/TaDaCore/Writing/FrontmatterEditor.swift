@@ -62,7 +62,7 @@ public enum FrontmatterEditor {
         return after == nil || after == " " || after == "\t"
     }
 
-    private static func isContinuation(_ line: Substring) -> Bool {
+    static func isContinuation(_ line: Substring) -> Bool {
         line.first == " " || line.first == "\t" || line == "-" || line.hasPrefix("- ")
     }
 
