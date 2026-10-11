@@ -107,6 +107,7 @@ struct PhoneSettingsScreen: View {
                     toggle("Brackets", "( [ {", \.brackets)
                     toggle("Text formatting", "** _ ==", \.formatting)
                     toggle("Wikilinks", "[[ ![[", \.wikiLinks)
+                    toggle("Tags", "#", \.tags)
                 }
                 .id(SettingsSection.editor)
                 Section {

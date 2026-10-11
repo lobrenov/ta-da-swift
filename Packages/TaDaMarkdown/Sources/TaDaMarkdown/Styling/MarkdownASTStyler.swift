@@ -642,6 +642,13 @@ enum MarkdownASTStyler {
             let last = ns.character(at: caret - 1)
             return last != 0x0A && last != 0x0D
         }
+        /// Ta Da fork: whether the caret is on one of the lines `range` spans.
+        func isOnCaretLine(_ range: NSRange) -> Bool {
+            guard caret >= 0, caret <= ns.length else { return false }
+            var start = 0, contentsEnd = 0
+            ns.getLineStart(&start, end: nil, contentsEnd: &contentsEnd, for: range)
+            return caret >= start && caret <= contentsEnd
+        }
         var theme: MarkdownEditorTheme { config.theme }
         var text: String { ns as String }
         var fullRange: NSRange { NSRange(location: 0, length: ns.length) }
@@ -918,6 +925,9 @@ enum MarkdownASTStyler {
             case .wikiLink(let range, let name, _, let markers):
                 styleWikiLink(range: range, name: name, markers: markers, ctx: ctx, into: &attrs)
 
+            case .tag(let range, let marker):
+                styleTag(range: range, marker: marker, ctx: ctx, into: &attrs)
+
             case .image, .imageEmbed, .inlineLatex, .escape:
                 break   // ported in later increments
             }
@@ -972,6 +982,23 @@ enum MarkdownASTStyler {
         }
         if !contentAttrs.isEmpty { attrs.append((name, contentAttrs)) }
         for marker in markers { attrs.append((marker, [.foregroundColor: ctx.theme.mutedText])) }
+    }
+
+    /// Ta Da fork: a bubble in the tag's tint with the `#` fainter, kerned apart from its neighbours to clear the
+    /// bubble's padding; plain source on the caret's line.
+    private static func styleTag(range: NSRange, marker: NSRange, ctx: Ctx, into attrs: inout [StyledRange]) {
+        attrs.append((range, [.spellingState: 0]))
+        guard let style = ctx.config.tags, !ctx.isOnCaretLine(range) else { return }
+        let bubble = style.bubble
+        let tint = bubble.text ?? ctx.theme.bodyText
+        let name = ctx.ns.substring(with: NSRange(location: NSMaxRange(marker), length: NSMaxRange(range) - NSMaxRange(marker)))
+        attrs.append((range, [.markdownInlineBubble: InlineBubbleSpan(bubble), .foregroundColor: tint,
+                              .markdownTag: name]))
+        attrs.append((marker, [.foregroundColor: tint.withAlphaComponent(style.hashAlpha)]))
+        attrs.append((lastCharacter(of: range), [.kern: bubble.markerAdvance]))
+        if range.location > 0, ![0x0A, 0x0D].contains(ctx.ns.character(at: range.location - 1)) {
+            attrs.append((NSRange(location: range.location - 1, length: 1), [.kern: bubble.markerAdvance]))
+        }
     }
 
     // MARK: - Marker shrinking (hide syntax of inactive nodes)
@@ -1032,7 +1059,7 @@ enum MarkdownASTStyler {
                 if !(forceReveal || ctx.isActive(range)) { shrink(markers, ctx: ctx, into: &attrs) }
             case .escape(let range, _, let marker):
                 if !(forceReveal || ctx.isActive(range)) { shrink([marker], ctx: ctx, into: &attrs) }
-            case .text, .code, .imageEmbed, .inlineLatex:
+            case .text, .code, .imageEmbed, .inlineLatex, .tag:
                 break   // own marker handling / not shrunk
             }
         }

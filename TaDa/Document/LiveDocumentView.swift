@@ -44,6 +44,8 @@ struct BodyEditor: View {
     let document: OpenDocument
     /// Opens a link's file; by default the model follows it (`AppModel.openLink(to:)`).
     var open: ((String) -> Void)? = nil
+    /// Opens a clicked tag; by default the model shows its page.
+    var openTag: ((Tag) -> Void)? = nil
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -58,7 +60,11 @@ struct BodyEditor: View {
             links: LinkMenuSource(index: model.index, vault: model.vault, attachments: model.attachments, recent: model.recentFiles, openPath: document.path),
             embedImage: model.embed,
             imageActions: model,
-            onLinkClick: openLink
+            onLinkClick: openLink,
+            onTagClick: { name in
+                guard let tag = Tag(name) else { return }
+                if let openTag { openTag(tag) } else { model.show(.tag(tag.path)) }
+            }
         )
         // The editor insets its text by 16pt; line it up with the title.
         .padding(.horizontal, -16)

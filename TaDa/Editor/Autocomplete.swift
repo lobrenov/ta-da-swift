@@ -8,6 +8,8 @@ struct Autocomplete: Equatable {
     var formatting = true
     /// `[[` adds `]]`, for links and `![[` embeds.
     var wikiLinks = true
+    /// `#` and a letter list the tags in use.
+    var tags = true
 
     init() {}
 
@@ -16,9 +18,10 @@ struct Autocomplete: Equatable {
         brackets = dictionary?["brackets"] as? Bool ?? true
         formatting = dictionary?["formatting"] as? Bool ?? true
         wikiLinks = dictionary?["wikiLinks"] as? Bool ?? true
+        tags = dictionary?["tags"] as? Bool ?? true
     }
 
     var dictionary: [String: Bool] {
-        ["brackets": brackets, "formatting": formatting, "wikiLinks": wikiLinks]
+        ["brackets": brackets, "formatting": formatting, "wikiLinks": wikiLinks, "tags": tags]
     }
 }

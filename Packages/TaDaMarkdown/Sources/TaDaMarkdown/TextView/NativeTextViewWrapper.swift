@@ -152,6 +152,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
     /// Ta Da fork: with `imageEmbed.selectionRing` set, a right-click on a drawn image (`.menu`), or ⌘C, ⌘X or ⌘⌫
     /// while one is selected. The embedder copies the image, shows its menu, and so on; a cut calls `remove`.
     public var onImageEmbed: ((ImageEmbedRequest) -> Void)?
+    /// Ta Da fork: a click on a drawn `#tag` (with `configuration.tags` set), with the tag as written, without `#`.
+    public var onTagClick: ((String) -> Void)?
     /// Ta Da fork: ↑/↓ and ↵/⇥ (`.confirm`) while a slash command is open. Return `true`
     /// to consume the key. Esc always closes it.
     public var onSlashCommandKey: ((InlinePreviewKey) -> Bool)?
@@ -189,7 +191,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         slashCommandProxy: SlashCommandProxy? = nil,
         onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil,
         onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil,
-        onImageEmbed: ((ImageEmbedRequest) -> Void)? = nil
+        onImageEmbed: ((ImageEmbedRequest) -> Void)? = nil,
+        onTagClick: ((String) -> Void)? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -222,6 +225,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         self.onTaskMarkerMenu = onTaskMarkerMenu
         self.onCalloutMenu = onCalloutMenu
         self.onImageEmbed = onImageEmbed
+        self.onTagClick = onTagClick
     }
 
     public func sizeThatFits(
@@ -439,6 +443,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         textView.onTaskMarkerMenu = onTaskMarkerMenu
         textView.onCalloutMenu = onCalloutMenu
         textView.onImageEmbed = onImageEmbed
+        textView.onTagClick = onTagClick
         reconcileHeader(textView: textView, context: context)
 
         let isNodeSwitch = context.coordinator.documentId != documentId
@@ -613,6 +618,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
             textView.configuration.extensions = configuration.extensions
             context.coordinator.configuration.callouts = configuration.callouts
             textView.configuration.callouts = configuration.callouts
+            context.coordinator.configuration.tags = configuration.tags
+            textView.configuration.tags = configuration.tags
             context.coordinator.configuration.services = configuration.services
             textView.configuration.services = configuration.services
             context.coordinator.cachedParsedDocument = nil

@@ -22,6 +22,7 @@
 //                          spans wholly nested inside a Markdown link's label.
 //                          This keeps `[x](y)` inert inside code while allowing
 //                          valid labels such as [`x`](y).
+//    3b. scanTags        — Ta Da fork: `#tags`, when the registry reads them.
 //    4. resolveEmphasis  — `*`/`_` delimiter runs over text outside every
 //                          claimed span; may wrap claimed spans.
 //    5. buildTree        — containment tree. Emphasis nests already-collected
@@ -59,6 +60,8 @@ indirect enum InlineNode: Equatable {
     case text(NSRange)
     /// `` `code` `` — opaque; `range` covers the backticks, `content` strips single-space padding.
     case code(range: NSRange, content: NSRange)
+    /// Ta Da fork: `#tag` — opaque; `marker` is the `#`.
+    case tag(range: NSRange, marker: NSRange)
     /// `*`/`_` emphasis. `markers` is `[openMarker, closeMarker]`.
     case emphasis(EmphasisKind, range: NSRange, markers: [NSRange], children: [InlineNode])
     /// `[text](url)`. `markers` is `[ "[", "]", "(", ")" ]`; text is recursively parsed.
@@ -103,6 +106,7 @@ enum InlineParser {
     private static let pipe: unichar = 0x7C
     private static let backslash: unichar = 0x5C
     private static let dollar: unichar = 0x24
+    private static let hash: unichar = 0x23
 
     // MARK: - Entry point
 
@@ -121,6 +125,14 @@ enum InlineParser {
     /// quadratic vs. linear differ by orders of magnitude rather than by 1.4x.
     static func parse(_ text: String, registry: ExtensionRegistry = .empty,
                       cost: inout InlineParseCost) -> [InlineNode] {
+        parse(text, registry: registry, tags: registry.tags ? .atBoundary : nil, cost: &cost)
+    }
+
+    /// Ta Da fork: how a parse reads `#tags`. nil reads none.
+    private enum TagStart { case atBoundary, notAtBoundary }
+
+    private static func parse(_ text: String, registry: ExtensionRegistry, tags: TagStart?,
+                              cost: inout InlineParseCost) -> [InlineNode] {
         let ns = text as NSString
         let len = ns.length
         guard len > 0 else { return [] }
@@ -132,6 +144,12 @@ enum InlineParser {
 
         var linkIndex = ClaimedIndex(claimed)
         claimed += scanLinkFamily(ns, len: len, claimed: &linkIndex, registry: registry)
+
+        if let tags {
+            var tagIndex = ClaimedIndex(claimed)
+            claimed += scanTags(ns, len: len, claimed: &tagIndex, startsAtBoundary: tags == .atBoundary)
+            cost.claimedProbes += tagIndex.probes
+        }
 
         var emphasisIndex = ClaimedIndex(claimed)
         let emphasis = resolveEmphasis(ns, len: len, claimed: &emphasisIndex)
@@ -158,9 +176,11 @@ enum InlineParser {
         case inlineLatex(range: NSRange, content: NSRange, markers: [NSRange])
         case escape(range: NSRange, character: NSRange, marker: NSRange)
         case ext(id: String, range: NSRange, contentRange: NSRange, markers: [NSRange], parsesContent: Bool)
+        case tag(range: NSRange, marker: NSRange)
 
         var fullRange: NSRange {
             switch self {
+            case .tag(let r, _): return r
             case .code(let r, _), .emphasis(_, let r, _, _), .link(let r, _, _, _),
                  .image(let r, _, _, _), .wikiLink(let r, _, _, _), .imageEmbed(let r, _, _),
                  .inlineLatex(let r, _, _), .escape(let r, _, _),
@@ -630,6 +650,43 @@ enum InlineParser {
         return true
     }
 
+    // MARK: - 3b. Tags (Ta Da fork)
+
+    /// `#` at the text's start (when `startsAtBoundary`) or after whitespace, then letters, digits, `_`, `-` and `/`,
+    /// with at least one character that isn't a digit or `/`, as TaDaCore's `InlineTags` reads them. Emphasis
+    /// delimiters before the `#` take the boundary of their own start. Escaped and claimed `#`s are skipped.
+    private static func scanTags(_ ns: NSString, len: Int, claimed: inout ClaimedIndex, startsAtBoundary: Bool) -> [Span] {
+        var spans: [Span] = []
+        var i = 0
+        while i < len {
+            guard ns.character(at: i) == hash, !claimed.contains(i), tagBoundary(before: i, ns, startsAtBoundary) else {
+                i += 1
+                continue
+            }
+            var end = i + 1
+            var hasWord = false
+            while end < len {
+                let composed = ns.rangeOfComposedCharacterSequence(at: end)
+                guard let c = ns.substring(with: composed).first,
+                      c.isLetter || c.isNumber || c == "_" || c == "-" || c == "/" else { break }
+                if !c.isNumber && c != "/" { hasWord = true }
+                end = NSMaxRange(composed)
+            }
+            let range = NSRange(location: i, length: end - i)
+            if hasWord, !claimed.overlaps(range) {
+                spans.append(.tag(range: range, marker: NSRange(location: i, length: 1)))
+            }
+            i = end
+        }
+        return spans
+    }
+
+    private static func tagBoundary(before i: Int, _ ns: NSString, _ startsAtBoundary: Bool) -> Bool {
+        var k = i - 1
+        while k >= 0, ns.character(at: k) == asterisk || ns.character(at: k) == underscore { k -= 1 }
+        return k < 0 ? startsAtBoundary : isWhitespaceOrBoundary(k, ns, ns.length)
+    }
+
     // MARK: - 4. Emphasis (delimiter runs)
 
     private struct DelimRun {
@@ -786,7 +843,7 @@ enum InlineParser {
                                                             registry: registry, cost: &cost)))
             case .link(let range, let textRange, let url, let markers):
                 result.append(.link(range: range, textRange: textRange, url: url, markers: markers,
-                                     children: reparse(textRange, ns: ns, registry: registry, cost: &cost)))
+                                     children: reparse(textRange, ns: ns, registry: registry, tags: nil, cost: &cost)))
             case .image(let range, let alt, let url, let markers):
                 result.append(.image(range: range, alt: alt, url: url, markers: markers))
             case .wikiLink(let range, let name, let id, let markers):
@@ -797,10 +854,15 @@ enum InlineParser {
                 result.append(.inlineLatex(range: range, content: content, markers: markers))
             case .escape(let range, let character, let marker):
                 result.append(.escape(range: range, character: character, marker: marker))
+            case .tag(let range, let marker):
+                result.append(.tag(range: range, marker: marker))
             case .ext(let id, let range, let contentRange, let markers, let parsesContent):
                 result.append(.ext(ExtensionInlineNode(
                     extensionID: id, range: range, contentRange: contentRange, markers: markers,
-                    children: parsesContent ? reparse(contentRange, ns: ns, registry: registry, cost: &cost) : []
+                    children: parsesContent
+                        ? reparse(contentRange, ns: ns, registry: registry, tags: registry.tags ? .notAtBoundary : nil,
+                                  cost: &cost)
+                        : []
                 )))
             }
             // Every span but emphasis is opaque, so nothing should remain
@@ -820,9 +882,10 @@ enum InlineParser {
     }
 
     /// Recursively parse a sub-range's content, offset back to absolute coordinates.
-    private static func reparse(_ range: NSRange, ns: NSString, registry: ExtensionRegistry,
+    /// A link's text holds no tags, as TaDaCore reads it; an extension's content follows its open marker.
+    private static func reparse(_ range: NSRange, ns: NSString, registry: ExtensionRegistry, tags: TagStart?,
                                 cost: inout InlineParseCost) -> [InlineNode] {
-        offsetNodes(parse(ns.substring(with: range), registry: registry, cost: &cost), by: range.location)
+        offsetNodes(parse(ns.substring(with: range), registry: registry, tags: tags, cost: &cost), by: range.location)
     }
 
     // MARK: - Helpers
@@ -843,6 +906,7 @@ enum InlineParser {
         case .imageEmbed(let r, let t, let m): return .imageEmbed(range: s(r), target: s(t), markers: m.map(s))
         case .inlineLatex(let r, let c, let m): return .inlineLatex(range: s(r), content: s(c), markers: m.map(s))
         case .escape(let r, let c, let m): return .escape(range: s(r), character: s(c), marker: s(m))
+        case .tag(let r, let m): return .tag(range: s(r), marker: s(m))
         case .ext(let n): return .ext(ExtensionInlineNode(
             extensionID: n.extensionID, range: s(n.range), contentRange: s(n.contentRange),
             markers: n.markers.map(s), children: offsetNodes(n.children, by: d)))

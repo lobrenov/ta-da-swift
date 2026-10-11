@@ -1,8 +1,8 @@
 // The Tags row under a file's property chips: its `tags:` as filled chips (× on hover removes one), + Tag for
 // tagMenu, then "In text" and the body's tags, read-only. A chip click opens that tag's page.
-#if os(macOS)
 import SwiftUI
 import TaDaCore
+#if os(macOS)
 
 struct TagChipRow: View {
     let model: AppModel
@@ -98,17 +98,6 @@ private struct TagChip: View {
     }
 }
 
-/// A tag's path: the parent segments muted, the last one plain.
-struct TagName: View {
-    let tag: Tag
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        let parent = tag.parent.map { $0.name + "/" } ?? ""
-        Text("\(Text(parent).foregroundStyle(theme.color(\.muted)))\(Text(tag.leaf))")
-    }
-}
-
 /// + Tag: a dashed capsule, `surface` under the pointer or while tagMenu is open.
 private struct AddTagStyle: ButtonStyle {
     let isOpen: Bool
@@ -140,16 +129,6 @@ private struct AddTagBody<Label: View>: View {
             .contentShape(.capsule)
             .onHover { hovering = $0 }
     }
-}
-
-extension Theme {
-    /// A tag chip's fill: `accent` at 14% in dark schemes and 10% in light ones, stronger under the pointer.
-    func tagFill(hovering: Bool = false) -> Color {
-        color(\.accent).opacity(hovering ? (isDark ? 0.24 : 0.18) : (isDark ? 0.14 : 0.10))
-    }
-
-    /// A tag chip's ring: `accent` at 32% in dark schemes and 28% in light ones.
-    var tagRing: Color { color(\.accent).opacity(isDark ? 0.32 : 0.28) }
 }
 
 /// A row of tagMenu.
@@ -266,3 +245,24 @@ struct TagChoiceRow: View {
     }
 }
 #endif
+
+/// A tag's path: the parent segments muted, the last one plain.
+struct TagName: View {
+    let tag: Tag
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let parent = tag.parent.map { $0.name + "/" } ?? ""
+        Text("\(Text(parent).foregroundStyle(theme.color(\.muted)))\(Text(tag.leaf))")
+    }
+}
+
+extension Theme {
+    /// A tag chip's fill: `accent` at 14% in dark schemes and 10% in light ones, stronger under the pointer.
+    func tagFill(hovering: Bool = false) -> Color {
+        color(\.accent).opacity(hovering ? (isDark ? 0.24 : 0.18) : (isDark ? 0.14 : 0.10))
+    }
+
+    /// A tag chip's ring: `accent` at 32% in dark schemes and 28% in light ones.
+    var tagRing: Color { color(\.accent).opacity(isDark ? 0.32 : 0.28) }
+}

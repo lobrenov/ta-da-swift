@@ -466,6 +466,53 @@ struct SlashCommandTests {
         #expect(tv.string == "Ask [[uat]]")
     }
 
+    @Test func hashAndATagCharacterOpenATagQuery() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("Ask ", recorder)
+        try await type(tv, "#")
+        #expect(recorder.states.isEmpty)
+        try await type(tv, "pe")
+        let state = try #require(recorder.last)
+        #expect(state.trigger == .tag && state.query == "pe")
+        #expect(state.range == NSRange(location: 4, length: 3))
+        try await type(tv, "/m")
+        #expect(recorder.last?.query == "pe/m")
+        try await type(tv, " ")
+        #expect(recorder.states.last! == nil)
+        #expect(tv.string == "Ask #pe/m ")
+    }
+
+    @Test func aHeadingDigitsOrAHashInAWordOpenNoTagQuery() async throws {
+        let recorder = Recorder()
+        let (tv, _) = makeEditor("", recorder)
+        try await type(tv, "# Plan")
+        #expect(recorder.states.allSatisfy { $0 == nil })
+
+        let digits = Recorder()
+        let (other, _) = makeEditor("", digits)
+        try await type(other, "#42")
+        #expect(digits.states.allSatisfy { $0 == nil })
+        try await type(other, "a")
+        #expect(digits.last?.trigger == .tag && digits.last?.query == "42a")
+
+        let word = Recorder()
+        let (url, _) = makeEditor("issue", word)
+        try await type(url, "#ab")
+        #expect(word.states.isEmpty)
+    }
+
+    @Test func insertReplacesATagQueryUpToTheCaret() async throws {
+        let recorder = Recorder()
+        let (tv, proxy) = makeEditor("Ask ", recorder)
+        try await type(tv, "#gar")
+        proxy.insert("#home/garden ", selecting: NSRange(location: 13, length: 0))
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(tv.string == "Ask #home/garden ")
+        #expect(tv.selectedRange() == NSRange(location: 17, length: 0))
+        tv.undoManager?.undo()
+        #expect(tv.string == "Ask #gar")
+    }
+
     @Test func aSlashCommandThatLeavesTheCaretInBracketsOpensALinkQuery() async throws {
         let recorder = Recorder()
         let (tv, proxy) = makeEditor("Ask ", recorder)
@@ -1078,6 +1125,26 @@ struct FragmentGeometryTests {
         let content = ("cd" as NSString).size(withAttributes: [.font: font]).width
         // Each hidden backtick takes padding + margin; the bubble stops a margin short of each.
         #expect(abs(shape.rect.width - (content + 12)) < 0.5)
+        withExtendedLifetime(keep) {}
+    }
+
+    @Test func aTagsBubblePadsOutsideItsTextAndAClickFindsIt() throws {
+        let (fragments, keep) = try fragments("Intro\n\nab #cd ef") {
+            $0.tags = TagStyle(bubble: InlineBubble(fill: .gray, horizontalPadding: 6, margin: 1))
+        }
+        let fragment = try #require(fragments.last)
+        let shape = try #require(fragment.inlineBubbleShapes(at: .zero).first)
+        let font = try #require(fragment.textStorage?.attribute(.font, at: 11, effectiveRange: nil) as? PlatformFont)
+        let content = ("#cd" as NSString).size(withAttributes: [.font: font]).width
+        #expect(abs(shape.rect.width - (content + 12)) < 0.5)
+
+        let (_, coordinator, _) = try #require(keep as? (NSWindow, NativeTextViewCoordinator, MarkdownLayoutManagerDelegate))
+        let tv = try #require(coordinator.textView as? NativeTextView)
+        let rect = try #require(tv.layoutBridge).boundingRect(forCharacterRange: NSRange(location: 10, length: 3),
+                                                              in: try #require(tv.textContainer))
+        let point = CGPoint(x: rect.midX + tv.textContainerOrigin.x, y: rect.midY + tv.textContainerOrigin.y)
+        #expect(tv.tagHit(atViewPoint: point) == "cd")
+        #expect(tv.tagHit(atViewPoint: CGPoint(x: point.x - 60, y: point.y)) == nil)
         withExtendedLifetime(keep) {}
     }
 

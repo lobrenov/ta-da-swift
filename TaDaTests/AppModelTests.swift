@@ -156,6 +156,13 @@ struct AppModelTests {
         #expect(!second.autocomplete.formatting && second.autocomplete.brackets && second.autocomplete.wikiLinks)
     }
 
+    @Test func theTagsSwitchIsRemembered() {
+        let first = AppModel(defaults: folder.defaults)
+        #expect(first.autocomplete.tags)
+        first.autocomplete.tags = false
+        #expect(!AppModel(defaults: folder.defaults).autocomplete.tags)
+    }
+
     @Test func unknownThemeNamesFallBackToTomorrow() {
         folder.defaults.set("Monokai", forKey: "themeSet")
         folder.defaults.set("Monokai Light", forKey: "lightScheme")
