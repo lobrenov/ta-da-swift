@@ -35,3 +35,11 @@ private let today = LocalDate("2026-10-02")!
     let area = try #require(Item(parsing: text, path: "areas/Personal.md"))
     #expect(area.properties.kind == .area && area.properties.createdDate == today && area.warnings.isEmpty)
 }
+
+@Test func newTaskWithTagsParsesBack() throws {
+    let text = NewFile.task(area: "Personal", tags: [Tag("errands")!, Tag("Quick Win")!, Tag("quick win")!, Tag("a, b")!], today: today)
+    #expect(text == "---\ntype: task\nstatus: Not Started\narea: \"[[Personal]]\"\ncreatedDate: 2026-10-02\ntags: [errands, Quick Win, \"a, b\"]\n---\n")
+    let item = try #require(Item(parsing: text, path: "t.md"))
+    #expect(item.properties.tags.map(\.name) == ["errands", "Quick Win", "a, b"] && item.warnings.isEmpty)
+    #expect(NewFile.task(tags: [], today: today) == NewFile.task(today: today))
+}

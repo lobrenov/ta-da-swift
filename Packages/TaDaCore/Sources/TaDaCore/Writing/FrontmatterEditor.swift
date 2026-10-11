@@ -43,13 +43,13 @@ public enum FrontmatterEditor {
     // MARK: Locating
 
     /// The closing `---` line, when line 0 opens frontmatter.
-    private static func closingFence(_ file: Lines) -> Int? {
+    static func closingFence(_ file: Lines) -> Int? {
         guard let first = file.lines.first, FrontmatterSplitter.isFenceLine(Lines.content(first).unicodeScalars) else { return nil }
         return file.lines.indices.dropFirst().first { FrontmatterSplitter.isFenceLine(Lines.content(file.lines[$0]).unicodeScalars) }
     }
 
     /// The unindented `key:` line plus its continuation lines (indented lines and `- ` items).
-    private static func keyRange(_ key: String, in file: Lines, closing: Int) -> Range<Int>? {
+    static func keyRange(_ key: String, in file: Lines, closing: Int) -> Range<Int>? {
         guard let start = (1..<closing).first(where: { isKeyLine(Lines.content(file.lines[$0]), key) }) else { return nil }
         var end = start + 1
         while end < closing, isContinuation(Lines.content(file.lines[end])) { end += 1 }
@@ -66,7 +66,7 @@ public enum FrontmatterEditor {
         line.first == " " || line.first == "\t" || line == "-" || line.hasPrefix("- ")
     }
 
-    private static func endingOf(_ line: Substring) -> String {
+    static func endingOf(_ line: Substring) -> String {
         line.unicodeScalars.last != "\n" ? "" : line.unicodeScalars.dropLast().last == "\r" ? "\r\n" : "\n"
     }
 
