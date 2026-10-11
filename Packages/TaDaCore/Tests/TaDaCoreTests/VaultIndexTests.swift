@@ -101,3 +101,27 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
                     .sorted(by: VaultIndex.byTitle), sourceLocation: sourceLocation)
     }
 }
+
+@Test func loggedFilesResolveAsLinksButStayOutOfTheLists() {
+    let index = VaultIndex([
+        makeItem("projects/Kombi.md", "type: project\nstatus: Doing"),
+        makeItem(".logbook/2026-09/Kombi.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-30"),
+        makeItem(".logbook/2026-09/Sold.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-30"),
+        makeItem("tasks/Open.md", "type: task\nstatus: Doing\nproject: \"[[Kombi]]\""),
+        makeItem("tasks/Closed.md", "type: task\nstatus: Done\nproject: \"[[Kombi]]\""),
+        makeItem(".logbook/2026-09/Photos.md", "type: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Kombi]]\""),
+        makeItem(".logbook/2026-09/Listing.md", "type: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Sold]]\""),
+    ])
+    #expect(index[".logbook/2026-09/Photos.md"]?.isLogged == true)
+    #expect(index.items(titled: "Kombi").map(\.path) == ["projects/Kombi.md", ".logbook/2026-09/Kombi.md"], "the file that isn't logged resolves first")
+    #expect(index.projects.map(\.title) == ["Kombi"])
+    #expect(Set(index.logged.map(\.title)) == ["Kombi", "Sold", "Photos", "Listing"])
+    let kombi = index["projects/Kombi.md"]!, sold = index[".logbook/2026-09/Sold.md"]!
+    #expect(index.tasks(in: kombi).map(\.title) == ["Closed", "Open"])
+    #expect(index.tasks(in: kombi, includingLogged: true).map(\.title) == ["Closed", "Open", "Photos"])
+    #expect(index.openTasks(in: kombi).map(\.title) == ["Open"])
+    #expect(index.tasks(in: sold, includingLogged: true).map(\.title) == ["Listing"], "a logged project has its logged tasks")
+    #expect(index.parent(of: index[".logbook/2026-09/Listing.md"]!)?.path == sold.path)
+    #expect((index.progress(of: kombi).done, index.progress(of: kombi).total) == (2, 3), "progress counts logged tasks")
+    #expect(index.search("photos").isEmpty && index.search("open").map(\.title) == ["Open"])
+}

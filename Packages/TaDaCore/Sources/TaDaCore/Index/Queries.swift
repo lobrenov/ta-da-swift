@@ -108,9 +108,10 @@ extension VaultIndex {
         }
     }
 
-    /// Done/total of the tasks whose `project` resolves to this project. Cancelled tasks are left out of the total.
+    /// Done/total of the tasks whose `project` resolves to this project, logged ones included. Cancelled tasks are left
+    /// out of the total.
     public func progress(of project: Item) -> ProjectProgress {
-        let tasks = tasks(in: project).filter { $0.properties.status != .cancelled }
+        let tasks = tasks(in: project, includingLogged: true).filter { $0.properties.status != .cancelled }
         return ProjectProgress(project: project, done: tasks.count { $0.properties.status == .done }, total: tasks.count)
     }
 
@@ -137,15 +138,15 @@ extension VaultIndex {
         return groups
     }
 
-    /// Items whose title, summary or area (a task's through its project) contain every word of the query,
-    /// ignoring case and diacritics. Titles that match rank first.
+    /// Items that aren't logged whose title, summary or area (a task's through its project) contain every word of the
+    /// query, ignoring case and diacritics. Titles that match rank first.
     public func search(_ query: String) -> [Item] {
         let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
         guard !words.isEmpty else { return [] }
         func matches(_ text: String) -> Bool {
             words.allSatisfy { text.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
         }
-        let hits = items.values.filter { item in
+        let hits = liveItems.filter { item in
             let area = area(of: item)?.title ?? item.properties.area?.title ?? ""
             return matches([item.title, item.summary ?? "", area].joined(separator: "\n"))
         }

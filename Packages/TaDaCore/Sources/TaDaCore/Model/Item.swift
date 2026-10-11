@@ -33,6 +33,12 @@ public struct Item: Hashable, Sendable, Identifiable {
 
     public var id: String { path }
 
+    /// Whether the file has been logged: it's in `.logbook/`.
+    public var isLogged: Bool { Self.isLogged(path) }
+
+    /// Whether a path is in `.logbook/`.
+    public static func isLogged(_ path: String) -> Bool { path.hasPrefix(Vault.logbookFolder + "/") }
+
     /// Nil when the text isn't a Ta Da file (no `type: task`, `type: project` or `type: area`).
     public init?(parsing text: String, path: String) {
         let split = FrontmatterSplitter.split(text)
