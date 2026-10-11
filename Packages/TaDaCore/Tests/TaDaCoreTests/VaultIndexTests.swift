@@ -125,3 +125,30 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
     #expect((index.progress(of: kombi).done, index.progress(of: kombi).total) == (2, 3), "progress counts logged tasks")
     #expect(index.search("photos").isEmpty && index.search("open").map(\.title) == ["Open"])
 }
+
+@Test func indexPatchesTagsPerItem() {
+    let a = makeItem("tasks/A.md", "type: task\nstatus: Doing\ntags: [Errands]", body: "#home/garden")
+    let b = makeItem("tasks/B.md", "type: task\nstatus: Doing", body: "#errands")
+    var index = VaultIndex([a, b])
+    #expect(index.carriedTags.map(\.name).sorted() == ["Errands", "home/garden"])
+    #expect(index.paths(carrying: "errands") == [a.path, b.path])
+    #expect(index.paths(carrying: "home").isEmpty, "a parent isn't carried by its children's files")
+
+    index.update(makeItem("tasks/A.md", "type: task\nstatus: Doing"))
+    #expect(index.paths(carrying: "errands") == [b.path] && index.paths(carrying: "home/garden").isEmpty)
+    #expect(index.carriedTags.map(\.name) == ["Errands"], "the first spelling stays while a file carries it")
+
+    index.remove(b.path)
+    #expect(index.carriedTags.isEmpty)
+    index.update(b)
+    #expect(index.carriedTags.map(\.name) == ["errands"])
+}
+
+@Test func indexLeavesLoggedFilesOutOfTags() {
+    let logged = makeItem(".logbook/tasks/Old.md", "type: task\nstatus: Done\ntags: [old]")
+    var index = VaultIndex([logged])
+    #expect(index.carriedTags.isEmpty)
+    index.remove(logged.path)
+    index.update(makeItem("tasks/Old.md", "type: task\nstatus: Done\ntags: [old]"))
+    #expect(index.paths(carrying: "old") == ["tasks/Old.md"])
+}
