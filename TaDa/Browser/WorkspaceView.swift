@@ -82,6 +82,8 @@ struct WorkspaceView: View {
                 EmptyState(systemImage: "questionmark.folder", title: "Area not found",
                            message: "This area’s file is no longer in the folder.")
             }
+        case .tag:
+            split { EmptyView() }
         }
     }
 

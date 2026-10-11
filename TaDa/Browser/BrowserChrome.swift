@@ -91,6 +91,7 @@ extension AppModel.Domain {
         case .logbook: "Logbook"
         case .trash: "Trash"
         case .project(let path), .area(let path): Item.title(ofPath: path)
+        case .tag(let path): path.flatMap(Tag.init)?.leaf ?? "Untagged"
         }
     }
 
@@ -104,6 +105,7 @@ extension AppModel.Domain {
         case .trash: "trash"
         case .project: "circle.dotted"
         case .area: "cube"
+        case .tag(let path): path == nil ? "tag.slash" : "tag"
         }
     }
 
@@ -115,6 +117,7 @@ extension AppModel.Domain {
         case .logbook: \.done
         case .trash: \.muted
         case .area: \.doing
+        case .tag(let path): path == nil ? \.muted : \.accent
         }
     }
 }
