@@ -2,11 +2,14 @@ import Foundation
 
 /// Every Ta Da item in the vault, held in memory. Files are the only truth; this is built at launch
 /// and patched as files change. Each patch touches only the changed item's entries in the maps.
+/// Logged files (in `.logbook/`) are held too: links to them resolve, but the lists of tasks, projects and areas, and
+/// the files filed under a parent, leave them out.
 public struct VaultIndex: Sendable {
     public private(set) var items: [String: Item] = [:]
     /// Every item's title, lowercased.
     public private(set) var titles: Set<String> = []
-    /// Lowercased title → paths, sorted, so resolution is stable when titles repeat across folders.
+    /// Lowercased title → paths, files outside `.logbook/` first, then by path, so resolution is stable when titles
+    /// repeat across folders and prefers a file that isn't logged.
     private var pathsByTitle: [String: [String]] = [:]
     /// Lowercased title of a task's `project` link → the tasks' paths.
     private var tasksByProjectTitle: [String: Set<String>] = [:]
@@ -39,11 +42,15 @@ public struct VaultIndex: Sendable {
         removeLinks(of: old)
     }
 
-    public var tasks: [Item] { items.values.filter { $0.properties.kind == .task } }
-    public var projects: [Item] { items.values.filter { $0.properties.kind == .project } }
-    public var areas: [Item] { items.values.filter { $0.properties.kind == .area } }
+    /// Items that aren't logged.
+    public var liveItems: [Item] { items.values.filter { !$0.isLogged } }
+    public var tasks: [Item] { liveItems.filter { $0.properties.kind == .task } }
+    public var projects: [Item] { liveItems.filter { $0.properties.kind == .project } }
+    public var areas: [Item] { liveItems.filter { $0.properties.kind == .area } }
+    /// Logged tasks and projects.
+    public var logged: [Item] { items.values.filter(\.isLogged) }
 
-    /// Items with this title, ignoring case; the first by path wins when titles repeat.
+    /// Items with this title, ignoring case; one that isn't logged comes first, then the first by path.
     public func items(titled title: String) -> [Item] {
         (pathsByTitle[title.lowercased()] ?? []).compactMap { items[$0] }
     }
@@ -75,14 +82,19 @@ public struct VaultIndex: Sendable {
         }
     }
 
-    /// Tasks filed straight under this project or area, sorted by title.
-    public func tasks(in parent: Item) -> [Item] {
-        filed(under: parent).filter { $0.properties.kind == .task }
+    /// Tasks filed straight under this project or area, sorted by title; logged ones only when `includingLogged`.
+    public func tasks(in parent: Item, includingLogged: Bool = false) -> [Item] {
+        filed(under: parent).filter { $0.properties.kind == .task && (includingLogged || !$0.isLogged) }
     }
 
-    /// Projects whose `area` resolves to this area, sorted by title.
-    public func projects(in area: Item) -> [Item] {
-        filed(under: area).filter { $0.properties.kind == .project }
+    /// Projects whose `area` resolves to this area, sorted by title; logged ones only when `includingLogged`.
+    public func projects(in area: Item, includingLogged: Bool = false) -> [Item] {
+        filed(under: area).filter { $0.properties.kind == .project && (includingLogged || !$0.isLogged) }
+    }
+
+    /// A project's tasks that aren't Done or Cancelled, sorted by title.
+    public func openTasks(in project: Item) -> [Item] {
+        tasks(in: project).filter { !$0.properties.status.isClosed }
     }
 
     /// An area's own tasks, then its projects' tasks, each sorted by title.
@@ -154,7 +166,7 @@ public struct VaultIndex: Sendable {
     private mutating func addTitle(of path: String) {
         let title = Item.title(ofPath: path).lowercased()
         pathsByTitle[title, default: []].append(path)
-        pathsByTitle[title]?.sort()
+        pathsByTitle[title]?.sort { (Item.isLogged($0) ? 1 : 0, $0) < (Item.isLogged($1) ? 1 : 0, $1) }
         titles.insert(title)
     }
 

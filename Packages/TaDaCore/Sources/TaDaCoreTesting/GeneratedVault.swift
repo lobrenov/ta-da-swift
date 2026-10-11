@@ -12,7 +12,7 @@ public enum GeneratedVault {
         let projects = (1...projectCount).map { String(format: "Project %02d", $0) }
         let words = ["review", "draft", "call", "fix", "plan", "book", "email", "update", "clean", "order", "renew", "ship"]
         let contexts = ["@computer", "@phone", "@home", "@errands", "@office"]
-        let statuses = ["Not Started", "Not Started", "Not Started", "Doing", "Blocked", "Done", "Done"]
+        let statuses = ["Not Started", "Not Started", "Not Started", "Doing", "Blocked", "Done", "Done", "Cancelled"]
         var files: [(String, String)] = []
 
         for (i, title) in projects.enumerated() {
@@ -36,7 +36,7 @@ public enum GeneratedVault {
                 fm.append("  - \"\(contexts[random.next(in: 0...contexts.count - 1)])\"")
             }
             fm.append("createdDate: \(today.adding(days: -random.next(in: 1...200)))")
-            if status == "Done" { fm.append("completedDate: \(today.adding(days: -random.next(in: 0...30)))") }
+            if status == "Done" || status == "Cancelled" { fm.append("completedDate: \(today.adding(days: -random.next(in: 0...30)))") }
             if random.next(in: 0...9) < 5 { fm.append("dueDate: \(today.adding(days: random.next(in: -30...60)))") }
             if random.next(in: 0...9) < 2 { fm.append("deadline: \(today.adding(days: random.next(in: -10...90)))") }
             if random.next(in: 0...32) == 0 { fm.append("repeat: weekly") }

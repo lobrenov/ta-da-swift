@@ -51,7 +51,7 @@ private struct LinkedTasksTable: View {
     let reveal: (String) -> Void
     @Environment(\.theme) private var theme
 
-    private static let order: [Status] = [.doing, .blocked, .notStarted, .done]
+    private static let order: [Status] = [.doing, .blocked, .notStarted, .done, .cancelled]
 
     var body: some View {
         let sorted = tasks.enumerated().sorted { a, b in
@@ -116,7 +116,7 @@ private struct LinkedTaskRow: View {
 
     var body: some View {
         let p = task.properties
-        let done = p.status == .done
+        let done = p.status.isClosed
         let subtasks = task.subtasks
         let due = p.dueDate?.relativeLabel(today: model.today)
         let deadline = p.deadline?.relativeLabel(today: model.today)

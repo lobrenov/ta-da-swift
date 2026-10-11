@@ -87,7 +87,7 @@ struct PhoneTaskRow: View {
     }
 
     private var title: some View {
-        let done = item.properties.status == .done
+        let done = item.properties.status.isClosed
         let text: AttributedString = if case let .search(words, _) = meta {
             item.title.highlighting(words, fill: theme.color(\.due).opacity(theme.isDark ? 0.3 : 0.25))
         } else {
@@ -135,7 +135,7 @@ struct PhoneTaskRow: View {
         if let rule = p.repeatRule {
             chips.append(AnyView(Chip(systemImage: "repeat", text: rule, spoken: "Repeats \(rule)")))
         }
-        if p.status != .done {
+        if !p.status.isClosed {
             if let due = p.dueDate, dates != .overdueDueAndDeadline || due < today {
                 chips.append(AnyView(DateChip(kind: .due, date: due, today: today, labelled: dates != .iconsOnly)))
             }
@@ -155,7 +155,7 @@ struct PhoneTaskRow: View {
     }
 
     private func toggle() {
-        let wasDone = item.properties.status == .done
+        let wasDone = item.properties.status.isClosed
         nav.play(wasDone ? .pick : .complete)
         Task { await model.toggleCompletion(item) }
     }
@@ -184,7 +184,7 @@ struct PhoneProjectRow: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(project.title)
                             .scaledFont(size: 17)
-                            .foregroundStyle(theme.color(project.properties.status == .done ? \.muted : \.fg))
+                            .foregroundStyle(theme.color(project.properties.status.isClosed ? \.muted : \.fg))
                             .lineLimit(2)
                         if !isCompact {
                             meta(project)
@@ -222,7 +222,7 @@ struct PhoneProjectRow: View {
                     Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
                          spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
                 }
-                if p.status != .done {
+                if !p.status.isClosed {
                     if let due = p.dueDate { DateChip(kind: .due, date: due, today: model.today, labelled: false) }
                     if let deadline = p.deadline { DateChip(kind: .deadline, date: deadline, today: model.today, labelled: false) }
                 }
@@ -242,7 +242,7 @@ struct PhoneAreaRow: View {
 
     var body: some View {
         let projects = model.index.projects(in: area).count
-        let open = model.index.tasks(in: area).count { $0.properties.status != .done }
+        let open = model.index.tasks(in: area).count { !$0.properties.status.isClosed }
         VStack(spacing: 0) {
             Button { nav.push(.area(area.path)) } label: {
                 HStack(spacing: 12) {
@@ -343,7 +343,7 @@ struct PhoneFileMenu: View {
 
     @ViewBuilder private var fileItems: some View {
         let path = item.path
-        let isDone = item.properties.status == .done
+        let isDone = item.properties.status.isClosed
         ControlGroup {
             Button {
                 nav.play(isDone ? .pick : .complete)
@@ -395,6 +395,6 @@ struct PhoneFileMenu: View {
 
 extension Status {
     /// The order status menus list them in.
-    static let menuOrder: [Status] = [.notStarted, .doing, .blocked, .done]
+    static let menuOrder: [Status] = [.notStarted, .doing, .blocked, .done, .cancelled]
 }
 #endif

@@ -18,13 +18,15 @@ public struct Vault: Sendable {
         root.appending(path: path, directoryHint: .notDirectory)
     }
 
-    /// The path of `url` when it's a Markdown file outside hidden folders, as `markdownPaths()` lists them.
+    /// The path of `url` when it's a Markdown file outside hidden folders, or in `.logbook/`, as `markdownPaths()` lists
+    /// them.
     public func path(of url: URL) -> String? {
         let root = root.resolvingSymlinksInPath().pathComponents
         let components = url.resolvingSymlinksInPath().pathComponents
         guard components.count > root.count, components.starts(with: root), url.pathExtension.lowercased() == "md" else { return nil }
         let relative = components.dropFirst(root.count)
-        return relative.contains { $0.hasPrefix(".") } ? nil : relative.joined(separator: "/")
+        let inside = relative.first == Self.logbookFolder ? relative.dropFirst() : relative
+        return inside.contains { $0.hasPrefix(".") } ? nil : relative.joined(separator: "/")
     }
 
     // MARK: Bookmarks
@@ -56,7 +58,7 @@ public struct Vault: Sendable {
     // MARK: Scanning
 
     /// Every `.md` file, recursively. Hidden files and folders (including `.obsidian` and `.trash`)
-    /// and packages are skipped. Sorted for a stable order.
+    /// and packages are skipped, except `.logbook/`. Sorted for a stable order.
     public func markdownPaths() -> [String] {
         modificationDates().keys.sorted()
     }
@@ -67,18 +69,23 @@ public struct Vault: Sendable {
         guard let files = FileManager.default.enumerator(
             at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles, .skipsPackageDescendants]
         ) else { return [:] }
+        // Not `.skipsHiddenFiles`: in iCloud Drive it finds nothing inside `.logbook`. Hidden files are skipped below.
+        let logged = FileManager.default.enumerator(
+            at: url(for: Self.logbookFolder), includingPropertiesForKeys: Array(keys), options: [.skipsPackageDescendants]
+        )
         let rootComponents = root.pathComponents.count
         var dates: [String: Date] = [:]
-        for case let url as URL in files where url.pathExtension.lowercased() == "md" {
-            guard let values = try? url.resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
-            let path = url.standardizedFileURL.pathComponents.dropFirst(rootComponents).joined(separator: "/")
-            dates[path] = values.contentModificationDate ?? .distantPast
+        for case let url as URL in Array(files) + (logged.map(Array.init) ?? []) where url.pathExtension.lowercased() == "md" {
+            let components = url.standardizedFileURL.pathComponents.dropFirst(rootComponents)
+            guard !components.dropFirst().contains(where: { $0.hasPrefix(".") }),
+                  let values = try? url.resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
+            dates[components.joined(separator: "/")] = values.contentModificationDate ?? .distantPast
         }
         return dates
     }
 
     /// Markdown files and images that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show
-    /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders are skipped.
+    /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders other than `.logbook/` are skipped.
     public func placeholderPaths() -> [String] {
         guard let files = FileManager.default.enumerator(
             at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsPackageDescendants]
@@ -87,7 +94,7 @@ public struct Vault: Sendable {
         var paths: [String] = []
         for case let url as URL in files where url.lastPathComponent.hasPrefix(".") {
             if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
-                files.skipDescendants()
+                if url.standardizedFileURL.pathComponents.dropFirst(rootComponents) != [Self.logbookFolder] { files.skipDescendants() }
                 continue
             }
             guard let original = Self.placeholderOriginal(url.lastPathComponent),
@@ -177,42 +184,44 @@ public struct Vault: Sendable {
         Item(parsing: try CoordinatedFileIO.update(url(for: path), transform), path: path)
     }
 
-    /// Creates `<folder>/<title>.md`, numbering the name if it's taken. Returns the new path.
-    public func create(_ text: String, in folder: String, title: String) throws -> String {
-        let path = (folder.isEmpty ? "" : folder + "/") + FileNaming.filename(for: title, existing: filenames(in: folder))
+    /// Creates `<folder>/<title>.md`, numbering the name if it's taken in the folder or among `taken`. Returns the new path.
+    public func create(_ text: String, in folder: String, title: String, taken: Set<String> = []) throws -> String {
+        let path = (folder.isEmpty ? "" : folder + "/") + FileNaming.filename(for: title, existing: filenames(in: folder).union(taken))
         try CoordinatedFileIO.create(text, at: url(for: path))
         return path
     }
 
-    /// Renames a file in place from a new title. Returns the new path (unchanged if the name is the same).
-    public func rename(_ path: String, to title: String) throws -> String {
+    /// Renames a file in place from a new title, numbering it if the name is taken in the folder or among `taken`.
+    /// Returns the new path (unchanged if the name is the same).
+    public func rename(_ path: String, to title: String, taken: Set<String> = []) throws -> String {
         let folder = Self.folder(of: path)
         let current = String(path.split(separator: "/").last ?? "")
-        let filename = FileNaming.filename(for: title, existing: filenames(in: folder).subtracting([current]))
+        let filename = FileNaming.filename(for: title, existing: filenames(in: folder).union(taken).subtracting([current]))
         guard filename != current else { return path }
         let newPath = (folder.isEmpty ? "" : folder + "/") + filename
         try CoordinatedFileIO.move(url(for: path), to: url(for: newPath))
         return newPath
     }
 
-    /// Renames a project's file and relinks each of its tasks; a task that can't be relinked doesn't stop the rest.
+    /// Renames a project's file and relinks each of its tasks, logged ones too; a task that can't be relinked doesn't stop the rest.
     /// Returns the project's new path, its tasks as they now are and the paths of the tasks that couldn't be relinked.
     public func renameProject(at path: String, to title: String, index: VaultIndex) throws
         -> (path: String, relinked: [Item], failed: [String]) {
         guard let project = index[path], project.properties.kind == .project else { return (path, [], []) }
-        return try rename(project, to: title, relinking: index.tasks(in: project), key: "project")
+        return try rename(project, to: title, taken: index.projectFilenames(excluding: path),
+                          relinking: index.tasks(in: project, includingLogged: true), key: "project")
     }
 
-    /// Renames an area's file and relinks its projects and its own tasks, as `renameProject` does.
+    /// Renames an area's file and relinks its projects and its own tasks, logged ones too, as `renameProject` does.
     public func renameArea(at path: String, to title: String, index: VaultIndex) throws
         -> (path: String, relinked: [Item], failed: [String]) {
         guard let area = index[path], area.properties.kind == .area else { return (path, [], []) }
-        return try rename(area, to: title, relinking: index.projects(in: area) + index.tasks(in: area), key: "area")
+        return try rename(area, to: title, taken: [], relinking: index.projects(in: area, includingLogged: true) + index.tasks(in: area, includingLogged: true), key: "area")
     }
 
-    private func rename(_ parent: Item, to title: String, relinking files: [Item], key: String) throws
+    private func rename(_ parent: Item, to title: String, taken: Set<String>, relinking files: [Item], key: String) throws
         -> (path: String, relinked: [Item], failed: [String]) {
-        let newPath = try rename(parent.path, to: title)
+        let newPath = try rename(parent.path, to: title, taken: taken)
         let newTitle = Item.title(ofPath: newPath)
         guard newTitle != parent.title else { return (newPath, [], []) }
         var relinked: [Item] = [], failed: [String] = []

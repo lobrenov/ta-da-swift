@@ -8,6 +8,12 @@ extension LocalDate {
         case weekdayDayMonth
         /// "Sat 3 Oct 2026"
         case weekdayDayMonthYear
+        /// "Saturday 3 Oct"
+        case wideWeekdayDayMonth
+        /// "3 Oct"
+        case dayMonth
+        /// "3 Oct 2026"
+        case dayMonthYear
         /// "Saturday"
         case weekday
         /// "October 2026"
@@ -21,6 +27,9 @@ extension LocalDate {
         return switch style {
         case .weekdayDayMonth: date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
         case .weekdayDayMonthYear: date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).year())
+        case .wideWeekdayDayMonth: date.formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
+        case .dayMonth: date.formatted(.dateTime.day().month(.abbreviated))
+        case .dayMonthYear: date.formatted(.dateTime.day().month(.abbreviated).year())
         case .weekday: date.formatted(.dateTime.weekday(.wide))
         case .monthYear: date.formatted(.dateTime.month(.wide).year())
         case .month: date.formatted(.dateTime.month(.wide))

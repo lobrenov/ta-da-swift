@@ -11,11 +11,23 @@ public struct AgendaEntry: Hashable, Sendable, Identifiable {
     public var id: String { "\(item.path)#\(kind)" }
 }
 
-/// A sidebar project: done/total of its linked tasks.
+/// A sidebar project: done/total of its linked tasks, Cancelled tasks left out of the total.
 public struct ProjectProgress: Hashable, Sendable, Identifiable {
     public var project: Item
     public var done: Int
     public var total: Int
+
+    init(project: Item, done: Int, total: Int) {
+        self.project = project
+        self.done = done
+        self.total = total
+    }
+
+    /// The progress of `project` over `tasks`, leaving the Cancelled ones out of the total.
+    public init(project: Item, tasks: [Item]) {
+        let counted = tasks.filter { $0.properties.status != .cancelled }
+        self.init(project: project, done: counted.count { $0.properties.status == .done }, total: counted.count)
+    }
 
     public var open: Int { total - done }
     /// 0…1; 0 for a project without tasks.
@@ -44,24 +56,24 @@ public struct AreaProjects: Hashable, Sendable, Identifiable {
 /// Loose list tasks; projects show their dates on their own page. Each list applies a per-item test to
 /// every task, and the tests answer for one file too.
 extension VaultIndex {
-    /// Open tasks due or at their deadline today or earlier, plus tasks completed today.
+    /// Open tasks due or at their deadline today or earlier, plus tasks completed (Done or Cancelled) today.
     /// Sorted by their earliest date, then title.
     public func today(_ today: LocalDate) -> [Item] {
         tasks.filter { isInToday($0, today: today) }.sorted { Self.byDate($0, $1) }
     }
 
-    /// Whether a task is in Today: open and due or at its deadline today or earlier, or completed today.
+    /// Whether a task is in Today: open and due or at its deadline today or earlier, or completed (Done or Cancelled) today.
     public func isInToday(_ item: Item, today: LocalDate) -> Bool {
         let p = item.properties
         guard p.kind == .task else { return false }
-        if p.status == .done { return p.completedDate == today }
+        if p.status.isClosed { return p.completedDate == today }
         return [p.dueDate, p.deadline].contains { $0.map { $0 <= today } ?? false }
     }
 
     /// An open item whose due date or deadline has passed.
     public func isOverdue(_ item: Item, today: LocalDate) -> Bool {
         let p = item.properties
-        return p.status != .done && [p.dueDate, p.deadline].contains { $0.map { $0 < today } ?? false }
+        return !p.status.isClosed && [p.dueDate, p.deadline].contains { $0.map { $0 < today } ?? false }
     }
 
     /// Entries for open tasks dated after today, by date, due before deadline, then title.
@@ -73,7 +85,7 @@ extension VaultIndex {
     /// open and they're after today.
     public func upcomingEntries(of item: Item, after today: LocalDate) -> [AgendaEntry] {
         let p = item.properties
-        guard p.kind == .task, p.status != .done else { return [] }
+        guard p.kind == .task, !p.status.isClosed else { return [] }
         return [p.dueDate.map { AgendaEntry(item: item, date: $0, kind: .due) },
                 p.deadline.map { AgendaEntry(item: item, date: $0, kind: .deadline) }]
             .compactMap { $0 }
@@ -88,12 +100,12 @@ extension VaultIndex {
 
     /// Whether a task is in Loose tasks: open, with no project or area that resolves.
     public func isLoose(_ item: Item) -> Bool {
-        item.properties.kind == .task && item.properties.status != .done && parent(of: item) == nil
+        item.properties.kind == .task && !item.properties.status.isClosed && parent(of: item) == nil
     }
 
-    /// Projects that aren't Done, with progress over all their linked tasks, sorted by title.
+    /// Projects that aren't Done or Cancelled, with progress over all their linked tasks, sorted by title.
     public func activeProjects() -> [ProjectProgress] {
-        projects.filter { $0.properties.status != .done }.sorted(by: Self.byTitle).map { progress(of: $0) }
+        projects.filter { !$0.properties.status.isClosed }.sorted(by: Self.byTitle).map { progress(of: $0) }
     }
 
     /// Active projects without an area that resolves, sorted by title.
@@ -104,14 +116,14 @@ extension VaultIndex {
     /// Every area by title, each with its active projects by title.
     public func areaProjects() -> [AreaProjects] {
         areas.sorted(by: Self.byTitle).map { area in
-            AreaProjects(area: area, projects: projects(in: area).filter { $0.properties.status != .done }.map { progress(of: $0) })
+            AreaProjects(area: area, projects: projects(in: area).filter { !$0.properties.status.isClosed }.map { progress(of: $0) })
         }
     }
 
-    /// Done/total of the tasks whose `project` resolves to this project.
+    /// Done/total of the tasks whose `project` resolves to this project, logged ones included. Cancelled tasks are left
+    /// out of the total.
     public func progress(of project: Item) -> ProjectProgress {
-        let tasks = tasks(in: project)
-        return ProjectProgress(project: project, done: tasks.count { $0.properties.status == .done }, total: tasks.count)
+        ProjectProgress(project: project, tasks: tasks(in: project, includingLogged: true))
     }
 
     /// Splits tasks into groups: tasks without a parent first, then loose projects' groups by title, then each area by
@@ -137,15 +149,15 @@ extension VaultIndex {
         return groups
     }
 
-    /// Items whose title, summary or area (a task's through its project) contain every word of the query,
-    /// ignoring case and diacritics. Titles that match rank first.
+    /// Items that aren't logged whose title, summary or area (a task's through its project) contain every word of the
+    /// query, ignoring case and diacritics. Titles that match rank first.
     public func search(_ query: String) -> [Item] {
         let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
         guard !words.isEmpty else { return [] }
         func matches(_ text: String) -> Bool {
             words.allSatisfy { text.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
         }
-        let hits = items.values.filter { item in
+        let hits = liveItems.filter { item in
             let area = area(of: item)?.title ?? item.properties.area?.title ?? ""
             return matches([item.title, item.summary ?? "", area].joined(separator: "\n"))
         }

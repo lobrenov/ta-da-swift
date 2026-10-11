@@ -286,16 +286,16 @@ struct ScreenAnchorReader: NSViewRepresentable {
 /// A row of the status menu.
 struct StatusChoice: PopupMenuItem {
     /// The order the menu lists them in.
-    static let order: [Status] = [.notStarted, .doing, .blocked, .done]
+    static let order: [Status] = [.notStarted, .doing, .blocked, .done, .cancelled]
 
     let status: Status
     let isCurrent: Bool
 
     var title: String { status.rawValue }
-    var accessibilityValue: String { isCurrent ? "Current" : status == .done ? "Sets completedDate" : "" }
+    var accessibilityValue: String { isCurrent ? "Current" : status.isClosed ? "Sets completedDate" : "" }
 }
 
-/// The status's checkbox, its name, and a tick on the current one. Done says it also sets completedDate.
+/// The status's checkbox, its name, and a tick on the current one. Done and Cancelled say they also set completedDate.
 private struct StatusChoiceRow: View {
     let choice: StatusChoice
     let isHighlighted: Bool
@@ -310,7 +310,7 @@ private struct StatusChoiceRow: View {
                 .foregroundStyle(theme.color(isHighlighted ? \.strong : \.fg))
                 .lineLimit(1)
             Spacer(minLength: 8)
-            if choice.status == .done, !choice.isCurrent {
+            if choice.status.isClosed, !choice.isCurrent {
                 Text("sets completedDate")
                     .font(.system(size: 11))
                     .foregroundStyle(theme.color(\.muted))
@@ -384,7 +384,7 @@ enum ProjectChoice: PopupMenuItem {
         /// The project rows under `area` (nil for those without one), with the current project when it's done.
         func rows(_ projects: [ProjectProgress], in area: Item?) -> [ProjectChoice] {
             var projects = projects
-            if let current, current.properties.kind == .project, current.properties.status == .done,
+            if let current, current.properties.kind == .project, current.properties.status.isClosed,
                index.area(of: current)?.path == area?.path {
                 projects = (projects + [index.progress(of: current)]).sorted { VaultIndex.byTitle($0.project, $1.project) }
             }

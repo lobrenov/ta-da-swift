@@ -18,13 +18,14 @@ enum PhoneRoute: Hashable {
     case area(String)
     /// Settings, scrolled to a section.
     case settings(SettingsSection)
+    case logbook
     case trash
 
     /// The file the screen shows, if it shows one.
     var path: String? {
         switch self {
         case let .file(path), let .project(path), let .area(path): path
-        case .settings, .trash: nil
+        case .settings, .logbook, .trash: nil
         }
     }
 }
@@ -77,7 +78,7 @@ enum PhoneMoveRow: Hashable, Identifiable {
         let current = currentParent(index: index, files: tasks) ?? nil
         func projects(_ projects: [ProjectProgress], in area: Item?) -> [PhoneMoveRow] {
             var projects = projects
-            if let current, current.properties.kind == .project, current.properties.status == .done,
+            if let current, current.properties.kind == .project, current.properties.status.isClosed,
                index.area(of: current)?.path == area?.path {
                 projects = (projects + [index.progress(of: current)]).sorted { VaultIndex.byTitle($0.project, $1.project) }
             }

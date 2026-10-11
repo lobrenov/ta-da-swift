@@ -22,6 +22,11 @@ struct ContentView: View {
             DeleteFilesDialog(model: model, request: request)
                 .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
         }
+        .sheet(item: Binding { model.completionConfirmation }
+                         set: { if $0 == nil, let request = model.completionConfirmation { Task { await model.answerCompletion(request, tasksAs: nil) } } }) { request in
+            CompletionDialog(model: model, request: request)
+                .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
+        }
         .themed(by: model)
         // No toolbar fill: each column's own colour runs up under the toolbar (proven in the M1 spike).
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)

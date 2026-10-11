@@ -153,7 +153,7 @@ extension Vault {
 
     /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, numbering names that are taken. Each brings back
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
-    /// in the vault or `.trash/` is created by name. When a parent's name had to change, the link follows it.
+    /// in the vault (outside `.logbook/`) or `.trash/` is created by name (a project under a title no other project has). When a parent's name had to change, the link follows it.
     /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
     /// back the trashed images it embeds, to `attachments/`, and its embeds follow an image whose name or folder
     /// changed. Returns the paths of the restored and created files, parents first, then the images.
@@ -164,6 +164,8 @@ extension Vault {
         var brought: [(path: String, entry: TrashedItem)] = []
         // Trashed path → the title it was restored under.
         var titles: [String: String] = [:]
+        // Kind and lowercased title of a parent created by name → the title it was created under.
+        var created: [String: String] = [:]
 
         /// Restores a trashed file after its parent; returns its title in the vault.
         func bringBack(_ entry: TrashedItem) throws -> String {
@@ -186,12 +188,15 @@ extension Vault {
         func bringBack(_ parent: Parent) throws -> String {
             let kind: Item.Kind = if case .project = parent { .project } else { .area }
             let matches = { (item: Item) in item.properties.kind == kind && item.title.lowercased() == parent.title.lowercased() }
-            if index.items(titled: parent.title).contains(where: matches) { return parent.title }
+            if index.items(titled: parent.title).contains(where: { matches($0) && !$0.isLogged }) { return parent.title }
             if let entry = trashed.first(where: { matches($0.item) }) { return try bringBack(entry) }
+            let key = "\(kind)/\(parent.title.lowercased())"
+            if let title = created[key] { return title }
             let folder = kind == .project ? Self.projectFolder : Self.areaFolder
             let text = kind == .project ? NewFile.project(today: today) : NewFile.area(today: today)
-            let path = try create(text, in: folder, title: parent.title)
+            let path = try create(text, in: folder, title: parent.title, taken: kind == .project ? index.projectFilenames() : [])
             restored.append(path)
+            created[key] = Item.title(ofPath: path)
             return Item.title(ofPath: path)
         }
 
@@ -216,7 +221,7 @@ extension Vault {
         for image in images where paths.contains(image.path) { try bringBack(image) }
         let live = attachmentPaths()
         for (path, entry) in brought where !movedImages.isEmpty {
-            try update(path) { text in
+            _ = try update(path) { text in
                 let split = FrontmatterSplitter.split(text)
                 let body = split.body
                 var result = split.block, copied = body.startIndex
@@ -265,11 +270,11 @@ extension Vault {
         if let firstError { throw DiscardError(failed: failed, firstError: firstError) }
     }
 
-    /// Moves a file into `folder`, creating it if needed, keeping its filename unless that's taken.
-    /// Returns the new path.
-    private func moveFile(_ path: String, into folder: String) throws -> String {
+    /// Moves a file into `folder`, creating it if needed, keeping its filename unless that's taken there or among
+    /// `taken`. Returns the new path.
+    func moveFile(_ path: String, into folder: String, taken: Set<String> = []) throws -> String {
         let current = String(path.split(separator: "/").last ?? "")
-        let existing = filenames(in: folder)
+        let existing = filenames(in: folder).union(taken)
         let isTaken = existing.contains { $0.lowercased() == current.lowercased() }
         let (base, ext) = FileNaming.split(current)
         let filename = isTaken ? FileNaming.filename(for: base, extension: ext, existing: existing) : current

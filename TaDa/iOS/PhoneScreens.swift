@@ -15,7 +15,7 @@ struct PhoneTaskListScreen: View {
     var body: some View {
         let all = kind == .today ? model.todayTasks : model.looseTasks
         let groups = model.index.grouped(all)
-        let open = all.count { $0.properties.status != .done }
+        let open = all.count { !$0.properties.status.isClosed }
 
         PhoneList(model: model, title: kind == .today ? "Today" : "Loose tasks",
                   subtitle: kind == .today
@@ -130,7 +130,7 @@ private struct WeekStrip: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let open = model.index.tasks.filter { $0.properties.status != .done }
+        let open = model.index.tasks.filter { !$0.properties.status.isClosed }
         HStack(spacing: 0) {
             ForEach(0..<PhoneUpcomingScreen.days, id: \.self) { offset in
                 let day = model.today.adding(days: offset)
@@ -202,7 +202,7 @@ struct PhoneProjectsScreen: View {
     @Environment(PhoneNavigation.self) private var nav
 
     var body: some View {
-        let completed = model.index.projects.filter { $0.properties.status == .done }
+        let completed = model.index.projects.filter { $0.properties.status.isClosed }
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
             .map { model.index.progress(of: $0) }
 
@@ -297,8 +297,8 @@ struct PhoneProjectScreen: View {
     var body: some View {
         if let project = model.index[path] {
             let tasks = model.index.tasks(in: project)
-            let open = tasks.filter { $0.properties.status != .done }
-            let done = tasks.filter { $0.properties.status == .done }
+            let open = tasks.filter { !$0.properties.status.isClosed }
+            let done = tasks.filter { $0.properties.status.isClosed }
             let shown = (model.isFolded("Open", in: path) ? [] : open) + (model.isFolded("Completed", in: path) ? [] : done)
             let progress = model.index.progress(of: project)
             let subtasks = project.subtasks
@@ -381,8 +381,8 @@ struct PhoneAreaScreen: View {
         if let area = model.index[path] {
             let projects = model.index.projects(in: area).map { model.index.progress(of: $0) }
             let filed = model.index.tasks(in: area)
-            let open = filed.filter { $0.properties.status != .done }
-            let done = filed.filter { $0.properties.status == .done }
+            let open = filed.filter { !$0.properties.status.isClosed }
+            let done = filed.filter { $0.properties.status.isClosed }
             let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
 
             PhoneList(model: model, title: area.title,

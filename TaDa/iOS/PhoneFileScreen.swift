@@ -160,9 +160,9 @@ struct PhoneFileScreen: View {
                             }
                         }
                     } label: {
-                        Label { Text(status == .done ? "Reopen" : "Complete") } icon: { Image(uiImage: statusImage(status)) }
+                        Label { Text(status.isClosed ? "Reopen" : "Complete") } icon: { Image(uiImage: statusImage(status)) }
                     } primaryAction: {
-                        nav.play(status == .done ? .pick : .complete)
+                        nav.play(status.isClosed ? .pick : .complete)
                         Task { await model.toggleCompletion(model.index[item.path] ?? item) }
                     }
                     .accessibilityValue(status.rawValue)
@@ -322,7 +322,7 @@ struct PhoneChips: View {
     }
 
     private func dateChip(_ kind: AgendaEntry.Kind, _ date: LocalDate?) -> some View {
-        let isDone = item.properties.status == .done
+        let isDone = item.properties.status.isClosed
         let isOverdue = !isDone && date.map { $0 < model.today } == true
         return Button { nav.sheet = .date(kind, paths: [item.path]) } label: {
             if let date {
@@ -371,7 +371,7 @@ private struct PhoneLinkedTasks: View {
 
     var body: some View {
         let tasks = model.index.tasks(in: project)
-        let sorted = tasks.filter { $0.properties.status != .done } + tasks.filter { $0.properties.status == .done }
+        let sorted = tasks.filter { !$0.properties.status.isClosed } + tasks.filter { $0.properties.status.isClosed }
         VStack(alignment: .leading, spacing: 0) {
             Text("Tasks")
                 .scaledFont(size: 22, weight: .bold)
@@ -382,7 +382,7 @@ private struct PhoneLinkedTasks: View {
             ForEach(sorted) { task in
                 HStack(spacing: 12) {
                     StatusCheckbox(status: task.properties.status, title: task.title, size: 20) {
-                        nav.play(task.properties.status == .done ? .pick : .complete)
+                        nav.play(task.properties.status.isClosed ? .pick : .complete)
                         Task { await model.toggleCompletion(task) }
                     }
                     Button { nav.push(.file(task.path)) } label: {

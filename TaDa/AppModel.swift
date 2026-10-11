@@ -4,7 +4,7 @@ import TaDaCore
 
 @Observable final class AppModel {
     enum Domain: Hashable {
-        case today, upcoming, loose, trash
+        case today, upcoming, loose, logbook, trash
         /// A project, by vault-relative path.
         case project(String)
         /// An area, by vault-relative path.
@@ -158,13 +158,32 @@ import TaDaCore
         /// Other files going to the trash.
         let goingIn: [String]
     }
+    /// Completing a project that still has open tasks, or logging one with Log Now, waits here for the user to choose
+    /// whether its open tasks are completed or cancelled; `answerCompletion(_:tasksAs:)` goes ahead.
+    var completionConfirmation: CompletionConfirmation?
+    /// Further questions, as when several projects are completed at once; each is shown once the one before is answered.
+    private var pendingCompletions: [CompletionConfirmation] = []
+    struct CompletionConfirmation: Equatable, Identifiable {
+        let id = UUID()
+        let project: Item
+        /// Done or Cancelled: what the project is set to.
+        let status: Status
+        /// The project's open tasks, as they were when asked about; answering sets those it has then.
+        let tasks: [Item]
+        /// Log Now asked; it goes on logging once this is answered.
+        var logsAfter = false
+    }
     /// Whether `VaultWatcher` is watching the folder. Without it, changes are picked up when the app becomes active.
     private(set) var isWatching = false
     /// Whether the folder is in iCloud Drive, or in an app's iCloud folder such as Obsidian's.
     private(set) var isInICloud = false
     /// Refreshed when the day changes, so every query uses the same `today`.
     var today = LocalDate(Date()) {
-        didSet { if today != oldValue { updateLists() } }
+        didSet {
+            guard today != oldValue else { return }
+            updateLists()
+            Task { await logIfDue() }
+        }
     }
 
     var themeSet: ThemeSet {
@@ -261,6 +280,7 @@ import TaDaCore
         static let autocomplete = "autocomplete"
         static let hapticsOff = "hapticsOff"
         static let recentFiles = "recentFiles"
+        static let lastLogged = "lastLogged"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -334,6 +354,7 @@ import TaDaCore
         await Self.run { vault.downloadPlaceholders() }
         #endif
         startWatching(vault)
+        await logIfDue()
     }
 
     private func startWatching(_ vault: Vault) {
@@ -616,10 +637,15 @@ import TaDaCore
         selection = path
     }
 
-    /// Follows a link to a file: a project or area opens as its own page; a task opens in its project's or area's
-    /// page, or in Loose tasks.
+    /// Follows a link to a file: a logged file opens in the Logbook; a project or area opens as its own page; a task
+    /// opens in its project's or area's page, or in Loose tasks.
     func openLink(to path: String) {
         guard let item = index[path] else { return }
+        if item.isLogged {
+            domain = .logbook
+            selection = path
+            return
+        }
         if item.properties.kind == .task {
             let parent = index.parent(of: item)
             domain = switch parent?.properties.kind {
@@ -790,12 +816,17 @@ import TaDaCore
 
     // MARK: Editing files
 
-    /// Completes an open task or reopens a done one. Only `status` and `completedDate` change.
+    /// Completes an open task or reopens a done or cancelled one. Only `status` and `completedDate` change. A project
+    /// goes through `setStatus(_:in:)`, which asks first when it has open tasks.
     func toggleCompletion(_ item: Item) async {
+        if item.properties.kind == .project {
+            return await setStatus(item.properties.status.isClosed ? .notStarted : .done, in: item.path)
+        }
         let today = today, fallback = item.properties.status
         await edit(item.path) { text in
             Completion.toggle(Item(parsing: text, path: item.path)?.properties.status ?? fallback, in: text, today: today)
         }
+        await reopenParent(of: item.path, wasClosed: item.properties.status.isClosed)
     }
 
     /// Applies a text change to one file, then patches the index. The open document is changed in memory
@@ -821,10 +852,40 @@ import TaDaCore
         }
     }
 
-    /// Sets the status; Done also sets `completedDate`, anything else clears it.
-    func setStatus(_ status: Status, in path: String) async {
-        let today = today
+    /// Sets the status; Done and Cancelled also set `completedDate`, anything else clears it. Unless `confirmed`,
+    /// completing or cancelling a project that has open tasks asks first through `completionConfirmation`. A reopened task
+    /// sets its Done or Cancelled project to Doing; a logged file that's reopened goes back to `tasks/` or `projects/`.
+    func setStatus(_ status: Status, in path: String, confirmed: Bool = false) async {
+        if !confirmed, status.isClosed, let item = index[path], item.properties.kind == .project {
+            let tasks = index.openTasks(in: item)
+            if !tasks.isEmpty {
+                ask(CompletionConfirmation(project: item, status: status, tasks: tasks))
+                return
+            }
+        }
+        let today = today, wasClosed = index[path]?.properties.status.isClosed ?? false
         await edit(path) { Completion.setStatus(status, in: $0, today: today) }
+        await reopenParent(of: path, wasClosed: wasClosed)
+    }
+
+    /// Shows `request`, or keeps it pending behind the question already showing.
+    private func ask(_ request: CompletionConfirmation) {
+        if completionConfirmation == nil { completionConfirmation = request } else { pendingCompletions.append(request) }
+    }
+
+    /// Answers `completionConfirmation`: sets the project's status and the open tasks it has now to `tasksAs` (Done or
+    /// Cancelled), or leaves them all when it's nil. Log Now then goes on, and the next pending question shows.
+    func answerCompletion(_ request: CompletionConfirmation, tasksAs status: Status?) async {
+        if completionConfirmation?.id == request.id { completionConfirmation = nil }
+        if let status, let project = index[request.project.path] {
+            let tasks = index.openTasks(in: project)
+            if project.properties.status != request.status {
+                await setStatus(request.status, in: project.path, confirmed: true)
+            }
+            for task in tasks { await setStatus(status, in: task.path) }
+        }
+        if request.logsAfter { await logNow(asking: status != nil) }
+        if completionConfirmation == nil, !pendingCompletions.isEmpty { completionConfirmation = pendingCompletions.removeFirst() }
     }
 
     /// Renames a file from a new title, and points the `[[ ]]` links to it in other files' bodies at the new title.
@@ -1179,6 +1240,112 @@ import TaDaCore
         return paths[(i + 1)...].first { !removed.contains($0) } ?? paths[..<i].last { !removed.contains($0) }
     }
 
+    // MARK: Logbook
+
+    /// Logs the files completed before today, once a day: when the folder opens or the day changes. Logged files reopened
+    /// in another app go back.
+    /// Each folder's day is kept once its logging succeeds; after a failure the next open or day change tries again.
+    func logIfDue() async {
+        guard state == .ready, !isLogging, let folder = vault?.root,
+              Self.lastLogged(folder, in: defaults) != today else { return }
+        isLogging = true
+        defer { isLogging = false }
+        let day = today
+        var succeeded = await log(index.filesToLog(completedBefore: day).map(\.path))
+        let reopened = index.reopenedLogged.map(\.path)
+        if !reopened.isEmpty {
+            succeeded = await moveFiles("put back the reopened files") { try $0.unlog(reopened, index: $1, today: $2) } != nil
+                && succeeded
+        }
+        let waiting = index.loggedProjectsWithOpenTasks
+        if !waiting.isEmpty {
+            let paths = waiting.map(\.path)
+            let moved = await moveFiles("put back the projects with open tasks") { try $0.unlog(paths, index: $1, today: $2) }
+            for path in paths { if let back = moved?[path] { await setStatus(.doing, in: back) } }
+            succeeded = moved != nil && succeeded
+        }
+        if succeeded { Self.setLastLogged(folder, to: day, in: defaults) }
+    }
+
+    /// Whether `logIfDue()` is running.
+    private var isLogging = false
+
+    /// The day `logIfDue()` last logged `folder`.
+    static func lastLogged(_ folder: URL, in defaults: any SettingsStore) -> LocalDate? {
+        (defaults.dictionary(forKey: Keys.lastLogged)?[folder.resolvingSymlinksInPath().path] as? String).flatMap(LocalDate.init)
+    }
+
+    static func setLastLogged(_ folder: URL, to day: LocalDate, in defaults: any SettingsStore) {
+        var days = defaults.dictionary(forKey: Keys.lastLogged) ?? [:]
+        days[folder.resolvingSymlinksInPath().path] = day.description
+        defaults.set(days, forKey: Keys.lastLogged)
+    }
+
+    /// Log Now: logs every completed task and project. Unless `asking` is false, a completed project that still has open
+    /// tasks asks first through `completionConfirmation`, and logging goes on once it's answered; without asking it
+    /// waits.
+    func logNow(asking: Bool = true) async {
+        if asking, let project = index.projects.sorted(by: VaultIndex.byTitle)
+            .first(where: { $0.properties.status.isClosed && !index.openTasks(in: $0).isEmpty }) {
+            ask(CompletionConfirmation(project: project, status: project.properties.status,
+                                       tasks: index.openTasks(in: project), logsAfter: true))
+            return
+        }
+        await log(index.filesToLog(completedBefore: nil).map(\.path))
+    }
+
+    /// Whether Log Now has anything to log or ask about.
+    var hasFilesToLog: Bool { logbook.contains { !$0.isLogged } }
+
+    /// Moves files to `.logbook/`. Returns false when that failed.
+    @discardableResult
+    private func log(_ paths: [String]) async -> Bool {
+        guard !paths.isEmpty else { return true }
+        return await moveFiles("log the files") { try $0.log(paths, index: $1, today: $2) } != nil
+    }
+
+    /// A logged file that isn't Done or Cancelled any more goes back to `tasks/` or `projects/`, bringing back its logged
+    /// project as Doing. A task reopened from Done or Cancelled sets its Done or Cancelled project to Doing, and an open
+    /// task whose project is logged brings it back as Doing.
+    private func reopenParent(of path: String, wasClosed: Bool) async {
+        guard var item = index[path], !item.properties.status.isClosed else { return }
+        let wasClosed = wasClosed || item.isLogged
+        if item.isLogged {
+            let moved = await moveFiles("put “\(item.title)” back") { try $0.unlog([path], index: $1, today: $2) }
+            guard let back = moved?[path].flatMap({ index[$0] }) else { return }
+            item = back
+        }
+        guard let project = index.project(of: item) else { return }
+        if project.isLogged {
+            let moved = await moveFiles("put “\(project.title)” back") { try $0.unlog([project.path], index: $1, today: $2) }
+            if let back = moved?[project.path] { await setStatus(.doing, in: back) }
+        } else if wasClosed, project.properties.status.isClosed {
+            await setStatus(.doing, in: project.path)
+        }
+    }
+
+    /// Saves the open file, moves files with `move` (which returns each new path by its old one), and follows them.
+    /// Returns the moved paths, or nil when moving failed.
+    @discardableResult
+    private func moveFiles(_ action: String,
+                           _ move: @escaping @Sendable (Vault, VaultIndex, LocalDate) throws -> [String: String]) async
+        -> [String: String]? {
+        guard let vault else { return nil }
+        if let document { await save(document) }
+        let index = index, today = today
+        var result: [String: String]?
+        do {
+            let moved = try await Self.run { try move(vault, index, today) }
+            let items = await Self.run { moved.values.compactMap { try? vault.load($0) } }
+            for (old, new) in moved { follow(old, to: new, items: items.filter { $0.path == new }) }
+            result = moved
+        } catch {
+            errorMessage = Self.couldNot(action, error)
+        }
+        await refresh()
+        return result
+    }
+
     // MARK: Move and dates
 
     /// The files a due date or deadline is set on, in list order. With `path` (a right-clicked or dragged row): the
@@ -1299,14 +1466,16 @@ import TaDaCore
     /// Creates an untitled project, in the area whose page is showing, and opens its page with its title ready to type.
     func newProject() async {
         let area = domainParent.flatMap { $0.properties.kind == .area ? $0 : nil }
-        guard let path = await create(NewFile.project(area: area?.title, today: today), in: Vault.projectFolder) else { return }
+        guard let path = await create(NewFile.project(area: area?.title, today: today), in: Vault.projectFolder,
+                                      taken: index.projectFilenames()) else { return }
         titleFocus = path
         open(path)
     }
 
     /// Creates a project called `title` and files the tasks at `paths` under it.
     func newProject(named title: String, linking paths: [String]) async {
-        guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title),
+        guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title,
+                                      taken: index.projectFilenames()),
               let project = index[path] else { return }
         await setParent(project, of: paths)
     }
@@ -1328,10 +1497,10 @@ import TaDaCore
         return path
     }
 
-    private func create(_ text: String, in folder: String, title: String = "Untitled") async -> String? {
+    private func create(_ text: String, in folder: String, title: String = "Untitled", taken: Set<String> = []) async -> String? {
         guard let vault else { return nil }
         do {
-            let path = try await Self.run { try vault.create(text, in: folder, title: title) }
+            let path = try await Self.run { try vault.create(text, in: folder, title: title, taken: taken) }
             if let item = Item(parsing: text, path: path) { updateIndex { $0.update(item) } }
             return path
         } catch {
@@ -1352,8 +1521,10 @@ import TaDaCore
     private(set) var looseProjects: [ProjectProgress] = []
     /// Every area, with its active projects.
     private(set) var areas: [AreaProjects] = []
+    /// The Logbook: logged tasks and projects, and the completed ones not logged yet.
+    private(set) var logbook: [Item] = []
 
-    var todayCount: Int { todayTasks.count { $0.properties.status != .done } }
+    var todayCount: Int { todayTasks.count { !$0.properties.status.isClosed } }
     var looseCount: Int { looseTasks.count }
 
     /// Changes the index, then the lists. Several changes in one call update the lists once.
@@ -1372,6 +1543,7 @@ import TaDaCore
         for i in upcoming.indices where upcoming[i].item.path == item.path { upcoming[i].item = item }
         if let i = projects.firstIndex(where: { $0.project.path == item.path }) { projects[i].project = item }
         if let i = looseProjects.firstIndex(where: { $0.project.path == item.path }) { looseProjects[i].project = item }
+        if let i = logbook.firstIndex(where: { $0.path == item.path }) { logbook[i] = item }
         for i in areas.indices {
             if areas[i].area.path == item.path { areas[i].area = item }
             if let j = areas[i].projects.firstIndex(where: { $0.project.path == item.path }) { areas[i].projects[j].project = item }
@@ -1386,6 +1558,8 @@ import TaDaCore
         projects = index.activeProjects()
         looseProjects = index.looseProjects()
         areas = index.areaProjects()
+        logbook = index.items.values.filter { $0.properties.kind != .area && ($0.isLogged || $0.properties.status.isClosed) }
+            .sorted(by: VaultIndex.byTitle)
     }
 
     var folderDisplayName: String { vault.map { Self.displayName(for: $0.root) } ?? "" }

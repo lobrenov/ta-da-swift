@@ -222,7 +222,7 @@ private struct DatePropertyChip: View {
     var body: some View {
         let p = item.properties
         let date = kind == .due ? p.dueDate : p.deadline
-        let isDone = p.status == .done
+        let isDone = p.status.isClosed
         let isOverdue = !isDone && date.map { $0 < model.today } == true
         Button { PropertyPicker.shared.pickDate(kind, of: [item], model: model, anchor: anchor) } label: {
             if let date {

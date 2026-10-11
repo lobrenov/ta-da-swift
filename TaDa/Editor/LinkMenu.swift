@@ -73,12 +73,12 @@ final class LinkMenuSearch {
         ThumbnailCache.decode(url, pixels: 96)
     }
 
-    /// Recent files first, then the rest by title; an empty query lists only the recent ones, or every file when
+    /// Recent files first, then the rest by title, logged files left out; an empty query lists only the recent ones, or every file when
     /// none has been opened.
     private func links(_ query: String) -> (label: String?, choices: [LinkChoice]) {
         let index = source.index
-        let recent = source.recent.compactMap { index[$0] }.filter { $0.path != source.openPath }.prefix(Self.recentCount)
-        let others = index.items.values.filter { $0.path != source.openPath && !recent.contains($0) }.sorted(by: VaultIndex.byTitle)
+        let recent = source.recent.compactMap { index[$0] }.filter { $0.path != source.openPath && !$0.isLogged }.prefix(Self.recentCount)
+        let others = index.liveItems.filter { $0.path != source.openPath && !recent.contains($0) }.sorted(by: VaultIndex.byTitle)
         if query.trimmingCharacters(in: .whitespaces).isEmpty, !recent.isEmpty {
             return ("Recent", recent.map(choice))
         }

@@ -50,6 +50,17 @@ struct PhoneRootView: View {
                          set: { if $0 == nil { model.trashConfirmation = nil } }) { request in
             PhoneDeleteFilesSheet(model: model, request: request) { trash(request, images: $0) }
         }
+        .confirmationDialog(model.completionConfirmation.map { CompletionText(request: $0).title } ?? "",
+                            isPresented: Binding { model.completionConfirmation != nil }
+                                                 set: { if !$0, let request = model.completionConfirmation { answer(request, nil) } },
+                            titleVisibility: .visible, presenting: model.completionConfirmation) { request in
+            let text = CompletionText(request: request)
+            Button(text.button(text.choices.primary)) { answer(request, text.choices.primary) }
+            Button(text.button(text.choices.secondary)) { answer(request, text.choices.secondary) }
+            Button("Cancel", role: .cancel) { answer(request, nil) }
+        } message: { request in
+            Text(CompletionText(request: request).message)
+        }
         .environment(nav)
         .phoneHaptics(nav, enabled: model.haptics)
         .onChange(of: nav.tab) { nav.endPicking() }
@@ -62,6 +73,14 @@ struct PhoneRootView: View {
             await model.confirmTrash(request, images: images)
             nav.dropScreens { model.index[$0] == nil }
         }
+    }
+
+    /// Answers the completion question once: it's cleared first.
+    private func answer(_ request: AppModel.CompletionConfirmation, _ status: Status?) {
+        guard model.completionConfirmation?.id == request.id else { return }
+        model.completionConfirmation = nil
+        if status != nil { nav.play(.complete) }
+        Task { await model.answerCompletion(request, tasksAs: status) }
     }
 
     /// "Move “Personal” to Trash?", or the number of files.
@@ -79,6 +98,7 @@ struct PhoneRootView: View {
                     case let .project(path): PhoneProjectScreen(model: model, path: path)
                     case let .area(path): PhoneAreaScreen(model: model, path: path)
                     case let .settings(section): PhoneSettingsScreen(model: model, section: section)
+                    case .logbook: PhoneLogbookScreen(model: model)
                     case .trash: PhoneTrashScreen(model: model)
                     }
                 }

@@ -10,8 +10,8 @@ struct ProjectBrowserView: View {
 
     var body: some View {
         let tasks = model.index.tasks(in: project)
-        let open = tasks.filter { $0.properties.status != .done }
-        let done = tasks.filter { $0.properties.status == .done }
+        let open = tasks.filter { !$0.properties.status.isClosed }
+        let done = tasks.filter { $0.properties.status.isClosed }
         let shown = (isFolded("Open") ? [] : open) + (isFolded("Completed") ? [] : done)
 
         BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18) {

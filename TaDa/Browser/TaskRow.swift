@@ -20,7 +20,7 @@ struct TaskRow: View {
     let onSelect: () -> Void
 
     private var p: Properties { item.properties }
-    private var isDone: Bool { p.status == .done }
+    private var isClosed: Bool { p.status.isClosed }
 
     var body: some View {
         SelectableRow(item: item, selected: selected, onToggle: onToggle, onSelect: onSelect) { chips }
@@ -35,7 +35,7 @@ struct TaskRow: View {
         if let rule = p.repeatRule {
             Chip(systemImage: "repeat", text: rule, spoken: "Repeats \(rule)")
         }
-        if !isDone {
+        if !isClosed {
             if let due = p.dueDate, dates != .overdueDueAndDeadline || due < today {
                 DateChip(kind: .due, date: due, today: today, labelled: dates != .iconsOnly)
             }
@@ -80,7 +80,7 @@ struct SelectableRow<Meta: View>: View {
     }
 }
 
-/// A task title: struck through and muted when done, strong when selected.
+/// A task title: struck through and muted when done or cancelled, strong when selected.
 struct TaskTitle: View {
     let item: Item
     var selected = false
@@ -88,7 +88,7 @@ struct TaskTitle: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let done = item.properties.status == .done
+        let done = item.properties.status.isClosed
         Text(item.title)
             .font(.system(size: size))
             .strikethrough(done)
@@ -97,8 +97,8 @@ struct TaskTitle: View {
     }
 }
 
-/// The box left of a task: empty for Not Started, a square for Doing, a bar for Blocked, a tick for Done.
-/// Clicking completes the task, or reopens a done one.
+/// The box left of a task: empty for Not Started, a square for Doing, a bar for Blocked, a tick for Done, a slash for
+/// Cancelled. Clicking completes the task, or reopens a done or cancelled one.
 struct StatusCheckbox: View {
     let status: Status
     let title: String
@@ -114,8 +114,17 @@ struct StatusCheckbox: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(status == .done ? "Mark not done: \(title)" : "Complete: \(title)")
-        .help(status == .done ? "Mark not done" : "Complete")
+        .accessibilityLabel("\(Self.action(for: status)): \(title)")
+        .help(Self.action(for: status))
+    }
+
+    /// What a click does: "Mark not done", "Reopen" or "Complete".
+    static func action(for status: Status) -> String {
+        switch status {
+        case .done: "Mark not done"
+        case .cancelled: "Reopen"
+        default: "Complete"
+        }
     }
 
     /// The checkbox marker and tint that show a status.
@@ -125,6 +134,7 @@ struct StatusCheckbox: View {
         case .doing: "/"
         case .blocked: "B"
         case .done: "x"
+        case .cancelled: "-"
         }
         return (marker, theme.checkboxTint(marker))
     }
@@ -217,6 +227,7 @@ extension Theme {
         case .doing: color(\.doing)
         case .done: color(\.done)
         case .blocked: color(\.blocked)
+        case .cancelled: color(\.muted)
         }
     }
 }

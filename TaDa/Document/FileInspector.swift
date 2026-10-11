@@ -115,11 +115,12 @@ struct FileInspector: View {
     /// The sidebar lists this file shows in, and why.
     private func appearances(of item: Item) -> [Place] {
         let index = model.index, today = model.today, p = item.properties
+        if item.isLogged { return [Place(.logbook, reason: "logged")] }
         switch p.kind {
         case .area:
             return [Place(.area(item.path), reason: "area")]
         case .project:
-            guard p.status != .done else { return [] }
+            guard !p.status.isClosed else { return [Place(.logbook, reason: "not logged yet")] }
             return [index.area(of: item).map { Place(.area($0.path), reason: "area") }
                 ?? Place(.project(item.path), title: "Projects", reason: "not done")]
         case .task:
@@ -127,7 +128,7 @@ struct FileInspector: View {
         }
         var places: [Place] = []
         if index.isInToday(item, today: today) {
-            let reason = p.status == .done ? "completed today"
+            let reason = p.status.isClosed ? "completed today"
                 : index.isOverdue(item, today: today) ? "overdue"
                 : p.dueDate.map { $0 <= today } == true ? "dueDate" : "deadline"
             places.append(Place(.today, reason: reason))
@@ -141,6 +142,7 @@ struct FileInspector: View {
         } else if index.isLoose(item) {
             places.append(Place(.loose, reason: "no project or area"))
         }
+        if p.status.isClosed { places.append(Place(.logbook, reason: "not logged yet")) }
         return places
     }
 }
