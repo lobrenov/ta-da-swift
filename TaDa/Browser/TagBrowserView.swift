@@ -12,44 +12,75 @@ struct TagBrowserView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let tag = path.flatMap { model.tag(at: $0) ?? Tag($0) }
-        let page = model.index.tagBrowser(tag)
-        let open = page.groups.flatMap(\.tasks)
-        let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : page.completed)
-        let parentsTitle = tag == nil ? "Areas and projects" : "Tagged areas and projects"
+        // Set while a tag page shows, which is when the workspace shows this view.
+        if let page = model.tagPage { column(page) }
+    }
 
-        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18) {
+    private func column(_ page: TagBrowser) -> some View {
+        let tag = model.shownTag
+        let open = page.groups.flatMap(\.tasks)
+        let rows = rows(page, open: open, untagged: tag == nil)
+
+        return BrowserColumn(model: model, paths: rows.compactMap(\.taskPath), spacing: 1) {
             header(tag, page: page, open: open.count)
         } content: {
-            if !page.areasAndProjects.isEmpty {
-                VStack(alignment: .leading, spacing: 1) {
-                    foldHeader(parentsTitle, count: page.areasAndProjects.count)
-                    ForEach(isFolded(parentsTitle) ? [] : page.areasAndProjects) { parentRow($0) }
-                }
-            }
-            VStack(alignment: .leading, spacing: 1) {
-                foldHeader("Tasks", count: open.count)
-                if !isFolded("Tasks") {
-                    if open.isEmpty {
-                        Text(tag == nil ? "Every open task has a tag." : "No open tasks carry this tag.")
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(theme.color(\.muted))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
-                    }
-                    ForEach(page.groups) { group in
-                        groupHeader(group)
-                        ForEach(group.tasks) { taskRow($0) }
-                    }
-                }
-            }
-            if !page.completed.isEmpty {
-                VStack(alignment: .leading, spacing: 1) {
-                    foldHeader("Completed", count: page.completed.count)
-                    ForEach(isFolded("Completed") ? [] : page.completed) { taskRow($0) }
+            ForEach(rows) { row in
+                switch row {
+                case let .fold(title, count, first): foldHeader(title, count: count).padding(.top, first ? 0 : 17)
+                case let .parent(item): parentRow(item)
+                case let .group(group): groupHeader(group)
+                case let .task(task): taskRow(task)
+                case let .note(text):
+                    Text(text)
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(theme.color(\.muted))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
                 }
             }
         }
+    }
+
+    /// One row of the page, straight in the column's lazy stack.
+    private enum Row: Identifiable {
+        case fold(String, count: Int, first: Bool)
+        case parent(Item)
+        case group(TaskGroup)
+        case task(Item)
+        case note(String)
+
+        var id: String {
+            switch self {
+            case .fold(let title, _, _): "fold:" + title
+            case .parent(let item): "parent:" + item.path
+            case .group(let group): "group:" + group.id
+            case .task(let task): task.path
+            case .note: "note"
+            }
+        }
+
+        /// The task's path, for the arrow keys.
+        var taskPath: String? { if case .task(let task) = self { task.path } else { nil } }
+    }
+
+    /// Tagged areas and projects, Tasks in Today's groups (Loose last) and Completed, each under its fold header.
+    private func rows(_ page: TagBrowser, open: [Item], untagged: Bool) -> [Row] {
+        let parentsTitle = untagged ? "Areas and projects" : "Tagged areas and projects"
+        var rows: [Row] = []
+        if !page.areasAndProjects.isEmpty {
+            rows.append(.fold(parentsTitle, count: page.areasAndProjects.count, first: true))
+            if !isFolded(parentsTitle) { rows += page.areasAndProjects.map(Row.parent) }
+        }
+        rows.append(.fold("Tasks", count: open.count, first: rows.isEmpty))
+        if !isFolded("Tasks") {
+            if open.isEmpty { rows.append(.note(untagged ? "Every open task has a tag." : "No open tasks carry this tag.")) }
+            for group in page.groups { rows += [.group(group)] + group.tasks.map(Row.task) }
+        }
+        if !page.completed.isEmpty {
+            rows.append(.fold("Completed", count: page.completed.count, first: false))
+            if !isFolded("Completed") { rows += page.completed.map(Row.task) }
+        }
+        return rows
     }
 
     private func header(_ tag: Tag?, page: TagBrowser, open: Int) -> some View {

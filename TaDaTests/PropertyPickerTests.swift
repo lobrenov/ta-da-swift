@@ -181,14 +181,14 @@ struct PropertyPickerTests {
 
     // MARK: tagMenu
 
-    private func tagMenu(_ query: String = "") -> (titles: [String?], labels: [String?], highlight: Int?) {
+    private func tagMenu(_ query: String = "", keeping: String? = nil) -> (titles: [String?], labels: [String?], highlight: Int?) {
         let files = [
             ("tasks/Weed.md", "---\ntype: task\nstatus: Doing\ntags: [home/garden]\n---\nAsk #people/max\n"),
             ("tasks/Rent.md", "---\ntype: task\nstatus: Doing\ntags: [money, errands]\n---\n#people/dan\n"),
             ("areas/Home.md", "---\ntype: area\ntags: [errands]\n---\n"),
         ]
         let index = VaultIndex(files.compactMap { Item(parsing: $0.1, path: $0.0) })
-        let menu = TagChoice.menu(item: index["tasks/Weed.md"]!, tree: index.tagTree(), query: query)
+        let menu = TagChoice.menu(item: index["tasks/Weed.md"]!, tree: index.tagTree(), query: query, keeping: keeping)
         let values = menu.sections.flatMap(\.items).map { $0.accessibilityValue as String? }
         return (titles(menu.sections), values, menu.highlight)
     }
@@ -208,5 +208,10 @@ struct PropertyPickerTests {
         #expect(tagMenu("#New Tag").titles == ["Create #New Tag"])
         #expect(tagMenu("people/max").titles == ["people/max"] && tagMenu("people/max").highlight == nil,
                 "a tag only in the text can't be picked")
+    }
+
+    @Test func tagMenuKeepsTheToggledTagHighlighted() {
+        #expect(tagMenu(keeping: "money").highlight == 4, "the tag just toggled stays highlighted after the menu refreshes")
+        #expect(tagMenu(keeping: "gone").highlight == 0)
     }
 }

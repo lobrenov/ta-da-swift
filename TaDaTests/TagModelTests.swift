@@ -75,4 +75,42 @@ struct TagModelTests {
         #expect(model.selection == nil && model.domain.title == "errands")
         #expect(AppModel.Domain.tag(nil).title == "Untagged")
     }
+
+    @Test func theSidebarFollowsTheDomain() async {
+        let model = await folder.model()
+        model.show(.tag("errands"))
+        #expect(model.sidebarMode == .tags)
+        model.show(.area("areas/Home.md"))
+        #expect(model.sidebarMode == .projects)
+        model.sidebarMode = .tags
+        model.show(.today)
+        #expect(model.sidebarMode == .tags, "Today and the rows above the switch leave it alone")
+        model.show(.loose)
+        #expect(model.sidebarMode == .projects)
+    }
+
+    @Test func aTagPageKeepsItsSpellingOnceNoFileCarriesIt() async throws {
+        let model = await folder.model()
+        model.show(.tag("home"))
+        #expect(model.shownTag?.name == "Home" && model.tagPage?.areasAndProjects.map(\.title) == ["Home"])
+        await model.removeTag(try #require(Tag("home/garden")), from: "tasks/Weed.md")
+        await model.removeTag(try #require(Tag("home")), from: "areas/Home.md")
+        #expect(model.tag(at: "home") == nil, "\(model.tagTree.map(\.tag.name))")
+        #expect(model.shownTag?.name == "Home", "\(String(describing: model.shownTag))")
+        #expect(model.tagPage?.areasAndProjects.isEmpty == true && model.tagPage?.groups.isEmpty == true)
+        await model.newTask()
+        #expect(try folder.read(try #require(model.selection)).contains("tags: [Home]\n"))
+    }
+
+    @Test func typingKeepsTheTagPageCurrent() async throws {
+        let model = await folder.model()
+        model.show(.tag("errands"))
+        model.selection = "tasks/Weed.md"
+        await model.loading?.value
+        let document = try #require(model.document)
+        document.text += "More.\n"
+        #expect(model.tagPage?.groups.flatMap(\.tasks).first?.summary == "Pull them. #errands More.")
+        document.text = document.text.replacingOccurrences(of: "#errands", with: "#errand")
+        #expect(model.tagPage?.groups.isEmpty == true && model.tagTree.map(\.tag.name) == ["errand", "Home"])
+    }
 }

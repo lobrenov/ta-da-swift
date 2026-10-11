@@ -235,9 +235,10 @@ final class PropertyPicker {
         }
     }
 
-    private func showTags() {
+    /// Shows tagMenu for the file as it is now, highlighting the tag at `keeping` when it has a row.
+    private func showTags(keeping: String? = nil) {
         guard open?.key == "tags", let context = tagMenuContext, let item = context.model.index[context.path] else { return }
-        let menu = TagChoice.menu(item: item, tree: context.model.tagTree, query: tagMenu.query)
+        let menu = TagChoice.menu(item: item, tree: context.model.tagTree, query: tagMenu.query, keeping: keeping)
         tagMenu.show(menu.sections, highlight: menu.highlight, theme: context.model.theme, below: context.anchor,
                      inset: 0, gap: 6, in: context.window) { [weak self] choice in
             self?.pickTag(choice)
@@ -251,10 +252,10 @@ final class PropertyPicker {
         case .tag(_, _, _, true):
             return
         case .tag(let tag, _, true, _):
-            Task { await model.removeTag(tag, from: path); showTags() }
+            Task { await model.removeTag(tag, from: path); showTags(keeping: tag.path) }
         case .tag(let tag, _, false, _), .create(let tag):
             tagMenu.query = ""
-            Task { await model.addTag(tag, to: path); showTags() }
+            Task { await model.addTag(tag, to: path); showTags(keeping: tag.path) }
         }
     }
 

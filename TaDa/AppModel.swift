@@ -37,6 +37,12 @@ import TaDaCore
             multiSelection = []
             trashSelection = []
             trashNote = nil
+            switch domain {
+            case .tag: sidebarMode = .tags
+            case .loose, .project, .area: sidebarMode = .projects
+            default: break
+            }
+            updateTagPage()
         }
     }
     /// The file shown in the document pane, by vault-relative path. Picking another domain clears it.
@@ -1489,7 +1495,7 @@ import TaDaCore
     func newTask() async {
         let parent = domainParent
         var tags: [Tag] = []
-        if case let .tag(path?) = domain, let tag = tag(at: path) ?? Tag(path) { tags = [tag] }
+        if case .tag(_?) = domain, let shownTag { tags = [shownTag] }
         var text = Self.newTask(in: parent, tags: tags, today: today)
         if parent == nil, domain == .today { text = FrontmatterEditor.set("dueDate", to: .date(today), in: text) }
         guard let path = await create(text, in: Vault.taskFolder) else { return }
@@ -1579,6 +1585,11 @@ import TaDaCore
     private(set) var tagTree: [TagNode] = []
     /// Areas, projects and tasks without a tag.
     private(set) var untaggedCount = 0
+    /// The tag whose page shows, spelled as the index shows it, or as last shown once no file carries it; nil
+    /// elsewhere and on Untagged.
+    private(set) var shownTag: Tag?
+    /// The lists of the tag page or Untagged, while one shows.
+    private(set) var tagPage: TagBrowser?
 
     var todayCount: Int { todayTasks.count { !$0.properties.status.isClosed } }
     var looseCount: Int { looseTasks.count }
@@ -1589,12 +1600,10 @@ import TaDaCore
         updateLists()
     }
 
-    /// Puts an edited item in the index. When its properties and tags are unchanged, as when typing in its body,
-    /// the lists keep their order and take the new item in place of the old.
+    /// Puts an edited item in the index. When its properties are unchanged, as when typing in its body, the lists keep
+    /// their order and take the new item in place of the old; a change to its tags redoes only the tag lists.
     private func updateIndex(replacing item: Item) {
-        guard let old = index[item.path], old.properties == item.properties, old.tags == item.tags else {
-            return updateIndex { $0.update(item) }
-        }
+        guard let old = index[item.path], old.properties == item.properties else { return updateIndex { $0.update(item) } }
         index.update(item)
         if let i = todayTasks.firstIndex(where: { $0.path == item.path }) { todayTasks[i] = item }
         if let i = looseTasks.firstIndex(where: { $0.path == item.path }) { looseTasks[i] = item }
@@ -1605,6 +1614,16 @@ import TaDaCore
         for i in areas.indices {
             if areas[i].area.path == item.path { areas[i].area = item }
             if let j = areas[i].projects.firstIndex(where: { $0.project.path == item.path }) { areas[i].projects[j].project = item }
+        }
+        if old.tags != item.tags { return updateTags() }
+        if var page = tagPage {
+            func patch(_ items: inout [Item]) {
+                if let i = items.firstIndex(where: { $0.path == item.path }) { items[i] = item }
+            }
+            patch(&page.areasAndProjects)
+            patch(&page.completed)
+            for i in page.groups.indices { patch(&page.groups[i].tasks) }
+            tagPage = page
         }
     }
 
@@ -1618,8 +1637,24 @@ import TaDaCore
         areas = index.areaProjects()
         logbook = index.items.values.filter { $0.properties.kind != .area && ($0.isLogged || $0.properties.status.isClosed) }
             .sorted(by: VaultIndex.byTitle)
+        updateTags()
+    }
+
+    /// The tag tree, the Untagged count and the tag page.
+    private func updateTags() {
         tagTree = index.tagTree()
-        untaggedCount = index.untagged().count
+        untaggedCount = index.items.values.count { !$0.isLogged && $0.tags.isEmpty }
+        updateTagPage()
+    }
+
+    private func updateTagPage() {
+        guard case let .tag(path) = domain else {
+            shownTag = nil
+            tagPage = nil
+            return
+        }
+        shownTag = path.flatMap { path in tag(at: path) ?? (shownTag?.path == path ? shownTag : Tag(path)) }
+        tagPage = index.tagBrowser(path == nil ? nil : shownTag)
     }
 
     var folderDisplayName: String { vault.map { Self.displayName(for: $0.root) } ?? "" }
