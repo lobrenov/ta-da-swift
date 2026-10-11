@@ -7,6 +7,10 @@ import TaDaCore
 #if os(macOS)
 struct SidebarView: View {
     @Bindable var model: AppModel
+    /// Search Files focuses this sidebar's search field; a hidden sidebar's it doesn't.
+    var takesSearchFocus = true
+    /// The search field has the keyboard as the sidebar appears.
+    var focusesSearch = false
     @Environment(\.theme) private var theme
     @Environment(\.openSettings) private var openSettings
     @FocusState private var searchFocused: Bool
@@ -54,7 +58,8 @@ struct SidebarView: View {
             newButtons
         }
         .background(theme.color(\.side))
-        .onChange(of: model.searchFocusRequest) { searchFocused = true }
+        .onChange(of: model.searchFocusRequest) { if takesSearchFocus { searchFocused = true } }
+        .onAppear { if focusesSearch { searchFocused = true } }
         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
     }
 

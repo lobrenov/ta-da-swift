@@ -14,6 +14,8 @@ struct SidebarSplitView: View {
     /// The sidebar hid because the window got narrow; it comes back when there's room.
     @State private var sidebarAutoHidden = false
     @State private var sidebarFloats = false
+    /// The sidebar floats for Search Files, with its search field taking the keyboard.
+    @State private var floatsForSearch = false
     /// Our sidebar button in place of the split view's, once the sidebar has slid away in a narrow window.
     @State private var usesOwnToggle = false
     @State private var anchor = ScreenAnchor()
@@ -22,7 +24,7 @@ struct SidebarSplitView: View {
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
-            SidebarView(model: model)
+            SidebarView(model: model, takesSearchFocus: columns != .detailOnly)
                 .onGeometryChange(for: CGFloat.self) { $0.size.width } action: {
                     if columns == .all { sidebarWidth = min(max($0, 200), 340) }
                 }
@@ -43,6 +45,10 @@ struct SidebarSplitView: View {
         .onDisappear { stopWatchingSwipes() }
         .onChange(of: columns) { if columns != .detailOnly { showedDockedSidebar() } }
         .onChange(of: model.sidebarToggleRequest) { toggle() }
+        .onChange(of: model.searchFocusRequest) {
+            if columns == .detailOnly, !sidebarFloats { floatsForSearch = true; sidebarFloats = true }
+        }
+        .onChange(of: sidebarFloats) { if !sidebarFloats { floatsForSearch = false } }
         .onChange(of: model.domain) { sidebarFloats = false }
     }
 
@@ -61,7 +67,7 @@ struct SidebarSplitView: View {
                     .contentShape(Rectangle())
                     .onTapGesture { sidebarFloats = false }
                     .accessibilityHidden(true)
-                SidebarView(model: model)
+                SidebarView(model: model, focusesSearch: floatsForSearch)
                     .frame(width: sidebarWidth)
                     .background { model.theme.color(\.side).ignoresSafeArea() }
                     .overlay(alignment: .trailing) { Hairline(axis: .vertical).ignoresSafeArea() }
