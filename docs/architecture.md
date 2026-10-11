@@ -26,7 +26,7 @@ TaDa/
 │                              schemes and 8 sets; themed(by:) sets \.theme and the colour scheme and follows the system appearance
 ├── Onboarding/                FolderPickerView
 ├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView, EditorSettingsView
-├── Sidebar/                   SidebarView: search, domains, loose projects, areas with their projects, folder line, Settings, New buttons; SidebarSplitView: the sidebar beside the workspace, hidden or floating in a narrow window; SidebarSwipe: the two-finger swipe that floats it
+├── Sidebar/                   SidebarView: search, domains, loose projects, areas with their projects, folder line, Settings, New buttons; SidebarSplitView: the sidebar beside the workspace, hidden or floating in a narrow window; SidebarSwipe: the two-finger swipes that float and hide it
 ├── Browser/
 │   ├── WorkspaceView.swift    the area right of the sidebar, per domain
 │   ├── TaskListView.swift     Today and Loose tasks
@@ -88,9 +88,9 @@ A theme set pairs a light and a dark scheme. `AppModel.theme` is the set's dark 
 
 ## Window
 
-`SidebarSplitView`: `NavigationSplitView { SidebarView } detail: { WorkspaceView }`. When the window is narrower than the sidebar plus `WorkspaceView.minWidth` (the browser's 320 and the document's 360), the sidebar hides, and comes back when there's room unless it was hidden by hand. In a narrow window the sidebar button and View ▸ Toggle Sidebar (⌃⌘S) float the sidebar over the workspace instead; a click outside it or picking a domain hides it. While the sidebar is hidden, at any width, a two-finger trackpad swipe to the right (40pt, mostly sideways) floats it too, unless a scroll view under the pointer can scroll left. The window is at least `WorkspaceView.minWidth` wide. Settings (⌘, or the sidebar's Settings row) is the `Settings` scene: `SettingsView`, 900×640, with Vault, Themes and Editor pages. The workspace shows:
+`SidebarSplitView`: `NavigationSplitView { SidebarView } detail: { WorkspaceView }`. When the window (its width, from `NSWindow.didResizeNotification`) is narrower than the sidebar plus `WorkspaceView.minWidth` (the browser's 320 and the document's 360), the sidebar hides, and comes back when there's room unless it was hidden by hand. In a narrow window the sidebar button and View ▸ Toggle Sidebar (⌃⌘S) float the sidebar over the workspace instead; a click outside it or picking a domain hides it. While the sidebar is hidden, at any width, a two-finger trackpad swipe to the right (40pt, mostly sideways) floats it too, unless a scroll view under the pointer can scroll left; it slides in from the left. A swipe to the left hides the floating sidebar, or the docked one when the pointer is over it. The window is at least `WorkspaceView.minWidth` wide. Settings (⌘, or the sidebar's Settings row) is the `Settings` scene: `SettingsView`, 900×640, with Vault, Themes and Editor pages. The workspace shows:
 
-- Today, Loose tasks, a project's tasks and an area's page (`AreaBrowserView`): the browser list beside `DocumentPane`.
+- Today, Loose tasks, a project's tasks and an area's page (`AreaBrowserView`): the browser list beside `DocumentPane`. The browser takes half the width, from 320 to 460, leaving `DocumentPane` at least 360.
 - Upcoming: the agenda beside the month calendar when nothing is selected, otherwise the agenda beside `DocumentPane`.
 - A project's or area's own file: `DocumentPane` (with `ProjectDocumentView` for a project) across the workspace.
 - Search: `SearchResultsView` beside `DocumentPane`.
