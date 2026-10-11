@@ -45,6 +45,8 @@ struct WorkspaceView: View {
             split { TaskListView(model: model, kind: .loose).id(AppModel.Domain.loose) }
         case .trash:
             TrashView(model: model)
+        case .logbook:
+            EmptyView()
         case .upcoming:
             if model.selection == nil, model.multiSelection.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {

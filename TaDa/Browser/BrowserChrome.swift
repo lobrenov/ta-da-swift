@@ -88,6 +88,7 @@ extension AppModel.Domain {
         case .today: "Today"
         case .upcoming: "Upcoming"
         case .loose: "Loose tasks"
+        case .logbook: "Logbook"
         case .trash: "Trash"
         case .project(let path), .area(let path): Item.title(ofPath: path)
         }
@@ -99,6 +100,7 @@ extension AppModel.Domain {
         case .today: "star.fill"
         case .upcoming: "calendar"
         case .loose: "tray"
+        case .logbook: "book.closed"
         case .trash: "trash"
         case .project: "circle.dotted"
         case .area: "cube"
@@ -110,6 +112,7 @@ extension AppModel.Domain {
         case .today: \.due
         case .upcoming: \.deadline
         case .loose, .project: \.accent
+        case .logbook: \.done
         case .trash: \.muted
         case .area: \.doing
         }

@@ -28,9 +28,11 @@ final class TestFolder {
         try String(contentsOf: url.appending(path: path), encoding: .utf8)
     }
 
-    /// A model on the folder on 3 October 2026 unless `today` is given, with `path` selected and loaded.
+    /// A model on the folder on 3 October 2026 unless `today` is given, with `path` selected and loaded. Unless `logging`,
+    /// the folder counts as logged today, so opening it moves nothing to `.logbook/`.
     @MainActor
-    func model(today: LocalDate = LocalDate("2026-10-03")!, selecting path: String? = nil) async -> AppModel {
+    func model(today: LocalDate = LocalDate("2026-10-03")!, selecting path: String? = nil, logging: Bool = false) async -> AppModel {
+        if !logging { defaults.set(today.description, forKey: AppModel.Keys.lastLogged) }
         let model = AppModel(defaults: defaults)
         model.today = today
         await model.choose(url)
