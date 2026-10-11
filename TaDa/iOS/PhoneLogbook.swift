@@ -39,12 +39,15 @@ struct PhoneLogbookScreen: View {
         .navigationSubtitle("Completed files in \(Vault.logbookFolder)/")
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
+            ToolbarItem(placement: .bottomBar) {
                 Text(waiting == 0 ? "Up to date · logs every night" : "\(waiting) completed today · logs every night")
                     .scaledFont(size: 13)
                     .foregroundStyle(theme.color(\.muted))
                     .fixedSize()
-                Spacer()
+            }
+            .sharedBackgroundVisibility(.hidden)
+            ToolbarSpacer(.flexible, placement: .bottomBar)
+            ToolbarItem(placement: .bottomBar) {
                 Button("Log Now") {
                     nav.play(.complete)
                     Task { await model.logNow() }
