@@ -1228,6 +1228,18 @@ struct AutoPairTests {
         #expect(shown(tv) == "a **word** (*x*)|")
     }
 
+    @Test func aFormattingButtonTappedTwiceLeavesNoMarkers() throws {
+        let tv = makeEditor("a ")
+        let coordinator = try #require(tv.delegate as? NativeTextViewCoordinator)
+        coordinator.didMarkdownBold(nil)
+        coordinator.didMarkdownBold(nil)
+        #expect(shown(tv) == "a |")
+        #expect(tv.autoPairs.isEmpty)
+        coordinator.didMarkdownInlineCode(nil)
+        coordinator.didMarkdownInlineCode(nil)
+        #expect(shown(tv) == "a |")
+    }
+
     @Test func markersStayPlainWhereTheyCantFormat() {
         #expect(typed("* item") == "* item|")
         #expect(typed("snake_case") == "snake_case|")

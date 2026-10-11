@@ -487,7 +487,8 @@ extension NativeTextViewWrapper.Coordinator {
         tv.setSelectedRange(NSRange(location: range.location + length, length: 0))
     }
 
-    /// Ta Da fork: with the caret at a `marker` closer the editor added, steps over it as typing it would.
+    /// Ta Da fork: with the caret at a `marker` closer the editor added, steps over it as typing it would, or removes
+    /// the pair when nothing is between its markers.
     private func stepsOverAutoPair(_ marker: String) -> Bool {
         guard let tv = textView as? NativeTextView, tv.currentSelectedRange.length == 0 else { return false }
         let location = tv.currentSelectedRange.location
@@ -495,8 +496,13 @@ extension NativeTextViewWrapper.Coordinator {
         guard let index = tv.autoPairs.lastIndex(where: { $0.closer.location == location }),
               NSMaxRange(tv.autoPairs[index].closer) <= text.length,
               text.substring(with: tv.autoPairs[index].closer) == marker else { return false }
-        let closer = tv.autoPairs.remove(at: index).closer
-        tv.setSelectedRange(NSRange(location: NSMaxRange(closer), length: 0))
+        let pair = tv.autoPairs.remove(at: index)
+        if NSMaxRange(pair.opener) == location, text.substring(with: pair.opener) == marker {
+            let range = NSRange(location: pair.opener.location, length: NSMaxRange(pair.closer) - pair.opener.location)
+            if replace(range, with: "") { tv.setSelectedRange(NSRange(location: range.location, length: 0)) }
+            return true
+        }
+        tv.setSelectedRange(NSRange(location: NSMaxRange(pair.closer), length: 0))
         return true
     }
 
