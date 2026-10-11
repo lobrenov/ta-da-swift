@@ -13,11 +13,7 @@ struct ContentView: View {
             case .noFolder, .failed:
                 FolderPickerView(model: model)
             case .loading, .ready:
-                NavigationSplitView {
-                    SidebarView(model: model)
-                } detail: {
-                    WorkspaceView(model: model)
-                }
+                SidebarSplitView(model: model)
             }
         }
         .imageDialogs(model)
@@ -31,7 +27,7 @@ struct ContentView: View {
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .toolbar(removing: .title)
         .containerBackground(model.theme.color(\.bg), for: .window)
-        .frame(minWidth: 900, minHeight: 480)
+        .frame(minWidth: WorkspaceView.minWidth, minHeight: 480)
         .alert("Ta Da", isPresented: Binding { model.errorMessage != nil } set: { if !$0 { model.errorMessage = nil } }) {
             Button("OK") {}
         } message: {
