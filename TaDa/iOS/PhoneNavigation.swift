@@ -126,7 +126,7 @@ enum Haptic: Equatable {
     case complete
     /// A subtask checked or unchecked.
     case subtask
-    /// The floating + pressed, or a swipe passing its threshold.
+    /// The floating + pressed, or the pull to search arming.
     case press
     /// A row picked, or a status, date or project picked.
     case pick
