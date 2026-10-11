@@ -41,7 +41,7 @@ struct SidebarSplitView: View {
         }
         .onAppear { watchSwipes() }
         .onDisappear { stopWatchingSwipes() }
-        .onChange(of: columns) { if columns != .detailOnly { sidebarFloats = false } }
+        .onChange(of: columns) { if columns != .detailOnly { showedDockedSidebar() } }
         .onChange(of: model.sidebarToggleRequest) { toggle() }
         .onChange(of: model.domain) { sidebarFloats = false }
     }
@@ -101,6 +101,15 @@ struct SidebarSplitView: View {
         } else {
             hideDockedSidebar(columns != .detailOnly)
         }
+    }
+
+    /// The split view showed its sidebar: the floating one hides, and in a narrow window the docked one slides away
+    /// again.
+    private func showedDockedSidebar() {
+        sidebarFloats = false
+        guard isNarrow else { return }
+        withAnimation { columns = .detailOnly }
+        sidebarAutoHidden = true
     }
 
     private func hideDockedSidebar(_ hide: Bool) {
