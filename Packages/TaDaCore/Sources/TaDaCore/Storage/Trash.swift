@@ -153,7 +153,7 @@ extension Vault {
 
     /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, numbering names that are taken. Each brings back
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
-    /// in the vault (outside `.logbook/`) or `.trash/` is created by name. When a parent's name had to change, the link follows it.
+    /// in the vault (outside `.logbook/`) or `.trash/` is created by name (a project under a title no other project has). When a parent's name had to change, the link follows it.
     /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
     /// back the trashed images it embeds, to `attachments/`, and its embeds follow an image whose name or folder
     /// changed. Returns the paths of the restored and created files, parents first, then the images.
@@ -190,7 +190,7 @@ extension Vault {
             if let entry = trashed.first(where: { matches($0.item) }) { return try bringBack(entry) }
             let folder = kind == .project ? Self.projectFolder : Self.areaFolder
             let text = kind == .project ? NewFile.project(today: today) : NewFile.area(today: today)
-            let path = try create(text, in: folder, title: parent.title)
+            let path = try create(text, in: folder, title: parent.title, taken: kind == .project ? index.projectFilenames() : [])
             restored.append(path)
             return Item.title(ofPath: path)
         }

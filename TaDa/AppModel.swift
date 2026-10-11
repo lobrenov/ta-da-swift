@@ -1458,14 +1458,16 @@ import TaDaCore
     /// Creates an untitled project, in the area whose page is showing, and opens its page with its title ready to type.
     func newProject() async {
         let area = domainParent.flatMap { $0.properties.kind == .area ? $0 : nil }
-        guard let path = await create(NewFile.project(area: area?.title, today: today), in: Vault.projectFolder) else { return }
+        guard let path = await create(NewFile.project(area: area?.title, today: today), in: Vault.projectFolder,
+                                      taken: index.projectFilenames()) else { return }
         titleFocus = path
         open(path)
     }
 
     /// Creates a project called `title` and files the tasks at `paths` under it.
     func newProject(named title: String, linking paths: [String]) async {
-        guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title),
+        guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title,
+                                      taken: index.projectFilenames()),
               let project = index[path] else { return }
         await setParent(project, of: paths)
     }
@@ -1487,10 +1489,10 @@ import TaDaCore
         return path
     }
 
-    private func create(_ text: String, in folder: String, title: String = "Untitled") async -> String? {
+    private func create(_ text: String, in folder: String, title: String = "Untitled", taken: Set<String> = []) async -> String? {
         guard let vault else { return nil }
         do {
-            let path = try await Self.run { try vault.create(text, in: folder, title: title) }
+            let path = try await Self.run { try vault.create(text, in: folder, title: title, taken: taken) }
             if let item = Item(parsing: text, path: path) { updateIndex { $0.update(item) } }
             return path
         } catch {

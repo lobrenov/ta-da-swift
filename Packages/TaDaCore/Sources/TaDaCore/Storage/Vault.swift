@@ -184,18 +184,19 @@ public struct Vault: Sendable {
         Item(parsing: try CoordinatedFileIO.update(url(for: path), transform), path: path)
     }
 
-    /// Creates `<folder>/<title>.md`, numbering the name if it's taken. Returns the new path.
-    public func create(_ text: String, in folder: String, title: String) throws -> String {
-        let path = (folder.isEmpty ? "" : folder + "/") + FileNaming.filename(for: title, existing: filenames(in: folder))
+    /// Creates `<folder>/<title>.md`, numbering the name if it's taken in the folder or among `taken`. Returns the new path.
+    public func create(_ text: String, in folder: String, title: String, taken: Set<String> = []) throws -> String {
+        let path = (folder.isEmpty ? "" : folder + "/") + FileNaming.filename(for: title, existing: filenames(in: folder).union(taken))
         try CoordinatedFileIO.create(text, at: url(for: path))
         return path
     }
 
-    /// Renames a file in place from a new title. Returns the new path (unchanged if the name is the same).
-    public func rename(_ path: String, to title: String) throws -> String {
+    /// Renames a file in place from a new title, numbering it if the name is taken in the folder or among `taken`.
+    /// Returns the new path (unchanged if the name is the same).
+    public func rename(_ path: String, to title: String, taken: Set<String> = []) throws -> String {
         let folder = Self.folder(of: path)
         let current = String(path.split(separator: "/").last ?? "")
-        let filename = FileNaming.filename(for: title, existing: filenames(in: folder).subtracting([current]))
+        let filename = FileNaming.filename(for: title, existing: filenames(in: folder).union(taken).subtracting([current]))
         guard filename != current else { return path }
         let newPath = (folder.isEmpty ? "" : folder + "/") + filename
         try CoordinatedFileIO.move(url(for: path), to: url(for: newPath))
@@ -207,19 +208,20 @@ public struct Vault: Sendable {
     public func renameProject(at path: String, to title: String, index: VaultIndex) throws
         -> (path: String, relinked: [Item], failed: [String]) {
         guard let project = index[path], project.properties.kind == .project else { return (path, [], []) }
-        return try rename(project, to: title, relinking: index.tasks(in: project, includingLogged: true), key: "project")
+        return try rename(project, to: title, taken: index.projectFilenames(excluding: path),
+                          relinking: index.tasks(in: project, includingLogged: true), key: "project")
     }
 
     /// Renames an area's file and relinks its projects and its own tasks, logged ones too, as `renameProject` does.
     public func renameArea(at path: String, to title: String, index: VaultIndex) throws
         -> (path: String, relinked: [Item], failed: [String]) {
         guard let area = index[path], area.properties.kind == .area else { return (path, [], []) }
-        return try rename(area, to: title, relinking: index.projects(in: area, includingLogged: true) + index.tasks(in: area, includingLogged: true), key: "area")
+        return try rename(area, to: title, taken: [], relinking: index.projects(in: area, includingLogged: true) + index.tasks(in: area, includingLogged: true), key: "area")
     }
 
-    private func rename(_ parent: Item, to title: String, relinking files: [Item], key: String) throws
+    private func rename(_ parent: Item, to title: String, taken: Set<String>, relinking files: [Item], key: String) throws
         -> (path: String, relinked: [Item], failed: [String]) {
-        let newPath = try rename(parent.path, to: title)
+        let newPath = try rename(parent.path, to: title, taken: taken)
         let newTitle = Item.title(ofPath: newPath)
         guard newTitle != parent.title else { return (newPath, [], []) }
         var relinked: [Item] = [], failed: [String] = []

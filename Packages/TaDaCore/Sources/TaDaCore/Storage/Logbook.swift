@@ -63,8 +63,7 @@ extension Vault {
     /// projects' filenames chosen so far in this move, which it joins.
     private func moveFile(_ item: Item, into folder: String, index: VaultIndex, named: inout Set<String>) throws -> String {
         guard item.properties.kind == .project else { return try moveFile(item.path, into: folder) }
-        let others = index.items.values.filter { $0.properties.kind == .project && $0.path != item.path }.map { $0.title + ".md" }
-        let path = try moveFile(item.path, into: folder, taken: named.union(others))
+        let path = try moveFile(item.path, into: folder, taken: named.union(index.projectFilenames(excluding: item.path)))
         named.insert(String(path.split(separator: "/").last ?? ""))
         return path
     }
@@ -81,6 +80,12 @@ extension Vault {
 }
 
 extension VaultIndex {
+    /// The filenames of every project's title, live or logged, except the project at `path`: the names a project's file
+    /// avoids when it's created, renamed or moved.
+    public func projectFilenames(excluding path: String? = nil) -> Set<String> {
+        Set(items.values.filter { $0.properties.kind == .project && $0.path != path }.map { $0.title + ".md" })
+    }
+
     /// The tasks and projects to log: Done or Cancelled and not logged yet, completed before `before` (any day when it's
     /// nil; a file without a `completedDate` counts as completed before it), sorted by title. A Done or Cancelled
     /// project that still has open tasks waits, and so do its tasks.

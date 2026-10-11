@@ -186,3 +186,26 @@ private func project(_ status: String, completed: String? = nil) -> String {
     ])
     #expect(index.loggedProjectsWithOpenTasks.map(\.title) == ["Shipped"])
 }
+
+@Test func aNewRenamedOrRestoredProjectTakesATitleNoOtherProjectHas() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(project("Done", completed: "2026-08-31"), ".logbook/2026-08/Accounts.md", in: folder)
+        try writeFile(project("Doing"), "work/Books.md", in: folder)
+        try writeFile(task("Doing", project: "Books"), "tasks/Balance.md", in: folder)
+        try writeFile(task("Not Started", project: "Gone"), ".trash/Restore me.md", in: folder)
+        try writeFile(project("Done", completed: "2026-08-31"), ".logbook/2026-08/Gone.md", in: folder)
+        let index = await vault.loadIndex()
+
+        #expect(try vault.create(project("Doing"), in: Vault.projectFolder, title: "Accounts", taken: index.projectFilenames())
+            == "projects/Accounts 2.md")
+
+        let renamed = try vault.renameProject(at: "work/Books.md", to: "Accounts", index: index)
+        #expect(renamed.path == "work/Accounts 2.md")
+        #expect(try vault.read("tasks/Balance.md").contains("project: \"[[Accounts 2]]\""))
+
+        #expect(try vault.restore([".trash/Restore me.md"], index: index, today: today)
+            == ["projects/Gone 2.md", "tasks/Restore me.md"])
+        #expect(try vault.read("tasks/Restore me.md").contains("project: \"[[Gone 2]]\""))
+    }
+}
