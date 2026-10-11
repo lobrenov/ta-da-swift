@@ -1,5 +1,6 @@
 // The window's sidebar beside the workspace. When the window is too narrow for both, the sidebar hides, and the
 // sidebar button (or View ▸ Toggle Sidebar) floats it over the workspace until a click elsewhere or a pick in it.
+// While the sidebar is hidden, a two-finger swipe to the right floats it too.
 #if os(macOS)
 import SwiftUI
 
@@ -12,6 +13,9 @@ struct SidebarSplitView: View {
     /// The sidebar hid because the window got narrow; it comes back when there's room.
     @State private var sidebarAutoHidden = false
     @State private var sidebarFloats = false
+    @State private var anchor = ScreenAnchor()
+    @State private var swipe = SidebarSwipe()
+    @State private var swipeMonitor: Any?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
@@ -26,6 +30,10 @@ struct SidebarSplitView: View {
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { fit(width: $0) }
         .overlay(alignment: .leading) { floatingSidebar }
+        .background(ScreenAnchorReader(anchor: anchor))
+        .onAppear { watchSwipes() }
+        .onDisappear { stopWatchingSwipes() }
+        .onChange(of: columns) { if columns != .detailOnly { sidebarFloats = false } }
         .onChange(of: model.sidebarToggleRequest) { toggle() }
         .onChange(of: model.domain) { hideFloatingSidebar() }
     }
@@ -74,12 +82,31 @@ struct SidebarSplitView: View {
     }
 
     private func toggle() {
-        if isNarrow {
+        if isNarrow || sidebarFloats {
             withAnimation(.snappy(duration: 0.22)) { sidebarFloats.toggle() }
         } else {
             sidebarAutoHidden = false
             withAnimation { columns = columns == .detailOnly ? .all : .detailOnly }
         }
+    }
+
+    /// Floats the hidden sidebar on a two-finger swipe to the right, unless something under the pointer scrolls left.
+    private func watchSwipes() {
+        stopWatchingSwipes()
+        swipeMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+            MainActor.assumeIsolated {
+                guard event.window === anchor.window, columns == .detailOnly, !sidebarFloats,
+                      swipe.track(event.phase, dx: SidebarSwipe.fingersDX(event), dy: event.scrollingDeltaY),
+                      !SidebarSwipe.scrollsLeft(event) else { return }
+                withAnimation(.snappy(duration: 0.22)) { sidebarFloats = true }
+            }
+            return event
+        }
+    }
+
+    private func stopWatchingSwipes() {
+        if let swipeMonitor { NSEvent.removeMonitor(swipeMonitor) }
+        swipeMonitor = nil
     }
 
     private func hideFloatingSidebar() {
