@@ -14,6 +14,8 @@ struct SidebarSplitView: View {
     /// The sidebar hid because the window got narrow; it comes back when there's room.
     @State private var sidebarAutoHidden = false
     @State private var sidebarFloats = false
+    /// Our sidebar button in place of the split view's, once the sidebar has slid away in a narrow window.
+    @State private var usesOwnToggle = false
     @State private var anchor = ScreenAnchor()
     @State private var swipe = SidebarSwipe()
     @State private var swipeMonitor: Any?
@@ -24,11 +26,11 @@ struct SidebarSplitView: View {
                 .onGeometryChange(for: CGFloat.self) { $0.size.width } action: {
                     if columns == .all { sidebarWidth = min(max($0, 200), 340) }
                 }
-                .toolbar(removing: isNarrow ? .sidebarToggle : nil)
+                .toolbar(removing: usesOwnToggle ? .sidebarToggle : nil)
         } detail: {
             WorkspaceView(model: model)
                 .toolbar {
-                    if isNarrow { ToolbarItem(placement: .navigation) { toggleButton } }
+                    if usesOwnToggle { ToolbarItem(placement: .navigation) { toggleButton } }
                 }
         }
         .overlay(alignment: .leading) { floatingSidebar }
@@ -43,7 +45,8 @@ struct SidebarSplitView: View {
         .onChange(of: model.domain) { sidebarFloats = false }
     }
 
-    /// The sidebar button while the window is narrow; otherwise the split view's own.
+    /// The sidebar button in a narrow window, where the split view's own would show the sidebar beside the workspace.
+    /// It takes the split view's place beside the window's buttons.
     private var toggleButton: some View {
         Button { toggle() } label: { Label("Toggle Sidebar", systemImage: "sidebar.left") }
             .help(sidebarFloats ? "Hide Sidebar" : "Show Sidebar")
@@ -75,13 +78,16 @@ struct SidebarSplitView: View {
         isNarrow = narrow
         if narrow {
             if columns != .detailOnly {
-                columns = .detailOnly
+                withAnimation { columns = .detailOnly } completion: { if isNarrow { usesOwnToggle = true } }
                 sidebarAutoHidden = true
+            } else {
+                usesOwnToggle = true
             }
         } else {
             sidebarFloats = false
+            usesOwnToggle = false
             if sidebarAutoHidden {
-                columns = .all
+                withAnimation { columns = .all }
                 sidebarAutoHidden = false
             }
         }
