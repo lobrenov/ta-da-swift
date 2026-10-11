@@ -25,6 +25,8 @@ struct DesignRenderTests {
         let empty = AppModel(defaults: defaults)
         try await render(empty, to: output.appending(path: "onboarding.png"))
 
+        // The fixtures count as logged that day, so opening them moves nothing to `.logbook/`.
+        defaults.set("2026-10-02", forKey: AppModel.Keys.lastLogged)
         let model = AppModel(defaults: defaults)
         model.today = LocalDate("2026-10-02")!
         await model.choose(sampleVault)
@@ -55,7 +57,7 @@ struct DesignRenderTests {
         }
 
         // Areas, on TaDaCore's AreaVault fixture, in the default dark scheme.
-        let areas = AppModel(defaults: TestSettings())
+        let areas = AppModel(defaults: defaults)
         areas.today = LocalDate("2026-10-02")!
         await areas.choose(URL(filePath: #filePath).deletingLastPathComponent()
             .appending(path: "../Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/AreaVault").standardized)
@@ -71,6 +73,25 @@ struct DesignRenderTests {
             areas.selection = selection
             try await render(areas, to: output.appending(path: "\(name).png"))
         }
+        // The Logbook, on a copy of the design's data with its completed files logged, one completed and one cancelled
+        // today, in the default dark scheme.
+        let copy = FileManager.default.temporaryDirectory.appending(path: "DesignVault-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.copyItem(at: sampleVault, to: copy)
+        defer { try? FileManager.default.removeItem(at: copy) }
+        let logbook = AppModel(defaults: TestSettings())
+        logbook.today = LocalDate("2026-10-02")!
+        await logbook.choose(copy)
+        await logbook.setStatus(.done, in: "tasks/Update my claude.md files.md")
+        await logbook.setStatus(.cancelled, in: "tasks/Submit timesheet.md")
+        logbook.appearance = .dark
+        logbook.show(.logbook)
+        logbook.selection = ".logbook/2026-09/Frontmatter schema for tasks and projects.md"
+        try await render(logbook, to: output.appending(path: "logbook.png"))
+        logbook.completionConfirmation = AppModel.CompletionConfirmation(
+            project: try #require(logbook.index[project]), status: .done, tasks: logbook.index.openTasks(in: try #require(logbook.index[project])))
+        try await render(CompletionDialog(model: logbook, request: try #require(logbook.completionConfirmation)).themed(by: logbook),
+                         width: 480, to: output.appending(path: "logbook-confirm.png"))
+
         // The window's sidebar is glass, which doesn't draw here, so the sidebar also renders on its own.
         areas.domain = .area("areas/Personal.md")
         try await render(SidebarView(model: areas).themed(by: areas), width: 240, to: output.appending(path: "area-sidebar.png"))

@@ -34,6 +34,7 @@ struct AppCommands: Commands {
             show(.upcoming, key: "2")
             show(.loose, key: "3")
             show(.trash, key: "4")
+            show(.logbook, key: "5")
             Divider()
             Button(model.isSourceMode ? "Show Live Preview" : "Show Source") { model.isSourceMode.toggle() }
                 .keyboardShortcut("e")
@@ -53,7 +54,7 @@ struct AppCommands: Commands {
         }
         CommandMenu("Task") {
             let selected = model.selection.flatMap { model.index[$0] }
-            Button(selected?.properties.status == .done ? "Mark Not Done" : "Complete") {
+            Button(selected.map { StatusCheckbox.action(for: $0.properties.status).capitalized } ?? "Complete") {
                 if let selected { Task { await model.toggleCompletion(selected) } }
             }
             .keyboardShortcut("k")

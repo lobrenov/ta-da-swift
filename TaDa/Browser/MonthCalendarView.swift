@@ -12,7 +12,7 @@ struct MonthCalendarView: View {
     var body: some View {
         let today = model.today
         let month = shownMonth ?? today.startOfMonth
-        let open = model.index.tasks.filter { $0.properties.status != .done }
+        let open = model.index.tasks.filter { !$0.properties.status.isClosed }
         let due = Set(open.compactMap(\.properties.dueDate))
         let deadlines = Set(open.compactMap(\.properties.deadline))
         let lastAgendaDay = today.adding(days: AgendaView.days)

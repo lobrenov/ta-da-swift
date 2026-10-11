@@ -313,7 +313,7 @@ private struct DeleteImageDialog: View {
             LinkChoiceIcon(icon: text.icon(of: item), search: search, theme: theme, size: 16)
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.title)
-                    .foregroundStyle(theme.color(item.properties.status == .done ? \.muted : \.strong))
+                    .foregroundStyle(theme.color(item.properties.status.isClosed ? \.muted : \.strong))
                 Text(text.place(of: item))
                     .font(.system(size: 11.5))
                     .foregroundStyle(theme.color(\.muted))
@@ -499,7 +499,7 @@ private struct PhoneDeleteImageSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
                     .scaledFont(size: 17)
-                    .foregroundStyle(theme.color(item.properties.status == .done ? \.muted : \.strong))
+                    .foregroundStyle(theme.color(item.properties.status.isClosed ? \.muted : \.strong))
                 Text(meta.compactMap { $0 }.joined(separator: " · "))
                     .scaledFont(size: 13)
                     .foregroundStyle(theme.color(\.muted))

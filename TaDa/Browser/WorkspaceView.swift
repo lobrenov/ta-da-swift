@@ -46,7 +46,7 @@ struct WorkspaceView: View {
         case .trash:
             TrashView(model: model)
         case .logbook:
-            EmptyView()
+            split { LogbookView(model: model) }
         case .upcoming:
             if model.selection == nil, model.multiSelection.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {

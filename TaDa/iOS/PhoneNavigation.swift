@@ -77,7 +77,7 @@ enum PhoneMoveRow: Hashable, Identifiable {
         let current = currentParent(index: index, files: tasks) ?? nil
         func projects(_ projects: [ProjectProgress], in area: Item?) -> [PhoneMoveRow] {
             var projects = projects
-            if let current, current.properties.kind == .project, current.properties.status == .done,
+            if let current, current.properties.kind == .project, current.properties.status.isClosed,
                index.area(of: current)?.path == area?.path {
                 projects = (projects + [index.progress(of: current)]).sorted { VaultIndex.byTitle($0.project, $1.project) }
             }

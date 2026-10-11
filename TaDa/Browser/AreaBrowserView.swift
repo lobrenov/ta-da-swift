@@ -12,8 +12,8 @@ struct AreaBrowserView: View {
     var body: some View {
         let projects = model.index.projects(in: area).map { model.index.progress(of: $0) }
         let tasks = model.index.tasks(in: area)
-        let open = tasks.filter { $0.properties.status != .done }
-        let done = tasks.filter { $0.properties.status == .done }
+        let open = tasks.filter { !$0.properties.status.isClosed }
+        let done = tasks.filter { $0.properties.status.isClosed }
         let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
 
         BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18) {
@@ -100,7 +100,7 @@ struct AreaBrowserView: View {
                             Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
                                  spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
                         }
-                        if p.status != .done {
+                        if !p.status.isClosed {
                             if let due = p.dueDate {
                                 DateChip(kind: .due, date: due, today: model.today, labelled: false)
                             }

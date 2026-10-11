@@ -1,4 +1,4 @@
-// Sidebar: search, the three domains and Trash with counts, active projects without an area, then each area with its
+// Sidebar: search, the three domains with counts, Logbook, Trash with its count, active projects without an area, then each area with its
 // active projects under it, the folder line, Settings and the New buttons. Task rows drop onto Today, Loose
 // tasks, the projects and the areas; project rows drop onto the areas.
 import SwiftUI
@@ -30,8 +30,9 @@ struct SidebarView: View {
                     row(.upcoming, count: nil)
                     row(.loose, count: model.looseCount)
                         .taskDrop(model, onto: .loose)
-                    row(.trash, count: model.trashCount)
+                    row(.logbook, count: nil)
                         .padding(.top, 8)
+                    row(.trash, count: model.trashCount)
 
                     Spacer().frame(height: 12)
                     if model.looseProjects.isEmpty, model.areas.isEmpty {
