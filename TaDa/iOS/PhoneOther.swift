@@ -1,4 +1,4 @@
-// The Other tab: Logbook and Trash, and Settings (Vault, Themes, Editor, Haptics), with the folder's sync state under them.
+// The Other tab: Tags, Logbook and Trash, and Settings (Vault, Themes, Editor, Haptics), with the folder's sync state under them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -10,6 +10,9 @@ struct PhoneOtherScreen: View {
     var body: some View {
         List {
             Section {
+                NavigationLink(value: PhoneRoute.tags) {
+                    row("Tags", "tag", tint: \.accent, value: "\(model.tagCount)")
+                }
                 NavigationLink(value: PhoneRoute.logbook) {
                     row("Logbook", AppModel.Domain.logbook.systemImage, tint: \.done, value: "")
                 }

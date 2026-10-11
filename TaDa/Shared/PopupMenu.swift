@@ -2,10 +2,6 @@
 // `PopupPanel` places the panel, closes it on a click elsewhere, a scroll or esc and passes it keys; the date
 // picker's calendar uses it too. `PopupMenu` moves the highlight and picks, and its view draws the list around
 // each menu's own rows, in the full or compact style of the design system's Menu component.
-#if os(macOS)
-import SwiftUI
-import AppKit
-
 /// What a popup menu needs from each of its items.
 protocol PopupMenuItem {
     /// The row's VoiceOver label, and what typing a menu's letters matches.
@@ -26,6 +22,10 @@ struct PopupMenuSection<Item> {
     var label: String? = nil
     var items: [Item]
 }
+
+#if os(macOS)
+import SwiftUI
+import AppKit
 
 /// The Menu component's two densities.
 struct PopupMenuStyle {

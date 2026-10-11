@@ -1,4 +1,4 @@
-// A task's, project's or area's file: title, property chips (none for an area) and a quiet line, then the body in the
+// A task's, project's or area's file: title, property chips (none for an area), tags and a quiet line, then the body in the
 // live editor (or the whole file in Source), and for a project its linked tasks. The tab bar gives way to a toolbar of
 // the file's actions.
 #if os(iOS)
@@ -100,8 +100,12 @@ struct PhoneFileScreen: View {
             if let item = document.item {
                 if item.properties.kind != .area {
                     PhoneChips(model: model, item: model.index[item.path] ?? item)
+                    PhoneTagChips(model: model, item: model.index[item.path] ?? item)
                 }
                 QuietLine(model: model, item: item)
+                if item.properties.kind == .area {
+                    PhoneTagChips(model: model, item: model.index[item.path] ?? item)
+                }
             }
             WarningList(warnings: document.item.map { model.index[$0.path].map(model.index.warnings(for:)) ?? $0.warnings } ?? [])
             Hairline()
@@ -114,7 +118,8 @@ struct PhoneFileScreen: View {
                     .frame(minHeight: 320)
                     .padding(.horizontal, -5)
             } else {
-                BodyEditor(model: model, document: document) { nav.push(.file($0)) }
+                BodyEditor(model: model, document: document, open: { nav.push(.file($0)) },
+                           openTag: { nav.push(.tag($0.path)) })
             }
             if let item = document.item, item.properties.kind == .project {
                 PhoneLinkedTasks(model: model, project: model.index[item.path] ?? item)

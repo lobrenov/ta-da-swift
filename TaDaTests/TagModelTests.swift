@@ -31,6 +31,14 @@ struct TagModelTests {
         #expect(tree(model) == ["errands 1", "Home 2", "home/garden 1", "People 1", "People/Max 1"] && model.untaggedCount == 0)
     }
 
+    @Test func theVisibleTagsLeaveOutFoldedChildrenAndTheCountHasParents() async throws {
+        let model = await folder.model()
+        #expect(model.visibleTags.map { "\($0.node.tag.name) \($0.depth)" } == ["errands 0", "Home 0", "home/garden 1"])
+        #expect(model.tagCount == 3)
+        model.toggleTagFolded("home")
+        #expect(model.visibleTags.map(\.node.tag.name) == ["errands", "Home"] && model.tagCount == 3)
+    }
+
     @Test func tagsAreAddedAndRemovedInTagsOnly() async throws {
         let model = await folder.model()
         let quick = try #require(Tag("quick win"))

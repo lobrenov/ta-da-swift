@@ -131,74 +131,6 @@ private struct AddTagBody<Label: View>: View {
     }
 }
 
-/// A row of tagMenu.
-enum TagChoice: PopupMenuItem {
-    /// A tag and how many files carry it or a child. `inFile`: in the file's `tags:` (ticked); `inText`: only in its
-    /// body, so it can't be picked.
-    case tag(Tag, count: Int, inFile: Bool, inText: Bool)
-    /// Adds a tag no file carries yet.
-    case create(Tag)
-
-    static let prompt = "Add a tag"
-
-    var title: String {
-        switch self {
-        case .tag(let tag, _, _, _): tag.name
-        case .create(let tag): "Create #\(tag.name)"
-        }
-    }
-
-    var accessibilityValue: String {
-        switch self {
-        case .tag(_, let count, let inFile, let inText): inFile ? "In this file" : inText ? "In the text" : count == 1 ? "1 file" : "\(count) files"
-        case .create: ""
-        }
-    }
-
-    var isPickable: Bool {
-        if case .tag(_, _, _, true) = self { false } else { true }
-    }
-
-    /// tagMenu for `item` and what's typed. Unsearched: In this file (`tags:`, then the body's), then All tags with
-    /// counts, by path. Typing keeps the tags with a segment starting with the text, and puts Create first when no
-    /// tag has that path. The row of the tag at `keeping` is highlighted (the one just toggled), else the first
-    /// pickable row.
-    static func menu(item: Item, tree: [TagNode], query: String, keeping: String? = nil)
-        -> (sections: [PopupMenuSection<TagChoice>], highlight: Int?) {
-        let text = query.trimmingCharacters(in: .whitespaces)
-        let typed = Tag(text)
-        var counts: [String: (tag: Tag, count: Int)] = [:]
-        func visit(_ nodes: [TagNode]) {
-            for node in nodes {
-                counts[node.tag.path] = (node.tag, node.count)
-                visit(node.children)
-            }
-        }
-        visit(tree)
-        func matches(_ tag: Tag) -> Bool {
-            guard let typed else { return true }
-            return ([tag.path] + tag.path.indices.filter { tag.path[$0] == "/" }.map { String(tag.path[tag.path.index(after: $0)...]) })
-                .contains { $0.hasPrefix(typed.path) }
-        }
-        let inFile = item.tags.filter { matches($0.tag) }.map { use in
-            TagChoice.tag(use.tag, count: counts[use.tag.path]?.count ?? 0, inFile: use.inFrontmatter, inText: !use.inFrontmatter)
-        }
-        let own = Set(item.tags.map(\.tag.path))
-        let all = counts.values.filter { !own.contains($0.tag.path) && matches($0.tag) }.sorted { $0.tag.path < $1.tag.path }
-            .map { TagChoice.tag($0.tag, count: $0.count, inFile: false, inText: false) }
-        var sections: [PopupMenuSection<TagChoice>] = []
-        if let typed, counts[typed.path] == nil, !own.contains(typed.path) {
-            sections.append(PopupMenuSection(items: [.create(typed)]))
-        }
-        sections.append(PopupMenuSection(label: "In this file", items: inFile))
-        sections.append(PopupMenuSection(label: "All tags", items: all))
-        sections = sections.filter { !$0.items.isEmpty }
-        let items = sections.flatMap(\.items)
-        let kept = keeping.flatMap { path in items.firstIndex { if case .tag(let tag, _, _, _) = $0 { tag.path == path } else { false } } }
-        return (sections, kept ?? items.firstIndex(where: \.isPickable))
-    }
-}
-
 /// A tag's glyph, path and count, ticked when it's in `tags:` and greyed "in text" when it's only in the body; or
 /// Create with a plus.
 struct TagChoiceRow: View {
@@ -265,4 +197,72 @@ extension Theme {
 
     /// A tag chip's ring: `accent` at 32% in dark schemes and 28% in light ones.
     var tagRing: Color { color(\.accent).opacity(isDark ? 0.32 : 0.28) }
+}
+
+/// A row of tagMenu.
+enum TagChoice: PopupMenuItem {
+    /// A tag and how many files carry it or a child. `inFile`: in the file's `tags:` (ticked); `inText`: only in its
+    /// body, so it can't be picked.
+    case tag(Tag, count: Int, inFile: Bool, inText: Bool)
+    /// Adds a tag no file carries yet.
+    case create(Tag)
+
+    static let prompt = "Add a tag"
+
+    var title: String {
+        switch self {
+        case .tag(let tag, _, _, _): tag.name
+        case .create(let tag): "Create #\(tag.name)"
+        }
+    }
+
+    var accessibilityValue: String {
+        switch self {
+        case .tag(_, let count, let inFile, let inText): inFile ? "In this file" : inText ? "In the text" : count == 1 ? "1 file" : "\(count) files"
+        case .create: ""
+        }
+    }
+
+    var isPickable: Bool {
+        if case .tag(_, _, _, true) = self { false } else { true }
+    }
+
+    /// tagMenu for `item` and what's typed. Unsearched: In this file (`tags:`, then the body's), then All tags with
+    /// counts, by path. Typing keeps the tags with a segment starting with the text, and puts Create first when no
+    /// tag has that path. The row of the tag at `keeping` is highlighted (the one just toggled), else the first
+    /// pickable row.
+    static func menu(item: Item, tree: [TagNode], query: String, keeping: String? = nil)
+        -> (sections: [PopupMenuSection<TagChoice>], highlight: Int?) {
+        let text = query.trimmingCharacters(in: .whitespaces)
+        let typed = Tag(text)
+        var counts: [String: (tag: Tag, count: Int)] = [:]
+        func visit(_ nodes: [TagNode]) {
+            for node in nodes {
+                counts[node.tag.path] = (node.tag, node.count)
+                visit(node.children)
+            }
+        }
+        visit(tree)
+        func matches(_ tag: Tag) -> Bool {
+            guard let typed else { return true }
+            return ([tag.path] + tag.path.indices.filter { tag.path[$0] == "/" }.map { String(tag.path[tag.path.index(after: $0)...]) })
+                .contains { $0.hasPrefix(typed.path) }
+        }
+        let inFile = item.tags.filter { matches($0.tag) }.map { use in
+            TagChoice.tag(use.tag, count: counts[use.tag.path]?.count ?? 0, inFile: use.inFrontmatter, inText: !use.inFrontmatter)
+        }
+        let own = Set(item.tags.map(\.tag.path))
+        let all = counts.values.filter { !own.contains($0.tag.path) && matches($0.tag) }.sorted { $0.tag.path < $1.tag.path }
+            .map { TagChoice.tag($0.tag, count: $0.count, inFile: false, inText: false) }
+        var sections: [PopupMenuSection<TagChoice>] = []
+        if let typed, counts[typed.path] == nil, !own.contains(typed.path) {
+            sections.append(PopupMenuSection(items: [.create(typed)]))
+        }
+        sections.append(PopupMenuSection(label: "In this file", items: inFile))
+        sections.append(PopupMenuSection(label: "All tags", items: all))
+        sections = sections.filter { !$0.items.isEmpty }
+        let items = sections.flatMap(\.items)
+        let kept = keeping.flatMap { path in items.firstIndex { if case .tag(let tag, _, _, _) = $0 { tag.path == path } else { false } } }
+        return (sections, kept ?? items.firstIndex(where: \.isPickable))
+    }
 }

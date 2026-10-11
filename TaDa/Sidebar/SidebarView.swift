@@ -89,15 +89,8 @@ struct SidebarView: View {
                 .foregroundStyle(theme.color(\.muted))
                 .padding(.horizontal, 10)
         }
-        ForEach(visibleTags(model.tagTree, depth: 0), id: \.node.id) { entry in
+        ForEach(model.visibleTags, id: \.node.id) { entry in
             tagRow(entry.node, depth: entry.depth)
-        }
-    }
-
-    /// The tree's rows, top to bottom, leaving out the children of folded parents.
-    private func visibleTags(_ nodes: [TagNode], depth: Int) -> [(node: TagNode, depth: Int)] {
-        nodes.flatMap { node in
-            [(node, depth)] + (model.isTagFolded(node.tag.path) ? [] : visibleTags(node.children, depth: depth + 1))
         }
     }
 

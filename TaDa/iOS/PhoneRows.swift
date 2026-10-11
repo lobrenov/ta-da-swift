@@ -143,6 +143,7 @@ struct PhoneTaskRow: View {
                 chips.append(AnyView(DateChip(kind: .deadline, date: deadline, today: today, labelled: dates != .iconsOnly)))
             }
         }
+        if !item.tags.isEmpty { chips.append(AnyView(TagCountChip(tags: item.tags))) }
         return chips
     }
 

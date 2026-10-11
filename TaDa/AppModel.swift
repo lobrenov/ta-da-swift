@@ -1401,6 +1401,20 @@ import TaDaCore
         return nil
     }
 
+    /// The tag tree's rows, top to bottom, leaving out the children of folded parents.
+    var visibleTags: [(node: TagNode, depth: Int)] {
+        func rows(_ nodes: [TagNode], depth: Int) -> [(node: TagNode, depth: Int)] {
+            nodes.flatMap { [($0, depth)] + (isTagFolded($0.tag.path) ? [] : rows($0.children, depth: depth + 1)) }
+        }
+        return rows(tagTree, depth: 0)
+    }
+
+    /// How many tags are in use, parents included.
+    var tagCount: Int {
+        func count(_ nodes: [TagNode]) -> Int { nodes.reduce(nodes.count) { $0 + count($1.children) } }
+        return count(tagTree)
+    }
+
     // MARK: Move and dates
 
     /// The files a due date or deadline is set on, in list order. With `path` (a right-clicked or dragged row): the

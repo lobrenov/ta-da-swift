@@ -34,6 +34,7 @@ struct PhoneRootView: View {
             case let .date(kind, paths): PhoneDateSheet(model: model, kind: kind, paths: paths)
             case let .move(paths): PhoneMoveSheet(model: model, kind: .move, paths: paths)
             case let .area(paths): PhoneMoveSheet(model: model, kind: .area, paths: paths)
+            case let .tags(path): PhoneTagSheet(model: model, path: path)
             }
         }
         .alert(trashTitle, isPresented: Binding { model.trashConfirmation?.images.isEmpty == true }
@@ -100,6 +101,8 @@ struct PhoneRootView: View {
                     case let .settings(section): PhoneSettingsScreen(model: model, section: section)
                     case .logbook: PhoneLogbookScreen(model: model)
                     case .trash: PhoneTrashScreen(model: model)
+                    case .tags: PhoneTagsScreen(model: model)
+                    case let .tag(path): PhoneTagScreen(model: model, path: path)
                     }
                 }
             }
