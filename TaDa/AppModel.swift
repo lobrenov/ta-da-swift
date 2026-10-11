@@ -824,7 +824,7 @@ import TaDaCore
         await edit(item.path) { text in
             Completion.toggle(Item(parsing: text, path: item.path)?.properties.status ?? fallback, in: text, today: today)
         }
-        await returnIfReopened(item.path)
+        await reopenParent(of: item.path, wasClosed: item.properties.status.isClosed)
     }
 
     /// Applies a text change to one file, then patches the index. The open document is changed in memory
@@ -851,8 +851,8 @@ import TaDaCore
     }
 
     /// Sets the status; Done and Cancelled also set `completedDate`, anything else clears it. Unless `confirmed`,
-    /// completing or cancelling a project that has open tasks asks first through `completionConfirmation`. A logged file
-    /// that's reopened goes back to `tasks/` or `projects/`.
+    /// completing or cancelling a project that has open tasks asks first through `completionConfirmation`. A reopened task
+    /// sets its Done or Cancelled project to Doing; a logged file that's reopened goes back to `tasks/` or `projects/`.
     func setStatus(_ status: Status, in path: String, confirmed: Bool = false) async {
         if !confirmed, status.isClosed, let item = index[path], item.properties.kind == .project {
             let tasks = index.openTasks(in: item)
@@ -861,9 +861,9 @@ import TaDaCore
                 return
             }
         }
-        let today = today
+        let today = today, wasClosed = index[path]?.properties.status.isClosed ?? false
         await edit(path) { Completion.setStatus(status, in: $0, today: today) }
-        await returnIfReopened(path)
+        await reopenParent(of: path, wasClosed: wasClosed)
     }
 
     /// Answers `completionConfirmation`: sets the project's status and its open tasks to `tasksAs` (Done or Cancelled),
@@ -1274,10 +1274,14 @@ import TaDaCore
     }
 
     /// A logged file that isn't Done or Cancelled any more goes back to `tasks/` or `projects/`, bringing back its logged
-    /// project as Doing.
-    private func returnIfReopened(_ path: String) async {
-        guard let item = index[path], item.isLogged, !item.properties.status.isClosed else { return }
-        await moveFiles("put “\(item.title)” back") { try $0.unlog([path], index: $1, today: $2) }
+    /// project as Doing. A task reopened from Done or Cancelled sets its Done or Cancelled project to Doing.
+    private func reopenParent(of path: String, wasClosed: Bool) async {
+        guard let item = index[path], !item.properties.status.isClosed else { return }
+        if item.isLogged {
+            await moveFiles("put “\(item.title)” back") { try $0.unlog([path], index: $1, today: $2) }
+        } else if wasClosed, let project = index.project(of: item), project.properties.status.isClosed, !project.isLogged {
+            await setStatus(.doing, in: project.path)
+        }
     }
 
     /// Saves the open file, moves files with `move` (which returns each new path by its old one), and follows them.

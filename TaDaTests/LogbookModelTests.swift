@@ -84,6 +84,22 @@ struct LogbookModelTests {
         #expect(model.selection == "tasks/Photos.md" && model.document?.path == "tasks/Photos.md")
     }
 
+    @Test func reopeningACancelledTaskSetsItsCompletedProjectToDoing() async throws {
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-03\n---\n", "projects/Kombi.md")
+        try folder.write("---\ntype: task\nstatus: Cancelled\ncompletedDate: 2026-10-03\nproject: \"[[Kombi]]\"\n---\n", "tasks/Photos.md")
+        let model = await folder.model(logging: true)
+        await model.setStatus(.notStarted, in: "tasks/Photos.md")
+        #expect(model.index["projects/Kombi.md"]?.properties.status == .doing)
+        #expect(model.index["projects/Kombi.md"]?.properties.completedDate == nil)
+    }
+
+    @Test func movingAnOpenTaskLeavesItsCompletedProject() async throws {
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-03\n---\n", "projects/Kombi.md")
+        let model = await folder.model(logging: true)
+        await model.setStatus(.blocked, in: "tasks/Photos.md")
+        #expect(model.index["projects/Kombi.md"]?.properties.status == .done)
+    }
+
     @Test func aLinkToALoggedFileOpensInTheLogbook() async throws {
         let model = await folder.model(logging: true)
         model.openLink(to: ".logbook/2026-09/Old.md")
