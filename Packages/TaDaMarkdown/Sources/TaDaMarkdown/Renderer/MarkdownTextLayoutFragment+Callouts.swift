@@ -89,6 +89,14 @@ extension MarkdownTextLayoutFragment {
         return max(layoutFragmentFrame.height, ceil(last.typographicBounds.maxY + padding + 1))
     }
 
+    /// Above the fragment where a panel opens with no paragraph spacing to hold its top padding: the document's
+    /// first paragraph.
+    var calloutSurfaceTop: CGFloat {
+        let padding = calloutLine?.panels.filter(\.opens).map(\.topPadding).max()
+        guard let padding, let first = textLines.first else { return 0 }
+        return min(0, floor(first.typographicBounds.minY - padding - 1))
+    }
+
     private var textLines: [NSTextLineFragment] {
         textLineFragments.filter { $0.characterRange.length > 0 }
     }

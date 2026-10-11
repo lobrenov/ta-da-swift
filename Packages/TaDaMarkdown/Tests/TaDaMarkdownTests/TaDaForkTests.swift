@@ -1107,6 +1107,14 @@ struct FragmentGeometryTests {
         }
     }
 
+    @Test func aCalloutStartingTheDocumentDrawsItsTopPadding() throws {
+        let (fragments, keep) = try fragments("> [!note] T\n> body") { $0.callouts = testCalloutStyle }
+        let first = try #require(fragments.first)
+        let line = try #require(first.textLineFragments.first)
+        #expect(first.renderingSurfaceBounds.minY <= line.typographicBounds.minY - testCalloutStyle.paddingTop)
+        withExtendedLifetime(keep) {}
+    }
+
     @Test func aCalloutEndingTheDocumentDrawsItsBottomPadding() throws {
         let (fragments, keep) = try fragments("Intro\n\n> [!note] T\n> body") { $0.callouts = testCalloutStyle }
         let last = try #require(fragments.last)
