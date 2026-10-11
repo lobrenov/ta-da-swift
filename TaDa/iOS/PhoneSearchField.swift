@@ -43,6 +43,52 @@ final class ListSearch {
     }
 }
 
+extension View {
+    /// Pulling this scroll view past its top opens `search`, which the navigation stack draws above its bar; a tap
+    /// on the content closes it while nothing is typed.
+    func pullToSearch(_ search: ListSearch) -> some View {
+        modifier(PullToSearch(search: search))
+    }
+}
+
+private struct PullToSearch: ViewModifier {
+    let search: ListSearch
+    @State private var isDragging = false
+    @Environment(PhoneNavigation.self) private var nav
+    @Environment(SearchHost.self) private var searchHost
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y + geometry.contentInsets.top
+            } action: { _, offset in
+                search.distance = max(0, -offset)
+                guard isDragging, !search.isOpen else { return }
+                let isArmed = search.distance >= ListSearch.threshold
+                if isArmed, !search.isArmed { nav.play(.press) }
+                search.isArmed = isArmed
+            }
+            .onScrollPhaseChange { _, phase in
+                isDragging = phase == .interacting
+                if !isDragging, search.isArmed, !search.isOpen { search.open() }
+            }
+            .accessibilityAction(named: "Search") { search.open() }
+            .overlay {
+                if search.isOpen, !search.isSearching {
+                    Color.clear
+                        .contentShape(.rect)
+                        .onTapGesture { search.close() }
+                }
+            }
+            .onAppear { searchHost.search = search }
+            .onDisappear {
+                search.isFocused = false
+                if searchHost.search === search { searchHost.search = nil }
+            }
+            .onChange(of: nav.tab) { search.reset() }
+    }
+}
+
 /// The search of the list a navigation stack shows, which the stack draws.
 @Observable
 final class SearchHost {

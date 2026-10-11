@@ -163,6 +163,7 @@ extension NativeTextViewCoordinator {
             theme: configuration.theme
         )
 
+        (textView as? NativeTextView)?.fitLeadingCalloutPadding()
         if let tlm = textView.textLayoutManager {
             if invalidateLayout {
                 tlm.invalidateLayout(for: tlm.documentRange)

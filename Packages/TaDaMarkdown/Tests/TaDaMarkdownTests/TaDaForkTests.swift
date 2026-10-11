@@ -1097,6 +1097,24 @@ struct FragmentGeometryTests {
         withExtendedLifetime((window, coordinator)) {}
     }
 
+    /// TextKit gives the first paragraph no spacing before it, so the text inset holds the panel's top padding.
+    @Test func aCalloutStartingTheDocumentHasRoomForItsTopPadding() throws {
+        for (text, extra) in [("> [!note] T\n> body", testCalloutStyle.paddingTop), ("Intro\n\n> [!note] T", 0)] {
+            let (fragments, keep) = try fragments(text) { $0.callouts = testCalloutStyle }
+            let tv = try #require(fragments.first?.textLayoutManager?.textContainer?.textView as? NativeTextView)
+            #expect(tv.textContainerInset.height == tv.configuration.textInsets.vertical + extra)
+            withExtendedLifetime(keep) {}
+        }
+    }
+
+    @Test func aCalloutStartingTheDocumentDrawsItsTopPadding() throws {
+        let (fragments, keep) = try fragments("> [!note] T\n> body") { $0.callouts = testCalloutStyle }
+        let first = try #require(fragments.first)
+        let line = try #require(first.textLineFragments.first)
+        #expect(first.renderingSurfaceBounds.minY <= line.typographicBounds.minY - testCalloutStyle.paddingTop)
+        withExtendedLifetime(keep) {}
+    }
+
     @Test func aCalloutEndingTheDocumentDrawsItsBottomPadding() throws {
         let (fragments, keep) = try fragments("Intro\n\n> [!note] T\n> body") { $0.callouts = testCalloutStyle }
         let last = try #require(fragments.last)
@@ -1195,6 +1213,33 @@ struct AutoPairTests {
         #expect(shown(tv) == "a **|**")
     }
 
+    @Test func aFormattingButtonTappedAgainStepsOverItsCloser() throws {
+        let tv = makeEditor("a ")
+        let coordinator = try #require(tv.delegate as? NativeTextViewCoordinator)
+        coordinator.didMarkdownBold(nil)
+        type(tv, "word")
+        coordinator.didMarkdownBold(nil)
+        #expect(shown(tv) == "a **word**|")
+        type(tv, " (")
+        coordinator.didMarkdownItalic(nil)
+        type(tv, "x")
+        coordinator.didMarkdownItalic(nil)
+        type(tv, ")")
+        #expect(shown(tv) == "a **word** (*x*)|")
+    }
+
+    @Test func aFormattingButtonTappedTwiceLeavesNoMarkers() throws {
+        let tv = makeEditor("a ")
+        let coordinator = try #require(tv.delegate as? NativeTextViewCoordinator)
+        coordinator.didMarkdownBold(nil)
+        coordinator.didMarkdownBold(nil)
+        #expect(shown(tv) == "a |")
+        #expect(tv.autoPairs.isEmpty)
+        coordinator.didMarkdownInlineCode(nil)
+        coordinator.didMarkdownInlineCode(nil)
+        #expect(shown(tv) == "a |")
+    }
+
     @Test func markersStayPlainWhereTheyCantFormat() {
         #expect(typed("* item") == "* item|")
         #expect(typed("snake_case") == "snake_case|")
@@ -1228,6 +1273,33 @@ struct AutoPairTests {
         #expect(typed("(a", configure: { $0.autoClosePairsEnabled = false }) == "(a|")
         #expect(typed("**b", configure: { $0.autoCloseFormattingEnabled = false }) == "**b|")
         #expect(typed("[[a", configure: { $0.autoClosePairsEnabled = false; $0.autoCloseWikiLinksEnabled = false }) == "[[a|")
+    }
+}
+
+@MainActor
+@Suite("Ta Da fork — publishing the text")
+struct PublishTests {
+    private final class Box {
+        var text = "a"
+        var syncedWhenWritten: String?
+        weak var coordinator: NativeTextViewCoordinator?
+    }
+
+    /// Writing the binding can update the view at once; it must still find the binding in sync, or it rebuilds
+    /// from the binding's old text and the caret goes to the end.
+    @Test func theBindingIsWrittenBeforeTheTextCountsAsSynced() async throws {
+        let box = Box()
+        let coordinator = NativeTextViewCoordinator(
+            text: Binding(get: { box.text }, set: { box.syncedWhenWritten = box.coordinator?.lastSyncedText; box.text = $0 }),
+            fontName: "SF Pro Text", fontSize: 14,
+            isWikiLinkActive: .constant(false), onLinkClick: nil, onInlineSelectionChange: nil
+        )
+        box.coordinator = coordinator
+        coordinator.publish("ab")
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(box.text == "ab")
+        #expect(box.syncedWhenWritten == "a")
+        #expect(coordinator.lastSyncedText == "ab")
     }
 }
 #endif

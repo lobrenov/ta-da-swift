@@ -96,14 +96,34 @@ struct WorkspaceView: View {
         .padding(.bottom, 10)
     }
 
+    /// The browser column, the rule and the document pane at their narrowest.
+    static let minWidth: CGFloat = 320 + 1 + 360
+
     /// A browser column and the document pane, with a rule between them.
     private func split(@ViewBuilder browser: () -> some View) -> some View {
-        HStack(spacing: 0) {
+        SplitLayout {
             browser()
-                .frame(minWidth: 320, idealWidth: 460, maxWidth: 460, maxHeight: .infinity, alignment: .topLeading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             Hairline(axis: .vertical)
             DocumentPane(model: model)
-                .frame(minWidth: 360, maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+}
+
+/// The browser column, a rule and the document pane: the browser takes half the width, from 320 to 460, leaving the
+/// document pane at least 360.
+private struct SplitLayout: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        CGSize(width: max(proposal.width ?? 1040, WorkspaceView.minWidth), height: proposal.height ?? 600)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let browser = max(320, min((bounds.width - 1) / 2, 460, bounds.width - 1 - 360))
+        var x = bounds.minX
+        for (subview, width) in zip(subviews, [browser, 1, max(0, bounds.width - browser - 1)]) {
+            subview.place(at: CGPoint(x: x, y: bounds.minY), proposal: ProposedViewSize(width: width, height: bounds.height))
+            x += width
         }
     }
 }

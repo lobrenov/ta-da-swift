@@ -21,7 +21,16 @@ extension NativeTextViewCoordinator: UITextViewDelegate {
     }
 
     public func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        shouldChangeText(in: textView, affectedCharRange: range, replacementString: text)
+        let allowed = shouldChangeText(in: textView, affectedCharRange: range, replacementString: text)
+        // Ta Da fork: an allowed edit moves the auto-closed pairs, as the macOS text view's `shouldChangeText` does.
+        if allowed, let native = textView as? NativeTextView, !native.autoPairs.isEmpty {
+            if textView.undoManager?.isUndoing == true || textView.undoManager?.isRedoing == true {
+                native.autoPairs = []
+            } else {
+                native.autoPairs = MarkdownAutoPairs.map(native.autoPairs, replacing: range, with: text.utf16.count)
+            }
+        }
+        return allowed
     }
 
     /// macOS turns autocorrection off inside code; iOS keeps the keyboard's own settings.

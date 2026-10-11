@@ -59,6 +59,9 @@ struct PhoneTaskRow: View {
                             Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
                                 .scaledFont(size: 22)
                                 .foregroundStyle(isPicked ? theme.color(\.accent) : theme.color(\.border))
+                                // No height of its own, so the row keeps its height while picking.
+                                .frame(height: 0)
+                                .transition(.opacity.animation(PhoneNavigation.pickFade))
                                 .accessibilityHidden(true)
                         }
                     }
@@ -71,7 +74,14 @@ struct PhoneTaskRow: View {
             .padding(.vertical, 10)
             PhoneRowSeparator()
         }
-        .background(isPicked ? theme.color(\.accent).opacity(theme.isDark ? 0.16 : 0.1) : theme.color(\.bg))
+        .background {
+            // An opaque base under the highlight, so the swipe's pill stays hidden behind the row.
+            ZStack {
+                theme.color(\.bg)
+                theme.color(\.accent).opacity(isPicked ? (theme.isDark ? 0.16 : 0.1) : 0)
+                    .animation(PhoneNavigation.pickFade, value: isPicked)
+            }
+        }
         .swipeToPick(item.path)
         .contextMenu { PhoneFileMenu(model: model, item: item) }
     }

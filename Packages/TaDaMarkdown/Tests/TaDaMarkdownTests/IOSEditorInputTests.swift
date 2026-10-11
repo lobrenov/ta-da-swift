@@ -221,6 +221,56 @@ struct IOSEditorInputTests {
         #expect(editor.textView.string == "See [[]]")
     }
 
+    @Test func aTypedCloserStepsOverTheOneTheEditorAdded() async throws {
+        let editor = try IOSEditorHarness("See ")
+        await editor.type("(", after: "See ")
+        for character in "word)" { await editor.type(String(character)) }
+        #expect(editor.textView.string == "See (word)")
+        #expect(editor.textView.selectedRange == NSRange(location: 10, length: 0))
+    }
+
+    @Test func aFormattingButtonTappedAgainStepsOverItsCloser() async throws {
+        let editor = try IOSEditorHarness("See ")
+        editor.textView.selectedRange = NSRange(location: 4, length: 0)
+        let coordinator = try #require(editor.textView.delegate as? NativeTextViewCoordinator)
+        coordinator.didMarkdownBold(nil)
+        for character in "word" { await editor.type(String(character)) }
+        coordinator.didMarkdownBold(nil)
+        #expect(editor.textView.string == "See **word**")
+        #expect(editor.textView.selectedRange == NSRange(location: 12, length: 0))
+    }
+
+    @Test func aFormattingButtonTappedAgainOnItsEmptyPairRemovesIt() async throws {
+        let editor = try IOSEditorHarness("See ")
+        editor.textView.selectedRange = NSRange(location: 4, length: 0)
+        editor.proxy.apply(.bold)
+        #expect(editor.textView.string == "See ****")
+        await editor.settle()
+        editor.proxy.apply(.bold)
+        await editor.settle()
+        #expect(editor.textView.string == "See ")
+        #expect(editor.textView.selectedRange == NSRange(location: 4, length: 0))
+        #expect(editor.textView.autoPairs.isEmpty)
+    }
+
+    @Test func oneUndoRevertsAFormattingInsertion() async throws {
+        let editor = try IOSEditorHarness("Intro\nLine")
+        let coordinator = try #require(editor.textView.delegate as? NativeTextViewCoordinator)
+        let actions: [(NativeTextViewCoordinator) -> Void] = [
+            { $0.didMarkdownBlockquote(nil) }, { $0.didMarkdownLink(nil) }, { $0.didMarkdownCodeBlock(nil) },
+            { $0.didMarkdownHorizontalRule(nil) }, { $0.didMarkdownImage(nil) }
+        ]
+        for action in actions {
+            editor.textView.selectedRange = NSRange(location: 8, length: 0)
+            action(coordinator)
+            await editor.settle()
+            #expect(editor.textView.string != "Intro\nLine")
+            editor.textView.undoManager?.undo()
+            await editor.settle()
+            #expect(editor.textView.string == "Intro\nLine")
+        }
+    }
+
     @Test func typingThroughTheProxyPairsAsTheKeyboardDoes() async throws {
         let editor = try IOSEditorHarness("See ")
         editor.textView.selectedRange = NSRange(location: 4, length: 0)
@@ -230,6 +280,18 @@ struct IOSEditorInputTests {
         #expect(editor.textView.string == "See [[]]")
         #expect(editor.text == "See [[]]")
         #expect(editor.textView.selectedRange == NSRange(location: 6, length: 0))
+    }
+
+    @Test func theTapThatBringsUpTheKeyboardPutsTheCaretWhereItLands() async throws {
+        let editor = try IOSEditorHarness("First line\nSecond line\nThird line")
+        _ = editor.textView.resignFirstResponder()
+        editor.textView.selectedRange = NSRange(location: 33, length: 0)
+        await editor.settle()
+        let point = try #require(editor.point(of: "Second"))
+        editor.textView.handleTap(at: point)
+        await editor.settle()
+        #expect(editor.textView.isFirstResponder)
+        #expect((11...17).contains(editor.textView.selectedRange.location))
     }
 
     @Test func tappingALinkOpensItUnlessTheCaretIsInIt() async throws {

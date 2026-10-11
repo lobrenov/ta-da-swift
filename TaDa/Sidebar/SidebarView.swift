@@ -7,6 +7,12 @@ import TaDaCore
 #if os(macOS)
 struct SidebarView: View {
     @Bindable var model: AppModel
+    /// Search Files focuses this sidebar's search field; a hidden sidebar's it doesn't.
+    var takesSearchFocus = true
+    /// The search field has the keyboard as the sidebar appears.
+    var focusesSearch = false
+    /// A domain, area or project was picked, the open one included.
+    var picked: () -> Void = {}
     @Environment(\.theme) private var theme
     @Environment(\.openSettings) private var openSettings
     @FocusState private var searchFocused: Bool
@@ -54,13 +60,15 @@ struct SidebarView: View {
             newButtons
         }
         .background(theme.color(\.side))
-        .onChange(of: model.searchFocusRequest) { searchFocused = true }
+        .onChange(of: model.searchFocusRequest) { if takesSearchFocus { searchFocused = true } }
+        .onAppear { if focusesSearch { searchFocused = true } }
         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
     }
 
     private func row(_ domain: AppModel.Domain, count: Int?) -> some View {
         SidebarRow(selected: model.domain == domain && !model.isSearching, height: 32, count: count) {
             model.show(domain)
+            picked()
         } icon: {
             Image(systemName: domain.systemImage)
                 .font(.system(size: 13))
@@ -78,6 +86,7 @@ struct SidebarView: View {
         return SidebarRow(selected: model.domain == .area(path) && !model.isSearching, height: 32, count: nil) {
             if model.domain == .area(path), model.selection == path { model.selection = nil }
             model.show(.area(path))
+            picked()
         } icon: {
             AreaIcon()
         } label: {
@@ -93,6 +102,7 @@ struct SidebarView: View {
             // Clicking the open project again goes from its page back to its tasks.
             if model.domain == .project(path), model.selection == path { model.selection = nil }
             model.show(.project(path))
+            picked()
         } icon: {
             ProgressRing(fraction: progress.fraction)
                 .foregroundStyle(theme.color(\.accent))

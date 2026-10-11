@@ -7,9 +7,9 @@ import TaDaCore
 
 enum PickSwipe {
     /// How far left a row must move to be picked on release.
-    static let threshold: CGFloat = 64
+    static let threshold: CGFloat = 26
     /// How far the row moves with the finger before it resists.
-    static let reach: CGFloat = 88
+    static let reach: CGFloat = 34
 }
 
 extension View {
@@ -24,50 +24,61 @@ extension View {
     }
 }
 
+extension EnvironmentValues {
+    /// Rows swipe to pick; off in search results.
+    @Entry var swipesToPick = true
+}
+
 private struct SwipeToPick: ViewModifier {
     let path: String
     @Environment(PhoneNavigation.self) private var nav
+    @Environment(\.swipesToPick) private var swipesToPick
     @Environment(\.theme) private var theme
     /// How far the row has moved left.
     @State private var shift: CGFloat = 0
     @State private var isPastThreshold = false
+    /// Whether this swipe unpicks the row, fixed when it starts so the pill keeps its symbol as it closes.
+    @State private var unpicks = false
 
-    func body(content: Content) -> some View {
+    @ViewBuilder func body(content: Content) -> some View {
+        if swipesToPick { swipeable(content) } else { content }
+    }
+
+    private func swipeable(_ content: Content) -> some View {
         content
             .offset(x: -shift)
             .background(alignment: .trailing) {
-                if shift > 0 {
-                    Image(systemName: "checkmark.circle")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
-                    .frame(width: max(shift, PickSwipe.threshold))
+                // A small pill in the gap the row leaves, showing what letting go does. It closes with the gap.
+                Image(systemName: unpicks ? "xmark" : "checkmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white.opacity(isPastThreshold ? 1 : 0.5))
+                    .frame(width: max(shift - 8, 0))
                     .frame(maxHeight: .infinity)
-                    .background(theme.color(\.accent).opacity(isPastThreshold ? 1 : 0.6))
-                    .frame(width: shift, alignment: .leading)
-                    .clipped()
+                    .background(theme.color(\.accent), in: .rect(cornerRadius: 10))
+                    .clipShape(.rect(cornerRadius: 10))
+                    .padding(.vertical, 4)
+                    .padding(.trailing, 4)
+                    .opacity(shift > 0 ? 1 : 0)
                     .accessibilityHidden(true)
-                }
             }
             .gesture(PickPan(changed: changed, ended: ended))
-            .accessibilityAction(named: "Pick") { nav.isPicking ? nav.togglePicked(path) : nav.startPicking(path) }
+            .accessibilityAction(named: "Pick") { nav.pick(path) }
     }
 
     private func changed(_ translation: CGFloat) {
+        if shift == 0 { unpicks = nav.picked.contains(path) }
         let x = max(-translation, 0)
         shift = x <= PickSwipe.reach ? x : PickSwipe.reach + (x - PickSwipe.reach) / 4
-        let isPast = x >= PickSwipe.threshold
-        if isPast != isPastThreshold {
-            isPastThreshold = isPast
-            if isPast { nav.play(.press) }
-        }
+        isPastThreshold = x >= PickSwipe.threshold
     }
 
+    /// Springs the row back and picks or unpicks it in the same animation, so everything settles together.
     private func ended(_ isCancelled: Bool) {
-        if isPastThreshold, !isCancelled {
-            nav.isPicking ? nav.togglePicked(path) : nav.startPicking(path)
+        let picks = isPastThreshold && !isCancelled
+        withAnimation(PhoneNavigation.pickSpring) {
+            shift = 0
+            if picks { nav.pick(path) }
         }
-        isPastThreshold = false
-        withAnimation(.spring(duration: 0.35, bounce: 0.3)) { shift = 0 }
     }
 }
 
@@ -164,7 +175,6 @@ private struct PickingBars: ViewModifier {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(.snappy, value: nav.isPicking)
     }
 
     private var tasks: [String] { nav.picked.filter { model.index[$0]?.properties.kind == .task } }

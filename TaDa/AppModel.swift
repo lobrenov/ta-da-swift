@@ -78,6 +78,8 @@ import TaDaCore
     var searchText = ""
     /// Bumped by the Search Files command; the sidebar's search field takes focus.
     var searchFocusRequest = 0
+    /// Bumped by the Toggle Sidebar command; the window shows, hides or floats the sidebar.
+    var sidebarToggleRequest = 0
     /// The browser list on screen, top to bottom, for the arrow keys and selection clicks. Set by the list itself.
     struct ArrowKeyList: Equatable {
         var id: UUID

@@ -59,8 +59,8 @@ Bring the project instruction files in line with how I actually work now.
 
   | Marker | State | Counts as |
   |---|---|---|
-  | `[ ]` | To do | open |
-  | `[/]` | Incomplete | open |
+  | `[ ]` | Not started | open |
+  | `[/]` | Doing | open |
   | `[>]` | Forwarded | open |
   | `[<]` | Scheduling | open |
   | `[x]` `[X]` | Done | done |

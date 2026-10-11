@@ -71,9 +71,9 @@ All checkbox states share the 16px box. 23 states follow the Alternative Checkbo
 
 | Syntax | Name | Token | Syntax | Name | Token |
 | --- | --- | --- | --- | --- | --- |
-| `[ ]` | To do | `muted` | `[l]` | Location | `link` |
+| `[ ]` | Not started | `muted` | `[l]` | Location | `link` |
 | `[x]` | Done (filled) | `done` | `[b]` | Bookmark | `blocked` |
-| `[/]` | Incomplete / Doing | `doing` | `[i]` | Information | `accent` |
+| `[/]` | Doing | `doing` | `[i]` | Information | `accent` |
 | `[-]` | Cancelled | `muted` | `[S]` | Savings | `done` |
 | `[B]` | Blocked (Ta Da) | `blocked` | `[I]` | Idea | `due` |
 | `[>]` | Forwarded | `accent` | `[p]` | Pros | `done` |

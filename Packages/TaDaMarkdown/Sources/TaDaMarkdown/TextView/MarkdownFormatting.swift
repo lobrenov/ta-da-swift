@@ -254,7 +254,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownBold(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("**") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingBoldToken(for: range, in: tv.string) {
@@ -279,7 +279,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownItalic(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("*") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingItalicToken(for: range, in: tv.string) {
@@ -304,7 +304,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownHighlight(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("==") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingHighlightToken(for: range, in: tv.string) {
@@ -321,7 +321,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownStrikethrough(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("~~") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingToken(of: .extensionSpan(StrikethroughExtension.identifier), for: range, in: tv.string) {
@@ -344,7 +344,7 @@ extension NativeTextViewWrapper.Coordinator {
     }
 
     @objc func didMarkdownInlineCode(_ sender: Any?) {
-        guard let tv = textView else { return }
+        guard let tv = textView, !stepsOverAutoPair("`") else { return }
         let range = tv.currentSelectedRange
 
         if let token = enclosingToken(of: .inlineCode, for: range, in: tv.string) {
@@ -378,17 +378,13 @@ extension NativeTextViewWrapper.Coordinator {
 
         if originalLine.hasPrefix("> ") {
             let prefixRange = NSRange(location: lineRange.location, length: 2)
-            if tv.shouldChangeText(in: prefixRange, replacementString: "") {
-                tv.replaceCharacters(in: prefixRange, with: "")
-                tv.didChangeText()
+            if replace(prefixRange, with: "") {
                 let newLoc = max(lineRange.location, range.location - 2)
                 tv.setSelectedRange(NSRange(location: newLoc, length: 0))
             }
         } else {
             let insertRange = NSRange(location: lineRange.location, length: 0)
-            if tv.shouldChangeText(in: insertRange, replacementString: "> ") {
-                tv.replaceCharacters(in: insertRange, with: "> ")
-                tv.didChangeText()
+            if replace(insertRange, with: "> ") {
                 tv.setSelectedRange(NSRange(location: range.location + 2, length: range.length))
             }
         }
@@ -413,9 +409,7 @@ extension NativeTextViewWrapper.Coordinator {
             tv.setSelectedRange(NSRange(location: range.location + newText.count, length: 0))
         } else {
             let insertion = "[](\(url))"
-            if tv.shouldChangeText(in: range, replacementString: insertion) {
-                tv.replaceCharacters(in: range, with: insertion)
-                tv.didChangeText()
+            if replace(range, with: insertion) {
                 tv.setSelectedRange(NSRange(location: range.location + 1, length: 0))
             }
         }
@@ -428,9 +422,7 @@ extension NativeTextViewWrapper.Coordinator {
         let lineRange = nsText.lineRange(for: range)
         let prefix = range.location > lineRange.location ? "\n" : ""
         let insertion = "\(prefix)```\n\n```\n"
-        if tv.shouldChangeText(in: range, replacementString: insertion) {
-            tv.replaceCharacters(in: range, with: insertion)
-            tv.didChangeText()
+        if replace(range, with: insertion) {
             let cursorLoc = range.location + prefix.count + 4
             tv.setSelectedRange(NSRange(location: cursorLoc, length: 0))
         }
@@ -443,9 +435,7 @@ extension NativeTextViewWrapper.Coordinator {
         let lineRange = nsText.lineRange(for: range)
         let prefix = range.location > lineRange.location ? "\n" : ""
         let insertion = "\(prefix)---\n"
-        if tv.shouldChangeText(in: range, replacementString: insertion) {
-            tv.replaceCharacters(in: range, with: insertion)
-            tv.didChangeText()
+        if replace(range, with: insertion) {
             let cursorLoc = range.location + insertion.count
             tv.setSelectedRange(NSRange(location: cursorLoc, length: 0))
         }
@@ -456,11 +446,17 @@ extension NativeTextViewWrapper.Coordinator {
         let range = tv.currentSelectedRange
         let url = (sender as? NSNotification)?.userInfo?["url"] as? String ?? ""
         let insertion = "![](\(url))"
-        if tv.shouldChangeText(in: range, replacementString: insertion) {
-            tv.replaceCharacters(in: range, with: insertion)
-            tv.didChangeText()
+        if replace(range, with: insertion) {
             tv.setSelectedRange(NSRange(location: range.location + insertion.count, length: 0))
         }
+    }
+
+    /// Replaces `range` as one undoable edit the delegate hears of; false when the text view refuses it.
+    private func replace(_ range: NSRange, with string: String) -> Bool {
+        guard let tv = textView, tv.shouldChangeText(in: range, replacementString: string) else { return false }
+        tv.optionalTextStorage?.replaceCharacters(in: range, with: string)
+        tv.didChangeText()
+        return true
     }
 
     /// Wraps the range with markers while preserving the cursor's relative
@@ -480,15 +476,34 @@ extension NativeTextViewWrapper.Coordinator {
         tv.setSelectedRange(NSRange(location: range.location + marker.count + cursorOffset, length: 0))
     }
 
+    /// Ta Da fork: inserts an empty pair the editor remembers, so the marker typed or tapped again steps over its closer.
     private func insertEmptyMarkers(_ marker: String) {
         guard let tv = textView else { return }
         let range = tv.currentSelectedRange
-        let insertion = marker + marker
-        if tv.shouldChangeText(in: range, replacementString: insertion) {
-            tv.replaceCharacters(in: range, with: insertion)
-            tv.didChangeText()
-            tv.setSelectedRange(NSRange(location: range.location + marker.count, length: 0))
+        let length = (marker as NSString).length
+        MarkdownLists.performEdit(tv, replace: range, with: marker + marker)
+        (tv as? NativeTextView)?.autoPairs.append(AutoPair(opener: NSRange(location: range.location, length: length),
+                                                           closer: NSRange(location: range.location + length, length: length)))
+        tv.setSelectedRange(NSRange(location: range.location + length, length: 0))
+    }
+
+    /// Ta Da fork: with the caret at a `marker` closer the editor added, steps over it as typing it would, or removes
+    /// the pair when nothing is between its markers.
+    private func stepsOverAutoPair(_ marker: String) -> Bool {
+        guard let tv = textView as? NativeTextView, tv.currentSelectedRange.length == 0 else { return false }
+        let location = tv.currentSelectedRange.location
+        let text = tv.string as NSString
+        guard let index = tv.autoPairs.lastIndex(where: { $0.closer.location == location }),
+              NSMaxRange(tv.autoPairs[index].closer) <= text.length,
+              text.substring(with: tv.autoPairs[index].closer) == marker else { return false }
+        let pair = tv.autoPairs.remove(at: index)
+        if NSMaxRange(pair.opener) == location, text.substring(with: pair.opener) == marker {
+            let range = NSRange(location: pair.opener.location, length: NSMaxRange(pair.closer) - pair.opener.location)
+            if replace(range, with: "") { tv.setSelectedRange(NSRange(location: range.location, length: 0)) }
+            return true
         }
+        tv.setSelectedRange(NSRange(location: NSMaxRange(pair.closer), length: 0))
+        return true
     }
 
     private func wrapSelection(with marker: String) {

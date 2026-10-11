@@ -47,6 +47,10 @@ struct AppCommands: Commands {
             }
             Divider()
         }
+        CommandGroup(replacing: .sidebar) {
+            Button("Toggle Sidebar") { model.sidebarToggleRequest += 1 }
+                .keyboardShortcut("s", modifiers: [.control, .command])
+        }
         CommandMenu("Task") {
             let selected = model.selection.flatMap { model.index[$0] }
             Button(selected?.properties.status == .done ? "Mark Not Done" : "Complete") {

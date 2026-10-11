@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		2B593608306FCE4600D4BBDB /* TaDaCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2B593607306FCE4600D4BBDB /* TaDaCore */; };
 		2B59360B306FCF3A00D4BBDB /* TaDaMarkdown in Frameworks */ = {isa = PBXBuildFile; productRef = 2B59360A306FCF3A00D4BBDB /* TaDaMarkdown */; };
-		2B59360D306FD00100D4BBDB /* GeneratedVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B59360C306FD00100D4BBDB /* GeneratedVault.swift */; };
+		2B59360D306FD00100D4BBDB /* Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B59360C306FD00100D4BBDB /* Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,7 +33,7 @@
 		2B5935D2306FCAE300D4BBDB /* TaDa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TaDa.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2B5935DF306FCAE500D4BBDB /* TaDaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TaDaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2B5935E9306FCAE500D4BBDB /* TaDaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TaDaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		2B59360C306FD00100D4BBDB /* GeneratedVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift; sourceTree = "<group>"; };
+		2B59360C306FD00100D4BBDB /* Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -81,7 +81,7 @@
 				2B5935D4306FCAE300D4BBDB /* TaDa */,
 				2B5935E2306FCAE500D4BBDB /* TaDaTests */,
 				2B5935EC306FCAE500D4BBDB /* TaDaUITests */,
-				2B59360C306FD00100D4BBDB /* GeneratedVault.swift */,
+				2B59360C306FD00100D4BBDB /* Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift */,
 				2B5935D3306FCAE300D4BBDB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -238,7 +238,7 @@
 		2B5935DB306FCAE500D4BBDB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				2B59360D306FD00100D4BBDB /* GeneratedVault.swift in Sources */,
+				2B59360D306FD00100D4BBDB /* Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift in Sources */,
 			);
 		};
 		2B5935E5306FCAE500D4BBDB /* Sources */ = {

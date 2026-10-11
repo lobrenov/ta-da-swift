@@ -14,6 +14,7 @@ struct PhoneFileScreen: View {
     @State private var isSource = false
     @State private var isEditing = false
     @State private var isVisible = false
+    @State private var search = ListSearch()
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -31,10 +32,18 @@ struct PhoneFileScreen: View {
                 ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .background(theme.color(\.bg))
+        .background { theme.color(\.bg).ignoresSafeArea() }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .toolbar { toolbar }
+        .toolbar {
+            if search.isOpen {
+                // Keeps the navigation bar, so the page stays below the search field in its row.
+                ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) }
+            } else {
+                toolbar
+            }
+        }
+        .navigationBarBackButtonHidden(search.isOpen)
         .onAppear {
             isVisible = true
             model.selection = shownPath
@@ -73,39 +82,48 @@ struct PhoneFileScreen: View {
 
     private func page(_ document: OpenDocument) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                DocumentBanner(model: model, document: document)
-                    .padding(.horizontal, -16)
-                TitleField(model: model, document: document, size: 28)
-                if let item = document.item {
-                    if item.properties.kind != .area {
-                        PhoneChips(model: model, item: model.index[item.path] ?? item)
-                    }
-                    QuietLine(model: model, item: item)
-                }
-                WarningList(warnings: document.item.map { model.index[$0.path].map(model.index.warnings(for:)) ?? $0.warnings } ?? [])
-                Hairline()
-                if isSource {
-                    TextEditor(text: Binding { document.text } set: { document.text = $0 })
-                        .scaledFont(size: 15, design: .monospaced)
-                        .foregroundStyle(theme.color(\.fg))
-                        .scrollContentBackground(.hidden)
-                        .scrollDisabled(true)
-                        .frame(minHeight: 320)
-                        .padding(.horizontal, -5)
-                } else {
-                    BodyEditor(model: model, document: document) { nav.push(.file($0)) }
-                }
-                if let item = document.item, item.properties.kind == .project {
-                    PhoneLinkedTasks(model: model, project: model.index[item.path] ?? item)
-                }
+            if search.isSearching {
+                PhoneSearchResults(model: model, query: search.query)
+            } else {
+                fileContent(document)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 4)
-            // While editing, room for the last line to scroll above the keyboard bar.
-            .padding(.bottom, isEditing ? 100 : 40)
         }
         .scrollDismissesKeyboard(.interactively)
+        .pullToSearch(search)
+    }
+
+    private func fileContent(_ document: OpenDocument) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            DocumentBanner(model: model, document: document)
+                .padding(.horizontal, -16)
+            TitleField(model: model, document: document, size: 28)
+            if let item = document.item {
+                if item.properties.kind != .area {
+                    PhoneChips(model: model, item: model.index[item.path] ?? item)
+                }
+                QuietLine(model: model, item: item)
+            }
+            WarningList(warnings: document.item.map { model.index[$0.path].map(model.index.warnings(for:)) ?? $0.warnings } ?? [])
+            Hairline()
+            if isSource {
+                TextEditor(text: Binding { document.text } set: { document.text = $0 })
+                    .scaledFont(size: 15, design: .monospaced)
+                    .foregroundStyle(theme.color(\.fg))
+                    .scrollContentBackground(.hidden)
+                    .scrollDisabled(true)
+                    .frame(minHeight: 320)
+                    .padding(.horizontal, -5)
+            } else {
+                BodyEditor(model: model, document: document) { nav.push(.file($0)) }
+            }
+            if let item = document.item, item.properties.kind == .project {
+                PhoneLinkedTasks(model: model, project: model.index[item.path] ?? item)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        // While editing, room for the last line to scroll above the keyboard bar.
+        .padding(.bottom, isEditing ? 100 : 40)
     }
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
@@ -128,14 +146,31 @@ struct PhoneFileScreen: View {
         if let item = document?.item {
             ToolbarItemGroup(placement: .bottomBar) {
                 if item.properties.kind != .area {
-                    let isDone = item.properties.status == .done
-                    Button {
-                        nav.play(isDone ? .pick : .complete)
-                        Task { await model.toggleCompletion(model.index[item.path] ?? item) }
-                    } label: {
-                        Label(isDone ? "Reopen" : "Complete", systemImage: isDone ? "checkmark.circle.fill" : "checkmark.circle")
+                    let status = item.properties.status
+                    let setStatus = { (status: Status) in
+                        nav.play(.pick)
+                        Task { await model.setStatus(status, in: item.path) }
                     }
-                    .tint(theme.color(\.done))
+                    // A tap completes or reopens; a press and hold opens the statuses, which VoiceOver lists as actions.
+                    Menu {
+                        Picker("Status", selection: Binding(get: { status }, set: setStatus)) {
+                            ForEach(Status.menuOrder, id: \.self) { option in
+                                Label { Text(option.rawValue) } icon: { Image(uiImage: statusImage(option)) }
+                                    .tag(option)
+                            }
+                        }
+                    } label: {
+                        Label { Text(status == .done ? "Reopen" : "Complete") } icon: { Image(uiImage: statusImage(status)) }
+                    } primaryAction: {
+                        nav.play(status == .done ? .pick : .complete)
+                        Task { await model.toggleCompletion(model.index[item.path] ?? item) }
+                    }
+                    .accessibilityValue(status.rawValue)
+                    .accessibilityActions {
+                        ForEach(Status.menuOrder.filter { $0 != status }, id: \.self) { option in
+                            Button(option.rawValue) { setStatus(option) }
+                        }
+                    }
                     Button("Schedule", systemImage: "calendar") { nav.sheet = .date(.due, paths: [item.path]) }
                     Button("Set Deadline", systemImage: "flag") { nav.sheet = .date(.deadline, paths: [item.path]) }
                 }
@@ -181,10 +216,20 @@ struct PhoneFileScreen: View {
     private func dismissKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
+
+    /// A status's checkbox as an image in its own colours, for the toolbar and its menu, which show only images.
+    private func statusImage(_ status: Status) -> UIImage {
+        let (marker, tint) = StatusCheckbox.box(for: status, theme: theme)
+        let rect = CGRect(x: 0, y: 0, width: 22, height: 22)
+        return UIGraphicsImageRenderer(bounds: rect).image { context in
+            InlineCheckbox.draw(marker, in: rect, tint: tint, background: theme.bg, context: context.cgContext)
+        }
+        .withRenderingMode(.alwaysOriginal)
+    }
 }
 
-/// The type, a task's area through its project, the day the file was created, its progress and the files that link
-/// here (a menu of them), under the chips.
+/// The type, the status, a task's area through its project, the day the file was created, its progress and the files
+/// that link here (a menu of them), under the chips.
 private struct QuietLine: View {
     let model: AppModel
     let item: Item
@@ -194,6 +239,7 @@ private struct QuietLine: View {
     var body: some View {
         let p = item.properties
         var parts = [p.kind.rawValue]
+        if p.kind != .area { parts.append(p.status.rawValue) }
         if p.kind == .task, p.project != nil, let area = model.index.area(of: item) {
             parts.append("in \(area.title)")
         }
@@ -230,9 +276,9 @@ private struct QuietLine: View {
     }
 }
 
-/// A file's properties as chips: status opens a menu; a task's project or area (the move sheet), a project's area (the
-/// area sheet), due date and deadline open their sheets. A missing one is a dashed chip that adds it; a project or
-/// area no file has is struck through.
+/// A file's properties as chips: a task's project or area (the move sheet), a project's area (the area sheet), due date
+/// and deadline open their sheets; the status is the toolbar's checkbox. A missing one is a dashed chip that adds it; a
+/// project or area no file has is struck through.
 struct PhoneChips: View {
     let model: AppModel
     let item: Item
@@ -242,23 +288,6 @@ struct PhoneChips: View {
     var body: some View {
         let p = item.properties
         WrappingHStack(spacing: 8) {
-            Menu {
-                Picker("Status", selection: Binding { p.status } set: { status in
-                    nav.play(.pick)
-                    Task { await model.setStatus(status, in: item.path) }
-                }) {
-                    ForEach(Status.menuOrder, id: \.self) { Text($0.rawValue).tag($0) }
-                }
-            } label: {
-                let (marker, tint) = StatusCheckbox.box(for: p.status, theme: theme)
-                chip(missing: false) {
-                    InlineCheckboxView(marker: marker, tint: tint, background: theme.bg).frame(width: 16, height: 16)
-                    Text(p.status.rawValue)
-                    Image(systemName: "chevron.down").scaledFont(size: 11, weight: .semibold).foregroundStyle(theme.color(\.muted))
-                }
-            }
-            .accessibilityLabel("Status")
-            .accessibilityValue(p.status.rawValue)
             if p.kind == .task || p.kind == .project {
                 let parent = model.index.parent(of: item)
                 let link = p.kind == .task ? p.project ?? p.area : p.area

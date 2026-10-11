@@ -159,16 +159,20 @@ final class NativeTextView: UITextView {
     // MARK: Taps and presses
 
     /// A tap on a task box toggles it; on a `[[ ]]` link, goes to `onLinkClick`; on a foldable callout's title row
-    /// (outside its text), folds it.
+    /// (outside its text), folds it. Anywhere else it puts the caret there, as the tap that brings up the keyboard
+    /// must: UIKit's finds the caret's place after the focus restyles the text, which puts it at the end.
     func handleTap(at point: CGPoint) {
         if let hit = taskCheckboxHit(atViewPoint: point) {
             toggleTaskCheckbox(hit)
             onTaskCheckboxToggle?(hit.marker)
         } else if let target = wikiLinkHit(atViewPoint: point) {
             coordinator?.onLinkClick?(target)
-        } else if let hit = calloutTitleHit(atViewPoint: point), !toggleCalloutFold(hit) {
+        } else if let hit = calloutTitleHit(atViewPoint: point), toggleCalloutFold(hit) {
+            return
+        } else {
+            let location = characterIndex(atViewPoint: point)
             if !isFirstResponder { becomeFirstResponder() }
-            setSelectedRange(NSRange(location: characterIndex(atViewPoint: point), length: 0))
+            setSelectedRange(NSRange(location: location, length: 0))
         }
     }
 
@@ -186,8 +190,8 @@ final class NativeTextView: UITextView {
     fileprivate func takesTap(at point: CGPoint) -> Bool {
         if taskCheckboxHit(atViewPoint: point) != nil { return true }
         if coordinator?.onLinkClick != nil, wikiLinkHit(atViewPoint: point) != nil { return true }
-        guard let hit = calloutTitleHit(atViewPoint: point) else { return false }
-        return hit.header.fold.length == 1
+        if let hit = calloutTitleHit(atViewPoint: point), hit.header.fold.length == 1 { return true }
+        return isEditable && !isFirstResponder
     }
 
     /// Ta Da fork: the target of the `[[ ]]` link whose text is under a point. While the caret touches the link (with
@@ -311,9 +315,17 @@ final class NativeTextView: UITextView {
         revealCaretAboveKeyboardBar()
     }
 
-    /// After the caret moves or the text changes, once UIKit has scrolled the caret into view.
+    private var isRevealPending = false
+
+    /// After the caret moves or the text changes, once UIKit has scrolled the caret into view. Requests made
+    /// before it runs share it.
     func revealCaretAboveKeyboardBarSoon() {
-        DispatchQueue.main.async { [weak self] in self?.revealCaretAboveKeyboardBar() }
+        guard !isRevealPending else { return }
+        isRevealPending = true
+        DispatchQueue.main.async { [weak self] in
+            self?.isRevealPending = false
+            self?.revealCaretAboveKeyboardBar()
+        }
     }
 
     /// Scrolls the text, or the scroll view it sits in, so the caret clears the keyboard bar, which floats over
@@ -367,14 +379,15 @@ final class NativeTextView: UITextView {
         }
     }
 
-    private func applyInsets() {
+    func applyInsets() {
         var insets = bodyInsets
-        insets.top += headerHeight
+        insets.top += headerHeight + leadingCalloutPadding
         if textContainerInset != insets { textContainerInset = insets }
     }
 }
-/// The editor's own tap and press, which the text view's gestures wait for: they begin only over a
-/// task box, a link, a callout title line or (a press) an image, so everywhere else the text view behaves as usual.
+/// The editor's own tap and press, which the text view's gestures wait for. The tap begins over a task box, a link or
+/// a callout title line, and anywhere while the editor doesn't have the keyboard; the press begins over a task box, a
+/// callout title line or an image. Everywhere else the text view behaves as usual.
 private final class EditorGestures: NSObject, UIGestureRecognizerDelegate {
     weak var textView: NativeTextView?
     lazy var tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
