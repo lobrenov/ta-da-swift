@@ -120,6 +120,30 @@ struct LogbookModelTests {
         #expect(model.index["projects/Kombi.md"]?.properties.status == .doing)
     }
 
+    @Test func reopeningATaskWhoseProjectIsLoggedBringsTheProjectBack() async throws {
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n", ".logbook/2026-09/Boat.md")
+        try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\nproject: \"[[Boat]]\"\n---\n", "tasks/Sail.md")
+        let model = await folder.model(logging: true)
+        #expect(model.index[".logbook/2026-09/Boat.md"] != nil)
+        await model.toggleCompletion(try #require(model.index["tasks/Sail.md"]))
+        #expect(model.index["tasks/Sail.md"]?.properties.status == .notStarted)
+        #expect(model.index["projects/Boat.md"]?.properties.status == .doing)
+        #expect(model.index["projects/Boat.md"]?.properties.completedDate == nil)
+        #expect(model.index[".logbook/2026-09/Boat.md"] == nil)
+    }
+
+    @Test func loggingBringsBackALoggedProjectThatHasOpenTasks() async throws {
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n", ".logbook/2026-09/Boat.md")
+        try folder.write("---\ntype: task\nstatus: Doing\nproject: \"[[Boat]]\"\n---\n", "tasks/Sail.md")
+        try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Boat]]\"\n---\n",
+                         ".logbook/2026-09/Tyres.md")
+        let model = await folder.model(logging: true)
+        #expect(model.index["projects/Boat.md"]?.properties.status == .doing)
+        #expect(model.index["projects/Boat.md"]?.properties.completedDate == nil)
+        #expect(model.index[".logbook/2026-09/Tyres.md"] != nil, "its logged tasks stay")
+        #expect(model.index.loggedProjectsWithOpenTasks.isEmpty)
+    }
+
     @Test func eachFolderLogsOnceADay() async throws {
         let other = try TestFolder(["tasks/Old.md": "---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-20\n---\n"])
         let model = await folder.model(logging: true)

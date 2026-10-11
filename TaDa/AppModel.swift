@@ -1249,6 +1249,13 @@ import TaDaCore
             succeeded = await moveFiles("put back the reopened files") { try $0.unlog(reopened, index: $1, today: $2) } != nil
                 && succeeded
         }
+        let waiting = index.loggedProjectsWithOpenTasks
+        if !waiting.isEmpty {
+            let paths = waiting.map(\.path)
+            let moved = await moveFiles("put back the projects with open tasks") { try $0.unlog(paths, index: $1, today: $2) }
+            for path in paths { if let back = moved?[path] { await setStatus(.doing, in: back) } }
+            succeeded = moved != nil && succeeded
+        }
         if succeeded { Self.setLastLogged(folder, to: day, in: defaults) }
     }
 
@@ -1290,17 +1297,21 @@ import TaDaCore
     }
 
     /// A logged file that isn't Done or Cancelled any more goes back to `tasks/` or `projects/`, bringing back its logged
-    /// project as Doing. A task reopened from Done or Cancelled sets its Done or Cancelled project to Doing.
+    /// project as Doing. A task reopened from Done or Cancelled sets its Done or Cancelled project to Doing, and an open
+    /// task whose project is logged brings it back as Doing.
     private func reopenParent(of path: String, wasClosed: Bool) async {
         guard var item = index[path], !item.properties.status.isClosed else { return }
+        let wasClosed = wasClosed || item.isLogged
         if item.isLogged {
             let moved = await moveFiles("put “\(item.title)” back") { try $0.unlog([path], index: $1, today: $2) }
             guard let back = moved?[path].flatMap({ index[$0] }) else { return }
             item = back
-        } else if !wasClosed {
-            return
         }
-        if let project = index.project(of: item), project.properties.status.isClosed, !project.isLogged {
+        guard let project = index.project(of: item) else { return }
+        if project.isLogged {
+            let moved = await moveFiles("put “\(project.title)” back") { try $0.unlog([project.path], index: $1, today: $2) }
+            if let back = moved?[project.path] { await setStatus(.doing, in: back) }
+        } else if wasClosed, project.properties.status.isClosed {
             await setStatus(.doing, in: project.path)
         }
     }

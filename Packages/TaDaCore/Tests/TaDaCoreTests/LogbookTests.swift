@@ -172,3 +172,17 @@ private func project(_ status: String, completed: String? = nil) -> String {
         #expect(try vault.read(".logbook/2026-08/File them.md").contains("project: \"[[Accounts 3]]\""))
     }
 }
+
+@Test func loggedProjectsWithLiveOpenTasksAreListed() {
+    let index = VaultIndex([
+        makeItem(".logbook/2026-09/Shipped.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-30"),
+        makeItem(".logbook/2026-09/Quiet.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-30"),
+        makeItem(".logbook/2026-09/Closed task.md", "type: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Quiet]]\""),
+        makeItem("projects/Live.md", "type: project\nstatus: Doing"),
+        makeItem("tasks/One.md", "type: task\nstatus: Doing\nproject: \"[[Shipped]]\""),
+        makeItem("tasks/Two.md", "type: task\nstatus: Not Started\nproject: \"[[Shipped]]\""),
+        makeItem("tasks/Three.md", "type: task\nstatus: Doing\nproject: \"[[Live]]\""),
+        makeItem("tasks/Four.md", "type: task\nstatus: Done\ncompletedDate: 2026-10-01\nproject: \"[[Quiet]]\""),
+    ])
+    #expect(index.loggedProjectsWithOpenTasks.map(\.title) == ["Shipped"])
+}

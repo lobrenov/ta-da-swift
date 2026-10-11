@@ -104,4 +104,11 @@ extension VaultIndex {
     public var reopenedLogged: [Item] {
         logged.filter { !$0.properties.status.isClosed }.sorted(by: Self.byTitle)
     }
+
+    /// Logged projects that have live open tasks, as when a task was reopened in another app: they go back as Doing.
+    public var loggedProjectsWithOpenTasks: [Item] {
+        var seen: Set<String> = []
+        return tasks.filter { !$0.properties.status.isClosed }.compactMap { project(of: $0) }
+            .filter { $0.isLogged && seen.insert($0.path).inserted }.sorted(by: Self.byTitle)
+    }
 }
