@@ -153,7 +153,7 @@ extension Vault {
 
     /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, numbering names that are taken. Each brings back
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
-    /// in the vault or `.trash/` is created by name. When a parent's name had to change, the link follows it.
+    /// in the vault (outside `.logbook/`) or `.trash/` is created by name. When a parent's name had to change, the link follows it.
     /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
     /// back the trashed images it embeds, to `attachments/`, and its embeds follow an image whose name or folder
     /// changed. Returns the paths of the restored and created files, parents first, then the images.
@@ -186,7 +186,7 @@ extension Vault {
         func bringBack(_ parent: Parent) throws -> String {
             let kind: Item.Kind = if case .project = parent { .project } else { .area }
             let matches = { (item: Item) in item.properties.kind == kind && item.title.lowercased() == parent.title.lowercased() }
-            if index.items(titled: parent.title).contains(where: matches) { return parent.title }
+            if index.items(titled: parent.title).contains(where: { matches($0) && !$0.isLogged }) { return parent.title }
             if let entry = trashed.first(where: { matches($0.item) }) { return try bringBack(entry) }
             let folder = kind == .project ? Self.projectFolder : Self.areaFolder
             let text = kind == .project ? NewFile.project(today: today) : NewFile.area(today: today)
@@ -267,7 +267,7 @@ extension Vault {
 
     /// Moves a file into `folder`, creating it if needed, keeping its filename unless that's taken.
     /// Returns the new path.
-    private func moveFile(_ path: String, into folder: String) throws -> String {
+    func moveFile(_ path: String, into folder: String) throws -> String {
         let current = String(path.split(separator: "/").last ?? "")
         let existing = filenames(in: folder)
         let isTaken = existing.contains { $0.lowercased() == current.lowercased() }
