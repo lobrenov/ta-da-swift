@@ -35,6 +35,7 @@ struct SidebarSplitView: View {
         }
         .overlay(alignment: .leading) { floatingSidebar }
         .background(ScreenAnchorReader(anchor: anchor))
+        .background(WindowReader { fit(width: $0.frame.width) })
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResizeNotification)) { note in
             if let window = note.object as? NSWindow, window === anchor.window { fit(width: window.frame.width) }
         }
@@ -71,7 +72,8 @@ struct SidebarSplitView: View {
         .animation(.snappy(duration: 0.25), value: sidebarFloats)
     }
 
-    /// Hides the sidebar when the window gets too narrow for it, and shows it again when there's room.
+    /// Hides the sidebar when the window is too narrow for it, as it opens or resizes, and shows it again when there's
+    /// room.
     private func fit(width: CGFloat) {
         let narrow = width < sidebarWidth + WorkspaceView.minWidth
         guard narrow != isNarrow else { return }
@@ -133,6 +135,32 @@ struct SidebarSplitView: View {
     private func stopWatchingSwipes() {
         if let swipeMonitor { NSEvent.removeMonitor(swipeMonitor) }
         swipeMonitor = nil
+    }
+}
+
+/// Hands over the window its view joins. Clicks pass through it.
+private struct WindowReader: NSViewRepresentable {
+    let joined: (NSWindow) -> Void
+
+    func makeNSView(context: Context) -> NSView { WindowView(joined: joined) }
+
+    func updateNSView(_ view: NSView, context: Context) {}
+
+    private final class WindowView: NSView {
+        let joined: (NSWindow) -> Void
+
+        init(joined: @escaping (NSWindow) -> Void) {
+            self.joined = joined
+            super.init(frame: .zero)
+        }
+
+        required init?(coder: NSCoder) { fatalError() }
+
+        override func viewDidMoveToWindow() {
+            if let window { joined(window) }
+        }
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }
 #endif
