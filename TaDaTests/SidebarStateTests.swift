@@ -70,16 +70,21 @@ struct SidebarStateTests {
 
     @Test func swipes() {
         var state = SidebarState()
-        #expect(state.swiped(.right, overSidebar: false) { false } == nil)
+        #expect(state.switchesViews(overSidebar: true, swiping: true), "over the docked sidebar a swipe switches its view")
+        #expect(!state.switchesViews(overSidebar: false, swiping: true))
+        state.swiped(.right) { false }
         #expect(!state.floats)
-        #expect(state.swiped(.left, overSidebar: false) { false } == nil)
-        #expect(state.swiped(.left, overSidebar: true) { false } == .detailOnly)
+        state.swiped(.left) { false }
+        #expect(state.columns != .detailOnly, "a swipe no longer hides the docked sidebar")
         slide(&state, to: .detailOnly)
-        #expect(state.swiped(.right, overSidebar: false) { true } == nil)
+        #expect(!state.switchesViews(overSidebar: true, swiping: true) && !state.switchesViews(overSidebar: true, swiping: false))
+        state.swiped(.right) { true }
         #expect(!state.floats)
-        _ = state.swiped(.right, overSidebar: false) { false }
+        state.swiped(.right) { false }
         #expect(state.floats)
-        _ = state.swiped(.left, overSidebar: false) { false }
+        #expect(!state.switchesViews(overSidebar: true, swiping: true), "a swipe over the floating sidebar hides it")
+        #expect(state.switchesViews(overSidebar: true, swiping: false), "the mouse's buttons switch the floating sidebar's view")
+        state.swiped(.left) { false }
         #expect(!state.floats)
     }
 }

@@ -88,6 +88,18 @@ struct DesignRenderTests {
         try await render(tags, to: output.appending(path: "tag-task.png"))
         tags.domain = .area("areas/Home.md")
         try await render(tags, to: output.appending(path: "tag-area.png"))
+        tags.domain = .tag("errands")
+        tags.selection = "tasks/Message Max.md"
+        try await render(tags, to: output.appending(path: "tag-browser.png"))
+        tags.domain = .tag("people")
+        try await render(tags, to: output.appending(path: "tag-browser-parent.png"))
+        tags.domain = .tag(nil)
+        try await render(tags, to: output.appending(path: "tag-untagged.png"))
+        tags.sidebarMode = .tags
+        tags.domain = .tag("work/clients")
+        try await render(SidebarView(model: tags).themed(by: tags), width: 240, to: output.appending(path: "tag-sidebar.png"))
+        tags.sidebarMode = .projects
+        try await render(SidebarView(model: tags).themed(by: tags), width: 240, to: output.appending(path: "tag-sidebar-projects.png"))
 
         // The Logbook, on a copy of the design's data with its completed files logged, one completed and one cancelled
         // today, in the default dark scheme.
