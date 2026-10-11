@@ -240,6 +240,19 @@ struct IOSEditorInputTests {
         #expect(editor.textView.selectedRange == NSRange(location: 12, length: 0))
     }
 
+    @Test func aFormattingButtonTappedAgainOnItsEmptyPairRemovesIt() async throws {
+        let editor = try IOSEditorHarness("See ")
+        editor.textView.selectedRange = NSRange(location: 4, length: 0)
+        editor.proxy.apply(.bold)
+        #expect(editor.textView.string == "See ****")
+        await editor.settle()
+        editor.proxy.apply(.bold)
+        await editor.settle()
+        #expect(editor.textView.string == "See ")
+        #expect(editor.textView.selectedRange == NSRange(location: 4, length: 0))
+        #expect(editor.textView.autoPairs.isEmpty)
+    }
+
     @Test func oneUndoRevertsAFormattingInsertion() async throws {
         let editor = try IOSEditorHarness("Intro\nLine")
         let coordinator = try #require(editor.textView.delegate as? NativeTextViewCoordinator)
