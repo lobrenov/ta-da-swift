@@ -25,7 +25,7 @@ extension View {
 }
 
 extension EnvironmentValues {
-    /// Rows swipe to pick; off on screens without picking's bars.
+    /// Rows swipe to pick; off in search results.
     @Entry var swipesToPick = true
 }
 

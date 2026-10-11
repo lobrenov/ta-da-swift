@@ -207,7 +207,6 @@ struct PhoneTrashScreen: View {
         List {
             if search.isSearching {
                 PhoneSearchResults(model: model, query: search.query)
-                    .environment(\.swipesToPick, false)
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)

@@ -84,7 +84,6 @@ struct PhoneFileScreen: View {
         ScrollView {
             if search.isSearching {
                 PhoneSearchResults(model: model, query: search.query)
-                    .environment(\.swipesToPick, false)
             } else {
                 fileContent(document)
             }

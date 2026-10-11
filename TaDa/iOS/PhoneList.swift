@@ -201,6 +201,7 @@ struct PhoneSearchResults: View {
             }
             PickingBarClearance()
         }
+        .environment(\.swipesToPick, false)
     }
 
     private func place(of task: Item) -> String {
