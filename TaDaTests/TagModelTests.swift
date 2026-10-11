@@ -121,4 +121,28 @@ struct TagModelTests {
         document.text = document.text.replacingOccurrences(of: "#errands", with: "#errand")
         #expect(model.tagPage?.groups.isEmpty == true && model.tagTree.map(\.tag.name) == ["errand", "Home"])
     }
+
+    @Test func anIPhoneTagPageStaysCurrentWhileItShows() async throws {
+        let model = await folder.model(selecting: "tasks/Weed.md")
+        model.showPhoneTagPage("errands")
+        #expect(model.phoneTagPages["errands"]?.groups.flatMap(\.tasks).map(\.path) == ["tasks/Weed.md"])
+        #expect(model.taggedCount == 2 && model.untaggedCount == 1)
+
+        let document = try #require(model.document)
+        document.text = document.text.replacing("#errands", with: "#errands done")
+        #expect(model.phoneTagPages["errands"]?.groups.first?.tasks.first?.summary?.contains("done") == true)
+        document.text = document.text.replacing("#errands", with: "")
+        #expect(model.phoneTagPages["errands"]?.groups.isEmpty == true)
+        model.hidePhoneTagPage("errands")
+        #expect(model.phoneTagPages.isEmpty)
+    }
+
+    @Test func suggestionsLeaveOutTheTagBeingTyped() async throws {
+        let model = await folder.model(selecting: "tasks/Weed.md")
+        let document = try #require(model.document)
+        document.text += "#homw"
+        let source = LinkMenuSource(index: model.index, openPath: "tasks/Weed.md")
+        #expect(source.tagSuggestions("hom").map(\.tag.path) == ["home", "home/garden"])
+        #expect(LinkMenuSource(index: model.index).tagSuggestions("hom").map(\.tag.path).contains("homw"))
+    }
 }

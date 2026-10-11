@@ -205,7 +205,7 @@ struct LiveEditor: View {
     /// Lists the open `[[`, `![[` or `#` query's choices above the keyboard bar.
     private func showLinkChoices(_ state: SlashCommandState?) {
         if let state, let links, state.trigger == .tag {
-            let choices = links.index.tagSuggestions(state.query)
+            let choices = links.tagSuggestions(state.query)
             if choices != tagChoices { tagHighlight = 0 }
             tagChoices = choices
             linkChoices = []
@@ -306,7 +306,7 @@ struct LiveEditor: View {
 
     private func showTagMenu(_ state: SlashCommandState) {
         guard let links else { return }
-        tagMenu.show(links.index.tagSuggestions(state.query), anchor: state.anchorRect, theme: theme, pick: insertTag,
+        tagMenu.show(links.tagSuggestions(state.query), anchor: state.anchorRect, theme: theme, pick: insertTag,
                      dismiss: { [slashCommand] in slashCommand.dismiss() })
     }
 

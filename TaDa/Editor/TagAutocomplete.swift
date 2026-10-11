@@ -10,6 +10,14 @@ extension TagNode {
     var insertion: String { "#\(tag.name) " }
 }
 
+extension LinkMenuSource {
+    /// The tags in use for `query`, leaving out those only the open file's body carries, such as the one being typed.
+    func tagSuggestions(_ query: String) -> [TagNode] {
+        let own = Set(openPath.flatMap { index[$0] }?.tags.filter { !$0.inFrontmatter }.map(\.tag.path) ?? [])
+        return index.tagSuggestions(query).filter { !(own.contains($0.tag.path) && $0.count == 1) }
+    }
+}
+
 /// A row's tag glyph, path (parent muted) and count.
 struct TagSuggestionRow: View {
     let node: TagNode

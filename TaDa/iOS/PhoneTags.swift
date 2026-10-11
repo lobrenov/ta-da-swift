@@ -9,7 +9,7 @@ struct PhoneTagsScreen: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let tagged = model.index.items.values.count { !$0.isLogged && !$0.tags.isEmpty }
+        let tagged = model.taggedCount
         List {
             Section {
                 NavigationLink(value: PhoneRoute.tag(nil)) {
@@ -95,14 +95,21 @@ struct PhoneTagScreen: View {
 
     var body: some View {
         let tag = tag
-        let page = model.index.tagBrowser(tag)
+        if let page = model.phoneTagPages[path] {
+            list(page, tag: tag)
+        } else {
+            Color.clear.onAppear { model.showPhoneTagPage(path) }
+        }
+    }
+
+    private func list(_ page: TagBrowser, tag: Tag?) -> some View {
         let open = page.groups.flatMap(\.tasks)
         let foldKey = "tag:" + (path ?? "")
         // Completed starts folded: a stored entry for it means it was opened.
         let completedFolded = !model.isFolded("Completed", in: foldKey)
         let shown = open + (completedFolded ? [] : page.completed)
 
-        PhoneList(model: model, title: tag?.name ?? "Untagged", subtitle: subtitle(page, open: open.count, untagged: tag == nil),
+        return PhoneList(model: model, title: tag?.name ?? "Untagged", subtitle: subtitle(page, open: open.count, untagged: tag == nil),
                   icon: AnyView(Image(systemName: tag == nil ? "tag.slash" : "tag")
                       .scaledFont(size: 26)
                       .foregroundStyle(theme.color(tag == nil ? \.muted : \.accent))),
@@ -167,6 +174,13 @@ struct PhoneTagScreen: View {
         // Opened from a file's chip or bubble, it brings back the tab bar the file's screen hid, while it's on top.
         .toolbar(nav.stacks[nav.tab]?.last == .tag(path) ? .visible : .automatic, for: .tabBar)
         .onChange(of: tag, initial: true) { if let tag { lastTag = tag } }
+        .onAppear { model.showPhoneTagPage(path) }
+        .onDisappear {
+            // A screen pushed over it leaves its lists kept; popping it lets them go.
+            Task {
+                if !nav.stacks.values.contains(where: { $0.contains(.tag(path)) }) { model.hidePhoneTagPage(path) }
+            }
+        }
     }
 
     private var looseHeader: some View {

@@ -145,17 +145,27 @@ enum InlineParser {
         var linkIndex = ClaimedIndex(claimed)
         claimed += scanLinkFamily(ns, len: len, claimed: &linkIndex, registry: registry)
 
+        var tagSpans: [Span] = []
+        var tagsAfterDelimiters: Set<Int> = []
         if let tags {
             var tagIndex = ClaimedIndex(claimed)
-            claimed += scanTags(ns, len: len, claimed: &tagIndex, startsAtBoundary: tags == .atBoundary)
+            (tagSpans, tagsAfterDelimiters) = scanTags(ns, len: len, claimed: &tagIndex,
+                                                       startsAtBoundary: tags == .atBoundary)
             cost.claimedProbes += tagIndex.probes
         }
 
-        var emphasisIndex = ClaimedIndex(claimed)
+        var emphasisIndex = ClaimedIndex(claimed + tagSpans)
         let emphasis = resolveEmphasis(ns, len: len, claimed: &emphasisIndex)
+        // A tag after `*` or `_` stands only when they open emphasis, as TaDaCore reads it.
+        if !tagsAfterDelimiters.isEmpty {
+            let openers = Set(emphasis.compactMap { span -> Int? in
+                if case .emphasis(_, _, let open, _) = span { NSMaxRange(open) } else { nil }
+            })
+            tagSpans.removeAll { tagsAfterDelimiters.contains($0.fullRange.location) && !openers.contains($0.fullRange.location) }
+        }
 
         cost.claimedProbes += escapeIndex.probes + linkIndex.probes + emphasisIndex.probes
-        return buildTree(region: NSRange(location: 0, length: len), spans: claimed + emphasis,
+        return buildTree(region: NSRange(location: 0, length: len), spans: claimed + tagSpans + emphasis,
                          ns: ns, registry: registry, cost: &cost)
     }
 
@@ -653,13 +663,18 @@ enum InlineParser {
     // MARK: - 3b. Tags (Ta Da fork)
 
     /// `#` at the text's start (when `startsAtBoundary`) or after whitespace, then letters, digits, `_`, `-` and `/`,
-    /// with at least one character that isn't a digit or `/`, as TaDaCore's `InlineTags` reads them. Emphasis
-    /// delimiters before the `#` take the boundary of their own start. Escaped and claimed `#`s are skipped.
-    private static func scanTags(_ ns: NSString, len: Int, claimed: inout ClaimedIndex, startsAtBoundary: Bool) -> [Span] {
+    /// with at least one character that isn't a digit or `/`, as TaDaCore's `InlineTags` reads them. Trailing `/`s stay
+    /// out of the span. Escaped and claimed `#`s are skipped. A `#` after a run of `*` or `_` takes the boundary of the
+    /// run's start; such tags are also returned by start, to keep only where the run opens emphasis, and leave as many
+    /// trailing `_`s as the run had for its closer.
+    private static func scanTags(_ ns: NSString, len: Int, claimed: inout ClaimedIndex, startsAtBoundary: Bool)
+        -> (spans: [Span], afterDelimiters: Set<Int>) {
         var spans: [Span] = []
+        var afterDelimiters: Set<Int> = []
         var i = 0
         while i < len {
-            guard ns.character(at: i) == hash, !claimed.contains(i), tagBoundary(before: i, ns, startsAtBoundary) else {
+            guard ns.character(at: i) == hash, !claimed.contains(i),
+                  let delimiters = tagBoundary(before: i, ns, startsAtBoundary) else {
                 i += 1
                 continue
             }
@@ -672,19 +687,38 @@ enum InlineParser {
                 if !c.isNumber && c != "/" { hasWord = true }
                 end = NSMaxRange(composed)
             }
-            let range = NSRange(location: i, length: end - i)
-            if hasWord, !claimed.overlaps(range) {
-                spans.append(.tag(range: range, marker: NSRange(location: i, length: 1)))
+            let scanned = end
+            var underscores = delimiters.underscores
+            while underscores > 0, end > i + 1, ns.character(at: end - 1) == underscore {
+                end -= 1
+                underscores -= 1
             }
-            i = end
+            while end > i + 1, ns.character(at: end - 1) == 0x2F { end -= 1 }
+            let range = NSRange(location: i, length: end - i)
+            let name = ns.substring(with: NSRange(location: i + 1, length: end - i - 1))
+            if hasWord, name.contains(where: { !$0.isNumber && $0 != "/" }), !claimed.overlaps(range) {
+                spans.append(.tag(range: range, marker: NSRange(location: i, length: 1)))
+                if delimiters.count > 0 { afterDelimiters.insert(i) }
+            }
+            i = scanned
         }
-        return spans
+        return (spans, afterDelimiters)
     }
 
-    private static func tagBoundary(before i: Int, _ ns: NSString, _ startsAtBoundary: Bool) -> Bool {
+    /// The run of `*` and `_` before `i` when whitespace (by `Character.isWhitespace`, as TaDaCore reads it) or the
+    /// text's start (when `startsAtBoundary`) comes before the run; nil when the `#` isn't at a boundary.
+    private static func tagBoundary(before i: Int, _ ns: NSString, _ startsAtBoundary: Bool)
+        -> (count: Int, underscores: Int)? {
         var k = i - 1
-        while k >= 0, ns.character(at: k) == asterisk || ns.character(at: k) == underscore { k -= 1 }
-        return k < 0 ? startsAtBoundary : isWhitespaceOrBoundary(k, ns, ns.length)
+        var underscores = 0
+        while k >= 0, ns.character(at: k) == asterisk || ns.character(at: k) == underscore {
+            if ns.character(at: k) == underscore { underscores += 1 }
+            k -= 1
+        }
+        let atBoundary = k < 0
+            ? startsAtBoundary
+            : Unicode.Scalar(ns.character(at: k)).map { Character($0).isWhitespace } ?? false
+        return atBoundary ? (i - 1 - k, underscores) : nil
     }
 
     // MARK: - 4. Emphasis (delimiter runs)

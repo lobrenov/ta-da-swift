@@ -39,6 +39,17 @@ struct TagTests {
         #expect(tags("a*#no*") == [])
     }
 
+    @Test func tagsAgreeWithTaDaCoreAroundEmphasisSpacesAndSlashes() {
+        #expect(tags("word _#urgent_ x") == ["#urgent"])
+        #expect(tags("x __#a__ y") == ["#a"])
+        #expect(tags("a *#b c") == [] && tags("a _#c d") == [])
+        #expect(tags("日本\u{3000}#タグ") == ["#タグ"])
+        #expect(tags("a\u{00A0}#nb") == ["#nb"])
+        #expect(tags("x #a/ y") == ["#a"])
+        let nodes = InlineParser.parse("word _#urgent_ x", registry: Self.tagRegistry)
+        #expect(nodes.contains { if case .emphasis = $0 { true } else { false } })
+    }
+
     @Test func tagsAreReadOnlyWhenTheRegistryAsksForThem() {
         let tokens = InlineASTAdapter.tokens(from: InlineParser.parse("a #tag", registry: .empty))
         #expect(!tokens.contains { $0.kind == .tag })

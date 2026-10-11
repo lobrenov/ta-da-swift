@@ -1599,6 +1599,10 @@ import TaDaCore
     private(set) var tagTree: [TagNode] = []
     /// Areas, projects and tasks without a tag.
     private(set) var untaggedCount = 0
+    /// Areas, projects and tasks with a tag.
+    private(set) var taggedCount = 0
+    /// The iPhone's tag screens' lists, by tag path (nil for Untagged), while each shows.
+    private(set) var phoneTagPages: [String?: TagBrowser] = [:]
     /// The tag whose page shows, spelled as the index shows it, or as last shown once no file carries it; nil
     /// elsewhere and on Untagged.
     private(set) var shownTag: Tag?
@@ -1630,15 +1634,18 @@ import TaDaCore
             if let j = areas[i].projects.firstIndex(where: { $0.project.path == item.path }) { areas[i].projects[j].project = item }
         }
         if old.tags != item.tags { return updateTags() }
-        if var page = tagPage {
+        func patch(_ page: TagBrowser) -> TagBrowser {
+            var page = page
             func patch(_ items: inout [Item]) {
                 if let i = items.firstIndex(where: { $0.path == item.path }) { items[i] = item }
             }
             patch(&page.areasAndProjects)
             patch(&page.completed)
             for i in page.groups.indices { patch(&page.groups[i].tasks) }
-            tagPage = page
+            return page
         }
+        if let page = tagPage { tagPage = patch(page) }
+        if !phoneTagPages.isEmpty { phoneTagPages = phoneTagPages.mapValues(patch) }
     }
 
     /// Assigning a list equal to the old one doesn't notify the views that show it.
@@ -1654,11 +1661,29 @@ import TaDaCore
         updateTags()
     }
 
-    /// The tag tree, the Untagged count and the tag page.
+    /// The tag tree, the tagged and Untagged counts and the tag pages.
     private func updateTags() {
         tagTree = index.tagTree()
+        let live = index.items.values.count { !$0.isLogged }
         untaggedCount = index.items.values.count { !$0.isLogged && $0.tags.isEmpty }
+        taggedCount = live - untaggedCount
         updateTagPage()
+        if !phoneTagPages.isEmpty {
+            phoneTagPages = Dictionary(uniqueKeysWithValues: phoneTagPages.keys.map { ($0, phoneTagPage(for: $0)) })
+        }
+    }
+
+    /// Keeps the tag screen's lists for `path` (nil for Untagged) current while it shows.
+    func showPhoneTagPage(_ path: String?) {
+        phoneTagPages[path] = phoneTagPage(for: path)
+    }
+
+    func hidePhoneTagPage(_ path: String?) {
+        phoneTagPages[path] = nil
+    }
+
+    private func phoneTagPage(for path: String?) -> TagBrowser {
+        index.tagBrowser(path.flatMap { tag(at: $0) ?? Tag($0) })
     }
 
     private func updateTagPage() {
