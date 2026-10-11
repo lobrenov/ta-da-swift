@@ -57,6 +57,14 @@ private let index = VaultIndex(items)
     #expect((shipped.done, shipped.total) == (0, 1), "a done project isn't active but has progress")
 }
 
+@Test func progressOverGivenTasksLeavesCancelledOutOfTheTotal() {
+    let tasks = [makeItem("tasks/A.md", "type: task\nstatus: Done"), makeItem("tasks/B.md", "type: task\nstatus: Cancelled"),
+                 makeItem("tasks/C.md", "type: task\nstatus: Doing")]
+    let progress = ProjectProgress(project: items[0], tasks: tasks)
+    #expect((progress.done, progress.total) == (1, 2))
+    #expect(progress.fraction == 0.5)
+}
+
 @Test func perItemTestsAgreeWithTheLists() {
     for item in items {
         #expect(index.isInToday(item, today: today) == index.today(today).contains(item), "\(item.title)")

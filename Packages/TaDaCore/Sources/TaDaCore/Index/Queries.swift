@@ -17,6 +17,18 @@ public struct ProjectProgress: Hashable, Sendable, Identifiable {
     public var done: Int
     public var total: Int
 
+    init(project: Item, done: Int, total: Int) {
+        self.project = project
+        self.done = done
+        self.total = total
+    }
+
+    /// The progress of `project` over `tasks`, leaving the Cancelled ones out of the total.
+    public init(project: Item, tasks: [Item]) {
+        let counted = tasks.filter { $0.properties.status != .cancelled }
+        self.init(project: project, done: counted.count { $0.properties.status == .done }, total: counted.count)
+    }
+
     public var open: Int { total - done }
     /// 0…1; 0 for a project without tasks.
     public var fraction: Double { total == 0 ? 0 : Double(done) / Double(total) }
@@ -111,8 +123,7 @@ extension VaultIndex {
     /// Done/total of the tasks whose `project` resolves to this project, logged ones included. Cancelled tasks are left
     /// out of the total.
     public func progress(of project: Item) -> ProjectProgress {
-        let tasks = tasks(in: project, includingLogged: true).filter { $0.properties.status != .cancelled }
-        return ProjectProgress(project: project, done: tasks.count { $0.properties.status == .done }, total: tasks.count)
+        ProjectProgress(project: project, tasks: tasks(in: project, includingLogged: true))
     }
 
     /// Splits tasks into groups: tasks without a parent first, then loose projects' groups by title, then each area by

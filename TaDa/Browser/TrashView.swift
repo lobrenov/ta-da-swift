@@ -161,8 +161,7 @@ struct TrashView: View {
                 if p.kind == .area {
                     AreaIcon().padding(.top, 2)
                 } else if isProject {
-                    let done = tasks.count { $0.item.properties.status == .done }
-                    ProgressRing(fraction: tasks.isEmpty ? 0 : Double(done) / Double(tasks.count))
+                    ProgressRing(fraction: ProjectProgress(project: item, tasks: tasks.map(\.item)).fraction)
                         .foregroundStyle(theme.color(\.accent))
                         .padding(.top, 2)
                 } else {
