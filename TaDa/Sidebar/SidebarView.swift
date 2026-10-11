@@ -11,6 +11,8 @@ struct SidebarView: View {
     var takesSearchFocus = true
     /// The search field has the keyboard as the sidebar appears.
     var focusesSearch = false
+    /// A domain, area or project was picked, the open one included.
+    var picked: () -> Void = {}
     @Environment(\.theme) private var theme
     @Environment(\.openSettings) private var openSettings
     @FocusState private var searchFocused: Bool
@@ -66,6 +68,7 @@ struct SidebarView: View {
     private func row(_ domain: AppModel.Domain, count: Int?) -> some View {
         SidebarRow(selected: model.domain == domain && !model.isSearching, height: 32, count: count) {
             model.show(domain)
+            picked()
         } icon: {
             Image(systemName: domain.systemImage)
                 .font(.system(size: 13))
@@ -83,6 +86,7 @@ struct SidebarView: View {
         return SidebarRow(selected: model.domain == .area(path) && !model.isSearching, height: 32, count: nil) {
             if model.domain == .area(path), model.selection == path { model.selection = nil }
             model.show(.area(path))
+            picked()
         } icon: {
             AreaIcon()
         } label: {
@@ -98,6 +102,7 @@ struct SidebarView: View {
             // Clicking the open project again goes from its page back to its tasks.
             if model.domain == .project(path), model.selection == path { model.selection = nil }
             model.show(.project(path))
+            picked()
         } icon: {
             ProgressRing(fraction: progress.fraction)
                 .foregroundStyle(theme.color(\.accent))

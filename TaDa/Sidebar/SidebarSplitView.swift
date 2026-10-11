@@ -67,7 +67,7 @@ struct SidebarSplitView: View {
                     .contentShape(Rectangle())
                     .onTapGesture { sidebarFloats = false }
                     .accessibilityHidden(true)
-                SidebarView(model: model, focusesSearch: floatsForSearch)
+                SidebarView(model: model, focusesSearch: floatsForSearch) { sidebarFloats = false }
                     .frame(width: sidebarWidth)
                     .background { model.theme.color(\.side).ignoresSafeArea() }
                     .overlay(alignment: .trailing) { Hairline(axis: .vertical).ignoresSafeArea() }
