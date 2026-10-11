@@ -1,31 +1,37 @@
-// The Logbook's groups, on the Mac and iPhone: the completed files not logged yet, then the logged ones by the day they
-// were completed in the last week, then by month.
+// The Logbook's groups, on the Mac and iPhone: the completed files that log tonight, those waiting for a project's open
+// tasks, then the logged ones by the day they were completed in the last week, then by month.
 import Foundation
 import TaDaCore
 
 struct LogbookGroup: Identifiable {
-    /// "Completed today", "Thursday 1 Oct", "September" or "September 2025".
+    enum Kind { case logsTonight, waitsForOpenTasks, logged }
+
+    /// "Completed today", "Waiting for open tasks", "Thursday 1 Oct", "September" or "September 2025".
     let title: String
-    /// Whether the group holds the files not logged yet.
-    let isWaiting: Bool
+    let kind: Kind
     let items: [Item]
 
     var id: String { title }
+    /// Whether the group holds files not logged yet.
+    var isWaiting: Bool { kind != .logged }
 
-    /// Newest first, then by title. Files not logged yet come first; a file without a `completedDate` goes in
-    /// `today`'s group.
-    static func groups(_ items: [Item], today: LocalDate) -> [LogbookGroup] {
+    /// Newest first, then by title. Files not logged yet come first: those that log tonight, then those `index` holds
+    /// back for a project's open tasks. A file without a `completedDate` goes in `today`'s group.
+    static func groups(_ items: [Item], index: VaultIndex, today: LocalDate) -> [LogbookGroup] {
         func date(_ item: Item) -> LocalDate { item.properties.completedDate ?? today }
         let sorted = items.sorted { date($0) != date($1) ? date($0) > date($1) : VaultIndex.byTitle($0, $1) }
+        let live = sorted.filter { !$0.isLogged }
+        let held = live.filter(index.waitsForOpenTasks)
+        let tonight = live.filter { !index.waitsForOpenTasks($0) }
         var groups: [LogbookGroup] = []
-        let waiting = sorted.filter { !$0.isLogged }
-        if !waiting.isEmpty { groups.append(LogbookGroup(title: "Completed today", isWaiting: true, items: waiting)) }
+        if !tonight.isEmpty { groups.append(LogbookGroup(title: "Completed today", kind: .logsTonight, items: tonight)) }
+        if !held.isEmpty { groups.append(LogbookGroup(title: "Waiting for open tasks", kind: .waitsForOpenTasks, items: held)) }
         for item in sorted where item.isLogged {
             let title = title(for: date(item), today: today)
-            if groups.last?.title == title, groups.last?.isWaiting == false {
-                groups[groups.count - 1] = LogbookGroup(title: title, isWaiting: false, items: groups[groups.count - 1].items + [item])
+            if groups.last?.title == title, groups.last?.kind == .logged {
+                groups[groups.count - 1] = LogbookGroup(title: title, kind: .logged, items: groups[groups.count - 1].items + [item])
             } else {
-                groups.append(LogbookGroup(title: title, isWaiting: false, items: [item]))
+                groups.append(LogbookGroup(title: title, kind: .logged, items: [item]))
             }
         }
         return groups

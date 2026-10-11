@@ -1,5 +1,6 @@
-// The Logbook, pushed from the Other tab: the completed files not logged yet, then the logged ones by day and month,
-// with Log Now in the bottom bar. A row's box reopens a task, which goes back to `tasks/`; a tap opens the file.
+// The Logbook, pushed from the Other tab: the completed files not logged yet (logging tonight, or waiting for their
+// project's open tasks), then the logged ones by day and month, with Log Now in the bottom bar. A row's box reopens
+// a task, which goes back to `tasks/`; a tap opens the file.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -10,8 +11,8 @@ struct PhoneLogbookScreen: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let groups = LogbookGroup.groups(model.logbook, today: model.today)
-        let waiting = groups.first { $0.isWaiting }?.items.count ?? 0
+        let groups = LogbookGroup.groups(model.logbook, index: model.index, today: model.today)
+        let waiting = groups.filter(\.isWaiting).map(\.items.count).reduce(0, +)
         List {
             ForEach(groups) { group in
                 Section {
@@ -20,7 +21,9 @@ struct PhoneLogbookScreen: View {
                     HStack(alignment: .firstTextBaseline) {
                         Text(group.title).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong))
                         Spacer()
-                        if group.isWaiting { Text("Logs tonight").scaledFont(size: 13).foregroundStyle(theme.color(\.muted)) }
+                        if let note = note(group.kind) {
+                            Text(note).scaledFont(size: 13).foregroundStyle(theme.color(\.muted))
+                        }
                     }
                     .textCase(nil)
                 }
@@ -61,6 +64,14 @@ struct PhoneLogbookScreen: View {
 
     /// A task's box (which reopens it) or a project's full ring, its struck title over its parent, and the day it was
     /// completed.
+    private func note(_ kind: LogbookGroup.Kind) -> String? {
+        switch kind {
+        case .logsTonight: "Logs tonight"
+        case .waitsForOpenTasks: "Waits for its project"
+        case .logged: nil
+        }
+    }
+
     private func row(_ item: Item) -> some View {
         HStack(alignment: .top, spacing: 12) {
             if item.properties.kind == .project {

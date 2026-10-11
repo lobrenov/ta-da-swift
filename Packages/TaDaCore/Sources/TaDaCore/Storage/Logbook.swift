@@ -85,14 +85,19 @@ extension VaultIndex {
     /// nil; a file without a `completedDate` counts as completed before it), sorted by title. A Done or Cancelled
     /// project that still has open tasks waits, and so do its tasks.
     public func filesToLog(completedBefore before: LocalDate?) -> [Item] {
-        let waiting = Set(projects.filter { $0.properties.status.isClosed && !openTasks(in: $0).isEmpty }.map(\.path))
-        return liveItems.filter { item in
+        liveItems.filter { item in
             let p = item.properties
-            guard p.kind != .area, p.status.isClosed, !waiting.contains(item.path) else { return false }
-            if let project = project(of: item), waiting.contains(project.path) { return false }
+            guard p.kind != .area, p.status.isClosed, !waitsForOpenTasks(item) else { return false }
             guard let before, let completed = p.completedDate else { return true }
             return completed < before
         }.sorted(by: Self.byTitle)
+    }
+
+    /// Whether a file waits to be logged: a live Done or Cancelled project that still has open tasks, or one of its tasks.
+    public func waitsForOpenTasks(_ item: Item) -> Bool {
+        guard let project = item.properties.kind == .project ? item : project(of: item),
+              !project.isLogged, project.properties.status.isClosed else { return false }
+        return !openTasks(in: project).isEmpty
     }
 
     /// Logged files that aren't Done or Cancelled any more, as when reopened in another app: logging moves them back.

@@ -32,7 +32,7 @@ final class TestFolder {
     /// the folder counts as logged today, so opening it moves nothing to `.logbook/`.
     @MainActor
     func model(today: LocalDate = LocalDate("2026-10-03")!, selecting path: String? = nil, logging: Bool = false) async -> AppModel {
-        if !logging { defaults.set(today.description, forKey: AppModel.Keys.lastLogged) }
+        if !logging { AppModel.setLastLogged(url, to: today, in: defaults) }
         let model = AppModel(defaults: defaults)
         model.today = today
         await model.choose(url)

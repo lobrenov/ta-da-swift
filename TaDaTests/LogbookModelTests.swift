@@ -120,6 +120,37 @@ struct LogbookModelTests {
         #expect(model.index["projects/Kombi.md"]?.properties.status == .doing)
     }
 
+    @Test func eachFolderLogsOnceADay() async throws {
+        let other = try TestFolder(["tasks/Old.md": "---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-20\n---\n"])
+        let model = await folder.model(logging: true)
+        #expect(model.index[".logbook/2026-09/Old.md"] != nil)
+        await model.choose(other.url)
+        #expect(model.index[".logbook/2026-09/Old.md"] != nil && model.index["tasks/Old.md"] == nil, "another folder logs that day too")
+        #expect(AppModel.lastLogged(folder.url, in: folder.defaults) == model.today)
+        #expect(AppModel.lastLogged(other.url, in: folder.defaults) == model.today)
+    }
+
+    @Test func answeringTheQuestionClosesTheOpenTasksTheProjectHasThen() async throws {
+        let model = await folder.model(logging: true)
+        await model.setStatus(.done, in: "projects/Kombi.md")
+        let request = try #require(model.completionConfirmation)
+        try folder.write("---\ntype: task\nstatus: Doing\nproject: \"[[Kombi]]\"\n---\n", "tasks/Tyres.md")
+        await model.refresh()
+        await model.answerCompletion(request, tasksAs: .done)
+        #expect(model.index["tasks/Tyres.md"]?.properties.status == .done)
+        #expect(model.index.openTasks(in: try #require(model.index["projects/Kombi.md"])).isEmpty)
+    }
+
+    @Test func aCompletedProjectWithOpenTasksWaitsInItsOwnGroup() async throws {
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-01\n---\n", "projects/Kombi.md")
+        try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\nproject: \"[[Kombi]]\"\n---\n", "tasks/Photos.md")
+        let model = await folder.model(logging: true)
+        let groups = LogbookGroup.groups(model.logbook, index: model.index, today: model.today)
+        #expect(groups.map(\.kind) == [.logsTonight, .waitsForOpenTasks, .logged])
+        #expect(groups[0].items.map(\.title) == ["Today"])
+        #expect(groups[1].items.map(\.title) == ["Photos", "Kombi"])
+    }
+
     @Test func aLinkToALoggedFileOpensInTheLogbook() async throws {
         let model = await folder.model(logging: true)
         model.openLink(to: ".logbook/2026-09/Old.md")

@@ -1,5 +1,6 @@
-// The Logbook beside the document pane: Log Now, the completed files not logged yet, then the logged ones by day and
-// month. A row's box reopens a task, which goes back to `tasks/`.
+// The Logbook beside the document pane: Log Now, the completed files not logged yet (logging tonight, or waiting for
+// their project's open tasks), then the logged ones by day and month. A row's box reopens a task, which goes back to
+// `tasks/`.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -9,20 +10,28 @@ struct LogbookView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let groups = LogbookGroup.groups(model.logbook, today: model.today)
+        let groups = LogbookGroup.groups(model.logbook, index: model.index, today: model.today)
         BrowserColumn(model: model, paths: groups.flatMap(\.items).map(\.path), spacing: 20,
                       empty: groups.isEmpty ? empty : nil) {
-            header(waiting: groups.first { $0.isWaiting }?.items.count ?? 0)
+            header(waiting: groups.filter(\.isWaiting).map(\.items.count).reduce(0, +))
         } content: {
             ForEach(groups) { group in
                 VStack(alignment: .leading, spacing: 1) {
-                    GroupTitle(title: group.title, note: group.isWaiting ? "Still in place · logs tonight" : nil)
+                    GroupTitle(title: group.title, note: note(group.kind))
                     ForEach(group.items) { item in
                         LogbookRow(model: model, item: item)
                             .fileMenu(model, path: item.path)
                     }
                 }
             }
+        }
+    }
+
+    private func note(_ kind: LogbookGroup.Kind) -> String? {
+        switch kind {
+        case .logsTonight: "Still in place · logs tonight"
+        case .waitsForOpenTasks: "Still in place · logs once its project's tasks are completed"
+        case .logged: nil
         }
     }
 

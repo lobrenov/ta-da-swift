@@ -166,7 +166,7 @@ import TaDaCore
         let project: Item
         /// Done or Cancelled: what the project is set to.
         let status: Status
-        /// The project's open tasks, as they were when asked about.
+        /// The project's open tasks, as they were when asked about; answering sets those it has then.
         let tasks: [Item]
         /// Log Now asked; it goes on logging once this is answered.
         var logsAfter = false
@@ -866,15 +866,16 @@ import TaDaCore
         await reopenParent(of: path, wasClosed: wasClosed)
     }
 
-    /// Answers `completionConfirmation`: sets the project's status and its open tasks to `tasksAs` (Done or Cancelled),
-    /// or leaves them all when it's nil. Log Now then goes on.
+    /// Answers `completionConfirmation`: sets the project's status and the open tasks it has now to `tasksAs` (Done or
+    /// Cancelled), or leaves them all when it's nil. Log Now then goes on.
     func answerCompletion(_ request: CompletionConfirmation, tasksAs status: Status?) async {
         if completionConfirmation?.id == request.id { completionConfirmation = nil }
-        if let status {
-            if index[request.project.path]?.properties.status != request.status {
-                await setStatus(request.status, in: request.project.path, confirmed: true)
+        if let status, let project = index[request.project.path] {
+            let tasks = index.openTasks(in: project)
+            if project.properties.status != request.status {
+                await setStatus(request.status, in: project.path, confirmed: true)
             }
-            for task in request.tasks { await setStatus(status, in: task.path) }
+            for task in tasks { await setStatus(status, in: task.path) }
         }
         if request.logsAfter { await logNow(asking: status != nil) }
     }
@@ -1235,12 +1236,34 @@ import TaDaCore
 
     /// Logs the files completed before today, once a day: when the folder opens or the day changes. Logged files reopened
     /// in another app go back.
+    /// Each folder's day is kept once its logging succeeds; after a failure the next open or day change tries again.
     func logIfDue() async {
-        guard state == .ready, defaults.string(forKey: Keys.lastLogged) != today.description else { return }
-        defaults.set(today.description, forKey: Keys.lastLogged)
-        await log(index.filesToLog(completedBefore: today).map(\.path))
+        guard state == .ready, !isLogging, let folder = vault?.root,
+              Self.lastLogged(folder, in: defaults) != today else { return }
+        isLogging = true
+        defer { isLogging = false }
+        let day = today
+        var succeeded = await log(index.filesToLog(completedBefore: day).map(\.path))
         let reopened = index.reopenedLogged.map(\.path)
-        if !reopened.isEmpty { await moveFiles("put back the reopened files") { try $0.unlog(reopened, index: $1, today: $2) } }
+        if !reopened.isEmpty {
+            succeeded = await moveFiles("put back the reopened files") { try $0.unlog(reopened, index: $1, today: $2) } != nil
+                && succeeded
+        }
+        if succeeded { Self.setLastLogged(folder, to: day, in: defaults) }
+    }
+
+    /// Whether `logIfDue()` is running.
+    private var isLogging = false
+
+    /// The day `logIfDue()` last logged `folder`.
+    static func lastLogged(_ folder: URL, in defaults: any SettingsStore) -> LocalDate? {
+        (defaults.dictionary(forKey: Keys.lastLogged)?[folder.resolvingSymlinksInPath().path] as? String).flatMap(LocalDate.init)
+    }
+
+    static func setLastLogged(_ folder: URL, to day: LocalDate, in defaults: any SettingsStore) {
+        var days = defaults.dictionary(forKey: Keys.lastLogged) ?? [:]
+        days[folder.resolvingSymlinksInPath().path] = day.description
+        defaults.set(days, forKey: Keys.lastLogged)
     }
 
     /// Log Now: logs every completed task and project. Unless `asking` is false, a completed project that still has open
@@ -1259,10 +1282,11 @@ import TaDaCore
     /// Whether Log Now has anything to log or ask about.
     var hasFilesToLog: Bool { logbook.contains { !$0.isLogged } }
 
-    /// Moves files to `.logbook/`.
-    private func log(_ paths: [String]) async {
-        guard !paths.isEmpty else { return }
-        await moveFiles("log the files") { try $0.log(paths, index: $1, today: $2) }
+    /// Moves files to `.logbook/`. Returns false when that failed.
+    @discardableResult
+    private func log(_ paths: [String]) async -> Bool {
+        guard !paths.isEmpty else { return true }
+        return await moveFiles("log the files") { try $0.log(paths, index: $1, today: $2) } != nil
     }
 
     /// A logged file that isn't Done or Cancelled any more goes back to `tasks/` or `projects/`, bringing back its logged
@@ -1271,7 +1295,7 @@ import TaDaCore
         guard var item = index[path], !item.properties.status.isClosed else { return }
         if item.isLogged {
             let moved = await moveFiles("put “\(item.title)” back") { try $0.unlog([path], index: $1, today: $2) }
-            guard let back = moved[path].flatMap({ index[$0] }) else { return }
+            guard let back = moved?[path].flatMap({ index[$0] }) else { return }
             item = back
         } else if !wasClosed {
             return
@@ -1282,15 +1306,15 @@ import TaDaCore
     }
 
     /// Saves the open file, moves files with `move` (which returns each new path by its old one), and follows them.
-    /// Returns the moved paths, or none when moving failed.
+    /// Returns the moved paths, or nil when moving failed.
     @discardableResult
     private func moveFiles(_ action: String,
                            _ move: @escaping @Sendable (Vault, VaultIndex, LocalDate) throws -> [String: String]) async
-        -> [String: String] {
-        guard let vault else { return [:] }
+        -> [String: String]? {
+        guard let vault else { return nil }
         if let document { await save(document) }
         let index = index, today = today
-        var result: [String: String] = [:]
+        var result: [String: String]?
         do {
             let moved = try await Self.run { try move(vault, index, today) }
             let items = await Self.run { moved.values.compactMap { try? vault.load($0) } }
