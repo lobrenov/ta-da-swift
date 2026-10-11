@@ -161,6 +161,8 @@ import TaDaCore
     /// Completing a project that still has open tasks, or logging one with Log Now, waits here for the user to choose
     /// whether its open tasks are completed or cancelled; `answerCompletion(_:tasksAs:)` goes ahead.
     var completionConfirmation: CompletionConfirmation?
+    /// Further questions, as when several projects are completed at once; each is shown once the one before is answered.
+    private var pendingCompletions: [CompletionConfirmation] = []
     struct CompletionConfirmation: Equatable, Identifiable {
         let id = UUID()
         let project: Item
@@ -857,7 +859,7 @@ import TaDaCore
         if !confirmed, status.isClosed, let item = index[path], item.properties.kind == .project {
             let tasks = index.openTasks(in: item)
             if !tasks.isEmpty {
-                completionConfirmation = CompletionConfirmation(project: item, status: status, tasks: tasks)
+                ask(CompletionConfirmation(project: item, status: status, tasks: tasks))
                 return
             }
         }
@@ -866,8 +868,13 @@ import TaDaCore
         await reopenParent(of: path, wasClosed: wasClosed)
     }
 
+    /// Shows `request`, or keeps it pending behind the question already showing.
+    private func ask(_ request: CompletionConfirmation) {
+        if completionConfirmation == nil { completionConfirmation = request } else { pendingCompletions.append(request) }
+    }
+
     /// Answers `completionConfirmation`: sets the project's status and the open tasks it has now to `tasksAs` (Done or
-    /// Cancelled), or leaves them all when it's nil. Log Now then goes on.
+    /// Cancelled), or leaves them all when it's nil. Log Now then goes on, and the next pending question shows.
     func answerCompletion(_ request: CompletionConfirmation, tasksAs status: Status?) async {
         if completionConfirmation?.id == request.id { completionConfirmation = nil }
         if let status, let project = index[request.project.path] {
@@ -878,6 +885,7 @@ import TaDaCore
             for task in tasks { await setStatus(status, in: task.path) }
         }
         if request.logsAfter { await logNow(asking: status != nil) }
+        if completionConfirmation == nil, !pendingCompletions.isEmpty { completionConfirmation = pendingCompletions.removeFirst() }
     }
 
     /// Renames a file from a new title, and points the `[[ ]]` links to it in other files' bodies at the new title.
@@ -1279,8 +1287,8 @@ import TaDaCore
     func logNow(asking: Bool = true) async {
         if asking, let project = index.projects.sorted(by: VaultIndex.byTitle)
             .first(where: { $0.properties.status.isClosed && !index.openTasks(in: $0).isEmpty }) {
-            completionConfirmation = CompletionConfirmation(project: project, status: project.properties.status,
-                                                            tasks: index.openTasks(in: project), logsAfter: true)
+            ask(CompletionConfirmation(project: project, status: project.properties.status,
+                                       tasks: index.openTasks(in: project), logsAfter: true))
             return
         }
         await log(index.filesToLog(completedBefore: nil).map(\.path))

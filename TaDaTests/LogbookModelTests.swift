@@ -51,6 +51,24 @@ struct LogbookModelTests {
         #expect(model.index["tasks/Listing.md"]?.properties.completedDate == LocalDate("2026-10-03"))
     }
 
+    @Test func completingSeveralProjectsAsksAboutEachInTurn() async throws {
+        try folder.write("---\ntype: project\nstatus: Doing\n---\n", "projects/Boat.md")
+        try folder.write("---\ntype: task\nstatus: Doing\nproject: \"[[Boat]]\"\n---\n", "tasks/Sail.md")
+        let model = await folder.model(logging: true)
+        for path in ["projects/Boat.md", "projects/Kombi.md"] { await model.setStatus(.done, in: path) }
+        let first = try #require(model.completionConfirmation)
+        #expect(first.project.title == "Boat")
+
+        await model.answerCompletion(first, tasksAs: .done)
+        let second = try #require(model.completionConfirmation)
+        #expect(second.project.title == "Kombi")
+        #expect(model.index["projects/Boat.md"]?.properties.status == .done)
+
+        await model.answerCompletion(second, tasksAs: nil)
+        #expect(model.completionConfirmation == nil)
+        #expect(model.index["projects/Kombi.md"]?.properties.status == .doing)
+    }
+
     @Test func leavingTheQuestionChangesNothing() async throws {
         let model = await folder.model(logging: true)
         await model.setStatus(.cancelled, in: "projects/Kombi.md")
