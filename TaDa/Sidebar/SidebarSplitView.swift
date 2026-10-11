@@ -7,32 +7,23 @@ import SwiftUI
 
 struct SidebarSplitView: View {
     let model: AppModel
-    @State private var columns = NavigationSplitViewVisibility.all
+    @State private var state = SidebarState()
     @State private var sidebarWidth: CGFloat = 240
-    /// The window is too narrow for the sidebar beside the workspace.
-    @State private var isNarrow = false
-    /// The sidebar hid because the window got narrow; it comes back when there's room.
-    @State private var sidebarAutoHidden = false
-    @State private var sidebarFloats = false
-    /// The sidebar floats for Search Files, with its search field taking the keyboard.
-    @State private var floatsForSearch = false
-    /// Our sidebar button in place of the split view's, once the sidebar has slid away in a narrow window.
-    @State private var usesOwnToggle = false
     @State private var anchor = ScreenAnchor()
     @State private var swipe = SidebarSwipe()
     @State private var swipeMonitor: Any?
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columns) {
-            SidebarView(model: model, takesSearchFocus: columns != .detailOnly)
+        NavigationSplitView(columnVisibility: $state.columns) {
+            SidebarView(model: model, takesSearchFocus: state.columns != .detailOnly)
                 .onGeometryChange(for: CGFloat.self) { $0.size.width } action: {
-                    if columns == .all { sidebarWidth = min(max($0, 200), 340) }
+                    if state.columns == .all { sidebarWidth = min(max($0, 200), 340) }
                 }
-                .toolbar(removing: usesOwnToggle ? .sidebarToggle : nil)
+                .toolbar(removing: state.usesOwnToggle ? .sidebarToggle : nil)
         } detail: {
             WorkspaceView(model: model)
                 .toolbar {
-                    if usesOwnToggle { ToolbarItem(placement: .navigation) { toggleButton } }
+                    if state.usesOwnToggle { ToolbarItem(placement: .navigation) { toggleButton } }
                 }
         }
         .overlay(alignment: .leading) { floatingSidebar }
@@ -43,31 +34,28 @@ struct SidebarSplitView: View {
         }
         .onAppear { watchSwipes() }
         .onDisappear { stopWatchingSwipes() }
-        .onChange(of: columns) { if columns != .detailOnly { showedDockedSidebar() } }
-        .onChange(of: model.sidebarToggleRequest) { toggle() }
-        .onChange(of: model.searchFocusRequest) {
-            if columns == .detailOnly, !sidebarFloats { floatsForSearch = true; sidebarFloats = true }
-        }
-        .onChange(of: sidebarFloats) { if !sidebarFloats { floatsForSearch = false } }
-        .onChange(of: model.domain) { sidebarFloats = false }
+        .onChange(of: state.columns) { slide(to: state.columnsChanged()) }
+        .onChange(of: model.sidebarToggleRequest) { slide(to: state.toggle()) }
+        .onChange(of: model.searchFocusRequest) { state.searchRequested() }
+        .onChange(of: model.domain) { state.floats = false }
     }
 
     /// The sidebar button in a narrow window, where the split view's own would show the sidebar beside the workspace.
     /// It takes the split view's place beside the window's buttons.
     private var toggleButton: some View {
-        Button { toggle() } label: { Label("Toggle Sidebar", systemImage: "sidebar.left") }
-            .help(sidebarFloats ? "Hide Sidebar" : "Show Sidebar")
+        Button { slide(to: state.toggle()) } label: { Label("Toggle Sidebar", systemImage: "sidebar.left") }
+            .help(state.floats ? "Hide Sidebar" : "Show Sidebar")
     }
 
     /// The sidebar over the workspace, sliding in from the left, with a click anywhere else hiding it.
     private var floatingSidebar: some View {
         ZStack(alignment: .leading) {
-            if sidebarFloats {
+            if state.floats {
                 Color.clear
                     .contentShape(Rectangle())
-                    .onTapGesture { sidebarFloats = false }
+                    .onTapGesture { state.floats = false }
                     .accessibilityHidden(true)
-                SidebarView(model: model, focusesSearch: floatsForSearch) { sidebarFloats = false }
+                SidebarView(model: model, focusesSearch: state.floatsForSearch) { state.floats = false }
                     .frame(width: sidebarWidth)
                     .background { model.theme.color(\.side).ignoresSafeArea() }
                     .overlay(alignment: .trailing) { Hairline(axis: .vertical).ignoresSafeArea() }
@@ -75,56 +63,22 @@ struct SidebarSplitView: View {
                     .transition(.move(edge: .leading))
             }
         }
-        .animation(.snappy(duration: 0.25), value: sidebarFloats)
+        .animation(.snappy(duration: 0.25), value: state.floats)
     }
 
     /// Hides the sidebar when the window is too narrow for it, as it opens or resizes, and shows it again when there's
     /// room.
     private func fit(width: CGFloat) {
-        let narrow = width < sidebarWidth + WorkspaceView.minWidth
-        guard narrow != isNarrow else { return }
-        isNarrow = narrow
-        if narrow {
-            if columns != .detailOnly {
-                withAnimation { columns = .detailOnly } completion: { if isNarrow { usesOwnToggle = true } }
-                sidebarAutoHidden = true
-            } else {
-                usesOwnToggle = true
-            }
-        } else {
-            sidebarFloats = false
-            usesOwnToggle = false
-            if sidebarAutoHidden {
-                withAnimation { columns = .all }
-                sidebarAutoHidden = false
-            }
-        }
+        slide(to: state.fit(narrow: width < sidebarWidth + WorkspaceView.minWidth))
     }
 
-    private func toggle() {
-        if isNarrow || sidebarFloats {
-            sidebarFloats.toggle()
-        } else {
-            hideDockedSidebar(columns != .detailOnly)
-        }
+    /// Slides the split view's sidebar in or out to `columns`, if there are any.
+    private func slide(to columns: NavigationSplitViewVisibility?) {
+        guard let columns else { return }
+        withAnimation { state.columns = columns } completion: { state.slid() }
     }
 
-    /// The split view showed its sidebar: the floating one hides, and in a narrow window the docked one slides away
-    /// again.
-    private func showedDockedSidebar() {
-        sidebarFloats = false
-        guard isNarrow else { return }
-        withAnimation { columns = .detailOnly }
-        sidebarAutoHidden = true
-    }
-
-    private func hideDockedSidebar(_ hide: Bool) {
-        sidebarAutoHidden = false
-        withAnimation { columns = hide ? .detailOnly : .all }
-    }
-
-    /// Two-finger swipes: to the right floats the hidden sidebar, unless something under the pointer scrolls left; to
-    /// the left hides the floating sidebar, or the docked one when the pointer is over it.
+    /// Two-finger swipes, for `SidebarState.swiped`.
     private func watchSwipes() {
         stopWatchingSwipes()
         swipeMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
@@ -132,16 +86,9 @@ struct SidebarSplitView: View {
                 guard let window = anchor.window, event.window === window,
                       let direction = swipe.track(event.phase, dx: SidebarSwipe.fingersDX(event), dy: event.scrollingDeltaY)
                 else { return }
-                switch direction {
-                case .right:
-                    if columns == .detailOnly, !sidebarFloats, !SidebarSwipe.scrollsLeft(event) { sidebarFloats = true }
-                case .left:
-                    if sidebarFloats {
-                        sidebarFloats = false
-                    } else if columns != .detailOnly, event.locationInWindow.x < sidebarWidth {
-                        hideDockedSidebar(true)
-                    }
-                }
+                slide(to: state.swiped(direction, overSidebar: event.locationInWindow.x < sidebarWidth) {
+                    SidebarSwipe.scrollsLeft(event)
+                })
             }
             return event
         }

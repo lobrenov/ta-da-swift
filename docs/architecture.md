@@ -26,7 +26,7 @@ TaDa/
 │                              schemes and 8 sets; themed(by:) sets \.theme and the colour scheme and follows the system appearance
 ├── Onboarding/                FolderPickerView
 ├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView, EditorSettingsView
-├── Sidebar/                   SidebarView: search, domains, loose projects, areas with their projects, folder line, Settings, New buttons; SidebarSplitView: the sidebar beside the workspace, hidden or floating in a narrow window; SidebarSwipe: the two-finger swipes that float and hide it
+├── Sidebar/                   SidebarView: search, domains, loose projects, areas with their projects, folder line, Settings, New buttons; SidebarSplitView: the sidebar beside the workspace, hidden or floating in a narrow window; SidebarState: whether it is docked, hidden or floating; SidebarSwipe: the two-finger swipes that float and hide it
 ├── Browser/
 │   ├── WorkspaceView.swift    the area right of the sidebar, per domain
 │   ├── TaskListView.swift     Today and Loose tasks
