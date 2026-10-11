@@ -114,6 +114,21 @@ private let today = LocalDate("2026-10-09")!
     }
 }
 
+@Test func restoringTasksTogetherRecreatesTheirMissingParentOnce() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(task(in: "Gone"), ".trash/One.md", in: folder)
+        try writeFile(task(in: "Gone"), ".trash/Two.md", in: folder)
+        try writeFile(filed("task", in: "Gone area"), ".trash/Three.md", in: folder)
+        try writeFile(filed("project", in: "Gone area"), ".trash/P.md", in: folder)
+        let restored = try vault.restore([".trash/One.md", ".trash/Two.md", ".trash/Three.md", ".trash/P.md"],
+                                         index: await vault.loadIndex(), today: today)
+        #expect(Set(restored) == ["projects/Gone.md", "tasks/One.md", "tasks/Two.md", "areas/Gone area.md", "tasks/Three.md",
+                                  "projects/P.md"])
+        #expect(restored.count == 6)
+    }
+}
+
 @Test func restoringAParentUnderANewNameRelinksTheFile() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)

@@ -164,6 +164,8 @@ extension Vault {
         var brought: [(path: String, entry: TrashedItem)] = []
         // Trashed path → the title it was restored under.
         var titles: [String: String] = [:]
+        // Kind and lowercased title of a parent created by name → the title it was created under.
+        var created: [String: String] = [:]
 
         /// Restores a trashed file after its parent; returns its title in the vault.
         func bringBack(_ entry: TrashedItem) throws -> String {
@@ -188,10 +190,13 @@ extension Vault {
             let matches = { (item: Item) in item.properties.kind == kind && item.title.lowercased() == parent.title.lowercased() }
             if index.items(titled: parent.title).contains(where: { matches($0) && !$0.isLogged }) { return parent.title }
             if let entry = trashed.first(where: { matches($0.item) }) { return try bringBack(entry) }
+            let key = "\(kind)/\(parent.title.lowercased())"
+            if let title = created[key] { return title }
             let folder = kind == .project ? Self.projectFolder : Self.areaFolder
             let text = kind == .project ? NewFile.project(today: today) : NewFile.area(today: today)
             let path = try create(text, in: folder, title: parent.title, taken: kind == .project ? index.projectFilenames() : [])
             restored.append(path)
+            created[key] = Item.title(ofPath: path)
             return Item.title(ofPath: path)
         }
 
