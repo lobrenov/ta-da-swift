@@ -142,3 +142,54 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
     #expect(edited(body) == "Note:\\\n`[[Old]]` is the syntax\nsee [[New]] here\n\n- x\\\n  ![[b.png]] `![[a.png]]`\n  ![[b.png]]\n  [[New]]\\\n  [[New]]\n  [[New]]")
     #expect(edited("a\\\nb\\\n![[a.png]] `![[a.png]]`\n![[a.png]]") == "a\\\nb\\\n![[b.png]] `![[a.png]]`\n![[b.png]]")
 }
+
+@Test func scannerFindsInlineTags() {
+    let body = """
+    # Heading #in-heading
+
+    Ask #people/max about a coat.
+    #errands, #fabric and #2026plan; mid#word or a#b and #a#b.
+    *#emphasised* **bold #strong** _x_#after-emphasis `code`#after-code
+    #Errands again, and #ünïcödé_tag-1
+
+    - [ ] Find the receipt `#not-a-tag` #in-list
+    > #quoted
+
+    | #in-table |
+    | --- |
+
+    """
+    #expect(BodyScanner.scan(body).tags.map(\.name) == [
+        "in-heading", "people/max", "errands", "fabric", "2026plan", "a", "emphasised", "strong",
+        "ünïcödé_tag-1", "in-list", "quoted", "in-table",
+    ])
+}
+
+@Test func scannerSkipsTagsInCodeHTMLLinksAndURLs() {
+    let body = """
+    ```
+    #fenced
+    ```
+
+        #indented
+
+    <div>
+    #html
+    </div>
+
+    <span>#span</span> [see #linked](https://example.com) ![#alt](a.png) <https://example.com/#auto>
+    https://example.com/#top [[Kombi #Plan]] [[Kombi|the #alias]] ![[a.png#x]] [[Kombi]]#after-link \\
+    #after-break
+
+    """
+    #expect(BodyScanner.scan(body).tags.map(\.name) == ["after-break"])
+}
+
+@Test func scannerReadsTagsAtLineStartsAcrossSoftBreaks() {
+    #expect(BodyScanner.scan("One\n#two\r\n#three").tags.map(\.name) == ["two", "three"])
+}
+
+@Test func scannerSkipsEscapedHashes() {
+    let body = "\\#escaped and &#35;entity and &num;named but #real\n\n- [ ] item \\#no #yes\n\nx\\\n#after-break \\#not"
+    #expect(BodyScanner.scan(body).tags.map(\.name) == ["real", "yes", "after-break"])
+}

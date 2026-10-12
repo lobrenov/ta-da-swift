@@ -178,4 +178,40 @@ struct PropertyPickerTests {
         model.move(months: -2)
         #expect(model.cursor == LocalDate("2026-12-28")! && monthChanges == 3)
     }
+
+    // MARK: tagMenu
+
+    private func tagMenu(_ query: String = "", keeping: String? = nil) -> (titles: [String?], labels: [String?], highlight: Int?) {
+        let files = [
+            ("tasks/Weed.md", "---\ntype: task\nstatus: Doing\ntags: [home/garden]\n---\nAsk #people/max\n"),
+            ("tasks/Rent.md", "---\ntype: task\nstatus: Doing\ntags: [money, errands]\n---\n#people/dan\n"),
+            ("areas/Home.md", "---\ntype: area\ntags: [errands]\n---\n"),
+        ]
+        let index = VaultIndex(files.compactMap { Item(parsing: $0.1, path: $0.0) })
+        let menu = TagChoice.menu(item: index["tasks/Weed.md"]!, tree: index.tagTree(), query: query, keeping: keeping)
+        let values = menu.sections.flatMap(\.items).map { $0.accessibilityValue as String? }
+        return (titles(menu.sections), values, menu.highlight)
+    }
+
+    @Test func tagMenuListsTheFilesTagsThenEveryOtherTagWithCounts() {
+        let menu = tagMenu()
+        #expect(menu.titles == ["home/garden", "people/max", "errands", "home", "money", "people", "people/dan"])
+        #expect(menu.labels == ["In this file", "In the text", "2 files", "1 file", "1 file", "2 files", "1 file"])
+        #expect(menu.highlight == 0)
+    }
+
+    @Test func typingInTagMenuMatchesSegmentStartsAndOffersCreate() {
+        #expect(tagMenu("gar").titles == ["Create #gar", "home/garden"])
+        #expect(tagMenu("peo").titles == ["Create #peo", "people/max", "people", "people/dan"])
+        #expect(tagMenu("people").titles == ["people/max", "people", "people/dan"], "no Create for a tag in use")
+        #expect(tagMenu("home/garden").titles == ["home/garden"])
+        #expect(tagMenu("#New Tag").titles == ["Create #New Tag"])
+        #expect(tagMenu("people/max").titles == ["people/max"] && tagMenu("people/max").highlight == nil,
+                "a tag only in the text can't be picked")
+    }
+
+    @Test func tagMenuKeepsTheToggledTagHighlighted() {
+        #expect(tagMenu(keeping: "money").highlight == 4, "the tag just toggled stays highlighted after the menu refreshes")
+        #expect(tagMenu(keeping: "gone").highlight == 0)
+    }
 }

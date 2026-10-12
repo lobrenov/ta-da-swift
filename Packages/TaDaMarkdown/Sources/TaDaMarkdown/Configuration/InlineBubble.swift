@@ -26,6 +26,9 @@ public struct InlineBubble: Sendable, Equatable {
     /// How far the bubble reaches above the ascender and below the descender.
     public var verticalPadding: CGFloat
     public var cornerRadius: CGFloat
+    /// Whether the bubble reaches past the span's first and last glyphs by the padding, for a span with no hidden
+    /// markers to sit in it. The styler kerns the characters around the span to make room.
+    var padsOutsideText = false
 
     public init(fill: PlatformColor, ring: PlatformColor? = nil, text: PlatformColor? = nil, horizontalPadding: CGFloat,
                 margin: CGFloat = 0, verticalPadding: CGFloat = 2, cornerRadius: CGFloat = 6) {

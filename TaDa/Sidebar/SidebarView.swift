@@ -1,6 +1,7 @@
-// Sidebar: search, the three domains with counts, Logbook, Trash with its count, active projects without an area, then each area with its
-// active projects under it, the folder line, Settings and the New buttons. Task rows drop onto Today, Loose
-// tasks, the projects and the areas; project rows drop onto the areas.
+// Sidebar: search, Today and Upcoming, Logbook, Trash with its count, then the Projects | Tags switch. Projects lists
+// Loose tasks, active projects without an area, then each area with its active projects under it; Tags lists Untagged
+// and the tag tree. Then the folder line, Settings and the New buttons. Task rows drop onto Today, Loose tasks, the
+// projects and the areas; project rows drop onto the areas.
 import SwiftUI
 import TaDaCore
 
@@ -28,28 +29,16 @@ struct SidebarView: View {
                     row(.today, count: model.todayCount)
                         .taskDrop(model, onto: .today)
                     row(.upcoming, count: nil)
-                    row(.loose, count: model.looseCount)
-                        .taskDrop(model, onto: .loose)
                     row(.logbook, count: nil)
                         .padding(.top, 8)
                     row(.trash, count: model.trashCount)
 
-                    Spacer().frame(height: 12)
-                    if model.looseProjects.isEmpty, model.areas.isEmpty {
-                        Text("No active projects")
-                            .font(.system(size: 12))
-                            .foregroundStyle(theme.color(\.muted))
-                            .padding(.horizontal, 10)
-                    }
-                    ForEach(model.looseProjects) { progress in
-                        projectRow(progress)
-                    }
-                    ForEach(model.areas) { area in
-                        areaRow(area.area)
-                            .padding(.top, 12)
-                        ForEach(area.projects) { progress in
-                            projectRow(progress)
-                        }
+                    SidebarModeSwitch(mode: $model.sidebarMode)
+                        .padding(.top, 12)
+                        .padding(.bottom, 6)
+                    switch model.sidebarMode {
+                    case .projects: hierarchy
+                    case .tags: tags
                     }
                 }
                 .padding(.horizontal, 10)
@@ -66,7 +55,79 @@ struct SidebarView: View {
         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
     }
 
-    private func row(_ domain: AppModel.Domain, count: Int?) -> some View {
+    /// Loose tasks, the active projects without an area, then each area with its active projects.
+    @ViewBuilder private var hierarchy: some View {
+        row(.loose, count: model.looseCount, title: "Loose")
+            .taskDrop(model, onto: .loose)
+        if model.looseProjects.isEmpty, model.areas.isEmpty {
+            Text("No active projects")
+                .font(.system(size: 12))
+                .foregroundStyle(theme.color(\.muted))
+                .padding(.horizontal, 10)
+                .padding(.top, 12)
+        }
+        if !model.looseProjects.isEmpty { Spacer().frame(height: 12) }
+        ForEach(model.looseProjects) { progress in
+            projectRow(progress)
+        }
+        ForEach(model.areas) { area in
+            areaRow(area.area)
+                .padding(.top, 12)
+            ForEach(area.projects) { progress in
+                projectRow(progress)
+            }
+        }
+    }
+
+    /// Untagged, then the tag tree: roots aligned with Untagged, 16pt per level, the last segment only, a parent folding from its chevron.
+    @ViewBuilder private var tags: some View {
+        row(.tag(nil), count: model.untaggedCount)
+        Spacer().frame(height: 10)
+        if model.tagTree.isEmpty {
+            Text("No tags yet")
+                .font(.system(size: 12))
+                .foregroundStyle(theme.color(\.muted))
+                .padding(.horizontal, 10)
+        }
+        ForEach(model.visibleTags, id: \.node.id) { entry in
+            tagRow(entry.node, depth: entry.depth)
+        }
+    }
+
+    /// A tag: a row with its glyph, last segment and count, and for a parent a fold chevron in the row's leading padding.
+    private func tagRow(_ node: TagNode, depth: Int) -> some View {
+        let path = node.tag.path
+        let folded = model.isTagFolded(path)
+        return SidebarRow(selected: model.domain == .tag(path) && !model.isSearching, height: 30, count: node.count) {
+            model.show(.tag(path))
+            picked()
+        } icon: {
+            Image(systemName: "tag")
+                .font(.system(size: 11))
+                .foregroundStyle(theme.color(\.accent))
+                .frame(width: 16)
+                .accessibilityHidden(true)
+        } label: {
+            Text(node.tag.leaf)
+        }
+        .accessibilityLabel("Tag \(node.tag.name)")
+        .overlay(alignment: .leading) {
+            if !node.children.isEmpty {
+                Button { model.toggleTagFolded(path) } label: {
+                    Image(systemName: folded ? "chevron.right" : "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(theme.color(\.muted))
+                        .frame(width: 10, height: 30)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(folded ? "Expand \(node.tag.name)" : "Collapse \(node.tag.name)")
+            }
+        }
+        .padding(.leading, CGFloat(depth) * 16)
+    }
+
+    private func row(_ domain: AppModel.Domain, count: Int?, title: String? = nil) -> some View {
         SidebarRow(selected: model.domain == domain && !model.isSearching, height: 32, count: count) {
             model.show(domain)
             picked()
@@ -77,7 +138,7 @@ struct SidebarView: View {
                 .frame(width: 16)
                 .accessibilityHidden(true)
         } label: {
-            Text(domain.title)
+            Text(title ?? domain.title)
         }
     }
 
@@ -199,6 +260,44 @@ struct SidebarView: View {
         }
         .buttonStyle(ActionButtonStyle(height: 32, fullWidth: true))
         .accessibilityLabel(label)
+    }
+}
+
+/// The Projects | Tags switch: two segments on a `surface` track, the picked one on `bg` in semibold `strong`.
+private struct SidebarModeSwitch: View {
+    @Binding var mode: AppModel.SidebarMode
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        HStack(spacing: 2) {
+            segment(.projects, "Projects") { AreaIcon(size: 13) }
+            segment(.tags, "Tags") {
+                Image(systemName: "tag").font(.system(size: 11)).foregroundStyle(theme.color(\.accent))
+            }
+        }
+        .padding(2)
+        .background(theme.color(\.surface), in: .rect(cornerRadius: 8))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Sidebar lists")
+    }
+
+    private func segment(_ value: AppModel.SidebarMode, _ title: String, @ViewBuilder icon: () -> some View) -> some View {
+        let selected = mode == value
+        return Button { mode = value } label: {
+            HStack(spacing: 6) {
+                icon()
+                Text(title)
+            }
+            .font(.system(size: 12, weight: selected ? .semibold : .medium))
+            .foregroundStyle(theme.color(selected ? \.strong : \.fg))
+            .frame(maxWidth: .infinity)
+            .frame(height: 26)
+            .background(selected ? theme.color(\.bg) : .clear, in: .rect(cornerRadius: 6))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .help("\(title) (swipe sideways over the sidebar)")
     }
 }
 

@@ -6,7 +6,7 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - Brief: `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Personal/Projects/Ta Da - a to-do list app.md`
 - Design system: `docs/design/design-framework.md`. Follow it for UI work; its In the app table names the Swift view for each component, and its As built section lists where the app differs from the guidance. Component guidelines are in `docs/design/components/`, values in `docs/design/tokens.json`. Colour changes go in both `tokens.json` and `TaDa/Theme/BundledThemes.swift`.
 - Architecture (layers, files, runtime, window, editors, shortcuts): `docs/architecture.md`. Schema: `docs/file-format.md` (the source of truth; update it with any format change).
-- Backlog: `docs/backlog.md`. Archive: `docs/archive/` holds finished plans (`mvp-plan.md`: the MVP's decisions and milestones; `iOS-Plan.md`: the iPhone POC's; `areas-plan.md`: areas').
+- Backlog: `docs/backlog.md`. Archive: `docs/archive/` holds finished plans (`mvp-plan.md`: the MVP's decisions and milestones; `iOS-Plan.md`: the iPhone POC's; `areas-plan.md`: areas'; `tags-plan.md`: tags').
 
 ## Commands
 - Core tests: `swift test --package-path Packages/TaDaCore`. On iOS, from `Packages/TaDaCore`: `xcodebuild -scheme TaDaCore -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test`.

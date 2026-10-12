@@ -9,6 +9,13 @@ import TaDaCore
         case project(String)
         /// An area, by vault-relative path.
         case area(String)
+        /// A tag's page, by the tag's path (lowercased); nil for Untagged.
+        case tag(String?)
+    }
+
+    /// What the sidebar lists under Trash: the area and project hierarchy, or the tag tree.
+    enum SidebarMode: String {
+        case projects, tags
     }
 
     enum VaultState: Equatable {
@@ -30,6 +37,12 @@ import TaDaCore
             multiSelection = []
             trashSelection = []
             trashNote = nil
+            switch domain {
+            case .tag: sidebarMode = .tags
+            case .loose, .project, .area: sidebarMode = .projects
+            default: break
+            }
+            updateTagPage()
         }
     }
     /// The file shown in the document pane, by vault-relative path. Picking another domain clears it.
@@ -113,8 +126,8 @@ import TaDaCore
     var trashNote: String?
     /// The file whose file menu is open; its row is ringed.
     var menuTarget: String?
-    /// ⇧⌘M's request for the project or area menu, or ⌘S's and ⌘D's for a date's calendar. The view it names opens the
-    /// menu and sets this back to nil.
+    /// ⇧⌘M's request for the project or area menu, ⌘S's and ⌘D's for a date's calendar, or ⌘T's for tagMenu. The view
+    /// it names opens the menu and sets this back to nil.
     var propertyMenuRequest: PropertyMenuRequest?
     struct PropertyMenuRequest: Equatable {
         let id = UUID()
@@ -129,6 +142,7 @@ import TaDaCore
             case project
             case area
             case date(AgendaEntry.Kind)
+            case tags
         }
     }
     /// Deleting an area, or files that embed images, waits here for the user to confirm; `confirmTrash(_:images:)`
@@ -219,6 +233,14 @@ import TaDaCore
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
     }
+    /// The sidebar's Projects | Tags switch.
+    var sidebarMode: SidebarMode {
+        didSet { defaults.set(sidebarMode.rawValue, forKey: Keys.sidebarMode) }
+    }
+    /// The tag tree's folded parents, by tag path.
+    private(set) var foldedTags: Set<String> {
+        didSet { defaults.set(foldedTags.sorted(), forKey: Keys.foldedTags) }
+    }
     /// The files opened last, most recent first, for the link menu's Recent: eight besides the open one.
     private(set) var recentFiles: [String] {
         didSet { defaults.set(recentFiles, forKey: Keys.recentFiles) }
@@ -253,6 +275,14 @@ import TaDaCore
         foldedGroups[project] = groups.isEmpty ? nil : groups
     }
 
+    func isTagFolded(_ path: String) -> Bool {
+        foldedTags.contains(path)
+    }
+
+    func toggleTagFolded(_ path: String) {
+        if foldedTags.remove(path) == nil { foldedTags.insert(path) }
+    }
+
     /// How long an edit waits before it's saved.
     @ObservationIgnored var saveDelay = Duration.milliseconds(600)
     private let defaults: any SettingsStore
@@ -280,6 +310,8 @@ import TaDaCore
         static let autocomplete = "autocomplete"
         static let hapticsOff = "hapticsOff"
         static let recentFiles = "recentFiles"
+        static let sidebarMode = "sidebarMode"
+        static let foldedTags = "foldedTags"
         static let lastLogged = "lastLogged"
     }
 
@@ -294,6 +326,8 @@ import TaDaCore
         autocomplete = Autocomplete(defaults.dictionary(forKey: Keys.autocomplete))
         haptics = !defaults.bool(forKey: Keys.hapticsOff)
         recentFiles = defaults.stringArray(forKey: Keys.recentFiles) ?? []
+        sidebarMode = defaults.string(forKey: Keys.sidebarMode).flatMap(SidebarMode.init) ?? .projects
+        foldedTags = Set(defaults.stringArray(forKey: Keys.foldedTags) ?? [])
     }
 
     // MARK: Folder
@@ -1346,6 +1380,42 @@ import TaDaCore
         return result
     }
 
+    // MARK: Tags
+
+    /// Adds a tag to the file's `tags:`. A tag it has there already, ignoring case, isn't written.
+    func addTag(_ tag: Tag, to path: String) async {
+        await edit(path) { FrontmatterEditor.addTag(tag, in: $0) }
+    }
+
+    /// Removes a tag from the file's `tags:`. The body's tags stay.
+    func removeTag(_ tag: Tag, from path: String) async {
+        await edit(path) { FrontmatterEditor.removeTag(tag, in: $0) }
+    }
+
+    /// The tag at `path` in the tag tree, spelled as the index shows it; nil when no file carries it or a child.
+    func tag(at path: String) -> Tag? {
+        var nodes = tagTree
+        while let node = nodes.first(where: { path == $0.tag.path || path.hasPrefix($0.tag.path + "/") }) {
+            if node.tag.path == path { return node.tag }
+            nodes = node.children
+        }
+        return nil
+    }
+
+    /// The tag tree's rows, top to bottom, leaving out the children of folded parents.
+    var visibleTags: [(node: TagNode, depth: Int)] {
+        func rows(_ nodes: [TagNode], depth: Int) -> [(node: TagNode, depth: Int)] {
+            nodes.flatMap { [($0, depth)] + (isTagFolded($0.tag.path) ? [] : rows($0.children, depth: depth + 1)) }
+        }
+        return rows(tagTree, depth: 0)
+    }
+
+    /// How many tags are in use, parents included.
+    var tagCount: Int {
+        func count(_ nodes: [TagNode]) -> Int { nodes.reduce(nodes.count) { $0 + count($1.children) } }
+        return count(tagTree)
+    }
+
     // MARK: Move and dates
 
     /// The files a due date or deadline is set on, in list order. With `path` (a right-clicked or dragged row): the
@@ -1387,6 +1457,12 @@ import TaDaCore
     /// date chip or the first picked row.
     func showDateMenu(_ kind: AgendaEntry.Kind) {
         requestMenu(.date(kind), for: dateTargets())
+    }
+
+    /// ⌘T: asks for tagMenu for the open file, under its + Tag chip.
+    func showTagMenu() {
+        guard let selection, index[selection] != nil else { return }
+        requestMenu(.tags, for: [selection])
     }
 
     private func requestMenu(_ menu: PropertyMenuRequest.Menu, for paths: [String]) {
@@ -1435,14 +1511,17 @@ import TaDaCore
     // MARK: New files
 
     /// Creates an untitled task and selects it with its title ready to type. On a project's or area's page it's filed
-    /// there; in Today it's due today; anywhere else it opens in Loose tasks.
+    /// there; in Today it's due today; on a tag's page it carries the tag, and on Untagged it stays there; anywhere else
+    /// it opens in Loose tasks.
     func newTask() async {
         let parent = domainParent
-        var text = Self.newTask(in: parent, today: today)
+        var tags: [Tag] = []
+        if case .tag(_?) = domain, let shownTag { tags = [shownTag] }
+        var text = Self.newTask(in: parent, tags: tags, today: today)
         if parent == nil, domain == .today { text = FrontmatterEditor.set("dueDate", to: .date(today), in: text) }
         guard let path = await create(text, in: Vault.taskFolder) else { return }
         titleFocus = path
-        if parent == nil, domain != .today { domain = .loose }
+        if case .tag = domain {} else if parent == nil, domain != .today { domain = .loose }
         selection = path
     }
 
@@ -1455,11 +1534,11 @@ import TaDaCore
         return path
     }
 
-    private static func newTask(in parent: Item?, today: LocalDate) -> String {
+    private static func newTask(in parent: Item?, tags: [Tag] = [], today: LocalDate) -> String {
         switch parent?.properties.kind {
-        case .project: NewFile.task(project: parent?.title, today: today)
-        case .area: NewFile.task(area: parent?.title, today: today)
-        case .task, nil: NewFile.task(today: today)
+        case .project: NewFile.task(project: parent?.title, tags: tags, today: today)
+        case .area: NewFile.task(area: parent?.title, tags: tags, today: today)
+        case .task, nil: NewFile.task(tags: tags, today: today)
         }
     }
 
@@ -1523,6 +1602,19 @@ import TaDaCore
     private(set) var areas: [AreaProjects] = []
     /// The Logbook: logged tasks and projects, and the completed ones not logged yet.
     private(set) var logbook: [Item] = []
+    /// Every tag in use and its parents, with counts.
+    private(set) var tagTree: [TagNode] = []
+    /// Areas, projects and tasks without a tag.
+    private(set) var untaggedCount = 0
+    /// Areas, projects and tasks with a tag.
+    private(set) var taggedCount = 0
+    /// The iPhone's tag screens' lists, by tag path (nil for Untagged), while each shows.
+    private(set) var phoneTagPages: [String?: TagBrowser] = [:]
+    /// The tag whose page shows, spelled as the index shows it, or as last shown once no file carries it; nil
+    /// elsewhere and on Untagged.
+    private(set) var shownTag: Tag?
+    /// The lists of the tag page or Untagged, while one shows.
+    private(set) var tagPage: TagBrowser?
 
     var todayCount: Int { todayTasks.count { !$0.properties.status.isClosed } }
     var looseCount: Int { looseTasks.count }
@@ -1533,10 +1625,10 @@ import TaDaCore
         updateLists()
     }
 
-    /// Puts an edited item in the index. When its properties are unchanged, as when typing in its body,
-    /// the lists keep their order and take the new item in place of the old.
+    /// Puts an edited item in the index. When its properties are unchanged, as when typing in its body, the lists keep
+    /// their order and take the new item in place of the old; a change to its tags redoes only the tag lists.
     private func updateIndex(replacing item: Item) {
-        guard index[item.path]?.properties == item.properties else { return updateIndex { $0.update(item) } }
+        guard let old = index[item.path], old.properties == item.properties else { return updateIndex { $0.update(item) } }
         index.update(item)
         if let i = todayTasks.firstIndex(where: { $0.path == item.path }) { todayTasks[i] = item }
         if let i = looseTasks.firstIndex(where: { $0.path == item.path }) { looseTasks[i] = item }
@@ -1548,6 +1640,19 @@ import TaDaCore
             if areas[i].area.path == item.path { areas[i].area = item }
             if let j = areas[i].projects.firstIndex(where: { $0.project.path == item.path }) { areas[i].projects[j].project = item }
         }
+        if old.tags != item.tags { return updateTags() }
+        func patch(_ page: TagBrowser) -> TagBrowser {
+            var page = page
+            func patch(_ items: inout [Item]) {
+                if let i = items.firstIndex(where: { $0.path == item.path }) { items[i] = item }
+            }
+            patch(&page.areasAndProjects)
+            patch(&page.completed)
+            for i in page.groups.indices { patch(&page.groups[i].tasks) }
+            return page
+        }
+        if let page = tagPage { tagPage = patch(page) }
+        if !phoneTagPages.isEmpty { phoneTagPages = phoneTagPages.mapValues(patch) }
     }
 
     /// Assigning a list equal to the old one doesn't notify the views that show it.
@@ -1560,6 +1665,42 @@ import TaDaCore
         areas = index.areaProjects()
         logbook = index.items.values.filter { $0.properties.kind != .area && ($0.isLogged || $0.properties.status.isClosed) }
             .sorted(by: VaultIndex.byTitle)
+        updateTags()
+    }
+
+    /// The tag tree, the tagged and Untagged counts and the tag pages.
+    private func updateTags() {
+        tagTree = index.tagTree()
+        let live = index.items.values.count { !$0.isLogged }
+        untaggedCount = index.items.values.count { !$0.isLogged && $0.tags.isEmpty }
+        taggedCount = live - untaggedCount
+        updateTagPage()
+        if !phoneTagPages.isEmpty {
+            phoneTagPages = Dictionary(uniqueKeysWithValues: phoneTagPages.keys.map { ($0, phoneTagPage(for: $0)) })
+        }
+    }
+
+    /// Keeps the tag screen's lists for `path` (nil for Untagged) current while it shows.
+    func showPhoneTagPage(_ path: String?) {
+        phoneTagPages[path] = phoneTagPage(for: path)
+    }
+
+    func hidePhoneTagPage(_ path: String?) {
+        phoneTagPages[path] = nil
+    }
+
+    private func phoneTagPage(for path: String?) -> TagBrowser {
+        index.tagBrowser(path.flatMap { tag(at: $0) ?? Tag($0) })
+    }
+
+    private func updateTagPage() {
+        guard case let .tag(path) = domain else {
+            shownTag = nil
+            tagPage = nil
+            return
+        }
+        shownTag = path.flatMap { path in tag(at: path) ?? (shownTag?.path == path ? shownTag : Tag(path)) }
+        tagPage = index.tagBrowser(path == nil ? nil : shownTag)
     }
 
     var folderDisplayName: String { vault.map { Self.displayName(for: $0.root) } ?? "" }

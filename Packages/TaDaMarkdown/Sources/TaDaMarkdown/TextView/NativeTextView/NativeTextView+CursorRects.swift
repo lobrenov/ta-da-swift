@@ -26,6 +26,9 @@ extension NativeTextView {
             // on every move, so setting the arrow after it flickers — skip
             // super entirely, like the exclusion-zone branch.
             NSCursor.arrow.set()
+        } else if onTagClick != nil, tagHit(atViewPoint: convert(event.locationInWindow, from: nil)) != nil {
+            // Ta Da fork: a drawn tag opens on click, as a link does.
+            NSCursor.pointingHand.set()
         } else if isEditable, isOverWideTableOverlay(event) {
             // Same treatment for wide-table scroll overlays: the overlay is a
             // control surface (rendered image + horizontal scroller), not

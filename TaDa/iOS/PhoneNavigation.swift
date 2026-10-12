@@ -20,12 +20,16 @@ enum PhoneRoute: Hashable {
     case settings(SettingsSection)
     case logbook
     case trash
+    /// Untagged and the tag tree.
+    case tags
+    /// A tag's page, by path; nil for Untagged.
+    case tag(String?)
 
     /// The file the screen shows, if it shows one.
     var path: String? {
         switch self {
         case let .file(path), let .project(path), let .area(path): path
-        case .settings, .logbook, .trash: nil
+        case .settings, .logbook, .trash, .tags, .tag: nil
         }
     }
 }
@@ -34,18 +38,20 @@ enum SettingsSection: String, Hashable, CaseIterable {
     case vault, themes, editor, haptics
 }
 
-/// A picker over everything: a due date or deadline for one or more files, a project or area for tasks, or an area
-/// for projects.
+/// A picker over everything: a due date or deadline for one or more files, a project or area for tasks, an area
+/// for projects, or a file's tags.
 enum PhoneSheet: Identifiable {
     case date(AgendaEntry.Kind, paths: [String])
     case move(paths: [String])
     case area(paths: [String])
+    case tags(path: String)
 
     var id: String {
         switch self {
         case let .date(kind, paths): "\(kind)\(paths)"
         case let .move(paths): "move\(paths)"
         case let .area(paths): "area\(paths)"
+        case let .tags(path): "tags\(path)"
         }
     }
 }

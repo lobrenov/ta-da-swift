@@ -1,4 +1,4 @@
-// Settings ▸ Editor: the Autocomplete switches for brackets, text formatting, and wikilinks and embeds.
+// Settings ▸ Editor: the Autocomplete switches for brackets, text formatting, wikilinks and embeds, and tags.
 #if os(macOS)
 import SwiftUI
 
@@ -19,6 +19,9 @@ struct EditorSettingsView: View {
                     Hairline()
                     row("Wikilinks and embeds", "Typing [[ adds ]], for links and ![[ embeds.",
                         markers: ["[[ ]]", "![[ ]]"], isOn: $model.autocomplete.wikiLinks)
+                    Hairline()
+                    row("Tags", "Typing # and a letter lists the tags in use.",
+                        markers: ["#"], isOn: $model.autocomplete.tags)
                 }
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
             }

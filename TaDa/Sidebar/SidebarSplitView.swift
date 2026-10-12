@@ -1,7 +1,8 @@
 // The window's sidebar beside the workspace. When the window is too narrow for both, the sidebar hides, and the
 // sidebar button (or View ▸ Toggle Sidebar) floats it over the workspace until a click elsewhere or a pick in it.
 // While the sidebar is hidden, a two-finger swipe to the right floats it too; a swipe to the left hides a floating
-// sidebar, or the docked one when the pointer is over it.
+// sidebar. Over the docked sidebar a swipe switches Projects (right) and Tags (left), as the mouse's back and forward
+// buttons do over the docked or floating sidebar.
 #if os(macOS)
 import SwiftUI
 
@@ -12,6 +13,7 @@ struct SidebarSplitView: View {
     @State private var anchor = ScreenAnchor()
     @State private var swipe = SidebarSwipe()
     @State private var swipeMonitor: Any?
+    @State private var mouseButtonMonitor: Any?
 
     var body: some View {
         NavigationSplitView(columnVisibility: $state.columns) {
@@ -78,7 +80,8 @@ struct SidebarSplitView: View {
         withAnimation { state.columns = columns } completion: { state.slid() }
     }
 
-    /// Two-finger swipes, for `SidebarState.swiped`.
+    /// Two-finger swipes, for `SidebarState.swiped` or the sidebar's view, and the mouse's back (button 3) and forward
+    /// (button 4) buttons over the sidebar.
     private func watchSwipes() {
         stopWatchingSwipes()
         swipeMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
@@ -86,17 +89,30 @@ struct SidebarSplitView: View {
                 guard let window = anchor.window, event.window === window,
                       let direction = swipe.track(event.phase, dx: SidebarSwipe.fingersDX(event), dy: event.scrollingDeltaY)
                 else { return }
-                slide(to: state.swiped(direction, overSidebar: event.locationInWindow.x < sidebarWidth) {
-                    SidebarSwipe.scrollsLeft(event)
-                })
+                if state.switchesViews(overSidebar: event.locationInWindow.x < sidebarWidth, swiping: true) {
+                    model.sidebarMode = direction == .left ? .tags : .projects
+                } else {
+                    state.swiped(direction) { SidebarSwipe.scrollsLeft(event) }
+                }
             }
             return event
+        }
+        mouseButtonMonitor = NSEvent.addLocalMonitorForEvents(matching: .otherMouseDown) { event in
+            let (button, x, eventWindow) = (event.buttonNumber, event.locationInWindow.x, event.window)
+            let used = MainActor.assumeIsolated {
+                guard let window = anchor.window, eventWindow === window, [3, 4].contains(button),
+                      state.switchesViews(overSidebar: x < sidebarWidth, swiping: false) else { return false }
+                model.sidebarMode = button == 3 ? .projects : .tags
+                return true
+            }
+            return used ? nil : event
         }
     }
 
     private func stopWatchingSwipes() {
-        if let swipeMonitor { NSEvent.removeMonitor(swipeMonitor) }
+        for monitor in [swipeMonitor, mouseButtonMonitor].compactMap({ $0 }) { NSEvent.removeMonitor(monitor) }
         swipeMonitor = nil
+        mouseButtonMonitor = nil
     }
 }
 

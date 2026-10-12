@@ -24,8 +24,8 @@ struct FileMenuTests {
 
     @Test func everyFileCanBeRevealedInFinderWithoutAShortcut() async {
         let model = await folder.model()
-        #expect(titles("tasks/One.md", model) == ["Move", "Schedule", "Set Deadline…", "Reveal in Finder", "Delete"])
-        #expect(titles("projects/Ta Da MVP.md", model) == ["Move", "Schedule", "Set Deadline…", "Reveal in Finder", "Delete"])
+        #expect(titles("tasks/One.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Reveal in Finder", "Delete"])
+        #expect(titles("projects/Ta Da MVP.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Reveal in Finder", "Delete"])
 
         let paths = ["tasks/One.md", "tasks/Two.md", "tasks/Three.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
@@ -41,10 +41,19 @@ struct FileMenuTests {
         #expect(actions.first { $0.title == "Reveal in Finder" }?.shortcut == "")
     }
 
+    @Test func tagsOpensTheMenuForTheOneFileTheMenuActsOn() async {
+        let model = await folder.model()
+        let tags = FileMenuAction.actions(for: "tasks/One.md", model: model).first { $0.title == "Tags…" }
+        #expect(tags?.shortcut == "⌘T")
+        tags?.run()
+        #expect(model.propertyMenuRequest?.menu == .tags)
+        #expect(model.propertyMenuRequest?.paths == ["tasks/One.md"] && model.propertyMenuRequest?.onChip == false)
+    }
+
     @Test func anAreasMenuMakesFilesInItOpensItAndDeletes() async throws {
         try folder.write("---\ntype: area\n---\n", "areas/Home.md")
         let model = await folder.model()
-        #expect(titles("areas/Home.md", model) == ["New Task in Home", "New Project in Home", "Open Area File", "Reveal in Finder", "Delete"])
+        #expect(titles("areas/Home.md", model) == ["New Task in Home", "New Project in Home", "Open Area File", "Tags…", "Reveal in Finder", "Delete"])
         FileMenuAction.actions(for: "areas/Home.md", model: model).first { $0.title == "Open Area File" }?.run()
         #expect(model.domain == .area("areas/Home.md") && model.selection == "areas/Home.md")
     }

@@ -147,3 +147,30 @@ func readerIgnoresNonTaDaFrontmatter(_ yaml: String) {
     #expect(read.properties.dueDate == LocalDate("2026-10-02"))
     #expect(read.warnings.isEmpty)
 }
+
+/// The canvas's TagModel edge cases for `tags:`, plus a comma-split string.
+private let tagCases: [(yaml: String, tags: [String])] = [
+    ("tags: [a, b c]", ["a", "b c"]),
+    ("tags:\n  - \"#errands\"", ["errands"]),
+    ("tags:\n  - errands\n  - Home/Garden/\n  - \"\"\n  - [nested]", ["errands", "Home/Garden"]),
+    ("tags: \"errands, quick win, #home/garden\"", ["errands", "quick win", "home/garden"]),
+    ("tags: errands, #comment", ["errands"]),
+    ("tags: errands", ["errands"]),
+    ("tags: [Errands, errands, \"#errands\"]", ["Errands"]),
+    ("tags:", []),
+    ("tags: []", []),
+    ("tags: ~", []),
+    ("tags: 2026", ["2026"]),
+]
+
+@Test(arguments: tagCases)
+func readerReadsTags(_ yaml: String, _ tags: [String]) throws {
+    let read = try #require(PropertyReader.read("type: task\nstatus: Doing\n\(yaml)\n"))
+    #expect(read.properties.tags.map(\.name) == tags)
+    #expect(read.warnings.isEmpty)
+}
+
+@Test func readerWarnsOnTagsMapping() throws {
+    let read = try #require(PropertyReader.read("type: area\ntags:\n  a: b\n"))
+    #expect(read.properties.tags.isEmpty && read.warnings == [.unexpectedValue(key: "tags")])
+}

@@ -128,3 +128,74 @@ private let index = VaultIndex(items)
     #expect(index.tasks.filter { index.isOverdue($0, today: today) }.isEmpty)
     #expect(index.activeProjects().map { "\($0.project.title) \($0.done)/\($0.total)" } == ["Gamma 1/2"])
 }
+
+// MARK: Tags, on TagVault
+
+private func tagIndex() async -> VaultIndex { await Vault(root: tagVault).loadIndex() }
+
+private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
+    nodes.flatMap { [String(repeating: "  ", count: depth) + "\($0.tag.name) \($0.count)"] + describe($0.children, depth: depth + 1) }
+}
+
+@Test func tagTreeRollsUpCountsAndLeavesOutLoggedAndTrashedFiles() async {
+    #expect(describe(await tagIndex().tagTree()) == [
+        "errands 3",
+        "Home 4",
+        "  home/garden 3",
+        "people 2",
+        "  people/dan 1",
+        "  People/Max 1",
+        "quick win 2",
+        "Work 2",
+        "  Work/Clients 2",
+    ])
+}
+
+@Test func itemsTaggedIncludeChildren() async throws {
+    let index = await tagIndex()
+    #expect(index.items(tagged: try #require(Tag("home"))).map(\.title) == ["Buy mulch", "Garden", "Home", "Prune the lemon tree"])
+    #expect(index.items(tagged: try #require(Tag("HOME/GARDEN"))).map(\.title) == ["Buy mulch", "Garden", "Prune the lemon tree"])
+    #expect(index.items(tagged: try #require(Tag("logged-only"))).isEmpty)
+    #expect(index.items(tagged: try #require(Tag("trashed-only"))).isEmpty)
+}
+
+@Test func untaggedIsEveryFileWithoutATag() async {
+    #expect(await tagIndex().untagged().map(\.title) == ["Untagged task", "Work"])
+}
+
+@Test func tagBrowserListsParentsThenOpenTasksWithLooseLastThenCompleted() async throws {
+    let index = await tagIndex()
+    func groups(_ browser: TagBrowser) -> [String] {
+        browser.groups.map { "\($0.parent?.title ?? "Loose"): \($0.tasks.map(\.title).joined(separator: ", "))" }
+    }
+
+    let errands = index.tagBrowser(try #require(Tag("errands")))
+    #expect(errands.areasAndProjects.isEmpty && errands.completed.isEmpty && errands.children.isEmpty)
+    #expect(groups(errands) == ["Home: ", "Garden: Buy mulch, Prune the lemon tree", "Loose: Message Max"])
+
+    let home = index.tagBrowser(try #require(Tag("Home")))
+    #expect(home.areasAndProjects.map(\.title) == ["Home", "Garden"])
+    #expect(home.children.map(\.tag.name) == ["home/garden"])
+
+    let people = index.tagBrowser(try #require(Tag("people")))
+    #expect(groups(people) == ["Loose: Message Max"])
+    #expect(people.completed.map(\.title) == ["Call Dan"])
+    #expect(people.children.map { "\($0.tag.name) \($0.count)" } == ["people/dan 1", "People/Max 1"])
+
+    let untagged = index.tagBrowser(nil)
+    #expect(untagged.areasAndProjects.map(\.title) == ["Work"] && groups(untagged) == ["Loose: Untagged task"])
+    #expect(untagged.children.isEmpty)
+}
+
+@Test func tagSuggestionsMatchSegmentStartsFirstSegmentFirstThenByUse() async {
+    let index = await tagIndex()
+    func names(_ query: String, limit: Int = 50) -> [String] { index.tagSuggestions(query, limit: limit).map(\.tag.name) }
+    #expect(names("pe") == ["people", "people/dan", "People/Max"])
+    #expect(names("gar") == ["home/garden"])
+    #expect(names("C") == ["Work/Clients"])
+    #expect(names("w") == ["Work", "Work/Clients"])
+    #expect(names("win").isEmpty, "a space doesn't start a segment")
+    #expect(names("home/g") == ["home/garden"])
+    #expect(names("") == ["Home", "errands", "home/garden", "people", "quick win", "Work", "Work/Clients", "people/dan", "People/Max"])
+    #expect(names("", limit: 2) == ["Home", "errands"])
+}

@@ -66,6 +66,7 @@ struct AreaBrowserView: View {
             Text("^[\(projects) project](inflect: true) · ^[\(tasks) task](inflect: true)")
                 .font(.system(size: 11.5))
                 .foregroundStyle(theme.color(\.muted))
+            TagChipRow(model: model, item: area)
         }
     }
 

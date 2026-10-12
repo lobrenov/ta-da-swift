@@ -24,6 +24,12 @@ extension NativeTextView {
         // Ta Da fork: a click on a drawn image selects it.
         if selectImageEmbedIfHit(event: event) { return }
         if toggleCalloutFoldIfHit(event: event) { return }
+        // Ta Da fork: a click on a drawn tag opens it.
+        if event.clickCount == 1, event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock).isEmpty,
+           let onTagClick, let tag = tagHit(atViewPoint: convert(event.locationInWindow, from: nil)) {
+            onTagClick(tag)
+            return
+        }
         if remapClickInParagraphSpacing(event: event) { return }
         dragStartMouseScreenLoc = NSEvent.mouseLocation
         let boostTimer = Timer(timeInterval: 1.0 / configuration.dragSelection.ticksPerSecond, repeats: true) { [weak self] _ in

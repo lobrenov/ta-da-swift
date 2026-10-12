@@ -75,6 +75,32 @@ struct DesignRenderTests {
             areas.selection = selection
             try await render(areas, to: output.appending(path: "\(name).png"))
         }
+        // Tags, on TaDaCore's TagVault fixture, in the default dark scheme.
+        let tagVault = URL(filePath: #filePath).deletingLastPathComponent()
+            .appending(path: "../Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/TagVault").standardized
+        AppModel.setLastLogged(tagVault, to: LocalDate("2026-10-02")!, in: defaults)
+        let tags = AppModel(defaults: defaults)
+        tags.today = LocalDate("2026-10-02")!
+        await tags.choose(tagVault)
+        tags.appearance = .dark
+        tags.domain = .project("projects/Garden.md")
+        tags.selection = "tasks/Prune the lemon tree.md"
+        try await render(tags, to: output.appending(path: "tag-task.png"))
+        tags.domain = .area("areas/Home.md")
+        try await render(tags, to: output.appending(path: "tag-area.png"))
+        tags.domain = .tag("errands")
+        tags.selection = "tasks/Message Max.md"
+        try await render(tags, to: output.appending(path: "tag-browser.png"))
+        tags.domain = .tag("people")
+        try await render(tags, to: output.appending(path: "tag-browser-parent.png"))
+        tags.domain = .tag(nil)
+        try await render(tags, to: output.appending(path: "tag-untagged.png"))
+        tags.sidebarMode = .tags
+        tags.domain = .tag("work/clients")
+        try await render(SidebarView(model: tags).themed(by: tags), width: 240, to: output.appending(path: "tag-sidebar.png"))
+        tags.sidebarMode = .projects
+        try await render(SidebarView(model: tags).themed(by: tags), width: 240, to: output.appending(path: "tag-sidebar-projects.png"))
+
         // The Logbook, on a copy of the design's data with its completed files logged, one completed and one cancelled
         // today, in the default dark scheme.
         let copy = FileManager.default.temporaryDirectory.appending(path: "DesignVault-\(UUID().uuidString)", directoryHint: .isDirectory)

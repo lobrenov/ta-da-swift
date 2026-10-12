@@ -10,6 +10,8 @@ public struct BodyScan: Equatable, Sendable {
     public var links: [WikiLink]
     /// Every `![[…]]`, as `links` finds them.
     public var embeds: [WikiLink]
+    /// Every inline `#tag`, first spelling kept, in order. Code, HTML, links' text and `[[…]]` hold none.
+    public var tags: [Tag]
 }
 
 public enum BodyScanner {
@@ -19,7 +21,7 @@ public enum BodyScanner {
         var walker = Walker(bytes: Array(body.utf8), firstLineIndex: firstLineIndex)
         walker.visit(document)
         let summary = document.children.lazy.compactMap { $0 as? Paragraph }.first?.plainText
-        return BodyScan(summary: summary, checkboxes: walker.checkboxes, links: walker.links, embeds: walker.embeds)
+        return BodyScan(summary: summary, checkboxes: walker.checkboxes, links: walker.links, embeds: walker.embeds, tags: walker.tags.unique)
     }
 
     /// Where each `![[…]]` that `scan` finds sits in `body`: the range of its target (the text before any `#` or
@@ -62,6 +64,7 @@ public enum BodyScanner {
         var checkboxes: [Checkbox] = []
         var links: [WikiLink] = []
         var embeds: [WikiLink] = []
+        var tags: [Tag] = []
         /// The UTF-8 offsets in `bytes` of each text node that holds `[[`.
         var textSpans: [Range<Int>] = []
         private var spanCursor = 0
@@ -81,6 +84,9 @@ public enum BodyScanner {
             let found = WikiLink.scan(text.string)
             links += found.links
             embeds += found.embeds
+            if text.string.contains("#"), !Self.isInLink(text) {
+                tags += InlineTags.scan(source(of: text) ?? text.string, atBoundary: Self.startsAtBoundary(text))
+            }
             if text.string.contains("[["), let range = text.range { textSpans.append(span(of: text.string, reportedAt: range.lowerBound)) }
         }
 
@@ -104,6 +110,41 @@ public enum BodyScanner {
             let offset = found ?? min(lineStarts[start.line - 1] + start.column - 1, bytes.count)
             if found != nil { spanCursor = offset + expected.count }
             return offset..<min(offset + expected.count, bytes.count)
+        }
+
+        /// The text as written, escapes and `#` entities kept, when the parser's reported range holds it.
+        private func source(of text: Text) -> String? {
+            guard let range = text.range, range.lowerBound.line == range.upperBound.line, range.lowerBound.line <= lineStarts.count
+            else { return nil }
+            let lineStart = lineStarts[range.lowerBound.line - 1]
+            let (start, end) = (lineStart + range.lowerBound.column - 1, lineStart + range.upperBound.column - 1)
+            guard start <= end, end <= bytes.count, let source = String(bytes: bytes[start..<end], encoding: .utf8) else { return nil }
+            guard source != text.string else { return source }
+            let decoded = source.replacing(#/\\([!-\/:-@\[-`{-~])/#) { String($0.1) }
+                .replacing("&#35;", with: "#").replacing("&num;", with: "#")
+            return decoded == text.string ? source : nil
+        }
+
+        /// Whether the text is a link's or an image's text, or an autolink.
+        private static func isInLink(_ markup: Markup) -> Bool {
+            var node = markup.parent
+            while let current = node {
+                if current is Link || current is Image { return true }
+                node = current.parent
+            }
+            return false
+        }
+
+        /// Whether the markup starts a line or follows whitespace in the source. Inline containers, such as emphasis,
+        /// take the boundary of their own start.
+        private static func startsAtBoundary(_ markup: Markup) -> Bool {
+            guard let parent = markup.parent else { return true }
+            guard markup.indexInParent > 0, let previous = parent.child(at: markup.indexInParent - 1) else {
+                return parent is InlineMarkup ? startsAtBoundary(parent) : true
+            }
+            if previous is SoftBreak || previous is LineBreak { return true }
+            if let text = previous as? Text { return text.string.last?.isWhitespace ?? true }
+            return false
         }
 
         /// Reads `[c]` from the source after the item's list marker. swift-markdown only recognises

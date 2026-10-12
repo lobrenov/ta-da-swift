@@ -156,6 +156,13 @@ struct AppModelTests {
         #expect(!second.autocomplete.formatting && second.autocomplete.brackets && second.autocomplete.wikiLinks)
     }
 
+    @Test func theTagsSwitchIsRemembered() {
+        let first = AppModel(defaults: folder.defaults)
+        #expect(first.autocomplete.tags)
+        first.autocomplete.tags = false
+        #expect(!AppModel(defaults: folder.defaults).autocomplete.tags)
+    }
+
     @Test func unknownThemeNamesFallBackToTomorrow() {
         folder.defaults.set("Monokai", forKey: "themeSet")
         folder.defaults.set("Monokai Light", forKey: "lightScheme")
@@ -386,6 +393,25 @@ struct AppModelTests {
         #expect(model.propertyMenuRequest?.menu == .date(.due))
         #expect(model.propertyMenuRequest?.paths == paths && model.propertyMenuRequest?.anchor == paths[0])
         #expect(model.propertyMenuRequest?.onChip == false)
+    }
+
+    @Test func showTagMenuAsksTheOpenFilesChipAndNeedsAnOpenFile() async {
+        let model = await folder.model()
+        model.showTagMenu()
+        #expect(model.propertyMenuRequest == nil, "no open file")
+
+        let paths = ["tasks/Loose.md", "tasks/Due today.md"]
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
+        model.selection = paths[1]
+        model.showTagMenu()
+        #expect(model.propertyMenuRequest?.menu == .tags)
+        #expect(model.propertyMenuRequest?.paths == [paths[1]] && model.propertyMenuRequest?.onChip == true)
+
+        model.propertyMenuRequest = nil
+        model.selection = paths[0]
+        model.extendSelection(to: paths[1])
+        model.showTagMenu()
+        #expect(model.propertyMenuRequest == nil, "picked files aren't an open file")
     }
 
     @Test func settingSeveralDatesWritesOnlyTheOnesThatChange() async throws {

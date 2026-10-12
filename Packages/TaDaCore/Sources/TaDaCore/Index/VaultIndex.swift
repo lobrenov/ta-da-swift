@@ -2,8 +2,8 @@ import Foundation
 
 /// Every Ta Da item in the vault, held in memory. Files are the only truth; this is built at launch
 /// and patched as files change. Each patch touches only the changed item's entries in the maps.
-/// Logged files (in `.logbook/`) are held too: links to them resolve, but the lists of tasks, projects and areas, and
-/// the files filed under a parent, leave them out.
+/// Logged files (in `.logbook/`) are held too: links to them resolve, but the lists of tasks, projects and areas, the
+/// files filed under a parent, and the tag map leave them out.
 public struct VaultIndex: Sendable {
     public private(set) var items: [String: Item] = [:]
     /// Every item's title, lowercased.
@@ -19,6 +19,10 @@ public struct VaultIndex: Sendable {
     private var linkersByTitle: [String: Set<String>] = [:]
     /// Lowercased image filename → the paths of the items that embed it.
     private var embeddersByName: [String: Set<String>] = [:]
+    /// Tag path → the paths of the items that aren't logged and carry it (not counting its children).
+    private var pathsByTag: [String: Set<String>] = [:]
+    /// Tag path → the tag as spelled by the carrier with the first path, and that path, for each tag in `pathsByTag`.
+    private var tagsByPath: [String: (tag: Tag, path: String)] = [:]
 
     public init(_ items: [Item] = []) {
         for item in items { update(item) }
@@ -30,16 +34,19 @@ public struct VaultIndex: Sendable {
     public mutating func update(_ item: Item) {
         if let old = items.updateValue(item, forKey: item.path) {
             removeLinks(of: old)
+            removeTags(of: old)
         } else {
             addTitle(of: item.path)
         }
         addLinks(of: item)
+        addTags(of: item)
     }
 
     public mutating func remove(_ path: String) {
         guard let old = items.removeValue(forKey: path) else { return }
         removeTitle(of: path)
         removeLinks(of: old)
+        removeTags(of: old)
     }
 
     /// Items that aren't logged.
@@ -49,6 +56,13 @@ public struct VaultIndex: Sendable {
     public var areas: [Item] { liveItems.filter { $0.properties.kind == .area } }
     /// Logged tasks and projects.
     public var logged: [Item] { items.values.filter(\.isLogged) }
+
+    /// Every tag carried by an item that isn't logged, spelled as in the carrier with the first path, in no order.
+    /// Parents carried by no file are left out.
+    var carriedTags: [Tag] { tagsByPath.values.map(\.tag) }
+
+    /// The paths of the items that aren't logged and carry this tag path itself, not its children.
+    func paths(carrying path: String) -> Set<String> { pathsByTag[path] ?? [] }
 
     /// Items with this title, ignoring case; one that isn't logged comes first, then the first by path.
     public func items(titled title: String) -> [Item] {
@@ -193,6 +207,25 @@ public struct VaultIndex: Sendable {
         if let title = item.properties.area?.title.lowercased() { Self.remove(item.path, at: title, from: &filedByAreaTitle) }
         for link in item.links { Self.remove(item.path, at: link.title.lowercased(), from: &linkersByTitle) }
         for name in Self.attachmentNames(of: item) { Self.remove(item.path, at: name, from: &embeddersByName) }
+    }
+
+    private mutating func addTags(of item: Item) {
+        guard !item.isLogged else { return }
+        for use in item.tags {
+            pathsByTag[use.tag.path, default: []].insert(item.path)
+            if tagsByPath[use.tag.path].map({ item.path < $0.path }) ?? true { tagsByPath[use.tag.path] = (use.tag, item.path) }
+        }
+    }
+
+    private mutating func removeTags(of item: Item) {
+        guard !item.isLogged else { return }
+        for use in item.tags {
+            Self.remove(item.path, at: use.tag.path, from: &pathsByTag)
+            guard tagsByPath[use.tag.path]?.path == item.path else { continue }
+            tagsByPath[use.tag.path] = pathsByTag[use.tag.path]?.min().flatMap { path in
+                items[path]?.tags.first { $0.tag.path == use.tag.path }.map { ($0.tag, path) }
+            }
+        }
     }
 
     /// The lowercased image filenames an item embeds.

@@ -107,3 +107,103 @@ func textValuesReadBackUnchanged(_ value: String) throws {
     #expect((try Yams.load(yaml: yaml) as? [String: Any])?["contexts"] as? [String] == ["@computer", "a \"q\"", "Café"])
     #expect(try #require(PropertyReader.read(yaml)).properties.project?.title == "Game Jam - Starfall")
 }
+
+// MARK: Tags
+
+private func tag(_ name: String) -> TaDaCore.Tag { TaDaCore.Tag(name)! }
+
+/// The file's tags after parsing, by name.
+private func tagNames(_ text: String) throws -> [String] {
+    try #require(Item(parsing: text, path: "t.md")).properties.tags.map(\.name)
+}
+
+@Test func addTagInsertsAMissingKeyAfterCreatedDate() throws {
+    let text = "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-10-01\ndueDate: 2026-10-02\n---\nBody #inline\n"
+    let after = FrontmatterEditor.addTag(tag("errands"), in: text)
+    #expect(after == "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-10-01\ntags: [errands]\ndueDate: 2026-10-02\n---\nBody #inline\n")
+    #expect(FrontmatterEditor.addTag(tag("quick win"), in: "---\r\ntype: area\r\n---\r\n") == "---\r\ntype: area\r\ntags: [quick win]\r\n---\r\n")
+    #expect(FrontmatterEditor.addTag(tag("a"), in: "No frontmatter #a\n") == "No frontmatter #a\n")
+}
+
+@Test func addTagKeepsAFlowList() throws {
+    let text = "---\ntype: task\nstatus: Doing\ntags: [Errands, \"#home/garden\"] # keep\n---\n"
+    let after = FrontmatterEditor.addTag(tag("people/Max"), in: text)
+    #expect(changedLines(text, after) == (["tags: [Errands, \"#home/garden\"] # keep"], ["tags: [Errands, \"#home/garden\", people/Max] # keep"]))
+    #expect(FrontmatterEditor.addTag(tag("errands"), in: text) == text, "already there, ignoring case")
+    #expect(FrontmatterEditor.addTag(tag("HOME/GARDEN"), in: text) == text)
+    let multiLine = "---\ntype: task\ntags: [a,\n  b]\n---\n"
+    #expect(FrontmatterEditor.addTag(tag("c"), in: multiLine) == "---\ntype: task\ntags: [a, b, c]\n---\n")
+    #expect(try tagNames(FrontmatterEditor.addTag(tag("x, y"), in: text)) == ["Errands", "home/garden", "x, y"])
+}
+
+@Test func addTagKeepsABlockList() throws {
+    let text = "---\ntype: task\ntags:\n  - errands\n  # a comment\n  - \"quick win\"\nstatus: Doing\n---\n"
+    let after = FrontmatterEditor.addTag(tag("home/garden"), in: text)
+    #expect(after == "---\ntype: task\ntags:\n  - errands\n  # a comment\n  - \"quick win\"\n  - home/garden\nstatus: Doing\n---\n")
+    let unindented = "---\r\ntype: task\r\ntags:\r\n- errands\r\n---\r\n"
+    #expect(FrontmatterEditor.addTag(tag("2026"), in: unindented) == "---\r\ntype: task\r\ntags:\r\n- errands\r\n- \"2026\"\r\n---\r\n")
+    #expect(FrontmatterEditor.addTag(tag("Quick Win"), in: text) == text)
+}
+
+@Test func addTagTurnsAnEmptyKeyOrAStringIntoAFlowList() throws {
+    #expect(FrontmatterEditor.addTag(tag("a"), in: "---\ntype: task\ntags: # none yet\n---\n") == "---\ntype: task\ntags: [a] # none yet\n---\n")
+    #expect(FrontmatterEditor.addTag(tag("c"), in: "---\ntype: task\ntags: a, b # old\n---\n") == "---\ntype: task\ntags: [a, b, c] # old\n---\n")
+    for empty in ["tags:", "tags: []", "tags: ~"] {
+        #expect(FrontmatterEditor.addTag(tag("a"), in: "---\ntype: task\n\(empty)\n---\n") == "---\ntype: task\ntags: [a]\n---\n", "\(empty)")
+    }
+    #expect(FrontmatterEditor.addTag(tag("c"), in: "---\ntype: task\ntags: a, b\n---\n") == "---\ntype: task\ntags: [a, b, c]\n---\n")
+    #expect(FrontmatterEditor.addTag(tag("c"), in: "---\ntype: task\ntags: \"a, #b\"\n---\n") == "---\ntype: task\ntags: [a, \"#b\", c]\n---\n")
+    #expect(FrontmatterEditor.addTag(tag("B"), in: "---\ntype: task\ntags: \"a, #b\"\n---\n") == "---\ntype: task\ntags: \"a, #b\"\n---\n")
+}
+
+@Test func removeTagKeepsTheListsStyle() throws {
+    let flow = "---\ntype: task\ntags: [Errands, \"#home/garden\", 'quick win']\n---\nBody #errands\n"
+    #expect(FrontmatterEditor.removeTag(tag("home/garden"), in: flow) == "---\ntype: task\ntags: [Errands, 'quick win']\n---\nBody #errands\n")
+    let block = "---\ntype: task\ntags:\n  - errands\n  - \"#Home/Garden\"\n  - quick win\nstatus: Doing\n---\n"
+    #expect(FrontmatterEditor.removeTag(tag("home/garden"), in: block) == "---\ntype: task\ntags:\n  - errands\n  - quick win\nstatus: Doing\n---\n")
+    #expect(FrontmatterEditor.removeTag(tag("b"), in: "---\ntype: task\ntags: a, b\n---\n") == "---\ntype: task\ntags: [a]\n---\n")
+}
+
+@Test func removingTheLastTagLeavesAnEmptyKey() throws {
+    #expect(FrontmatterEditor.removeTag(tag("a"), in: "---\ntype: task\ntags: [a]\n---\n") == "---\ntype: task\ntags:\n---\n")
+    #expect(FrontmatterEditor.removeTag(tag("a"), in: "---\r\ntype: task\r\ntags:\r\n  - A\r\nstatus: Doing\r\n---\r\n") == "---\r\ntype: task\r\ntags:\r\nstatus: Doing\r\n---\r\n")
+    #expect(FrontmatterEditor.removeTag(tag("a"), in: "---\ntype: task\ntags: a\n---\n") == "---\ntype: task\ntags:\n---\n")
+    #expect(try tagNames("---\ntype: task\nstatus: Doing\ntags:\n---\n").isEmpty)
+}
+
+@Test func removeTagLeavesOtherTextAlone() {
+    let text = "---\ntype: task\ntags: [a]\n---\n#b in the body\n"
+    #expect(FrontmatterEditor.removeTag(tag("b"), in: text) == text, "body tags are never rewritten")
+    #expect(FrontmatterEditor.removeTag(tag("a"), in: "---\ntype: task\n---\n") == "---\ntype: task\n---\n")
+    #expect(FrontmatterEditor.removeTag(tag("a"), in: "#a only") == "#a only")
+}
+
+@Test(arguments: ["errands", "quick win", "home/garden", "2026", "-dash", "yes", "a: b", "x, y", "[x]", "Café ☕️", "#hash"])
+func addedAndRemovedTagsReadBack(_ name: String) throws {
+    let new = tag(name)
+    for list in ["tags: [first]", "tags:\n  - first", "tags: first", ""] {
+        let text = "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-10-01\n\(list)\n---\n"
+        let added = FrontmatterEditor.addTag(new, in: text)
+        let expected = list.isEmpty ? [new.name] : ["first", new.name]
+        #expect(try tagNames(added) == expected, "\(list)")
+        #expect(try tagNames(FrontmatterEditor.removeTag(new, in: added)) == expected.dropLast(), "\(list)")
+    }
+}
+
+@Test func tagEditsLeaveValuesTheyCantSpliceAlone() throws {
+    for value in ["tags: [a, # first\n  b]", "tags: [a,\n  # note\n  b]", "tags: a,\n  b", "tags: >-\n  a, b", "tags: |\n  a"] {
+        let text = "---\ntype: task\nstatus: Doing\n\(value)\n---\n"
+        #expect(FrontmatterEditor.addTag(tag("c"), in: text) == text, "\(value)")
+        #expect(FrontmatterEditor.removeTag(tag("a"), in: text) == text, "\(value)")
+    }
+}
+
+@Test func tagEditsReachBlockItemsPastBlankLines() throws {
+    let text = "---\ntype: task\ntags: # mine\n  - a\n\n  - b\n\nstatus: Doing\n---\n"
+    #expect(try tagNames(text) == ["a", "b"])
+    let removed = FrontmatterEditor.removeTag(tag("b"), in: text)
+    #expect(removed == "---\ntype: task\ntags: # mine\n  - a\n\n\nstatus: Doing\n---\n")
+    #expect(FrontmatterEditor.removeTag(tag("a"), in: removed) == "---\ntype: task\ntags: # mine\n\n\nstatus: Doing\n---\n")
+    #expect(FrontmatterEditor.addTag(tag("b"), in: text) == text)
+    #expect(FrontmatterEditor.addTag(tag("c"), in: text) == "---\ntype: task\ntags: # mine\n  - a\n\n  - b\n  - c\n\nstatus: Doing\n---\n")
+}

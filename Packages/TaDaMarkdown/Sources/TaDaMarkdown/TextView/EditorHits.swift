@@ -2,8 +2,8 @@
 //  EditorHits.swift
 //  TaDaMarkdown
 //
-//  Ta Da fork: task boxes and callout title lines under a point, and the edits
-//  a click, tap or menu makes to them. AppKit's event handling is in
+//  Ta Da fork: task boxes, callout title lines and tags under a point, and the
+//  edits a click, tap or menu makes to them. AppKit's event handling is in
 //  `NativeTextView+TaskCheckbox.swift` and `NativeTextView+Callout.swift`;
 //  UIKit's gestures in `iOS/NativeTextViewIOS.swift`.
 //
@@ -53,6 +53,23 @@ extension NativeTextView {
             }
         }
         return hit
+    }
+
+    /// The tag of the drawn `#tag` (or its bubble's padding) under a point in the text view's coordinates.
+    func tagHit(atViewPoint viewPoint: CGPoint) -> String? {
+        guard let textContainer = optionalTextContainer, let bridge = layoutBridge,
+              let storage = optionalTextStorage, storage.length > 0 else { return nil }
+        let point = CGPoint(x: viewPoint.x - textContainerOrigin.x, y: viewPoint.y - textContainerOrigin.y)
+        let padding = configuration.tags?.bubble.horizontalPadding ?? 0
+        let index = characterIndex(atViewPoint: viewPoint)
+        for location in [index, index - 1] where location >= 0 && location < storage.length {
+            var range = NSRange()
+            guard let tag = storage.attribute(.markdownTag, at: location, effectiveRange: &range) as? String else { continue }
+            if bridge.boundingRect(forCharacterRange: range, in: textContainer).insetBy(dx: -padding, dy: -2).contains(point) {
+                return tag
+            }
+        }
+        return nil
     }
 
     /// The box under a point in the text view's coordinates, if its text still reads as a box.

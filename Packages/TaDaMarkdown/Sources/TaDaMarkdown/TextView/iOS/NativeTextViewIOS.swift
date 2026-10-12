@@ -26,6 +26,8 @@ final class NativeTextView: UITextView {
     var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
     /// See ``NativeTextViewWrapper/onTaskCheckboxToggle``.
     var onTaskCheckboxToggle: ((Character) -> Void)?
+    /// See ``NativeTextViewWrapper/onTagClick``.
+    var onTagClick: ((String) -> Void)?
     /// See ``NativeTextViewWrapper/onPasteImage``.
     var onPasteImage: ((UIPasteboard) -> String?)?
     /// The title line location of the callout whose menu is open.
@@ -158,13 +160,15 @@ final class NativeTextView: UITextView {
 
     // MARK: Taps and presses
 
-    /// A tap on a task box toggles it; on a `[[ ]]` link, goes to `onLinkClick`; on a foldable callout's title row
+    /// A tap on a task box toggles it; on a drawn tag, goes to `onTagClick`; on a `[[ ]]` link, to `onLinkClick`; on a foldable callout's title row
     /// (outside its text), folds it. Anywhere else it puts the caret there, as the tap that brings up the keyboard
     /// must: UIKit's finds the caret's place after the focus restyles the text, which puts it at the end.
     func handleTap(at point: CGPoint) {
         if let hit = taskCheckboxHit(atViewPoint: point) {
             toggleTaskCheckbox(hit)
             onTaskCheckboxToggle?(hit.marker)
+        } else if let onTagClick, let tag = tagHit(atViewPoint: point) {
+            onTagClick(tag)
         } else if let target = wikiLinkHit(atViewPoint: point) {
             coordinator?.onLinkClick?(target)
         } else if let hit = calloutTitleHit(atViewPoint: point), toggleCalloutFold(hit) {
@@ -189,6 +193,7 @@ final class NativeTextView: UITextView {
 
     fileprivate func takesTap(at point: CGPoint) -> Bool {
         if taskCheckboxHit(atViewPoint: point) != nil { return true }
+        if onTagClick != nil, tagHit(atViewPoint: point) != nil { return true }
         if coordinator?.onLinkClick != nil, wikiLinkHit(atViewPoint: point) != nil { return true }
         if let hit = calloutTitleHit(atViewPoint: point), hit.header.fold.length == 1 { return true }
         return isEditable && !isFirstResponder

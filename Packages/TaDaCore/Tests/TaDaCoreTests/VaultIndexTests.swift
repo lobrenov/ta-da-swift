@@ -125,3 +125,45 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
     #expect((index.progress(of: kombi).done, index.progress(of: kombi).total) == (2, 3), "progress counts logged tasks")
     #expect(index.search("photos").isEmpty && index.search("open").map(\.title) == ["Open"])
 }
+
+@Test func indexPatchesTagsPerItem() {
+    let a = makeItem("tasks/A.md", "type: task\nstatus: Doing\ntags: [Errands]", body: "#home/garden")
+    let b = makeItem("tasks/B.md", "type: task\nstatus: Doing", body: "#errands")
+    var index = VaultIndex([a, b])
+    #expect(index.carriedTags.map(\.name).sorted() == ["Errands", "home/garden"])
+    #expect(index.paths(carrying: "errands") == [a.path, b.path])
+    #expect(index.paths(carrying: "home").isEmpty, "a parent isn't carried by its children's files")
+
+    index.update(makeItem("tasks/A.md", "type: task\nstatus: Doing"))
+    #expect(index.paths(carrying: "errands") == [b.path] && index.paths(carrying: "home/garden").isEmpty)
+    #expect(index.carriedTags.map(\.name) == ["errands"], "spelled by the remaining carrier")
+
+    index.update(a)
+    #expect(index.carriedTags.map(\.name).sorted() == ["Errands", "home/garden"], "the first path's spelling wins")
+    index.remove(b.path)
+    index.remove(a.path)
+    #expect(index.carriedTags.isEmpty)
+}
+
+@Test func patchedTagSpellingsMatchARebuild() {
+    let files = [
+        makeItem("tasks/A.md", "type: task\nstatus: Doing\ntags: [Home]"),
+        makeItem("tasks/B.md", "type: task\nstatus: Doing\ntags: [home]"),
+        makeItem("tasks/C.md", "type: task\nstatus: Doing", body: "#HOME"),
+    ]
+    var index = VaultIndex(files.reversed())
+    #expect(index.carriedTags.map(\.name) == ["Home"])
+    let edits = [makeItem("tasks/A.md", "type: task\nstatus: Doing"), makeItem("tasks/B.md", "type: task\nstatus: Doing\ntags: [hOme]")]
+    for edit in edits { index.update(edit) }
+    #expect(index.carriedTags.map(\.name) == VaultIndex([edits[0], edits[1], files[2]]).carriedTags.map(\.name))
+    #expect(index.carriedTags.map(\.name) == ["hOme"])
+}
+
+@Test func indexLeavesLoggedFilesOutOfTags() {
+    let logged = makeItem(".logbook/tasks/Old.md", "type: task\nstatus: Done\ntags: [old]")
+    var index = VaultIndex([logged])
+    #expect(index.carriedTags.isEmpty)
+    index.remove(logged.path)
+    index.update(makeItem("tasks/Old.md", "type: task\nstatus: Done\ntags: [old]"))
+    #expect(index.paths(carrying: "old") == ["tasks/Old.md"])
+}

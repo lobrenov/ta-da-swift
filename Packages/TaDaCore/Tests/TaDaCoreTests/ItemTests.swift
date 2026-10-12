@@ -92,3 +92,30 @@ func itemIgnoresNonTaDaFiles(_ text: String) {
     #expect(website.properties.project?.title == "Game Jam - Starfall")
     #expect(website.properties.deadline == LocalDate("2026-10-08"))
 }
+
+@Test func itemMergesFrontmatterAndBodyTags() throws {
+    // The canvas's TagModel file.
+    let text = """
+    ---
+    type: task
+    status: Not Started
+    area: "[[Personal]]"
+    tags: [errands, quick win]
+    createdDate: 2026-10-01
+    ---
+    # Message Max about a coat and a jacket
+
+    Ask #people/max about a coat and a jacket
+    in the same fabric as my pants. #Errands, #fabric
+
+    - [ ] Find the receipt `#not-a-tag`
+    """
+    let item = try #require(Item(parsing: text, path: "tasks/Message Max.md"))
+    #expect(item.properties.tags.map(\.name) == ["errands", "quick win"])
+    #expect(item.tags.map { "\($0.tag.name) \($0.inFrontmatter) \($0.inBody)" } == [
+        "errands true true",
+        "quick win true false",
+        "people/max false true",
+        "fabric false true",
+    ])
+}

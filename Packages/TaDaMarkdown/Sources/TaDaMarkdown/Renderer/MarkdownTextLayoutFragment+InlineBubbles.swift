@@ -35,7 +35,8 @@ extension MarkdownTextLayoutFragment {
                     ?? (NSMaxRange(hit) >= NSMaxRange(lineRange)
                         ? bounds.width
                         : lineFragment.locationForCharacter(at: NSMaxRange(hit)).x)
-                let left = hit.location == local.location ? startX + bubble.margin : startX - bubble.horizontalPadding
+                let left = hit.location == local.location && !bubble.padsOutsideText
+                    ? startX + bubble.margin : startX - bubble.horizontalPadding
                 let right = NSMaxRange(hit) == NSMaxRange(local) ? endX - bubble.margin : endX + bubble.horizontalPadding
                 guard right > left else { continue }
 

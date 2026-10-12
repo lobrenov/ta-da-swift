@@ -37,6 +37,8 @@ enum MarkdownTokenKind: Equatable {
     case table
     /// A CommonMark backslash escape; marker is the `\`, content the escaped literal char.
     case backslashEscape
+    /// Ta Da fork: a `#tag`; marker is the `#`.
+    case tag
     /// A span contributed by a registered `MarkdownExtension`,
     /// carrying the extension's id (e.g. `.extensionSpan("highlight")`).
     case extensionSpan(String)

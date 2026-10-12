@@ -147,4 +147,21 @@ struct PhoneNavigationTests {
         nav.dropScreens { $0 != "tasks/Weed.md" }
         #expect(nav.stacks[.projects] == [] && nav.stacks[.today] == [.file("tasks/Weed.md"), .trash])
     }
+
+    @Test func tagScreensShowNoFileAndTheTagSheetIsPerFile() {
+        #expect(PhoneRoute.tags.path == nil && PhoneRoute.tag("home").path == nil && PhoneRoute.tag(nil).path == nil)
+        #expect(PhoneRoute.tag("home") != PhoneRoute.tag(nil))
+        #expect(PhoneSheet.tags(path: "a.md").id != PhoneSheet.tags(path: "b.md").id)
+        #expect(PhoneSheet.tags(path: "a.md").id != PhoneSheet.move(paths: ["a.md"]).id)
+    }
+
+    @Test func aDeletedFilesScreensGoButTagScreensStay() {
+        let nav = PhoneNavigation()
+        nav.tab = .other
+        nav.push(.tags)
+        nav.push(.tag("home"))
+        nav.push(.file("tasks/a.md"))
+        nav.dropScreens { $0 == "tasks/a.md" }
+        #expect(nav.stacks[.other] == [.tags, .tag("home")])
+    }
 }

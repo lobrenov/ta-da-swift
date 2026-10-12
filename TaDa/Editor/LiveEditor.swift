@@ -21,7 +21,7 @@ struct LiveEditor: View {
     /// Plays a light tap when a task box is toggled (iOS).
     var haptics = false
     var header: AnyView? = nil
-    /// What `[[` and `![[` list and embeds draw; without it, typing them opens no menu.
+    /// What `[[`, `![[` and `#` list and embeds draw; without it, typing them opens no menu.
     var links: LinkMenuSource? = nil
     /// Saves a pasted or dropped image and returns its `![[ ]]`; without it, images paste as the system does.
     var embedImage: ((AppModel.PastedImage) -> String?)? = nil
@@ -30,6 +30,8 @@ struct LiveEditor: View {
     var imageActions: AppModel? = nil
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
+    /// Receives a clicked `#tag`, as written, without `#`; without it, tags draw as bubbles but don't open.
+    var onTagClick: ((String) -> Void)? = nil
 
     @State private var slashCommand = SlashCommandProxy()
     #if os(macOS)
@@ -37,11 +39,15 @@ struct LiveEditor: View {
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
     @State private var linkMenu = LinkMenuController()
+    @State private var tagMenu = TagMenuController()
     #else
     @State private var linkSearch = LinkMenuSearch()
     /// The open `[[` or `![[` query's choices, and the one ↵ picks.
     @State private var linkChoices: [LinkChoice] = []
     @State private var linkHighlight = 0
+    /// The open `#` query's choices (empty: "New tag"), and the one ↵ picks.
+    @State private var tagChoices: [TagNode]?
+    @State private var tagHighlight = 0
     @State private var checkboxMenu: MenuRequest<TaskMarkerMenuRequest>?
     @State private var calloutMenu: MenuRequest<CalloutMenuRequest>?
     @State private var toggles = 0
@@ -73,22 +79,25 @@ struct LiveEditor: View {
             onSlashCommandChange: showQueryMenu,
             onSlashCommandKey: { key in
                 switch key {
-                case .moveUp: slashMenu.handle(.up) || linkMenu.handle(.up)
-                case .moveDown: slashMenu.handle(.down) || linkMenu.handle(.down)
-                case .confirm: slashMenu.handle(.confirm) || linkMenu.handle(.confirm)
+                case .moveUp: slashMenu.handle(.up) || linkMenu.handle(.up) || tagMenu.handle(.up)
+                case .moveDown: slashMenu.handle(.down) || linkMenu.handle(.down) || tagMenu.handle(.down)
+                case .confirm: slashMenu.handle(.confirm) || linkMenu.handle(.confirm) || tagMenu.handle(.confirm)
                 case .confirmAndOpen, .cancel: false
                 }
             },
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: showCheckboxMenu,
             onCalloutMenu: showCalloutMenu,
-            onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } }
+            onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } },
+            onTagClick: onTagClick
         )
         .focusedValue(\.editor, slashCommand)
-        .onAppear { slashCommand.triggers = links == nil ? [.slash] : [.slash, .link, .embed] }
+        .onAppear { slashCommand.triggers = triggers }
+        .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .onDisappear {
             slashMenu.hide()
             linkMenu.hide()
+            tagMenu.hide()
             checkboxMenu.hide()
             calloutMenu.hide()
         }
@@ -117,6 +126,9 @@ struct LiveEditor: View {
                 if !linkChoices.isEmpty {
                     PhoneLinkList(choices: linkChoices, highlight: linkHighlight, search: linkSearch, theme: theme, pick: insertLink)
                 }
+                if let tagChoices {
+                    PhoneTagList(choices: tagChoices, highlight: tagHighlight, theme: theme, pick: insertTag)
+                }
                 EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks, haptics: haptics)
             }),
             onPasteImage: embedImage.map { embed in
@@ -140,9 +152,11 @@ struct LiveEditor: View {
                                               editMarkdown: request.revealSource)
                     }
                 }
-            }
+            },
+            onTagClick: onTagClick
         )
-        .onAppear { slashCommand.triggers = links == nil ? [] : [.link, .embed] }
+        .onAppear { slashCommand.triggers = triggers }
+        .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .sensoryFeedback(.impact(weight: .light), trigger: toggles) { _, _ in haptics }
         .sensoryFeedback(.impact(weight: .medium), trigger: menuPresses) { _, _ in haptics }
         .popover(item: $checkboxMenu, attachmentAnchor: .rect(.rect(checkboxMenu?.anchor ?? .zero))) { menu in
@@ -164,15 +178,40 @@ struct LiveEditor: View {
         #endif
     }
 
+    /// The queries typing opens: `/` on the Mac, and with `links`, `[[`, `![[` and (by Autocomplete) `#`.
+    private var triggers: Set<SlashCommandState.Trigger> {
+        #if os(macOS)
+        var triggers: Set<SlashCommandState.Trigger> = [.slash]
+        #else
+        var triggers: Set<SlashCommandState.Trigger> = []
+        #endif
+        if links != nil { triggers.formUnion(autocomplete.tags ? [.link, .embed, .tag] : [.link, .embed]) }
+        return triggers
+    }
+
     /// Replaces the `[[` or `![[` query with the choice's link or embed and puts the caret after it.
     private func insertLink(_ choice: LinkChoice) {
         let text = choice.markdown
         slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
     }
 
+    /// Replaces the `#` query with the tag's full path and a space, and puts the caret after it.
+    private func insertTag(_ node: TagNode) {
+        let text = node.insertion
+        slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
+    }
+
     #if os(iOS)
-    /// Lists the open `[[` or `![[` query's choices above the keyboard bar.
+    /// Lists the open `[[`, `![[` or `#` query's choices above the keyboard bar.
     private func showLinkChoices(_ state: SlashCommandState?) {
+        if let state, let links, state.trigger == .tag {
+            let choices = links.tagSuggestions(state.query)
+            if choices != tagChoices { tagHighlight = 0 }
+            tagChoices = choices
+            linkChoices = []
+            return
+        }
+        tagChoices = nil
         guard let state, let links, state.trigger != .slash else {
             linkChoices = []
             return
@@ -185,6 +224,15 @@ struct LiveEditor: View {
 
     /// A hardware keyboard's ↑/↓ move through the choices and ↵ picks one.
     private func handleLinkKey(_ key: InlinePreviewKey) -> Bool {
+        if let tagChoices, !tagChoices.isEmpty {
+            switch key {
+            case .moveUp: tagHighlight = (tagHighlight + tagChoices.count - 1) % tagChoices.count
+            case .moveDown: tagHighlight = (tagHighlight + 1) % tagChoices.count
+            case .confirm, .confirmAndOpen: insertTag(tagChoices[min(tagHighlight, tagChoices.count - 1)])
+            case .cancel: return false
+            }
+            return true
+        }
         guard !linkChoices.isEmpty else { return false }
         switch key {
         case .moveUp: linkHighlight = (linkHighlight + linkChoices.count - 1) % linkChoices.count
@@ -240,13 +288,26 @@ struct LiveEditor: View {
         case nil:
             slashMenu.hide()
             linkMenu.hide()
+            tagMenu.hide()
         case .slash:
             linkMenu.hide()
+            tagMenu.hide()
             showSlashMenu(state!)
         case .link, .embed:
             slashMenu.hide()
+            tagMenu.hide()
             showLinkMenu(state!)
+        case .tag:
+            slashMenu.hide()
+            linkMenu.hide()
+            showTagMenu(state!)
         }
+    }
+
+    private func showTagMenu(_ state: SlashCommandState) {
+        guard let links else { return }
+        tagMenu.show(links.tagSuggestions(state.query), anchor: state.anchorRect, theme: theme, pick: insertTag,
+                     dismiss: { [slashCommand] in slashCommand.dismiss() })
     }
 
     private func showLinkMenu(_ state: SlashCommandState) {
@@ -315,6 +376,11 @@ struct LiveEditor: View {
         // Inline code and highlights are bubbles with `strong` text.
         config.inlineCode.bubble = InlineBubble(fill: theme.code, ring: theme.border, text: theme.strong,
                                                 horizontalPadding: 6, margin: 1)
+        // Tags are bubbles in `accent`: fill 14% (10% on light schemes), ring 32% (28%).
+        config.tags = TagStyle(bubble: InlineBubble(
+            fill: theme.accent.withAlphaComponent(theme.isDark ? 0.14 : 0.1),
+            ring: theme.accent.withAlphaComponent(theme.isDark ? 0.32 : 0.28),
+            text: theme.accent, horizontalPadding: 6, margin: 1))
         config.extensions = [HighlightBubble(bubble: InlineBubble(fill: highlightFill, text: theme.strong,
                                                                   horizontalPadding: 4, margin: -1))]
         let theme = self.theme
@@ -580,7 +646,7 @@ private struct CalloutMenu: View {
     }
 }
 
-/// Above the keyboard: subtask box, heading, bold, italic, code, wikilink, callout and indent buttons, and hide
+/// Above the keyboard: subtask box, `#`, bold, italic, code, wikilink, callout and indent buttons, and hide
 /// keyboard. It's hosted outside SwiftUI's environment, so it takes the theme.
 private struct EditorKeyboardBar: View {
     let theme: Theme
@@ -595,7 +661,16 @@ private struct EditorKeyboardBar: View {
             ScrollView(.horizontal) {
                 HStack(spacing: 2) {
                     button("Subtask", "checkmark.square") { if let textView = proxy.textView { PhoneSubtask.perform(in: textView) } }
-                    button("Heading", "textformat.size") { proxy.apply(.nextHeading) }
+                    Button { proxy.type("#") } label: {
+                        Text(verbatim: "#")
+                            .font(.system(size: 18, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(theme.color(\.accent))
+                            .frame(width: 40, height: 36)
+                            .background(theme.tagFill(), in: .capsule)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Insert #")
                     button("Bold", "bold") { proxy.apply(.bold) }
                     button("Italic", "italic") { proxy.apply(.italic) }
                     button("Code", "chevron.left.forwardslash.chevron.right") { proxy.apply(.inlineCode) }

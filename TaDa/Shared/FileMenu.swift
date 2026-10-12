@@ -1,7 +1,7 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on an area,
-// project or task. Rows add it with `.fileMenu(model, path:)`. Move, Schedule, Set Deadline…, Reveal in
-// Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Reveal in Finder and
-// Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
+// project or task. Rows add it with `.fileMenu(model, path:)`. Move, Schedule, Set Deadline…, Tags… (one file),
+// Reveal in Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Tags…,
+// Reveal in Finder and Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
 #if os(macOS)
 import SwiftUI
 import AppKit
@@ -24,13 +24,13 @@ struct FileMenuAction: PopupMenuItem {
     var startsGroup = false
     let run: () -> Void
 
-    /// Move (to a project or area for tasks, to an area for projects), Schedule, Set Deadline…, Reveal in Finder and
-    /// Delete for a file in the folder; Restore, Reveal in Finder and Delete Forever for one in `.trash/`. A
-    /// right-click on a picked file acts on every picked file. Move, Schedule and Set Deadline… open their menu at `point` (screen coordinates) in `window`, else under
+    /// Move (to a project or area for tasks, to an area for projects), Schedule, Set Deadline…, Tags… (only when the
+    /// menu acts on one file), Reveal in Finder and Delete for a file in the folder; Restore, Reveal in Finder and Delete Forever for one in `.trash/`. A
+    /// right-click on a picked file acts on every picked file. Move, Schedule, Set Deadline… and Tags… open their menu at `point` (screen coordinates) in `window`, else under
     /// the row or the open file's chip.
     static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
         if let area = model.index[path], area.properties.kind == .area {
-            return areaActions(for: area, model: model)
+            return areaActions(for: area, model: model, at: point, in: window)
         }
         guard path.hasPrefix(Vault.trashFolder + "/") else {
             let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
@@ -71,7 +71,7 @@ struct FileMenuAction: PopupMenuItem {
                                         systemImage: "trash", shortcut: "⌘⌫") {
                 Task { await model.moveToTrash(paths) }
             }
-            return (moved.isEmpty ? [] : [move]) + [schedule, deadline, reveal(paths, model: model), delete]
+            return (moved.isEmpty ? [] : [move]) + [schedule, deadline] + (paths.count == 1 ? [tags(path, model: model, at: point, in: window)] : []) + [reveal(paths, model: model), delete]
         }
         let paths = model.trashSelection.contains(path) ? model.trashSelection : [path]
         return [
@@ -87,7 +87,7 @@ struct FileMenuAction: PopupMenuItem {
     }
 
     /// An area's page opens before a new file is made in it, so the file lands there.
-    private static func areaActions(for area: Item, model: AppModel) -> [FileMenuAction] {
+    private static func areaActions(for area: Item, model: AppModel, at point: CGPoint?, in window: NSWindow?) -> [FileMenuAction] {
         [
             FileMenuAction(title: "New Task in \(area.title)", systemImage: "plus", shortcut: "") {
                 model.show(.area(area.path))
@@ -100,11 +100,26 @@ struct FileMenuAction: PopupMenuItem {
             FileMenuAction(title: "Open Area File", systemImage: "doc", shortcut: "", startsGroup: true) {
                 model.open(area.path)
             },
+            tags(area.path, model: model, at: point, in: window),
             reveal([area.path], model: model),
             FileMenuAction(title: "Delete", systemImage: "trash", shortcut: "⌘⌫", startsGroup: true) {
                 Task { await model.moveToTrash([area.path]) }
             },
         ]
+    }
+
+    /// Opens tagMenu for the file at `path`, at `point` in `window`, else under the row or the open file's chip.
+    private static func tags(_ path: String, model: AppModel, at point: CGPoint?, in window: NSWindow?) -> FileMenuAction {
+        FileMenuAction(title: "Tags…", systemImage: "tag", shortcut: "⌘T") {
+            guard let item = model.index[path] else { return }
+            if let point, let window {
+                PropertyPicker.shared.pickTags(of: item, model: model, below: CGRect(origin: point, size: .zero), gap: 0,
+                                               in: window, ringing: path)
+            } else {
+                model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: .tags, paths: [path], anchor: path,
+                                                                         onChip: model.selection == path)
+            }
+        }
     }
 
     private static func reveal(_ paths: [String], model: AppModel) -> FileMenuAction {

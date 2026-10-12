@@ -16,7 +16,16 @@ public struct Item: Hashable, Sendable, Identifiable {
     public var links: [WikiLink]
     /// Embeds in the body, such as `![[front.jpg]]`. They aren't links.
     public var embeds: [WikiLink]
+    /// The file's tags: `tags:` in order, then the body's that aren't in `tags:`. Each keeps its first spelling.
+    public var tags: [TagUse]
     public var warnings: [Warning]
+
+    /// A tag on a file and where it's written.
+    public struct TagUse: Hashable, Sendable {
+        public var tag: Tag
+        public var inFrontmatter: Bool
+        public var inBody: Bool
+    }
 
     /// Done and total subtasks. Cancelled boxes are left out of the total; icon-only boxes aren't subtasks.
     public var subtasks: (done: Int, total: Int) {
@@ -51,6 +60,10 @@ public struct Item: Hashable, Sendable, Identifiable {
         checkboxes = body.checkboxes
         links = body.links
         embeds = body.embeds
+        let bodyPaths = Set(body.tags.map(\.path))
+        let frontmatterPaths = Set(read.properties.tags.map(\.path))
+        tags = read.properties.tags.map { TagUse(tag: $0, inFrontmatter: true, inBody: bodyPaths.contains($0.path)) }
+            + body.tags.filter { !frontmatterPaths.contains($0.path) }.map { TagUse(tag: $0, inFrontmatter: false, inBody: true) }
         warnings = read.warnings
     }
 }
@@ -78,6 +91,8 @@ public struct Properties: Hashable, Sendable {
     public var deadline: LocalDate?
     /// The `repeat` text, displayed only.
     public var repeatRule: String?
+    /// `tags:`, in order, without repeats.
+    public var tags: [Tag] = []
 
     public init(kind: Item.Kind) {
         self.kind = kind

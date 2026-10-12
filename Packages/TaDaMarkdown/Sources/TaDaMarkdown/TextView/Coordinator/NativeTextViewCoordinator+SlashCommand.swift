@@ -3,7 +3,8 @@
 //  TaDaMarkdown
 //
 //  Ta Da fork: a `/` typed at a line start or after whitespace opens a slash
-//  command, and a typed `[[` or `![[` a link or embed query. The engine tracks
+//  command, a typed `[[` or `![[` a link or embed query, and a `#` there a tag
+//  query once a tag character follows. The engine tracks
 //  the query and routes the menu keys; the embedder draws the menu and inserts
 //  through `SlashCommandProxy`.
 //
@@ -14,7 +15,7 @@ import AppKit
 import UIKit
 #endif
 
-/// Ta Da fork: the `/query`, `[[query` or `![[query` being typed, delivered through
+/// Ta Da fork: the `/query`, `[[query`, `![[query` or `#query` being typed, delivered through
 /// ``NativeTextViewWrapper/onSlashCommandChange``.
 public struct SlashCommandState: Equatable, Sendable {
     /// What opened the query.
@@ -25,12 +26,16 @@ public struct SlashCommandState: Equatable, Sendable {
         case link
         /// `![[`.
         case embed
+        /// `#`, at a line start or after whitespace, reported once the query holds a character that isn't a digit
+        /// (`# ` starts a heading).
+        case tag
 
         var marker: String {
             switch self {
             case .slash: "/"
             case .link: "[["
             case .embed: "![["
+            case .tag: "#"
             }
         }
 
@@ -39,6 +44,7 @@ public struct SlashCommandState: Equatable, Sendable {
             case .slash: "Insert Formatting"
             case .link: "Insert Link"
             case .embed: "Insert Embed"
+            case .tag: "Insert Tag"
             }
         }
     }
@@ -116,24 +122,18 @@ public final class SlashCommandProxy {
 
     /// Ta Da fork: formats the selection as the editor's formatting commands do, for iOS's formatting bar.
     public func apply(_ format: MarkdownFormat) {
-        guard let coordinator, let textView = coordinator.textView else { return }
+        guard let coordinator, coordinator.textView != nil else { return }
         switch format {
         case .bold: coordinator.didMarkdownBold(nil)
         case .italic: coordinator.didMarkdownItalic(nil)
         case .inlineCode: coordinator.didMarkdownInlineCode(nil)
-        case .nextHeading:
-            let text = textView.string as NSString
-            let line = text.substring(with: text.lineRange(for: textView.currentSelectedRange))
-            let level = line.prefix { $0 == "#" }.count
-            coordinator.didMarkdownHeading(level: level >= 3 ? 0 : level + 1)
         }
     }
 }
 
-/// Ta Da fork: a format ``SlashCommandProxy/apply(_:)`` toggles. `nextHeading` steps the line through
-/// headings 1 to 3, then back to body text.
+/// Ta Da fork: a format ``SlashCommandProxy/apply(_:)`` toggles.
 public enum MarkdownFormat: Sendable {
-    case bold, italic, inlineCode, nextHeading
+    case bold, italic, inlineCode
 }
 
 extension NativeTextViewCoordinator {
@@ -143,19 +143,21 @@ extension NativeTextViewCoordinator {
     private static let linkQueryStops = CharacterSet.newlines.union(CharacterSet(charactersIn: "[]|#^"))
 
     /// From `shouldChangeTextIn`, for interactive edits: a typed `/` after whitespace starts a slash query, and a
-    /// typed `[` after a `[` (not a third) a link query, or an embed query after `!`.
+    /// typed `[` after a `[` (not a third) a link query, or an embed query after `!`, and a typed `#` after whitespace a
+    /// tag query.
     func noteSlashCommandEdit(_ range: NSRange, replacement: String?, in text: NSString, codeTokens: [MarkdownToken]) {
         guard onSlashCommandChange != nil, range.length == 0 else { return }
         let start: Int, trigger: SlashCommandState.Trigger
+        let followsWhitespace = range.location == 0 || Unicode.Scalar(text.character(at: range.location - 1))
+            .map { CharacterSet.whitespacesAndNewlines.contains($0) } ?? false
         switch replacement {
         case "/":
-            // Within a link query, `/` is part of the query.
-            guard slashAnchor == nil || slashTrigger == .slash else { return }
-            if range.location > 0 {
-                guard let previous = Unicode.Scalar(text.character(at: range.location - 1)),
-                      CharacterSet.whitespacesAndNewlines.contains(previous) else { return }
-            }
+            // Within a link or tag query, `/` is part of the query.
+            guard slashAnchor == nil || slashTrigger == .slash, followsWhitespace else { return }
             (start, trigger) = (range.location, .slash)
+        case "#":
+            guard followsWhitespace else { return }
+            (start, trigger) = (range.location, .tag)
         case "[":
             let character = { (offset: Int) -> unichar? in
                 let index = range.location - offset
@@ -188,9 +190,21 @@ extension NativeTextViewCoordinator {
               selection.location >= anchor + markerLength else { return dismissSlashCommand() }
         let range = NSRange(location: anchor, length: selection.location - anchor)
         let query = text.substring(with: NSRange(location: anchor + markerLength, length: range.length - markerLength))
-        let (limit, stops) = slashTrigger == .slash ? (40, Self.slashQueryStops) : (100, Self.linkQueryStops)
-        guard query.count <= limit, query.rangeOfCharacter(from: stops) == nil else {
-            return dismissSlashCommand()
+        if slashTrigger == .tag {
+            guard query.count <= 100, query.allSatisfy(Self.isTagCharacter) else { return dismissSlashCommand() }
+            // Typed but not yet shown: `#` alone, or digits only.
+            guard query.contains(where: { !$0.isNumber && $0 != "/" }) else {
+                if slashCommand != nil {
+                    slashCommand = nil
+                    reportSlashCommand()
+                }
+                return
+            }
+        } else {
+            let (limit, stops) = slashTrigger == .slash ? (40, Self.slashQueryStops) : (100, Self.linkQueryStops)
+            guard query.count <= limit, query.rangeOfCharacter(from: stops) == nil else {
+                return dismissSlashCommand()
+            }
         }
         let line = text.lineRange(for: NSRange(location: anchor, length: 0))
         let lead = text.substring(with: NSRange(location: line.location, length: anchor - line.location))
@@ -203,6 +217,10 @@ extension NativeTextViewCoordinator {
                                          isAtLineStart: lead.allSatisfy { $0 == " " || $0 == "\t" },
                                          followsBlankLine: followsBlankLine)
         reportSlashCommand()
+    }
+
+    private static func isTagCharacter(_ c: Character) -> Bool {
+        c.isLetter || c.isNumber || c == "_" || c == "-" || c == "/"
     }
 
     func dismissSlashCommand() {
@@ -234,7 +252,7 @@ extension NativeTextViewCoordinator {
         let text = tv.string as NSString
         var range = command.range
         guard NSMaxRange(range) <= text.length else { return }
-        if command.trigger != .slash, NSMaxRange(range) + 2 <= text.length,
+        if command.trigger == .link || command.trigger == .embed, NSMaxRange(range) + 2 <= text.length,
            text.substring(with: NSRange(location: NSMaxRange(range), length: 2)) == "]]" {
             range.length += 2
         }

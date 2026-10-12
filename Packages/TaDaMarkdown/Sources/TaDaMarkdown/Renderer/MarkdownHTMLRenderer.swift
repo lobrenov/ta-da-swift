@@ -264,6 +264,9 @@ public enum MarkdownHTMLRenderer {
         case .wikiLink(_, let name, _, _):
             return escape(ns.substring(with: name))
 
+        case .tag(let range, _):
+            return escape(ns.substring(with: range))
+
         case .imageEmbed(_, let target, _):
             let t = escape(ns.substring(with: target))
             return "<img src=\"\(t)\" alt=\"\(t)\">"

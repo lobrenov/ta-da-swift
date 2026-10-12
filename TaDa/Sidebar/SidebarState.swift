@@ -71,22 +71,21 @@ struct SidebarState {
         floatsForSearch = true
     }
 
+    /// Whether a swipe, or the mouse's back and forward buttons, with the pointer `overSidebar` switch its Projects |
+    /// Tags view: over the docked sidebar, or the floating one for the buttons.
+    func switchesViews(overSidebar: Bool, swiping: Bool) -> Bool {
+        overSidebar && (swiping ? columns != .detailOnly && !floats : columns != .detailOnly || floats)
+    }
+
     /// A swipe to the right floats the hidden sidebar, unless something under the pointer `scrollsLeft`; to the left,
-    /// it hides the floating sidebar, or the docked one when the pointer is `overSidebar`. Gives the columns to slide
-    /// to.
-    mutating func swiped(_ direction: SidebarSwipe.Direction, overSidebar: Bool,
-                         scrollsLeft: () -> Bool) -> NavigationSplitViewVisibility? {
+    /// it hides the floating sidebar. Over the docked sidebar a swipe switches its view instead (`switchesViews`).
+    mutating func swiped(_ direction: SidebarSwipe.Direction, scrollsLeft: () -> Bool) {
         switch direction {
         case .right:
             if columns == .detailOnly, !floats, !scrollsLeft() { floats = true }
         case .left:
-            if floats {
-                floats = false
-            } else if columns != .detailOnly, overSidebar {
-                return dock(false)
-            }
+            floats = false
         }
-        return nil
     }
 
     private mutating func dock(_ show: Bool) -> NavigationSplitViewVisibility {

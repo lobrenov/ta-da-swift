@@ -35,6 +35,10 @@ let sampleVault = URL(filePath: #filePath).deletingLastPathComponent()
 let areaVault = URL(filePath: #filePath).deletingLastPathComponent()
     .appending(path: "Fixtures/AreaVault").standardized
 
+/// Tagged files: nested, frontmatter-only, body-only, both, untagged, logged and trashed.
+let tagVault = URL(filePath: #filePath).deletingLastPathComponent()
+    .appending(path: "Fixtures/TagVault").standardized
+
 func sampleFiles() throws -> [URL] {
     (FileManager.default.enumerator(at: sampleVault, includingPropertiesForKeys: nil)?.allObjects ?? [])
         .compactMap { $0 as? URL }.filter { $0.pathExtension == "md" }
