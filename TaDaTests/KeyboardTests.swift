@@ -93,6 +93,42 @@ struct KeyboardTests {
         #expect(model.selection == nil, "Escape clears the selection")
     }
 
+    @Test func arrowKeysMoveThroughNotesOnFolderAndTagPagesAndInSearch() async throws {
+        let notes = try TestFolder([
+            "Meetings/Ark.md": "---\ntags: [work]\n---\n",
+            "Meetings/Budget.md": "Body\n",
+            "tasks/Plan.md": "---\ntype: task\nstatus: Doing\ntags: [work]\n---\n",
+        ])
+        let model = await notes.model()
+        model.show(.folder("Meetings"))
+        let window = try await window(for: model)
+        defer { window.orderOut(nil) }
+
+        try await listHasKeyboard(in: window)
+        try await down(window)
+        try await down(window)
+        #expect(model.selection == "Meetings/Budget.md")
+
+        model.show(.tag("work"))
+        try await listHasKeyboard(in: window)
+        try await down(window)
+        try await down(window)
+        #expect(model.selection == "Meetings/Ark.md", "the Notes group follows the tasks")
+        model.toggleFolded("Notes", in: "tag:work")
+        model.selection = nil
+        try await settle()
+        try await down(window)
+        try await down(window)
+        #expect(model.selection == "tasks/Plan.md", "a folded group's notes are skipped")
+
+        model.searchText = "budget"
+        model.selection = nil
+        try await settle()
+        try await listHasKeyboard(in: window)
+        try await down(window)
+        #expect(model.selection == "Meetings/Budget.md")
+    }
+
     @Test func commandDeleteTrashesTheTaskAndRestoresItInTrash() async throws {
         let model = await folder.model()
         let window = try await window(for: model)

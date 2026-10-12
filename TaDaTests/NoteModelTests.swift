@@ -156,4 +156,10 @@ struct NoteModelTests {
         await model.moveNote("Meetings/Ark call.md", to: "Blocked")
         #expect(model.errorMessage != nil && model.domain == .folder("Meetings") && model.selection == "Meetings/Ark call.md")
     }
+
+    @Test func aNewFolderCanGoInAFolderWhosePageIsntShowing() async {
+        let model = await folder.model()
+        await model.newFolder(in: "Meetings/2026")
+        #expect(model.domain == .today && model.folderNameFocus == "Meetings/2026/Untitled folder")
+    }
 }

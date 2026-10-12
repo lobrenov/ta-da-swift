@@ -1704,10 +1704,11 @@ import TaDaCore
         selection = path
     }
 
-    /// Creates "Untitled folder" in the folder whose page shows (else at the top level), its name ready to type.
-    func newFolder() async {
+    /// Creates "Untitled folder" in `parent`, or the folder whose page shows (else at the top level), its name ready to
+    /// type.
+    func newFolder(in parent: String? = nil) async {
         guard let vault else { return }
-        let parent = shownFolder ?? ""
+        let parent = parent ?? shownFolder ?? ""
         do {
             let path = try await Self.run { try vault.createFolder(named: "Untitled folder", in: parent) }
             knownFolders.insert(path)

@@ -20,8 +20,6 @@ struct SidebarView: View {
     @FocusState private var searchFocused: Bool
     /// The folder whose name is being typed: one just made, or one picked for Rename.
     @State private var namingFolder: String?
-    @State private var folderName = ""
-    @FocusState private var folderNameFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -58,7 +56,8 @@ struct SidebarView: View {
         .background(theme.color(\.side))
         .onChange(of: model.searchFocusRequest) { if takesSearchFocus { searchFocused = true } }
         .onChange(of: model.folderNameFocus, initial: true) {
-            guard let path = model.folderNameFocus else { return }
+            // A hidden sidebar leaves it to the floating one, as it does search.
+            guard takesSearchFocus, let path = model.folderNameFocus else { return }
             model.folderNameFocus = nil
             name(path)
         }
@@ -142,23 +141,16 @@ struct SidebarView: View {
                         .foregroundStyle(theme.color(\.link))
                         .frame(width: 16)
                         .accessibilityHidden(true)
-                    TextField("Folder name", text: $folderName)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13))
-                        .foregroundStyle(theme.color(\.strong))
-                        .focused($folderNameFocused)
-                        .onSubmit { folderNameFocused = false }
-                        .onExitCommand {
-                            folderName = node.name
-                            folderNameFocused = false
-                        }
-                        .onChange(of: folderNameFocused) { if !folderNameFocused { commitFolderName(path) } }
+                    InlineTitleField(model: model, path: path, height: 30, font: .system(size: 13), focus: nil,
+                                     rename: { name in
+                                         guard FolderBrowserView.node(path, in: model.folderTree) != nil else { return }
+                                         await model.renameFolder(path, to: name)
+                                     },
+                                     onEnd: { if namingFolder == path { namingFolder = nil } }) {
+                        Text(node.name)
+                    }
                 }
-                .padding(.horizontal, 10)
-                .frame(height: 30)
-                .background(theme.color(\.code), in: .rect(cornerRadius: 7))
-                .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)))
-                .task { folderNameFocused = true }
+                .padding(.leading, 10)
             } else {
                 SidebarRow(selected: model.domain == .folder(path) && !model.isSearching, height: 30, count: node.count) {
                     model.show(.folder(path))
@@ -201,8 +193,7 @@ struct SidebarView: View {
                 Task { await model.newNote() }
             },
             FileMenuAction(title: "New Folder", systemImage: "folder.badge.plus", shortcut: "") {
-                model.show(.folder(path))
-                Task { await model.newFolder() }
+                Task { await model.newFolder(in: path) }
             },
             FileMenuAction(title: "Rename", systemImage: "pencil", shortcut: "", startsGroup: true) { name(path) },
             FileMenuAction(title: "Reveal in Finder", systemImage: "arrow.up.forward.square", shortcut: "") {
@@ -221,15 +212,8 @@ struct SidebarView: View {
             if model.isFolderFolded(parent) { model.toggleFolderFolded(parent) }
             parent = Vault.folder(of: parent)
         }
-        folderName = String(path.split(separator: "/").last ?? "")
+        // The field that was open renames as it goes.
         namingFolder = path
-    }
-
-    private func commitFolderName(_ path: String) {
-        guard namingFolder == path else { return }
-        namingFolder = nil
-        let name = folderName.trimmingCharacters(in: .whitespacesAndNewlines)
-        Task { await model.renameFolder(path, to: name) }
     }
 
     /// A tag: a row with its glyph, last segment and count, and for a parent a fold chevron in the row's leading padding.

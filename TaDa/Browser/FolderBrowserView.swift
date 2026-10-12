@@ -54,22 +54,22 @@ struct FolderBrowserView: View {
                     .accessibilityHidden(true)
                 if !parent.isEmpty {
                     Text(parent + "/")
-                        .font(.system(size: 26, weight: .medium))
+                        .font(.system(size: 24, weight: .medium))
                         .foregroundStyle(theme.color(\.muted))
                         .lineLimit(1)
                         .truncationMode(.head)
                 }
                 if folder.isEmpty {
                     Text("Loose")
-                        .font(.system(size: 26, weight: .bold))
-                        .tracking(-0.26)
+                        .font(.system(size: 24, weight: .bold))
+                        .tracking(-0.24)
                         .foregroundStyle(theme.color(\.strong))
                         .accessibilityAddTraits(.isHeader)
                 } else {
-                    InlineTitleField(model: model, path: folder, height: 34, font: .system(size: 26, weight: .bold),
+                    InlineTitleField(model: model, path: folder, height: 34, font: .system(size: 24, weight: .bold),
                                      focus: nil, rename: { await model.renameFolder(folder, to: $0) }) {
                         Text(name)
-                            .tracking(-0.26)
+                            .tracking(-0.24)
                             .foregroundStyle(theme.color(\.strong))
                             .accessibilityAddTraits(.isHeader)
                     }
@@ -100,7 +100,7 @@ struct FolderBrowserView: View {
                             .contentShape(.capsule)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Folder \(child.name), \(child.count) notes")
+                        .accessibilityLabel("Folder \(child.name), \(child.count == 1 ? "1 note" : "\(child.count) notes")")
                     }
                 }
             }

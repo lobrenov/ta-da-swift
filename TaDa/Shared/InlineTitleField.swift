@@ -18,6 +18,9 @@ struct InlineTitleField<Label: View>: View {
     var focus: ReferenceWritableKeyPath<AppModel, String?>? = \.titleFocus
     /// Renames from the new title; by default, the file at `path`.
     var rename: ((String) async -> Void)? = nil
+    /// Starts out editing, and runs `onEnd` once editing ends, also when the field goes away while editing, which then
+    /// renames: the sidebar's folder name field.
+    var onEnd: (() -> Void)? = nil
     /// The title as it shows when not editing.
     @ViewBuilder var label: Label
     @State private var draft = ""
@@ -50,7 +53,10 @@ struct InlineTitleField<Label: View>: View {
                         while anchor.window == nil, !Task.isCancelled { await Task.yield() }
                         focused = true
                     }
-                    .onDisappear(perform: stopWatchingClicks)
+                    .onDisappear {
+                        stopWatchingClicks()
+                        if onEnd != nil, editing { commit() }
+                    }
                     .padding(.horizontal, 6)
                     .frame(height: height)
                     .background(theme.color(\.code), in: .rect(cornerRadius: 7))
@@ -73,6 +79,7 @@ struct InlineTitleField<Label: View>: View {
             }
         }
         .padding(.leading, -6)
+        .onAppear { if onEnd != nil, !editing { begin() } }
         .onChange(of: focus.flatMap { model[keyPath: $0] }, initial: true) {
             guard let focus, model[keyPath: focus] == path else { return }
             model[keyPath: focus] = nil
@@ -105,6 +112,7 @@ struct InlineTitleField<Label: View>: View {
 
     private func commit() {
         editing = false
+        onEnd?()
         let new = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !new.isEmpty, new != title else { return }
         Task {
