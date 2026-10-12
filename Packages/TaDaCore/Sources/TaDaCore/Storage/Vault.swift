@@ -307,6 +307,11 @@ public struct Vault: Sendable {
         return result + body[copied...]
     }
 
+    /// `folder/name`, or `name` when `folder` is empty.
+    public static func join(_ folder: String, _ name: String) -> String {
+        folder.isEmpty ? name : folder + "/" + name
+    }
+
     /// `tasks/Name.md` → `tasks`; `Name.md` → empty.
     public static func folder(of path: String) -> String {
         path.split(separator: "/").dropLast().joined(separator: "/")

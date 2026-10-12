@@ -38,6 +38,19 @@ public enum FileNaming {
         return candidate
     }
 
+    /// A folder name from a title, as `sanitise` makes it, or `<name> 2`, `<name> 3`… when it's taken. `existing` holds the
+    /// names in the parent folder; matching ignores case.
+    public static func folderName(for title: String, existing: Set<String>) -> String {
+        let base = sanitise(title)
+        let taken = Set(existing.map { $0.lowercased() })
+        var candidate = base, number = 2
+        while taken.contains(candidate.lowercased()) {
+            candidate = "\(base) \(number)"
+            number += 1
+        }
+        return candidate
+    }
+
     /// `Name.png` → (`Name`, `png`); a name without an extension → (name, empty).
     public static func split(_ filename: String) -> (base: String, ext: String) {
         guard let dot = filename.lastIndex(of: "."), dot != filename.startIndex else { return (filename, "") }

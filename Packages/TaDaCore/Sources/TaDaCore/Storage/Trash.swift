@@ -93,7 +93,8 @@ extension Vault {
     public static let trashedAttachmentFolder = ".trash/attachments"
 
     /// Moves a file into `.trash/`, creating the folder if needed. A project takes the tasks linked to it; an area
-    /// takes its projects, their tasks and its own tasks. Returns the paths that were moved, the file first.
+    /// takes its projects, their tasks and its own tasks. A note keeps its folder inside `.trash/`. Returns the paths that
+    /// were moved, the file first.
     public func moveToTrash(_ path: String, index: VaultIndex) throws -> [String] {
         var paths = [path]
         if let item = index[path] {
@@ -103,7 +104,10 @@ extension Vault {
             case .task, .note: break
             }
         }
-        for path in paths { _ = try moveFile(path, into: Self.trashFolder) }
+        for path in paths {
+            let isNote = index[path]?.properties.kind == .note
+            _ = try moveFile(path, into: isNote ? Self.join(Self.trashFolder, Self.folder(of: path)) : Self.trashFolder)
+        }
         return paths
     }
 
@@ -151,7 +155,8 @@ extension Vault {
         }
     }
 
-    /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, numbering names that are taken. Each brings back
+    /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, and notes back to their folder (made again if it's
+    /// gone), numbering names that are taken. Each brings back
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
     /// in the vault (outside `.logbook/`) or `.trash/` is created by name (a project under a title no other project has). When a parent's name had to change, the link follows it.
     /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
@@ -173,8 +178,7 @@ extension Vault {
             let properties = entry.item.properties
             let parent: Parent? = properties.project.map { .project($0.title) } ?? properties.area.map { .area($0.title) }
             let parentTitle = try parent.map { try bringBack($0) }
-            let kind = properties.kind
-            let path = try moveFile(entry.item.path, into: kind == .area ? Self.areaFolder : kind == .project ? Self.projectFolder : Self.taskFolder)
+            let path = try moveFile(entry.item.path, into: Self.restoreFolder(of: entry.item))
             if let parent, let parentTitle, parentTitle != parent.title {
                 try relink(path, key: parent.key, from: parent.title, to: parentTitle)
             }
@@ -270,7 +274,17 @@ extension Vault {
         if let firstError { throw DiscardError(failed: failed, firstError: firstError) }
     }
 
-    /// Moves a file into `folder`, creating it if needed, keeping its filename unless that's taken there or among
+    /// Where a trashed file goes back to: its kind's folder, or a note's folder.
+    private static func restoreFolder(of item: Item) -> String {
+        switch item.properties.kind {
+        case .area: areaFolder
+        case .project: projectFolder
+        case .task: taskFolder
+        case .note: String(folder(of: item.path).dropFirst(trashFolder.count).drop { $0 == "/" })
+        }
+    }
+
+    /// Moves a file into `folder` (`""` for the top level), creating it if needed, keeping its filename unless that's taken there or among
     /// `taken`. Returns the new path.
     func moveFile(_ path: String, into folder: String, taken: Set<String> = []) throws -> String {
         let current = String(path.split(separator: "/").last ?? "")
@@ -278,7 +292,7 @@ extension Vault {
         let isTaken = existing.contains { $0.lowercased() == current.lowercased() }
         let (base, ext) = FileNaming.split(current)
         let filename = isTaken ? FileNaming.filename(for: base, extension: ext, existing: existing) : current
-        let newPath = folder + "/" + filename
+        let newPath = Self.join(folder, filename)
         try FileManager.default.createDirectory(at: root.appending(path: folder, directoryHint: .isDirectory),
                                                 withIntermediateDirectories: true)
         try CoordinatedFileIO.move(url(for: path), to: url(for: newPath))
