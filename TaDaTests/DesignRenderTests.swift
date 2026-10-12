@@ -132,12 +132,16 @@ struct DesignRenderTests {
         model.appearance = .dark
         var typed = QuickEntryDraft()
         typed.title = "Call Bea about the venue"
+        typed.parent = .project("Ta Da MVP")
+        typed.dueDate = LocalDate("2026-10-03")
+        typed.tags = [Tag("gamejams")!, Tag("people/bea")!]
         var area = typed.changingKind(to: .area)
         area.title = "Wellbeing"
         var taken = typed.changingKind(to: .project)
         taken.title = "Ta Da MVP"
         for (name, draft) in [("empty", QuickEntryDraft()), ("typed", typed), ("area", area), ("taken", taken)] {
-            let view = QuickEntryView(model: model, draft: .constant(draft), taken: model.quickEntryTakenNames(), create: { _ in }, close: {})
+            model.quickEntryDraft = draft
+            let view = QuickEntryView(model: model, taken: model.quickEntryTakenNames(), create: { _ in }, close: {})
                 .themed(by: model).padding(20).frame(height: 300, alignment: .top)
             try await render(view, width: 600, to: output.appending(path: "quick-entry-\(name).png"))
         }

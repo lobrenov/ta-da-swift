@@ -1,11 +1,11 @@
-// Quick Entry's content: the type switch, the title, the file it will write, and the keys and buttons in the footer.
+// Quick Entry's content: the type switch, the title, the property chips and Tags row on the model's draft, the file it
+// will write, and the keys and buttons in the footer. ⇧⌘M, ⌘S and ⌘D open the chips' menus, as in the main window.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
 
 struct QuickEntryView: View {
-    let model: AppModel
-    @Binding var draft: QuickEntryDraft
+    @Bindable var model: AppModel
     /// The names a new file of each kind is numbered against.
     let taken: [Item.Kind: Set<String>]
     /// Creates the file; true also opens it in Ta Da.
@@ -14,18 +14,22 @@ struct QuickEntryView: View {
     @FocusState private var titleFocused: Bool
     @Environment(\.theme) private var theme
 
+    private var draft: QuickEntryDraft { model.quickEntryDraft }
     private var canCreate: Bool { !draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 12) {
                 typeSwitch
-                TextField("Title", text: $draft.title, prompt: Text("New \(draft.kind.rawValue)").foregroundStyle(theme.color(\.muted)))
+                TextField("Title", text: $model.quickEntryDraft.title, prompt: Text("New \(draft.kind.rawValue)").foregroundStyle(theme.color(\.muted)))
                     .textFieldStyle(.plain)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(theme.color(\.strong))
                     .frame(minHeight: 30)
                     .focused($titleFocused)
+                let item = model.quickEntryItem
+                if draft.kind != .area { PropertyChipRow(model: model, item: item) }
+                TagChipRow(model: model, item: item)
                 if draft.kind == .area {
                     Text("An area has only its name and tags: no status, parent or dates.")
                         .font(.system(size: 12.5))
@@ -44,9 +48,19 @@ struct QuickEntryView: View {
         .foregroundStyle(theme.color(\.fg))
         .font(.system(size: 13))
         .background {
-            Button("Close", action: close)
-                .keyboardShortcut(.cancelAction)
-                .hidden()
+            Group {
+                Button("Close", action: close)
+                    .keyboardShortcut(.cancelAction)
+                if draft.kind != .area {
+                    Button("Move") { openMenu(draft.kind == .task ? .project : .area) }
+                        .keyboardShortcut("m", modifiers: [.command, .shift])
+                    Button("Due Date") { openMenu(.date(.due)) }
+                        .keyboardShortcut("s")
+                    Button("Deadline") { openMenu(.date(.deadline)) }
+                        .keyboardShortcut("d")
+                }
+            }
+            .hidden()
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Quick Entry")
@@ -58,7 +72,8 @@ struct QuickEntryView: View {
             ForEach([Item.Kind.task, .project, .area], id: \.self) { kind in
                 let isOn = draft.kind == kind
                 Button {
-                    draft = draft.changingKind(to: kind)
+                    PropertyPicker.shared.close()
+                    model.quickEntryDraft = draft.changingKind(to: kind)
                 } label: {
                     HStack(spacing: 6) {
                         icon(kind)
@@ -152,6 +167,12 @@ struct QuickEntryView: View {
         .background(theme.color(theme.isDark ? \.bg : \.side))
         .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 11, bottomTrailingRadius: 11))
         .overlay(alignment: .top) { Hairline() }
+    }
+
+    /// Opens a chip's menu, as the main window's ⇧⌘M, ⌘S and ⌘D do.
+    private func openMenu(_ menu: AppModel.PropertyMenuRequest.Menu) {
+        let path = AppModel.quickEntryDraftPath
+        model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: menu, paths: [path], anchor: path, onChip: true)
     }
 
     private func buttonLabel(_ title: String, key: String) -> some View {

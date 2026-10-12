@@ -53,10 +53,11 @@ The milestones run in order in one worktree. Each ends with its check passing.
 - Check: from Safari, ⌃Space and type at once: the title fills and Safari keeps its menu bar; click away closes; reopen is empty; ↵ writes the file and Safari is in front; ⌘↵ shows each destination in the canvas's table; works in a full-screen app and on a second display.
 
 ### M3 — Chips, menus and tags in the panel
-- `PropertyPicker` gains a draft target: the menus are built from the draft's `Item` (`Item(parsing: draft.text(today:), path:)`), and each pick sets the draft instead of writing a file. Chip, anchor and dismissal code stay shared.
-- `QuickEntryView`: the chips through `PropertyChipRow`'s chip views, and the Tags row through `TagChipRow`'s, each taking the draft's item and the draft target. Picked dates and parents redraw the path line.
+- `AppModel.quickEntryDraft` holds the draft, and `quickEntryItem` gives it as an `Item` at `AppModel.quickEntryDraftPath`, which isn't a file. The pickers' writers (`setStatus`, `setParent`, `setDate`, `addTag`, `removeTag`) edit the draft for that path instead of writing; `item(at:)` gives tagMenu the draft. Chip, picker, anchor and dismissal code stay as they are.
+- `QuickEntryView`: `PropertyChipRow` and `TagChipRow` on the draft's item. Hidden buttons take ⇧⌘M, ⌘S and ⌘D and set `propertyMenuRequest` for the draft's chips.
 - tagMenu for a draft: Added in place of In this file; Create #name adds the tag to the draft only.
-- Check: `PropertyPickerTests` for each draft pick (status, parent, area, dates, add, remove and create a tag) and that a draft pick writes no file; ⇧⌘M, ⌘S, ⌘D open their menus in the panel while another app is active; renders compared with the canvas's `QuickEntry` states.
+- The panel stays open while one of its menus has the keyboard, and closes when Ta Da resigns active.
+- Check: `QuickEntryTests` for each draft pick (status, parent, area, dates, add, remove and create a tag) and that a draft pick writes no file; ⇧⌘M and ⌘S open their menus in the panel; renders compared with the canvas's `QuickEntry` states.
 
 ### D1 — Docs
 - `docs/architecture.md`: the `QuickEntry/` folder, the hotkey service, the panel and its keys, Settings ▸ Hotkeys; the hotkey row in Shortcuts.

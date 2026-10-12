@@ -66,6 +66,51 @@ struct QuickEntryTests {
         }
     }
 
+    @Test func thePickersEditTheDraftAndWriteNothing() async throws {
+        let model = await folder.model()
+        let before = try FileManager.default.contentsOfDirectory(atPath: folder.url.appending(path: "tasks").path)
+        let path = AppModel.quickEntryDraftPath
+        let project = try #require(model.index["projects/Ta Da MVP.md"]), area = try #require(model.index["areas/Personal.md"])
+
+        await model.setStatus(.done, in: path)
+        await model.setParent(project, of: [path])
+        await model.setDate(.due, to: LocalDate("2026-10-14"), of: [path])
+        await model.setDate(.deadline, to: LocalDate("2026-10-20"), of: [path])
+        await model.addTag(Tag("venues")!, to: path)
+        await model.addTag(Tag("Venues")!, to: path)
+        await model.addTag(Tag("people/bea")!, to: path)
+        await model.removeTag(Tag("VENUES")!, from: path)
+        var expected = QuickEntryDraft()
+        expected.status = .done
+        expected.parent = .project("Ta Da MVP")
+        expected.dueDate = LocalDate("2026-10-14")
+        expected.deadline = LocalDate("2026-10-20")
+        expected.tags = [Tag("people/bea")!]
+        #expect(model.quickEntryDraft == expected)
+        #expect(model.item(at: path)?.properties.project?.title == "Ta Da MVP")
+        #expect(model.item(at: path)?.tags.map(\.tag.name) == ["people/bea"])
+
+        await model.setParent(area, of: [path])
+        #expect(model.quickEntryDraft.parent == .area("Personal"))
+        model.quickEntryDraft = model.quickEntryDraft.changingKind(to: .project)
+        await model.setParent(project, of: [path])
+        #expect(model.quickEntryDraft.parent == .area("Personal"), "a project goes only under an area")
+        await model.setParent(nil, of: [path])
+        #expect(model.quickEntryDraft.parent == nil)
+
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.url.appending(path: "tasks").path) == before)
+        #expect(model.index[path] == nil)
+    }
+
+    @Test func theDraftsTagMenuListsAdded() {
+        var item = QuickEntryDraft()
+        item.tags = [Tag("venues")!]
+        let draft = Item(parsing: item.text(today: LocalDate("2026-10-12")!), path: AppModel.quickEntryDraftPath)!
+        let menu = TagChoice.menu(item: draft, tree: [], query: "", ownLabel: "Added")
+        #expect(menu.sections.map(\.label) == ["Added"])
+        #expect(TagChoice.menu(item: draft, tree: [], query: "garden", ownLabel: "Added").sections.first?.items.first?.title == "Create #garden")
+    }
+
     @Test func theHotkeyDefaultsToControlSpaceAndSurvivesARelaunch() {
         let first = AppModel(defaults: folder.defaults)
         #expect(first.quickEntryHotkey == .quickEntryDefault && first.quickEntryHotkey?.displayString == "⌃Space")
@@ -98,6 +143,16 @@ struct QuickEntryTests {
 
 @MainActor @Suite(.keyWindow)
 struct QuickEntryPanelTests {
+    /// Waits up to 3 s for `condition`.
+    private func within(_ condition: () -> Bool) async -> Bool {
+        let end = ContinuousClock.now + .seconds(3)
+        while !condition() {
+            guard ContinuousClock.now < end else { return false }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        return true
+    }
+
     @Test func opensAFloatingPanelOnEverySpaceAndCreatesFromIt() async throws {
         let folder = try TestFolder(["projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n"])
         let model = await folder.model()
@@ -120,10 +175,22 @@ struct QuickEntryPanelTests {
         #expect(!quickEntry.isOpen)
 
         quickEntry.open()
-        let other = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 100), styleMask: [.titled], backing: .buffered, defer: false)
-        other.makeKeyAndOrderFront(nil)
-        while quickEntry.isOpen { await Task.yield() }
-        other.orderOut(nil)
+        func press(_ key: String, _ flags: NSEvent.ModifierFlags, code: UInt16) throws -> Bool {
+            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
+                                                      windowNumber: panel.windowNumber, context: nil, characters: key,
+                                                      charactersIgnoringModifiers: key, isARepeat: false, keyCode: code))
+            return panel.performKeyEquivalent(with: event)
+        }
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(try press("s", .command, code: 1))
+        #expect(await within { PropertyPicker.shared.isOpen(AppModel.quickEntryDraftPath, "dueDate") })
+        PropertyPicker.shared.close()
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(try press("m", [.command, .shift], code: 46))
+        #expect(await within { PropertyPicker.shared.isOpen(AppModel.quickEntryDraftPath, "project") })
+        #expect(quickEntry.isOpen)
+        quickEntry.close()
+        #expect(PropertyPicker.shared.isOpen(AppModel.quickEntryDraftPath, "project") == false)
 
         quickEntry.open()
         var draft = QuickEntryDraft()
@@ -131,7 +198,7 @@ struct QuickEntryPanelTests {
         draft.parent = .project("Ta Da MVP")
         quickEntry.create(draft, opening: false)
         #expect(!quickEntry.isOpen)
-        while model.index["tasks/Book venue.md"] == nil { await Task.yield() }
+        #expect(await within { model.index["tasks/Book venue.md"] != nil })
         #expect(try folder.read("tasks/Book venue.md") == draft.text(today: model.today))
     }
 }

@@ -14,6 +14,11 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
 
     init(model: AppModel) {
         self.model = model
+        super.init()
+        // A click in another app, even while one of the panel's menus has the keyboard.
+        NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.close() }
+        }
     }
 
     var isOpen: Bool { panel?.isVisible == true }
@@ -25,8 +30,9 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
     /// Shows the panel with a new view, so the last opening's view goes outside its own callbacks.
     func open() {
         let panel = panel ?? makePanel()
-        panel.contentView = NSHostingView(rootView: QuickEntryContent(model: model, create: { [weak self] draft, opening in
-            self?.create(draft, opening: opening)
+        model.quickEntryDraft = QuickEntryDraft()
+        panel.contentView = NSHostingView(rootView: QuickEntryContent(model: model, create: { [weak self, model] opening in
+            self?.create(model.quickEntryDraft, opening: opening)
         }, close: { [weak self] in self?.close() }))
         let size = panel.contentView?.fittingSize ?? CGSize(width: 560, height: 200)
         let mouse = NSEvent.mouseLocation
@@ -39,6 +45,7 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
     }
 
     func close() {
+        PropertyPicker.shared.close(path: AppModel.quickEntryDraftPath)
         panel?.orderOut(nil)
     }
 
@@ -56,10 +63,10 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
         return panel
     }
 
-    /// Closes unless the keyboard went to one of the panel's own menus.
+    /// Closes unless one of the panel's own menus is open: a menu with a search field takes the keyboard.
     func windowDidResignKey(_ notification: Notification) {
         DispatchQueue.main.async { [weak self] in
-            guard let self, let panel, NSApp.keyWindow?.parent !== panel else { return }
+            guard let self, let panel, !panel.isKeyWindow, panel.childWindows?.contains(where: \.isVisible) != true else { return }
             close()
         }
     }
@@ -91,17 +98,16 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
     }
 }
 
-/// Holds the draft for one opening of the panel.
+/// Reads the taken names for one opening of the panel.
 private struct QuickEntryContent: View {
     let model: AppModel
-    let create: (QuickEntryDraft, Bool) -> Void
+    let create: (Bool) -> Void
     let close: () -> Void
-    @State private var draft = QuickEntryDraft()
     /// Read once per opening: nothing else writes while the panel has the keyboard.
     @State private var taken: [Item.Kind: Set<String>] = [:]
 
     var body: some View {
-        QuickEntryView(model: model, draft: $draft, taken: taken, create: { create(draft, $0) }, close: close)
+        QuickEntryView(model: model, taken: taken, create: create, close: close)
             .onAppear { taken = model.quickEntryTakenNames() }
             .themed(by: model)
     }

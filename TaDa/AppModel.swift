@@ -253,6 +253,8 @@ import TaDaCore
     var quickEntryHotkeyTaken = false
     /// Settings ▸ Hotkeys is recording a new hotkey, so the current one is let go.
     var isRecordingHotkey = false
+    /// Quick Entry's draft. Its chips and pickers edit it as the file at `quickEntryDraftPath`, which doesn't exist.
+    var quickEntryDraft = QuickEntryDraft()
     /// The system appearance, kept current by `themed(by:)`.
     var systemIsDark = Appearance.systemIsDark
 
@@ -905,6 +907,7 @@ import TaDaCore
     /// completing or cancelling a project that has open tasks asks first through `completionConfirmation`. A reopened task
     /// sets its Done or Cancelled project to Doing; a logged file that's reopened goes back to `tasks/` or `projects/`.
     func setStatus(_ status: Status, in path: String, confirmed: Bool = false) async {
+        if editDraft(path, { $0.status = status }) { return }
         if !confirmed, status.isClosed, let item = index[path], item.properties.kind == .project {
             let tasks = index.openTasks(in: item)
             if !tasks.isEmpty {
@@ -1399,11 +1402,13 @@ import TaDaCore
 
     /// Adds a tag to the file's `tags:`. A tag it has there already, ignoring case, isn't written.
     func addTag(_ tag: Tag, to path: String) async {
+        if editDraft(path, { if !$0.tags.contains(where: { $0.path == tag.path }) { $0.tags.append(tag) } }) { return }
         await edit(path) { FrontmatterEditor.addTag(tag, in: $0) }
     }
 
     /// Removes a tag from the file's `tags:`. The body's tags stay.
     func removeTag(_ tag: Tag, from path: String) async {
+        if editDraft(path, { $0.tags.removeAll { $0.path == tag.path } }) { return }
         await edit(path) { FrontmatterEditor.removeTag(tag, in: $0) }
     }
 
@@ -1494,6 +1499,7 @@ import TaDaCore
         case .task, nil: nil
         }
         guard parent == nil || target != nil else { return }
+        if editDraft(paths.first, { if $0.kind == .task || target?.key != "project" { $0.parent = target } }) { return }
         for path in paths {
             guard let item = index[path], item.properties.kind != .area else { continue }
             if item.properties.kind == .project, case .project = target { continue }
@@ -1509,6 +1515,7 @@ import TaDaCore
     /// Sets `kind`'s date of the files at `paths`, or empties it when `date` is nil. Files already on it aren't
     /// written.
     func setDate(_ kind: AgendaEntry.Kind, to date: LocalDate?, of paths: [String]) async {
+        if editDraft(paths.first, { if kind == .due { $0.dueDate = date } else { $0.deadline = date } }) { return }
         for path in paths {
             guard let item = index[path], item.properties[keyPath: kind.date] != date else { continue }
             await setProperty(kind.key, to: date.map { .date($0) }, in: path)
@@ -1589,6 +1596,25 @@ import TaDaCore
               let area = index[path] else { return nil }
         await setParent(area, of: paths)
         return path
+    }
+
+    static let quickEntryDraftPath = "Quick Entry"
+
+    /// Quick Entry's draft as an item, for its chips and menus.
+    var quickEntryItem: Item {
+        Item(parsing: quickEntryDraft.text(today: today), path: Self.quickEntryDraftPath)!
+    }
+
+    /// The item at `path`: the index's, or Quick Entry's draft.
+    func item(at path: String) -> Item? {
+        path == Self.quickEntryDraftPath ? quickEntryItem : index[path]
+    }
+
+    /// Applies a picker's edit to Quick Entry's draft when `path` is the draft's. Returns whether it was.
+    private func editDraft(_ path: String?, _ change: (inout QuickEntryDraft) -> Void) -> Bool {
+        guard path == Self.quickEntryDraftPath else { return false }
+        change(&quickEntryDraft)
+        return true
     }
 
     /// Writes Quick Entry's draft as a new file, numbering its name if it's taken. Returns the new path.
