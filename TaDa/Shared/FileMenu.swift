@@ -97,9 +97,17 @@ struct FileMenuAction: PopupMenuItem {
         ]
     }
 
-    /// Convert to Task…, Project… and Area…, each naming the folder it goes to; on a row, Tags… and Move to Folder…; then
-    /// Reveal in Finder and Move to Trash.
+    /// Convert to Task…, Project… and Area…, each naming the folder it goes to; on a row, Tags… and Move to Folder… (when
+    /// there's a folder to move to); then Reveal in Finder and Move to Trash. A right-click on a picked note reveals or
+    /// trashes every picked file. Without a point (VoiceOver's actions), Tags… opens the note first and Move to Folder…
+    /// is left out.
     static func noteActions(for path: String, model: AppModel, onRow: Bool, at point: CGPoint?, in window: NSWindow?) -> [FileMenuAction] {
+        let paths = onRow && model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
+        let trash = FileMenuAction(title: paths.count == 1 ? "Move to Trash" : "Move \(paths.count) Files to Trash",
+                                   systemImage: "trash", shortcut: "⌘⌫", startsGroup: paths.count == 1) {
+            Task { await model.moveToTrash(paths) }
+        }
+        guard paths.count == 1 else { return [reveal(paths, model: model), trash] }
         let convert: [FileMenuAction] = [(Item.Kind.task, "Task", Vault.taskFolder), (.project, "Project", Vault.projectFolder),
                                          (.area, "Area", Vault.areaFolder)].map { kind, name, folder in
             FileMenuAction(title: "Convert to \(name)…", systemImage: "arrow.right.doc.on.clipboard", shortcut: folder + "/") {
@@ -108,26 +116,38 @@ struct FileMenuAction: PopupMenuItem {
         }
         var actions = convert
         if onRow {
-            var tagsAction = tags(path, model: model, at: point, in: window)
+            // Without a row to open it under, the note's page opens and its Tags row takes the request.
+            var tagsAction = point != nil ? tags(path, model: model, at: point, in: window)
+                : FileMenuAction(title: "Tags…", systemImage: "tag", shortcut: "⌘T") {
+                    model.selection = path
+                    model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: .tags, paths: [path], anchor: path, onChip: true)
+                }
             tagsAction.startsGroup = true
-            actions += [tagsAction, FileMenuAction(title: "Move to Folder…", systemImage: "folder", shortcut: "") {
-                if let point, let window { showFolders(for: path, model: model, at: point, in: window) }
-            }]
+            actions.append(tagsAction)
+            let folders = moveTargets(for: path, model: model)
+            if let point, let window, !folders.isEmpty {
+                actions.append(FileMenuAction(title: "Move to Folder…", systemImage: "folder", shortcut: "") {
+                    showFolders(folders, for: path, model: model, at: point, in: window)
+                })
+            }
         }
         var revealAction = reveal([path], model: model)
         revealAction.startsGroup = true
-        return actions + [revealAction, FileMenuAction(title: "Move to Trash", systemImage: "trash", shortcut: "⌘⌫") {
-            Task { await model.moveToTrash([path]) }
-        }]
+        return actions + [revealAction, trash]
     }
 
-    /// A menu of the folders a note can move to: Loose, then the tree, less its own folder.
-    private static func showFolders(for path: String, model: AppModel, at point: CGPoint, in window: NSWindow) {
+    /// The folders a note can move to: Loose, then the tree, indented, less its own folder.
+    static func moveTargets(for path: String, model: AppModel) -> [(path: String, title: String)] {
         func rows(_ nodes: [FolderNode], depth: Int) -> [(path: String, title: String)] {
             nodes.flatMap { [($0.path, String(repeating: "   ", count: depth) + $0.name)] + rows($0.children, depth: depth + 1) }
         }
         let current = Vault.folder(of: path)
-        let folders = ([("", "Loose")] + rows(model.folderTree, depth: 0)).filter { $0.path != current }
+        return ([("", "Loose")] + rows(model.folderTree, depth: 0)).filter { $0.path != current }
+    }
+
+    /// A menu of `folders` that moves the note at `path` to the one picked.
+    private static func showFolders(_ folders: [(path: String, title: String)], for path: String, model: AppModel,
+                                    at point: CGPoint, in window: NSWindow) {
         let actions = folders.map { folder in
             FileMenuAction(title: folder.title, systemImage: folder.path.isEmpty ? "tray" : "folder", shortcut: "") {
                 Task { await model.moveNote(path, to: folder.path) }

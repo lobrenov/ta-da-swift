@@ -418,10 +418,13 @@ private struct NoteMenuButton: View {
     let path: String
     @State private var anchor = ScreenAnchor()
     @State private var hovering = false
+    @State private var isOpen = false
+    /// When the menu last closed; a click that closed it doesn't open it again.
+    @State private var closed = Date.distantPast
     @Environment(\.theme) private var theme
 
     var body: some View {
-        Button(action: open) {
+        Button(action: toggle) {
             HStack(spacing: 5) {
                 NoteIcon(size: 12)
                 Text("Note")
@@ -429,7 +432,7 @@ private struct NoteMenuButton: View {
             }
             .padding(.horizontal, 6)
             .frame(height: 20)
-            .background(hovering || model.menuTarget == path ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 5))
+            .background(hovering || isOpen ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 5))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -440,13 +443,16 @@ private struct NoteMenuButton: View {
         .help("Convert, reveal or delete this note")
     }
 
-    private func open() {
-        guard let window = anchor.window else { return }
+    private func toggle() {
+        guard !isOpen, Date().timeIntervalSince(closed) > 0.3, let window = anchor.window else { return }
         let rect = anchor.rect
         let point = CGPoint(x: rect.minX, y: rect.minY - 2)
-        model.menuTarget = path
-        FileMenu.shared.show(FileMenuAction.noteActions(for: path, model: model, onRow: false, at: point, in: window),
-                             at: point, in: window, theme: model.theme) { model.menuTarget = nil }
+        let actions = FileMenuAction.noteActions(for: path, model: model, onRow: false, at: point, in: window)
+        FileMenu.shared.show(actions, at: point, in: window, theme: model.theme) {
+            isOpen = false
+            closed = Date()
+        }
+        isOpen = true
     }
 }
 
