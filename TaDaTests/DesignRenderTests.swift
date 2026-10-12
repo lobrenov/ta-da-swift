@@ -120,6 +120,13 @@ struct DesignRenderTests {
         try await render(CompletionDialog(model: logbook, request: try #require(logbook.completionConfirmation)).themed(by: logbook),
                          width: 480, to: output.appending(path: "logbook-confirm.png"))
 
+        // Settings ▸ Hotkeys with the default taken by macOS, in the default dark scheme.
+        let hotkeys = AppModel(defaults: TestSettings())
+        hotkeys.appearance = .dark
+        hotkeys.quickEntryHotkeyTaken = true
+        try await render(HotkeysSettingsView(model: hotkeys).themed(by: hotkeys).frame(height: 594), width: 700,
+                         to: output.appending(path: "settings-hotkeys.png"))
+
         // The window's sidebar is glass, which doesn't draw here, so the sidebar also renders on its own.
         areas.domain = .area("areas/Personal.md")
         try await render(SidebarView(model: areas).themed(by: areas), width: 240, to: output.appending(path: "area-sidebar.png"))

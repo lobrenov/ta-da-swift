@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 import TaDaCore
@@ -77,5 +78,19 @@ struct QuickEntryTests {
 
         first.quickEntryHotkey = nil
         #expect(AppModel(defaults: folder.defaults).quickEntryHotkey == nil)
+    }
+
+    @Test func aKeyPressRecordsAChordWithControlOptionOrCommand() throws {
+        func press(_ keyCode: UInt16, _ characters: String, _ flags: NSEvent.ModifierFlags) throws -> Hotkey? {
+            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
+                                                      windowNumber: 0, context: nil, characters: characters,
+                                                      charactersIgnoringModifiers: characters, isARepeat: false, keyCode: keyCode))
+            return Hotkey(event)
+        }
+        #expect(try press(49, " ", .control) == .quickEntryDefault)
+        #expect(try press(40, "k", [.option, .shift, .command])?.displayString == "⌥⇧⌘K")
+        #expect(try press(122, "\u{F704}", .command)?.displayString == "⌘F1")
+        #expect(try press(40, "K", .shift) == nil)
+        #expect(try press(40, "k", []) == nil)
     }
 }
