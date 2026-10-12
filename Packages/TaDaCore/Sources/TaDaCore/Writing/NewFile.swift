@@ -1,6 +1,6 @@
 /// The text of a file Ta Da creates. The title isn't written: it's the filename.
 public enum NewFile {
-    /// A task names one parent: its project, or else its area. Tags go in `tags:` as a flow list.
+    /// A task names one parent: its project, or else its area. Tags go in `tags:` as a flow list, here and below.
     public static func task(project: String? = nil, area: String? = nil, tags: [Tag] = [], today: LocalDate) -> String {
         var keys = ["type: task", "status: Not Started"]
         if let project {
@@ -9,22 +9,23 @@ public enum NewFile {
             keys.append("area: \(FrontmatterEditor.quoted("[[\(area)]]"))")
         }
         keys.append("createdDate: \(today)")
-        if !tags.isEmpty { keys.append("tags: [\(tags.unique.map { FrontmatterEditor.flowItem($0.name) }.joined(separator: ", "))]") }
-        return block(keys)
+        return block(keys, tags: tags)
     }
 
-    public static func project(area: String? = nil, today: LocalDate) -> String {
+    public static func project(area: String? = nil, tags: [Tag] = [], today: LocalDate) -> String {
         var keys = ["type: project", "status: Not Started"]
         if let area { keys.append("area: \(FrontmatterEditor.quoted("[[\(area)]]"))") }
         keys.append("createdDate: \(today)")
-        return block(keys)
+        return block(keys, tags: tags)
     }
 
-    public static func area(today: LocalDate) -> String {
-        block(["type: area", "createdDate: \(today)"])
+    public static func area(tags: [Tag] = [], today: LocalDate) -> String {
+        block(["type: area", "createdDate: \(today)"], tags: tags)
     }
 
-    private static func block(_ keys: [String]) -> String {
-        (["---"] + keys + ["---", ""]).joined(separator: "\n")
+    private static func block(_ keys: [String], tags: [Tag]) -> String {
+        var keys = keys
+        if !tags.isEmpty { keys.append("tags: [\(tags.unique.map { FrontmatterEditor.flowItem($0.name) }.joined(separator: ", "))]") }
+        return (["---"] + keys + ["---", ""]).joined(separator: "\n")
     }
 }
