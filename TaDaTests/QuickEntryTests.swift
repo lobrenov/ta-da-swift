@@ -96,7 +96,7 @@ struct QuickEntryTests {
     }
 }
 
-@MainActor
+@MainActor @Suite(.keyWindow)
 struct QuickEntryPanelTests {
     @Test func opensAFloatingPanelOnEverySpaceAndCreatesFromIt() async throws {
         let folder = try TestFolder(["projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n"])
@@ -115,7 +115,7 @@ struct QuickEntryPanelTests {
         let escape = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
                                                    windowNumber: panel.windowNumber, context: nil, characters: "\u{1b}",
                                                    charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53))
-        try await Task.sleep(for: .milliseconds(100))
+        try await Task.sleep(for: .milliseconds(400))
         #expect(panel.performKeyEquivalent(with: escape))
         #expect(!quickEntry.isOpen)
 

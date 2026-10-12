@@ -6,7 +6,7 @@ import TaDaCore
 
 /// The window on a generated folder of 1,000 tasks and projects: how long one keystroke in the editor
 /// and one arrow-key step in a list take, including SwiftUI's update of every visible view.
-@MainActor
+@MainActor @Suite(.keyWindow)
 struct LargeVaultUITimingTests {
     let folder: TestFolder
     static let today = LocalDate("2026-10-03")!
