@@ -1745,16 +1745,18 @@ import TaDaCore
                 errorMessage = "“\(Item.title(ofPath: document.path))” changed outside Ta Da. Choose which version to keep before deleting it."
                 return
             }
-            selection = nil
         }
+        // Before the write, as a refresh while it runs can show Loose.
+        let shown = shownFolder
         do {
             _ = try await Self.run { try vault.trashFolder(path) }
         } catch {
             errorMessage = Self.couldNot("move “\(Item.title(ofPath: path))” to the trash", error)
             return
         }
+        if let selection, isInside(selection) { self.selection = nil }
         knownFolders = knownFolders.filter { !isInside($0) }
-        if let folder = shownFolder, isInside(folder) { domain = .folder(Vault.folder(of: path)) }
+        if let shown, isInside(shown) { domain = .folder(Vault.folder(of: path)) }
         await refresh()
     }
 
@@ -1788,9 +1790,9 @@ import TaDaCore
                 return nil
             }
         }
-        // Before the write, as a refresh while it runs can clear the selection, and before the folder page changes,
-        // which clears it too.
-        let selected = selection
+        // Before the write, as a refresh while it runs can clear the selection or show Loose, and before the folder page
+        // changes, which clears the selection too.
+        let selected = selection, shown = shownFolder
         let index = index, today = today
         let result: Relinked
         do {
@@ -1805,13 +1807,22 @@ import TaDaCore
         if isFolder {
             knownFolders = Set(knownFolders.map(moved))
             foldedFolders = Set(foldedFolders.map(moved))
-            if let folder = shownFolder, isInside(folder) { domain = .folder(moved(folder)) }
+            if let shown, isInside(shown) { domain = .folder(moved(shown)) }
         }
-        if let document, isInside(document.path) { document.path = moved(document.path) }
+        let followed = document.flatMap { isInside($0.path) ? $0 : nil }
+        if let followed {
+            followed.path = moved(followed.path)
+            followed.isRemovedOnDisk = false
+        }
         if let selected, isInside(selected) { selection = moved(selected) }
         if recentFiles.contains(where: isInside) { recentFiles = recentFiles.map(moved) }
         await refresh()
-        if let item = document?.item, index[item.path] == nil { updateIndex { $0.update(item) } }
+        if let followed, followed === document {
+            // A refresh during the write may already have seen the file at its new path, so this one didn't reload it.
+            await reload(followed, from: vault)
+            if followed.isDirty { await save(followed) }
+            if let item = followed.item, index[item.path] != item { updateIndex { $0.update(item) } }
+        }
         if !result.failed.isEmpty {
             let names = result.failed.map { "“\(Item.title(ofPath: $0))”" }.formatted()
             errorMessage = "Ta Da moved “\(Item.title(ofPath: path))”, but the links in \(names) still point to the old place."
@@ -1908,16 +1919,21 @@ import TaDaCore
         updateNotes()
     }
 
+    /// Assigning a value equal to the old one would still redraw the Notes sidebar.
     private func updateNotes() {
-        folderTree = index.folderTree(folders: knownFolders)
-        looseNoteCount = index.looseNotes().count
+        let tree = index.folderTree(folders: knownFolders), loose = index.looseNotes().count
+        if tree != folderTree { folderTree = tree }
+        if loose != looseNoteCount { looseNoteCount = loose }
     }
 
     /// Finds the folders on disk again. A folder page whose folder is gone shows Loose.
     private func rescanFolders(_ vault: Vault) async {
         let empty = await Self.run { vault.emptyFolders() }
-        knownFolders = empty.union(index.notes.map { Vault.folder(of: $0.path) }.filter { !$0.isEmpty })
-        updateNotes()
+        let known = empty.union(index.notes.map { Vault.folder(of: $0.path) }.filter { !$0.isEmpty })
+        if known != knownFolders {
+            knownFolders = known
+            updateNotes()
+        }
         if let folder = shownFolder, !folder.isEmpty, !(await Self.run { vault.folderExists(folder) }) { domain = .folder("") }
     }
 

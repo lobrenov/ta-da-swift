@@ -115,4 +115,45 @@ struct NoteModelTests {
         #expect(model.index["Meetings/Ark call.md"] != nil && model.index["Idea.md"] != nil)
         #expect(model.trashNote == "2 items restored to Meetings/ and the top level")
     }
+
+    @Test func convertingTheOpenNoteReloadsIt() async throws {
+        let model = await folder.model()
+        model.show(.folder("Meetings"))
+        model.selection = "Meetings/Ark call.md"
+        await model.loading?.value
+        await model.convert("Meetings/Ark call.md", to: .task)
+        let document = try #require(model.document)
+        #expect(document.path == "tasks/Ark call.md" && document.text.hasPrefix("---\ntype: task\n"))
+        #expect(document.diskText == nil && !document.isDirty && model.index["tasks/Ark call.md"]?.properties.kind == .task)
+    }
+
+    @Test func movingTheOpenNoteKeepsItsUnsavedEdits() async throws {
+        let model = await folder.model()
+        model.show(.folder("Meetings"))
+        model.selection = "Meetings/Ark call.md"
+        await model.loading?.value
+        let document = try #require(model.document)
+        document.text += "More.\n"
+        await model.moveNote("Meetings/Ark call.md", to: "")
+        #expect(model.document === document && document.path == "Ark call.md" && !document.isDirty)
+        #expect(try folder.read("Ark call.md").hasSuffix("More.\n"))
+    }
+
+    @Test func trashingANestedFolderShowsItsParent() async {
+        let model = await folder.model()
+        model.show(.folder("Meetings/2026"))
+        model.trashFolder("Meetings/2026")
+        if let request = model.folderTrashConfirmation { await model.confirmTrashFolder(request) }
+        #expect(model.domain == .folder("Meetings") && tree(model) == ["Empty 0", "Meetings 1"])
+    }
+
+    @Test func aFailedMoveLeavesThePageAndSelection() async throws {
+        let model = await folder.model()
+        try folder.write("a file", "Blocked")
+        model.show(.folder("Meetings"))
+        model.selection = "Meetings/Ark call.md"
+        await model.loading?.value
+        await model.moveNote("Meetings/Ark call.md", to: "Blocked")
+        #expect(model.errorMessage != nil && model.domain == .folder("Meetings") && model.selection == "Meetings/Ark call.md")
+    }
 }
