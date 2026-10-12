@@ -46,10 +46,10 @@ struct FileMenuTests {
         try folder.write("A note\n", "Meetings/Ark.md")
         let model = await folder.model()
         let row = FileMenuAction.noteActions(for: "Meetings/Ark.md", model: model, onRow: true, at: .zero, in: NSWindow())
-        #expect(row.map(\.title) == ["Convert to Task…", "Convert to Project…", "Convert to Area…", "Tags…", "Move to Folder…",
+        #expect(row.map(\.title) == ["Task…", "Project…", "Area…", "Tags…", "Move to Folder…",
                                      "Reveal in Finder", "Move to Trash"])
         let page = FileMenuAction.noteActions(for: "Meetings/Ark.md", model: model, onRow: false, at: nil, in: nil)
-        #expect(page.map(\.title) == ["Convert to Task…", "Convert to Project…", "Convert to Area…", "Reveal in Finder", "Move to Trash"])
+        #expect(page.map(\.title) == ["Task…", "Project…", "Area…", "Reveal in Finder", "Move to Trash"])
         #expect(page.prefix(3).map(\.shortcut) == ["tasks/", "projects/", "areas/"])
         page[1].run()
         #expect(model.convertRequest?.path == "Meetings/Ark.md" && model.convertRequest?.kind == .project)

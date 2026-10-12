@@ -1,6 +1,6 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on an area,
-// project, task or note. Rows add it with `.fileMenu(model, path:)`. A note's menu (also its page's Note ▾) has Convert
-// to Task…, Project… and Area…, Tags… and Move to Folder… (a row's), Reveal in Finder and Move to Trash. Move, Schedule, Set Deadline…, Tags… (one file),
+// project, task or note. Rows add it with `.fileMenu(model, path:)`. A note's menu (also its page's Note ▾) has Task…,
+// Project… and Area… to convert it, Tags… and Move to Folder… (a row's), Reveal in Finder and Move to Trash. Move, Schedule, Set Deadline…, Tags… (one file),
 // Reveal in Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Tags…,
 // Reveal in Finder and Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
 #if os(macOS)
@@ -97,7 +97,7 @@ struct FileMenuAction: PopupMenuItem {
         ]
     }
 
-    /// Convert to Task…, Project… and Area…, each naming the folder it goes to; on a row, Tags… and Move to Folder… (when
+    /// Task…, Project… and Area… (converting it), each with its kind's icon and the folder it goes to; on a row, Tags… and Move to Folder… (when
     /// there's a folder to move to); then Reveal in Finder and Move to Trash. A right-click on a picked note reveals or
     /// trashes every picked file. Without a point (VoiceOver's actions), Tags… opens the note first and Move to Folder…
     /// is left out.
@@ -108,9 +108,10 @@ struct FileMenuAction: PopupMenuItem {
             Task { await model.moveToTrash(paths) }
         }
         guard paths.count == 1 else { return [reveal(paths, model: model), trash] }
-        let convert: [FileMenuAction] = [(Item.Kind.task, "Task", Vault.taskFolder), (.project, "Project", Vault.projectFolder),
-                                         (.area, "Area", Vault.areaFolder)].map { kind, name, folder in
-            FileMenuAction(title: "Convert to \(name)…", systemImage: "arrow.right.doc.on.clipboard", shortcut: folder + "/") {
+        let convert: [FileMenuAction] = [(Item.Kind.task, "Task", "checkmark.square", Vault.taskFolder),
+                                         (.project, "Project", "checklist", Vault.projectFolder),
+                                         (.area, "Area", "cube", Vault.areaFolder)].map { kind, name, icon, folder in
+            FileMenuAction(title: "\(name)…", systemImage: icon, shortcut: folder + "/") {
                 model.convertRequest = AppModel.ConvertRequest(path: path, kind: kind)
             }
         }
