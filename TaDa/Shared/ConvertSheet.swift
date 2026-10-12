@@ -7,38 +7,46 @@ import TaDaCore
 /// What converting a note will do, worked out from its text.
 struct ConvertPreview: Equatable {
     struct Line: Hashable {
-        let added: Bool
+        enum Change { case kept, added, removed }
+        let change: Change
         let text: String
     }
 
     /// The note's path, and the path it moves to.
     let from: String
     let to: String
-    /// The frontmatter block after converting, its added lines marked.
+    /// The frontmatter block after converting, its added lines marked, then before its closing `---` the lines converting
+    /// replaces or removes.
     let lines: [Line]
     /// What happens to the checkboxes.
     let subtasks: String
     /// What happens to the links to it.
     let links: String
 
-    /// `taken` holds the filenames the new name is numbered against (the folder's, and for a project every project's);
-    /// `folderLinks` counts the links written with the note's path.
+    /// `text` is the note's text as it will be converted (the open document's, unsaved edits included); `taken` holds the
+    /// filenames the name is numbered against (the folder's, and for a project every project's); `folderLinks` counts the
+    /// links written with the note's path.
     init(note: Item, text: String, kind: Item.Kind, status: Status, parent: Parent?, today: LocalDate,
          taken: Set<String>, folderLinks: Int) {
         let folder = kind == .area ? Vault.areaFolder : kind == .project ? Vault.projectFolder : Vault.taskFolder
         from = note.path
-        to = folder + "/" + FileNaming.filename(for: note.title, existing: taken)
+        to = folder + "/" + Vault.movedName(of: note.path, existing: taken)
         let converted = NoteConversion.text(text, to: kind, status: status, parent: parent, today: today)
-        var old = FrontmatterSplitter.split(text).block.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        lines = FrontmatterSplitter.split(converted).block.split(separator: "\n", omittingEmptySubsequences: true).map { line in
-            let line = String(line).trimmingCharacters(in: CharacterSet(charactersIn: "\r"))
-            if let i = old.firstIndex(where: { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\r")) == line }) {
-                old.remove(at: i)
-                return Line(added: false, text: line)
-            }
-            return Line(added: true, text: line)
+        func lines(_ text: String) -> [String] {
+            FrontmatterSplitter.split(text).block.split(whereSeparator: \.isNewline).map(String.init)
         }
-        let boxes = note.checkboxes.count { $0.state != .icon }, (done, total) = note.subtasks
+        var old = lines(text)
+        var new = lines(converted).map { line in
+            if let i = old.firstIndex(of: line) {
+                old.remove(at: i)
+                return Line(change: .kept, text: line)
+            }
+            return Line(change: .added, text: line)
+        }
+        new.insert(contentsOf: old.map { Line(change: .removed, text: $0) }, at: max(new.count - 1, 0))
+        self.lines = new
+        let parsed = Item(parsing: text, path: note.path) ?? note
+        let boxes = parsed.checkboxes.count { $0.state != .icon }, (done, total) = parsed.subtasks
         subtasks = switch kind {
         case _ where boxes == 0: "It has no checkboxes."
         case .area: "An area counts no subtasks; its checkboxes stay as written."
@@ -58,7 +66,7 @@ struct ConvertSheet: View {
     @State private var status = Status.notStarted
     @State private var parent: Parent?
     @State private var text: String?
-    @State private var taken: [Item.Kind: Set<String>] = [:]
+    @State private var taken: [Item.Kind: Set<String>]?
     @Environment(\.theme) private var theme
 
     private var note: Item? { model.index[request.path] }
@@ -83,7 +91,7 @@ struct ConvertSheet: View {
                     parentMenu
                 }
             }
-            if let note, let text {
+            if let note, let text, let taken {
                 let preview = ConvertPreview(note: note, text: text, kind: kind, status: status, parent: parent, today: model.today,
                                              taken: taken[kind] ?? [], folderLinks: folderLinks(to: note))
                 details(preview)
@@ -96,7 +104,7 @@ struct ConvertSheet: View {
                 Button("Convert to \(kindName)") { convert() }
                     .buttonStyle(ActionButtonStyle(kind: .primary, height: 28))
                     .keyboardShortcut(.defaultAction)
-                    .disabled(note == nil || text == nil)
+                    .disabled(note == nil || text == nil || taken == nil)
             }
         }
         .font(.system(size: 13))
@@ -219,13 +227,17 @@ struct ConvertSheet: View {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
                         HStack(spacing: 8) {
-                            Text(line.added ? "+" : " ").foregroundStyle(theme.color(\.done)).frame(width: 8)
-                            Text(line.text).foregroundStyle(theme.color(line.added ? \.strong : \.muted))
+                            Text(line.change == .added ? "+" : line.change == .removed ? "−" : " ")
+                                .foregroundStyle(theme.color(line.change == .removed ? \.deadline : \.done)).frame(width: 8)
+                            Text(line.text)
+                                .strikethrough(line.change == .removed)
+                                .foregroundStyle(theme.color(line.change == .added ? \.strong : \.muted))
                             Spacer(minLength: 0)
                         }
                         .padding(.horizontal, 8)
                         .padding(.vertical, 1)
-                        .background(line.added ? theme.color(\.done).opacity(0.14) : .clear)
+                        .background(line.change == .added ? theme.color(\.done).opacity(0.14) : .clear)
+                        .accessibilityLabel(line.change == .added ? "Added \(line.text)" : line.change == .removed ? "Removed \(line.text)" : line.text)
                     }
                 }
                 .font(.system(size: 12, design: .monospaced))
@@ -266,17 +278,16 @@ struct ConvertSheet: View {
     /// The note's text (the open document's, if it's open) and the names each kind's folder has taken.
     private func load() async {
         guard let vault = model.vault else { return }
-        let path = request.path
-        if let document = model.document, document.path == path {
-            text = document.text
-        } else {
-            text = await Task.detached { try? vault.read(path) }.value
-        }
-        let projects = model.index.projectFilenames()
-        taken = await Task.detached {
-            [.task: vault.filenames(in: Vault.taskFolder), .project: vault.filenames(in: Vault.projectFolder).union(projects),
-             .area: vault.filenames(in: Vault.areaFolder)]
+        let path = request.path, projects = model.index.projectFilenames()
+        let open = model.document.flatMap { $0.path == path ? $0.text : nil }
+        // Both at once, so the preview never shows a name before it's numbered.
+        let (read, names) = await Task.detached { () -> (String?, [Item.Kind: Set<String>]) in
+            (open ?? (try? vault.read(path)),
+             [.task: vault.filenames(in: Vault.taskFolder), .project: vault.filenames(in: Vault.projectFolder).union(projects),
+              .area: vault.filenames(in: Vault.areaFolder)])
         }.value
+        text = read
+        taken = names
     }
 
     private func convert() {

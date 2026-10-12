@@ -309,15 +309,19 @@ extension Vault {
         _ = prune(Self.trashFolder)
     }
 
+    /// The name a file at `path` keeps when it moves among `existing` filenames: its own, or numbered when that's taken
+    /// (ignoring case).
+    public static func movedName(of path: String, existing: Set<String>) -> String {
+        let current = String(path.split(separator: "/").last ?? "")
+        guard existing.contains(where: { $0.lowercased() == current.lowercased() }) else { return current }
+        let (base, ext) = FileNaming.split(current)
+        return FileNaming.filename(for: base, extension: ext, existing: existing)
+    }
+
     /// Moves a file into `folder` (`""` for the top level), creating it if needed, keeping its filename unless that's taken there or among
     /// `taken`. Returns the new path.
     func moveFile(_ path: String, into folder: String, taken: Set<String> = []) throws -> String {
-        let current = String(path.split(separator: "/").last ?? "")
-        let existing = filenames(in: folder).union(taken)
-        let isTaken = existing.contains { $0.lowercased() == current.lowercased() }
-        let (base, ext) = FileNaming.split(current)
-        let filename = isTaken ? FileNaming.filename(for: base, extension: ext, existing: existing) : current
-        let newPath = Self.join(folder, filename)
+        let newPath = Self.join(folder, Self.movedName(of: path, existing: filenames(in: folder).union(taken)))
         try FileManager.default.createDirectory(at: root.appending(path: folder, directoryHint: .isDirectory),
                                                 withIntermediateDirectories: true)
         try CoordinatedFileIO.move(url(for: path), to: url(for: newPath))
