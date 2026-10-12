@@ -1,5 +1,5 @@
-// Rows in the iPhone's lists: a task with its checkbox and chips, a project with its ring, an area with its cube, an
-// area's and a project's heading in Today, and the menu a press and hold opens on any of them.
+// Rows in the iPhone's lists: a task with its checkbox and chips, a project with its ring, an area with its cube, a note
+// with its page, an area's and a project's heading in Today, and the menu a press and hold opens on any of them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -271,6 +271,43 @@ struct PhoneAreaRow: View {
             PhoneRowSeparator(inset: 52)
         }
         .contextMenu { PhoneFileMenu(model: model, item: area) }
+    }
+}
+
+/// A note in a tag's screen or search: its page, title, and subtasks and folder, opening its file.
+struct PhoneNoteRow: View {
+    let model: AppModel
+    let note: Item
+    @Environment(PhoneNavigation.self) private var nav
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let folder = Vault.folder(of: note.path)
+        let subtasks = note.subtasks
+        let meta = (subtasks.total > 0 ? ["\(subtasks.done)/\(subtasks.total)"] : []) + [folder.isEmpty ? "Loose" : folder]
+        VStack(spacing: 0) {
+            Button { nav.push(.file(note.path)) } label: {
+                HStack(spacing: 12) {
+                    NoteIcon(size: 22).frame(width: 24)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(note.title)
+                            .scaledFont(size: 17)
+                            .foregroundStyle(theme.color(\.fg))
+                            .lineLimit(2)
+                        Text(meta.joined(separator: " · "))
+                            .scaledFont(size: 13)
+                            .foregroundStyle(theme.color(\.muted))
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 8)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            PhoneRowSeparator(inset: 52)
+        }
     }
 }
 

@@ -133,7 +133,7 @@ extension Vault {
         }
     }
 
-    /// The Ta Da files in `.trash/`, most recently deleted first. Other notes and hidden files are left out.
+    /// The Ta Da files and notes in `.trash/`, most recently deleted first. Hidden files are left out.
     public func trashedItems() -> [TrashedItem] {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .addedToDirectoryDateKey]
         // Not `.skipsHiddenFiles`: in iCloud Drive it finds nothing inside `.trash`. Hidden files are skipped below.

@@ -170,6 +170,13 @@ struct PhoneTagScreen: View {
                     ForEach(page.completed) { PhoneTaskRow(model: model, item: $0) }
                 }
             }
+            if !page.notes.isEmpty {
+                PhoneFoldHeader(model: model, title: "Notes", count: page.notes.count, group: "Notes",
+                                in: foldKey, isFolded: model.isFolded("Notes", in: foldKey))
+                if !model.isFolded("Notes", in: foldKey) {
+                    ForEach(page.notes) { PhoneNoteRow(model: model, note: $0) }
+                }
+            }
         }
         // Opened from a file's chip or bubble, it brings back the tab bar the file's screen hid, while it's on top.
         .toolbar(nav.stacks[nav.tab]?.last == .tag(path) ? .visible : .automatic, for: .tabBar)

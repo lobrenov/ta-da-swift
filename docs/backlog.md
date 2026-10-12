@@ -13,7 +13,7 @@ Work not yet built.
 - iPad: the canvas's iPad POC page, on the iPhone app's code.
 - iPhone: Remove Callout in the callout menu (TaDaMarkdown's `CalloutMenuRequest` has no remove), Create a New Folder in onboarding, and the domain's icon in list titles.
 - iOS UI tests.
-- Notes on iPhone: the Notes tree and folder screens, notes in search and tag screens, Move to Folder and Convert. The iPhone opens a note only from a link or backlink.
+- Notes on iPhone: the Notes tree and folder screens, Move to Folder and Convert.
 - TestFlight for iPhone, with the paid Apple Developer Program: Personal Team builds expire after 7 days.
 - Alias display in TaDaMarkdown: `[[Target|Alias]]` shows the target name.
 - Renaming and deleting a tag across files.
