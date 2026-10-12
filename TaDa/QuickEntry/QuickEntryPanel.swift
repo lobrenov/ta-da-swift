@@ -76,15 +76,13 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
     }
 
     /// Writes the file; when `opening`, brings Ta Da forward while the key press is handled, before the panel closes,
-    /// and shows the file there with the caret in its body. A failure brings Ta Da forward to show its error.
+    /// and shows the file there. A failure brings Ta Da forward to show its error.
     func create(_ draft: QuickEntryDraft, opening: Bool) {
         if opening { Self.bringTaDaForward() }
         close()
         Task { [model] in
             guard let path = await model.create(draft) else { return Self.bringTaDaForward() }
-            guard opening else { return }
-            model.bodyFocus = path
-            model.openLink(to: path)
+            if opening { model.openLink(to: path) }
         }
     }
 
