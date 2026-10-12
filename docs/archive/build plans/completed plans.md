@@ -9,3 +9,4 @@ Finished build plans, kept for their decisions and milestones. A finished plan m
 | `areas v1.md` | Areas above projects, on Mac and iPhone; contexts deprecated. | 2026-10-09 |
 | `tags v1.md` | Tags from frontmatter and bodies: the tag sidebar, pages, menus and editor bubbles, on Mac and iPhone. | 2026-10-12 |
 | `quick-entry v1.md` | The global hotkey and Quick Entry panel on the Mac, and Settings ▸ Hotkeys. | 2026-10-12 |
+| `notes v1.md` | Notes: untyped markdown files browsed by folder in a third sidebar domain, folder operations and converting a note, on the Mac. | 2026-10-12 |
