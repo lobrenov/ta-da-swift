@@ -25,7 +25,8 @@ TaDa/
 ├── Theme/                     Theme (15 colour tokens + isDark, as `PlatformColor`: NSColor or UIColor), ThemeSet, Appearance, the 15 bundled
 │                              schemes and 8 sets; themed(by:) sets \.theme and the colour scheme and follows the system appearance
 ├── Onboarding/                FolderPickerView
-├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView, EditorSettingsView
+├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView, EditorSettingsView, HotkeysSettingsView (with HotkeyRecorder)
+├── QuickEntry/                Hotkey (a key and Carbon modifiers), HotkeyService (registers the global hotkey with Carbon), QuickEntryPanel (the floating panel), QuickEntryView (its content)
 ├── Sidebar/                   SidebarView: search, domains, the Projects | Tags switch over Loose, loose projects and areas with their projects, or Untagged and the tag tree, folder line, Settings, New buttons; SidebarSplitView: the sidebar beside the workspace, hidden or floating in a narrow window; SidebarState: whether it is docked, hidden or floating; SidebarSwipe: the two-finger swipes that float and hide it
 ├── Browser/
 │   ├── WorkspaceView.swift    the area right of the sidebar, per domain
@@ -115,6 +116,14 @@ The sidebar's Projects | Tags switch (`SidebarModeSwitch`, under Trash) sets `Ap
 
 A project's browser folds its Open and Completed groups from their headers, and an area's its Projects, Tasks and Completed (Completed starts folded). `AppModel.foldedGroups` keeps the folded ones per project or area path in the settings and follows a rename; a folded group's rows leave the arrow-key list. Its header shows the project's chips through `PropertyChipRow`, and its title, an area page's title and the project page table's titles are `InlineTitleField`s, which rename with `AppModel.rename(_:to:)`. The table's New linked task calls `AppModel.newLinkedTask(in:)`, which sets `titleFocus` so the new row's title starts editing without opening the task.
 
+## Quick Entry
+
+The global hotkey (`AppModel.quickEntryHotkey`, ⌃Space by default; Settings ▸ Hotkeys records another or clears it) is registered by `HotkeyService` with Carbon's `RegisterEventHotKey`, which needs no Accessibility permission. `AppDelegate` owns it, registers again when the setting changes and when the app becomes active, and lets it go while Settings records a new one. A turned-on macOS shortcut on the same keys (`CopySymbolicHotKeys`) sets `quickEntryHotkeyTaken`, which Settings shows as a warning. The hotkey works while Ta Da runs; with no folder open it brings Ta Da forward.
+
+It opens or closes `QuickEntryPanel`: a borderless `.nonactivatingPanel` at the floating level, on every Space and over full-screen apps, centred on the pointer's screen. It takes the keyboard without bringing Ta Da forward, keeps its top edge as its content grows, and closes on esc or when neither it nor one of its menus has the keyboard. Each opening starts a new `AppModel.quickEntryDraft` (TaDaCore's `QuickEntryDraft`) and a new `QuickEntryView`.
+
+The view's chips are `PropertyChipRow` and `TagChipRow` on `AppModel.quickEntryItem`, the draft as an `Item` at `AppModel.quickEntryDraftPath`, which isn't a file. The pickers' writers (`setStatus`, `setParent`, `setDate`, `addTag`, `removeTag`) edit the draft for that path; `item(at:)` gives tagMenu the draft, whose own section is Added. Hidden buttons take ⇧⌘M, ⌘S and ⌘D (the menu bar's don't reach a panel while Ta Da isn't active) and set `propertyMenuRequest` for the draft's chips. The file line reads the names a new file would be numbered against once per opening (`quickEntryTakenNames()`, `quickEntryPath(for:taken:)`). ↵ writes the draft through `AppModel.create(_:)` and closes; ⌘↵ also brings Ta Da forward and opens the file with `openLink(to:)`. A failed write brings Ta Da forward to show its error.
+
 ## iPhone
 
 `PhoneRootView` is a `TabView` of Today, Upcoming, Loose, Projects and Other, each a `NavigationStack` whose path lives in `PhoneNavigation` (`@Observable`, in the environment), with the date, move and area sheets over them.
@@ -157,6 +166,7 @@ On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a check
 | ⌘N / ⇧⌘N / ⌥⌘N | New task (filed under the project or area on screen) / New project (under the area on screen) / New area |
 | File ▸ Reveal in Finder (no keys) | Select the picked or open files in Finder (`AppModel.picked`); the file menu has it too |
 | ⌥⌘F | Search files |
+| ⌃Space (Settings ▸ Hotkeys) | Open or close Quick Entry, from any app. In it: ↵ create, ⌘↵ create and open, esc close, ⇧⌘M, ⌘S and ⌘D the parent and date menus |
 | ⌘1 / ⌘2 / ⌘3 / ⌘4 / ⌘5 | Today / Upcoming / Loose tasks / Trash / Logbook |
 | ⌘E | Live / Source |
 | ⌘, | Settings |
