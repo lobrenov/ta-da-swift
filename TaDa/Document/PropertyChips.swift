@@ -261,7 +261,7 @@ private struct DatePropertyChip: View {
     }
 
     private func set(_ date: LocalDate?) {
-        Task { await model.setProperty(kind.key, to: date.map { .date($0) }, in: item.path) }
+        Task { await model.setDate(kind, to: date, of: [item.path]) }
     }
 }
 

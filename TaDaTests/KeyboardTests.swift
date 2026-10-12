@@ -5,7 +5,7 @@ import TaDaCore
 @testable import TaDa
 
 /// The list keys and Add Subtask (⌘L), in a real window with key events sent to it.
-@MainActor
+@MainActor @Suite(.keyWindow)
 struct KeyboardTests {
     let folder: TestFolder
 

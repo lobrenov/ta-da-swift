@@ -23,20 +23,49 @@ struct TaDaApp: App {
     }
 }
 
-/// Refreshes when the app becomes active, saves when it resigns and before it quits, and moves `today`
-/// on when the day changes.
+/// Refreshes when the app becomes active, saves when it resigns and before it quits, moves `today` on when the day
+/// changes, and keeps Quick Entry's hotkey registered.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel.forLaunch()
+    private let hotkeys = HotkeyService()
+    private lazy var quickEntry = QuickEntryPanel(model: model)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotificationCenter.default.addObserver(forName: .NSCalendarDayChanged, object: nil, queue: .main) { [model] _ in
             MainActor.assumeIsolated { model.today = LocalDate(Date()) }
         }
+        hotkeys.onPress = { [weak self] in self?.hotkeyPressed() }
+        registerHotkey()
+    }
+
+    /// Opens or closes Quick Entry; with no folder open, brings Ta Da forward to choose one.
+    private func hotkeyPressed() {
+        guard model.state == .ready else { return NSApp.activate() }
+        quickEntry.toggle()
+    }
+
+    /// Registers the hotkey in the settings, and again whenever it changes or recording starts or stops.
+    private func registerHotkey() {
+        withObservationTracking { _ = (model.quickEntryHotkey, model.isRecordingHotkey) } onChange: { [weak self] in
+            Task { @MainActor in self?.registerHotkey() }
+        }
+        refreshHotkey()
+    }
+
+    /// Registers the hotkey, or none while a new one is recorded, and notes whether its keys are taken.
+    private func refreshHotkey() {
+        guard !model.isRecordingHotkey else {
+            hotkeys.register(nil)
+            return
+        }
+        model.quickEntryHotkeyTaken = !hotkeys.register(model.quickEntryHotkey)
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
         // Catches anything the folder watcher missed (or everything, if it couldn't start).
         Task { await model.refresh() }
+        // The keys may have been freed in System Settings.
+        refreshHotkey()
     }
 
     func applicationDidResignActive(_ notification: Notification) {

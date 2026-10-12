@@ -232,11 +232,11 @@ enum TagChoice: PopupMenuItem {
         if case .tag(_, _, _, true) = self { false } else { true }
     }
 
-    /// tagMenu for `item` and what's typed. Unsearched: In this file (`tags:`, then the body's), then All tags with
+    /// tagMenu for `item` and what's typed. Unsearched: In this file (`ownLabel`; `tags:`, then the body's), then All tags with
     /// counts, by path. Typing keeps the tags with a segment starting with the text, and puts Create first when no
     /// tag has that path. The row of the tag at `keeping` is highlighted (the one just toggled), else the first
     /// pickable row.
-    static func menu(item: Item, tree: [TagNode], query: String, keeping: String? = nil)
+    static func menu(item: Item, tree: [TagNode], query: String, keeping: String? = nil, ownLabel: String = "In this file")
         -> (sections: [PopupMenuSection<TagChoice>], highlight: Int?) {
         let text = query.trimmingCharacters(in: .whitespaces)
         let typed = Tag(text)
@@ -263,7 +263,7 @@ enum TagChoice: PopupMenuItem {
         if let typed, counts[typed.path] == nil, !own.contains(typed.path) {
             sections.append(PopupMenuSection(items: [.create(typed)]))
         }
-        sections.append(PopupMenuSection(label: "In this file", items: inFile))
+        sections.append(PopupMenuSection(label: ownLabel, items: inFile))
         sections.append(PopupMenuSection(label: "All tags", items: all))
         sections = sections.filter { !$0.items.isEmpty }
         let items = sections.flatMap(\.items)

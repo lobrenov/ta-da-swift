@@ -43,3 +43,17 @@ private let today = LocalDate("2026-10-02")!
     #expect(item.properties.tags.map(\.name) == ["errands", "Quick Win", "a, b"] && item.warnings.isEmpty)
     #expect(NewFile.task(tags: [], today: today) == NewFile.task(today: today))
 }
+
+@Test func newProjectAndAreaWithTagsParseBack() throws {
+    let tags = [Tag("home/garden")!, Tag("Home/Garden")!, Tag("work")!]
+    let project = NewFile.project(area: "Personal", tags: tags, today: today)
+    #expect(project == "---\ntype: project\nstatus: Not Started\narea: \"[[Personal]]\"\ncreatedDate: 2026-10-02\ntags: [home/garden, work]\n---\n")
+    let area = NewFile.area(tags: tags, today: today)
+    #expect(area == "---\ntype: area\ncreatedDate: 2026-10-02\ntags: [home/garden, work]\n---\n")
+    for text in [project, area] {
+        let item = try #require(Item(parsing: text, path: "f.md"))
+        #expect(item.properties.tags.map(\.name) == ["home/garden", "work"] && item.warnings.isEmpty)
+    }
+    #expect(NewFile.project(tags: [], today: today) == NewFile.project(today: today))
+    #expect(NewFile.area(tags: [], today: today) == NewFile.area(today: today))
+}

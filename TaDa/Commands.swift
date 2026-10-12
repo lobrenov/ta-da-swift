@@ -29,7 +29,7 @@ struct AppCommands: Commands {
                 .keyboardShortcut("f", modifiers: [.command, .option])
                 .disabled(model.state != .ready)
         }
-        CommandGroup(before: .sidebar) {
+        CommandGroup(before: .toolbar) {
             show(.today, key: "1")
             show(.upcoming, key: "2")
             show(.loose, key: "3")
@@ -46,7 +46,6 @@ struct AppCommands: Commands {
             Picker("Appearance", selection: $model.appearance) {
                 ForEach(Appearance.allCases) { Text($0.rawValue).tag($0) }
             }
-            Divider()
         }
         CommandGroup(replacing: .sidebar) {
             Button("Toggle Sidebar") { model.sidebarToggleRequest += 1 }

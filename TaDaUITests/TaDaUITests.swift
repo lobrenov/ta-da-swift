@@ -169,7 +169,7 @@ final class TaDaUITests: XCTestCase {
         waitForTitle("Alpha")
         waitForValue(app.buttons["Project"], "value == 'Website'")
 
-        app.buttons["Alpha"].click(forDuration: 0.5, thenDragTo: app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Loose tasks'")).firstMatch,
+        app.buttons["Alpha"].click(forDuration: 0.5, thenDragTo: app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Loose'")).firstMatch,
                                    withVelocity: .slow, thenHoldForDuration: 0.5)
         waitForValue(app.buttons["Project"], "value == 'None'")
     }
