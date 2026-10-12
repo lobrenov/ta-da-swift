@@ -1,5 +1,6 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on an area,
-// project or task. Rows add it with `.fileMenu(model, path:)`. Move, Schedule, Set Deadline…, Tags… (one file),
+// project, task or note. Rows add it with `.fileMenu(model, path:)`. A note's menu (also its page's Note ▾) has Convert
+// to Task…, Project… and Area…, Tags… and Move to Folder… (a row's), Reveal in Finder and Move to Trash. Move, Schedule, Set Deadline…, Tags… (one file),
 // Reveal in Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Tags…,
 // Reveal in Finder and Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
 #if os(macOS)
@@ -38,6 +39,9 @@ struct FileMenuAction: PopupMenuItem {
     static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
         if let area = model.index[path], area.properties.kind == .area {
             return areaActions(for: area, model: model, at: point, in: window)
+        }
+        if model.index[path]?.properties.kind == .note {
+            return noteActions(for: path, model: model, onRow: true, at: point, in: window)
         }
         guard path.hasPrefix(Vault.trashFolder + "/") else {
             let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
@@ -91,6 +95,46 @@ struct FileMenuAction: PopupMenuItem {
                 Task { await model.discard(paths) }
             },
         ]
+    }
+
+    /// Convert to Task…, Project… and Area…, each naming the folder it goes to; on a row, Tags… and Move to Folder…; then
+    /// Reveal in Finder and Move to Trash.
+    static func noteActions(for path: String, model: AppModel, onRow: Bool, at point: CGPoint?, in window: NSWindow?) -> [FileMenuAction] {
+        let convert: [FileMenuAction] = [(Item.Kind.task, "Task", Vault.taskFolder), (.project, "Project", Vault.projectFolder),
+                                         (.area, "Area", Vault.areaFolder)].map { kind, name, folder in
+            FileMenuAction(title: "Convert to \(name)…", systemImage: "arrow.right.doc.on.clipboard", shortcut: folder + "/") {
+                model.convertRequest = AppModel.ConvertRequest(path: path, kind: kind)
+            }
+        }
+        var actions = convert
+        if onRow {
+            var tagsAction = tags(path, model: model, at: point, in: window)
+            tagsAction.startsGroup = true
+            actions += [tagsAction, FileMenuAction(title: "Move to Folder…", systemImage: "folder", shortcut: "") {
+                if let point, let window { showFolders(for: path, model: model, at: point, in: window) }
+            }]
+        }
+        var revealAction = reveal([path], model: model)
+        revealAction.startsGroup = true
+        return actions + [revealAction, FileMenuAction(title: "Move to Trash", systemImage: "trash", shortcut: "⌘⌫") {
+            Task { await model.moveToTrash([path]) }
+        }]
+    }
+
+    /// A menu of the folders a note can move to: Loose, then the tree, less its own folder.
+    private static func showFolders(for path: String, model: AppModel, at point: CGPoint, in window: NSWindow) {
+        func rows(_ nodes: [FolderNode], depth: Int) -> [(path: String, title: String)] {
+            nodes.flatMap { [($0.path, String(repeating: "   ", count: depth) + $0.name)] + rows($0.children, depth: depth + 1) }
+        }
+        let current = Vault.folder(of: path)
+        let folders = ([("", "Loose")] + rows(model.folderTree, depth: 0)).filter { $0.path != current }
+        let actions = folders.map { folder in
+            FileMenuAction(title: folder.title, systemImage: folder.path.isEmpty ? "tray" : "folder", shortcut: "") {
+                Task { await model.moveNote(path, to: folder.path) }
+            }
+        }
+        model.menuTarget = path
+        FileMenu.shared.show(actions, at: point, in: window, theme: model.theme) { model.menuTarget = nil }
     }
 
     /// An area's page opens before a new file is made in it, so the file lands there.

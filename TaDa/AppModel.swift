@@ -1685,6 +1685,13 @@ import TaDaCore
 
     /// A folder whose name field should take focus (a folder just made).
     var folderNameFocus: String?
+    /// Convert to Task…, Project… or Area… asked for this note; the window shows the convert sheet.
+    var convertRequest: ConvertRequest?
+    struct ConvertRequest: Equatable, Identifiable {
+        let id = UUID()
+        let path: String
+        let kind: Item.Kind
+    }
     /// Moving a folder to the trash waits here for the user to confirm; `confirmTrashFolder(_:)` goes ahead.
     var folderTrashConfirmation: FolderTrashConfirmation?
     struct FolderTrashConfirmation: Equatable, Identifiable {

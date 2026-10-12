@@ -328,8 +328,9 @@ private struct PropertyChipBody<Label: View>: View {
     }
 }
 
-/// The file's type (a project's with its progress, an area's with its counts), a task's area through its project,
-/// the days it was created and completed, and the files that link here (a menu of them), in `muted`.
+/// The file's type (a project's with its progress, an area's with its counts, a note's as the note menu, then its folder
+/// and subtasks), a task's area through its project, the days it was created (a note without `createdDate`: last
+/// edited) and completed, and the files that link here (a menu of them), in `muted`.
 private struct QuietLine: View {
     let model: AppModel
     let item: Item
@@ -356,12 +357,27 @@ private struct QuietLine: View {
                         .frame(width: 11, height: 11)
                     Text("Task")
                 case .note:
-                    NoteIcon(size: 12)
-                    Text("Note")
+                    NoteMenuButton(model: model, path: item.path)
+                }
+            }
+            if p.kind == .note {
+                let folder = Vault.folder(of: item.path)
+                HStack(spacing: 4) {
+                    Image(systemName: folder.isEmpty ? "tray" : "folder").font(.system(size: 10))
+                    Text(folder.isEmpty ? "Loose" : folder)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("In \(folder.isEmpty ? "Loose" : folder)")
+                let subtasks = item.subtasks
+                if subtasks.total > 0 {
+                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                         spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
                 }
             }
             if let created = p.createdDate {
                 Text("Created \(created.relativeLabel(today: model.today))")
+            } else if p.kind == .note, let document = model.document, document.path == item.path, let modified = document.modified {
+                Text("Edited \(LocalDate(modified).relativeLabel(today: model.today))")
             }
             if p.kind == .task, p.project != nil, let area = model.index.area(of: item) {
                 HStack(spacing: 6) {
@@ -393,6 +409,44 @@ private struct QuietLine: View {
         .font(.system(size: 11.5))
         .foregroundStyle(theme.color(\.muted))
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// Note ▾: the note's page icon and type, opening the note menu under it.
+private struct NoteMenuButton: View {
+    let model: AppModel
+    let path: String
+    @State private var anchor = ScreenAnchor()
+    @State private var hovering = false
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 5) {
+                NoteIcon(size: 12)
+                Text("Note")
+                Image(systemName: "chevron.down").font(.system(size: 7, weight: .bold))
+            }
+            .padding(.horizontal, 6)
+            .frame(height: 20)
+            .background(hovering || model.menuTarget == path ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 5))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, -6)
+        .background(ScreenAnchorReader(anchor: anchor))
+        .onHover { hovering = $0 }
+        .accessibilityLabel("Note menu")
+        .help("Convert, reveal or delete this note")
+    }
+
+    private func open() {
+        guard let window = anchor.window else { return }
+        let rect = anchor.rect
+        let point = CGPoint(x: rect.minX, y: rect.minY - 2)
+        model.menuTarget = path
+        FileMenu.shared.show(FileMenuAction.noteActions(for: path, model: model, onRow: false, at: point, in: window),
+                             at: point, in: window, theme: model.theme) { model.menuTarget = nil }
     }
 }
 

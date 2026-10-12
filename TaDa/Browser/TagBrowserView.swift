@@ -33,6 +33,7 @@ struct TagBrowserView: View {
                 case let .task(task): taskRow(task)
                 case let .noteFile(note):
                     NoteRow(item: note, selected: model.isSelected(note.path), showsFolder: true) { model.click(note.path) }
+                    .fileMenu(model, path: note.path)
                 case let .note(text):
                     Text(text)
                         .font(.system(size: 12.5))

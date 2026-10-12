@@ -41,6 +41,21 @@ struct FileMenuTests {
         #expect(actions.first { $0.title == "Reveal in Finder" }?.shortcut == "")
     }
 
+    @Test func aNotesMenuConvertsMovesAndTrashes() async throws {
+        try folder.write("A note\n", "Meetings/Ark.md")
+        let model = await folder.model()
+        #expect(titles("Meetings/Ark.md", model) == ["Convert to Task…", "Convert to Project…", "Convert to Area…", "Tags…",
+                                                     "Move to Folder…", "Reveal in Finder", "Move to Trash"])
+        let page = FileMenuAction.noteActions(for: "Meetings/Ark.md", model: model, onRow: false, at: nil, in: nil)
+        #expect(page.map(\.title) == ["Convert to Task…", "Convert to Project…", "Convert to Area…", "Reveal in Finder", "Move to Trash"])
+        #expect(page.prefix(3).map(\.shortcut) == ["tasks/", "projects/", "areas/"])
+        page[1].run()
+        #expect(model.convertRequest?.path == "Meetings/Ark.md" && model.convertRequest?.kind == .project)
+        page[4].run()
+        for _ in 0..<100 where model.trash.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(model.index["Meetings/Ark.md"] == nil && model.trash.map(\.id) == [".trash/Meetings/Ark.md"])
+    }
+
     @Test func tagsOpensTheMenuForTheOneFileTheMenuActsOn() async {
         let model = await folder.model()
         let tags = FileMenuAction.actions(for: "tasks/One.md", model: model).first { $0.title == "Tags…" }

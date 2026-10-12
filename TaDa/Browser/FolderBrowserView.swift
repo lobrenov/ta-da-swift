@@ -18,6 +18,7 @@ struct FolderBrowserView: View {
         } content: {
             ForEach(notes) { note in
                 NoteRow(item: note, selected: model.isSelected(note.path)) { model.click(note.path) }
+                    .fileMenu(model, path: note.path)
             }
             if notes.isEmpty {
                 Text(folder.isEmpty ? "No notes at the top level." : "No notes in \(name) itself.")
