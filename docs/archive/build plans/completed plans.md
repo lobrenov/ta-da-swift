@@ -1,0 +1,11 @@
+# Completed plans
+
+Finished build plans, kept for their decisions and milestones. A finished plan moves here and gets a line below.
+
+| Plan | Covers | Archived |
+| --- | --- | --- |
+| `macOS MVP.md` | The Mac app's first release: the file format, index, browser, editors, themes and Settings. | 2026-10-04 |
+| `iOS MVP.md` | The iPhone POC on the same code as the Mac app. | 2026-10-09 |
+| `areas v1.md` | Areas above projects, on Mac and iPhone; contexts deprecated. | 2026-10-09 |
+| `tags v1.md` | Tags from frontmatter and bodies: the tag sidebar, pages, menus and editor bubbles, on Mac and iPhone. | 2026-10-12 |
+| `quick-entry v1.md` | The global hotkey and Quick Entry panel on the Mac, and Settings ▸ Hotkeys. | 2026-10-12 |

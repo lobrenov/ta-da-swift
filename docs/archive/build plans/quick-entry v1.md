@@ -62,7 +62,7 @@ The milestones run in order in one worktree. Each ends with its check passing.
 ### D1 — Docs
 - `docs/architecture.md`: the `QuickEntry/` folder, the hotkey service, the panel and its keys, Settings ▸ Hotkeys; the hotkey row in Shortcuts.
 - `docs/design/design-framework.md`: In the app rows for the Quick Entry panel and the hotkey recorder; As built differences.
-- `docs/archive/`: move this plan there when done.
+- `docs/archive/build plans/`: move this plan there when done, and list it in `completed plans.md`.
 - `SampleVault`: unchanged unless manual testing writes to it; commit what it wrote.
 - Check: all tests (`TaDa.xctestplan`, UI tests with permission), both package suites, macOS and iOS builds; `git diff SampleVault` shows only the intended edits.
 

@@ -61,4 +61,4 @@ The milestones run in order. Each ends with its check passing. TaDaCore checks r
 - `docs/architecture.md`: the Integrations layer and the files above.
 - `docs/design-framework.md`: In the app rows for the event and reminder rows and Settings ▸ Integrations; As built notes where the app differs from the canvas.
 - `docs/backlog.md`: Reminders links, completing reminders from Ta Da, iPad.
-- Move this plan to `docs/archive/` when done.
+- Move this plan to `docs/archive/build plans/` when done, and list it in `completed plans.md`.
