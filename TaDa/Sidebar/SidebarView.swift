@@ -288,12 +288,11 @@ struct SidebarView: View {
         }
     }
 
-    /// An area: its cube and title, no count. Clicking the open area again goes from its file back to its page.
+    /// An area: its cube and title, no count. Clicking the open area again toggles between its page and its file.
     private func areaRow(_ area: Item) -> some View {
         let path = area.path
         return SidebarRow(selected: model.domain == .area(path) && !model.isSearching, height: 32, count: nil) {
-            if model.domain == .area(path), model.selection == path { model.selection = nil }
-            model.show(.area(path))
+            model.pickProjectOrArea(.area(path))
             picked()
         } icon: {
             AreaIcon()
@@ -307,9 +306,7 @@ struct SidebarView: View {
     private func projectRow(_ progress: ProjectProgress) -> some View {
         let path = progress.project.path
         return SidebarRow(selected: model.domain == .project(path) && !model.isSearching, height: 30, count: progress.open) {
-            // Clicking the open project again goes from its page back to its tasks.
-            if model.domain == .project(path), model.selection == path { model.selection = nil }
-            model.show(.project(path))
+            model.pickProjectOrArea(.project(path))
             picked()
         } icon: {
             ProgressRing(fraction: progress.fraction)

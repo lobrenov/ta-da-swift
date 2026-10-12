@@ -621,6 +621,20 @@ import TaDaCore
         self.domain = domain
     }
 
+    /// A sidebar click on the project or area at `path`: its browser, or its file when the browser is already showing
+    /// and from its file back to the browser.
+    func pickProjectOrArea(_ domain: Domain) {
+        switch domain {
+        case let .project(path), let .area(path):
+            if self.domain == domain, !isSearching {
+                selection = selection == path ? nil : path
+                return
+            }
+        default: break
+        }
+        show(domain)
+    }
+
     var isSearching: Bool { !searchText.trimmingCharacters(in: .whitespaces).isEmpty }
 
     /// ↑/↓: selects the task `offset` places away in the list on screen, or its first or last task when

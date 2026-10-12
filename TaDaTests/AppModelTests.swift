@@ -261,6 +261,20 @@ struct AppModelTests {
         #expect(FileManager.default.fileExists(atPath: folder.url.appending(path: ".trash/Due today.md").path(percentEncoded: false)))
     }
 
+    @Test func clickingTheShownProjectAgainOpensItsFileAndOnceMoreReturns() async {
+        let model = await folder.model()
+        let path = "projects/Ta Da MVP.md"
+        model.pickProjectOrArea(.project(path))
+        #expect(model.domain == .project(path) && model.selection == nil)
+        model.pickProjectOrArea(.project(path))
+        #expect(model.selection == path)
+        model.pickProjectOrArea(.project(path))
+        #expect(model.selection == nil)
+        model.pickProjectOrArea(.project(path))
+        model.pickProjectOrArea(.project("projects/Shipped.md"))
+        #expect(model.domain == .project("projects/Shipped.md") && model.selection == nil)
+    }
+
     @Test func aDeletedProjectTakesItsTasksAndTheyBringItBack() async {
         let model = await folder.model()
         model.show(.project("projects/Ta Da MVP.md"))
