@@ -39,6 +39,7 @@ struct SidebarView: View {
                     switch model.sidebarMode {
                     case .projects: hierarchy
                     case .tags: tags
+                    case .notes: EmptyView()
                     }
                 }
                 .padding(.horizontal, 10)
