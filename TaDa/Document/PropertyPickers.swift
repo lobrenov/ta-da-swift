@@ -306,7 +306,13 @@ final class PropertyPicker {
 
 /// Where a chip is on screen, for its picker to open under it.
 final class ScreenAnchor {
-    fileprivate weak var view: NSView?
+    /// The reader views, held weakly: while SwiftUI replaces one there are two, and either can update last.
+    private let views = NSHashTable<NSView>.weakObjects()
+
+    fileprivate func add(_ view: NSView) { views.add(view) }
+
+    /// The reader view in a window.
+    private var view: NSView? { views.allObjects.first { $0.window != nil } }
 
     var window: NSWindow? { view?.window }
 
@@ -323,11 +329,11 @@ struct ScreenAnchorReader: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSView {
         let view = PassThroughView()
-        anchor.view = view
+        anchor.add(view)
         return view
     }
 
-    func updateNSView(_ view: NSView, context: Context) { anchor.view = view }
+    func updateNSView(_ view: NSView, context: Context) { anchor.add(view) }
 
     private final class PassThroughView: NSView {
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
