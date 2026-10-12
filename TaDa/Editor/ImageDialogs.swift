@@ -71,7 +71,7 @@ extension AppModel {
     func linkIcon(of item: Item) -> LinkChoice.Icon {
         switch item.properties.kind {
         case .task: .task(item.properties.status)
-        case .project: .project(index.progress(of: item).fraction)
+        case .project: .project(index.progress(of: item))
         case .area: .area
         case .note: .note
         }

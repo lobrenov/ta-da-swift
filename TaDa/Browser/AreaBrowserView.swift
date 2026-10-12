@@ -89,14 +89,14 @@ struct AreaBrowserView: View {
         let subtasks = project.subtasks
         return Button { model.show(.project(project.path)) } label: {
             HStack(spacing: 10) {
-                ProgressRing(fraction: progress.fraction)
+                ProgressRing(progress)
                     .foregroundStyle(theme.color(\.accent))
                     .scaleEffect(16 / 14)
                     .frame(width: 16, height: 16)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(project.title).font(.system(size: 13.5)).foregroundStyle(theme.color(\.fg))
                     HStack(spacing: 12) {
-                        Text("\(p.status.rawValue) · \(progress.done) of \(progress.total) done")
+                        Text(progress.isOngoing ? p.status.rawValue : "\(p.status.rawValue) · \(progress.done) of \(progress.total) done")
                         if subtasks.total > 0 {
                             Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
                                  spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
@@ -125,7 +125,7 @@ struct AreaBrowserView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityValue("\(progress.done) of \(progress.total) tasks done")
+        .accessibilityValue(progress.isOngoing ? "Ongoing" : "\(progress.done) of \(progress.total) tasks done")
         .fileMenu(model, path: project.path)
     }
 

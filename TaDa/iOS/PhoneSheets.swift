@@ -300,7 +300,7 @@ struct PhoneMoveSheet: View {
         case .none:
             Image(systemName: kind == .move ? "tray" : "xmark").foregroundStyle(theme.color(kind == .move ? \.accent : \.muted))
         case let .project(progress):
-            ProgressRing(fraction: progress.fraction).scaleEffect(20 / 14).foregroundStyle(theme.color(\.accent))
+            ProgressRing(progress).scaleEffect(20 / 14).foregroundStyle(theme.color(\.accent))
         case .area, .createArea:
             AreaIcon(size: 20)
         }

@@ -177,9 +177,9 @@ struct TagBrowserView: View {
         case let parent? where parent.properties.kind == .area:
             AreaGroupHeader(area: parent).padding(.top, 8)
         case let parent? where model.index.area(of: parent) != nil:
-            ProjectSubheader(project: parent, fraction: model.index.progress(of: parent).fraction)
+            ProjectSubheader(project: parent, progress: model.index.progress(of: parent))
         case let parent?:
-            ProjectGroupHeader(project: parent, fraction: model.index.progress(of: parent).fraction).padding(.top, 8)
+            ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent)).padding(.top, 8)
         case nil:
             VStack(alignment: .leading, spacing: 7) {
                 HStack(spacing: 8) {
@@ -203,7 +203,7 @@ struct TagBrowserView: View {
         let isArea = item.properties.kind == .area
         let progress = isArea ? nil : model.index.progress(of: item)
         let meta = if let progress {
-            "\(progress.done) of \(progress.total) done · \(model.index.area(of: item)?.title ?? "No area")"
+            "\(progress.isOngoing ? "Ongoing" : "\(progress.done) of \(progress.total) done") · \(model.index.area(of: item)?.title ?? "No area")"
         } else {
             model.index.projects(in: item).count == 1 ? "1 project" : "\(model.index.projects(in: item).count) projects"
         }
@@ -211,7 +211,7 @@ struct TagBrowserView: View {
             HStack(spacing: 10) {
                 Group {
                     if let progress {
-                        ProgressRing(fraction: progress.fraction).foregroundStyle(theme.color(\.accent))
+                        ProgressRing(progress).foregroundStyle(theme.color(\.accent))
                     } else {
                         AreaIcon()
                     }

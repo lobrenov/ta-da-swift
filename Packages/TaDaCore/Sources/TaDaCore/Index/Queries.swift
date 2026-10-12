@@ -30,6 +30,8 @@ public struct ProjectProgress: Hashable, Sendable, Identifiable {
     }
 
     public var open: Int { total - done }
+    /// An Ongoing project shows no progress.
+    public var isOngoing: Bool { project.properties.status == .ongoing }
     /// 0…1; 0 for a project without tasks.
     public var fraction: Double { total == 0 ? 0 : Double(done) / Double(total) }
     public var id: String { project.path }

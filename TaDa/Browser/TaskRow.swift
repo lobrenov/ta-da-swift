@@ -141,16 +141,17 @@ struct StatusCheckbox: View {
         }
     }
 
-    /// The checkbox marker and tint that show a status.
+    /// The checkbox marker and tint that show a status. Ongoing is Forwarded's `[>]` in its dot's `doing`.
     static func box(for status: Status, theme: Theme) -> (marker: Character, tint: PlatformColor) {
         let marker: Character = switch status {
         case .notStarted: " "
         case .doing: "/"
+        case .ongoing: ">"
         case .blocked: "B"
         case .done: "x"
         case .cancelled: "-"
         }
-        return (marker, theme.checkboxTint(marker))
+        return (marker, status == .ongoing ? theme.doing : theme.checkboxTint(marker))
     }
 }
 
@@ -238,7 +239,7 @@ extension Theme {
     func statusColor(_ status: Status) -> Color {
         switch status {
         case .notStarted: color(\.muted)
-        case .doing: color(\.doing)
+        case .doing, .ongoing: color(\.doing)
         case .done: color(\.done)
         case .blocked: color(\.blocked)
         case .cancelled: color(\.muted)

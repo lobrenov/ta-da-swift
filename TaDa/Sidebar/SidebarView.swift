@@ -309,13 +309,13 @@ struct SidebarView: View {
             model.pickProjectOrArea(.project(path))
             picked()
         } icon: {
-            ProgressRing(fraction: progress.fraction)
+            ProgressRing(progress)
                 .foregroundStyle(theme.color(\.accent))
                 .frame(width: 16)
         } label: {
             Text(progress.project.title)
         }
-        .accessibilityValue("\(progress.done) of \(progress.total) tasks done")
+        .accessibilityValue(progress.isOngoing ? "Ongoing" : "\(progress.done) of \(progress.total) tasks done")
         .fileMenu(model, path: path)
         .taskDrop(model, onto: .project(progress.project))
         .draggable(containerItemID: path)
@@ -492,16 +492,33 @@ struct SidebarRow<Icon: View, Label: View>: View {
 
 #endif
 
-/// A ring with a pie inside that fills clockwise from the top: done/total of a project's tasks.
+/// A ring with a pie inside that fills clockwise from the top: done/total of a project's tasks. An Ongoing project
+/// draws `checklist` instead.
 struct ProgressRing: View {
     let fraction: Double
+    let ongoing: Bool
+
+    init(fraction: Double, ongoing: Bool = false) {
+        self.fraction = fraction
+        self.ongoing = ongoing
+    }
+
+    init(_ progress: ProjectProgress) {
+        self.init(fraction: progress.fraction, ongoing: progress.isOngoing)
+    }
 
     var body: some View {
-        ZStack {
-            Circle().stroke(lineWidth: 1.4)
-            Pie(fraction: fraction)
+        Group {
+            if ongoing {
+                Image(systemName: "checklist").font(.system(size: 11, weight: .medium))
+            } else {
+                ZStack {
+                    Circle().stroke(lineWidth: 1.4)
+                    Pie(fraction: fraction)
+                }
+                .frame(width: 12, height: 12)
+            }
         }
-        .frame(width: 12, height: 12)
         .frame(width: 14, height: 14)
         .accessibilityHidden(true)
     }

@@ -157,7 +157,7 @@ struct PhoneTagScreen: View {
                 case let parent? where parent.properties.kind == .area:
                     PhoneAreaHeader(area: parent)
                 case let parent?:
-                    PhoneProjectHeader(project: parent, fraction: model.index.progress(of: parent).fraction)
+                    PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
                 case nil:
                     looseHeader
                 }

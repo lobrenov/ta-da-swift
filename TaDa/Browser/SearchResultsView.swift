@@ -45,7 +45,7 @@ struct SearchResultsView: View {
             model.open(project.path)
         } label: {
             HStack(alignment: .top, spacing: 10) {
-                ProgressRing(fraction: model.index.progress(of: project).fraction)
+                ProgressRing(model.index.progress(of: project))
                     .foregroundStyle(theme.color(\.accent))
                     .padding(.top, 2)
                 VStack(alignment: .leading, spacing: 3) {

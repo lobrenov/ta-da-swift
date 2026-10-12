@@ -34,7 +34,7 @@ Bring the project instruction files in line with how I actually work now.
 | Key | Applies to | Value | Notes |
 |---|---|---|---|
 | `type` | tasks, projects, areas | `task` \| `project` \| `area` | Required; a note has none |
-| `status` | tasks, projects | `Not Started` \| `Doing` \| `Done` \| `Blocked` \| `Cancelled` | Read case-insensitively; written in this exact form. Missing or unknown values read as `Not Started`, with a warning |
+| `status` | tasks, projects | `Not Started` \| `Doing` \| `Ongoing` \| `Done` \| `Blocked` \| `Cancelled` | Read case-insensitively; written in this exact form. Missing or unknown values read as `Not Started`, with a warning. `Ongoing` is for projects: an open project without progress (Ta Da offers it only for projects) |
 | `project` | tasks | wikilink `"[[Project title]]"` | Optional. The **only** thing that makes a task belong to a project. If the link doesn't resolve, the task has no parent and gets a warning |
 | `area` | tasks, projects | wikilink `"[[Area title]]"` | Optional. Files a project, or a task with no project, under an area. Plain text (`area: Personal`) reads as the title. If it doesn't resolve, the file has no parent and gets a warning |
 | `createdDate` | all | `YYYY-MM-DD` | Set when Ta Da creates the file |

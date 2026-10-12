@@ -32,7 +32,7 @@ struct ProjectBrowserView: View {
         let subtasks = project.subtasks
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                ProgressRing(fraction: progress.fraction).scaleEffect(24 / 16).frame(width: 21, height: 21)
+                ProgressRing(progress).scaleEffect(24 / 16).frame(width: 21, height: 21)
                     .foregroundStyle(theme.color(\.accent))
                 InlineTitleField(model: model, path: project.path, height: 34, font: .system(size: 24, weight: .bold)) {
                     Text(project.title)
@@ -57,9 +57,11 @@ struct ProjectBrowserView: View {
                 }
             }
             TagChipRow(model: model, item: project)
-            Text("\(progress.done) of \(progress.total) tasks done")
-                .font(.system(size: 11.5))
-                .foregroundStyle(theme.color(\.muted))
+            if !progress.isOngoing {
+                Text("\(progress.done) of \(progress.total) tasks done")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(theme.color(\.muted))
+            }
         }
     }
 

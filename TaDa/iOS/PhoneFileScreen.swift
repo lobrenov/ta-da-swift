@@ -159,7 +159,7 @@ struct PhoneFileScreen: View {
                     // A tap completes or reopens; a press and hold opens the statuses, which VoiceOver lists as actions.
                     Menu {
                         Picker("Status", selection: Binding(get: { status }, set: setStatus)) {
-                            ForEach(Status.menuOrder, id: \.self) { option in
+                            ForEach(Status.choices(for: item.properties.kind), id: \.self) { option in
                                 Label { Text(option.rawValue) } icon: { Image(uiImage: statusImage(option)) }
                                     .tag(option)
                             }
@@ -172,7 +172,7 @@ struct PhoneFileScreen: View {
                     }
                     .accessibilityValue(status.rawValue)
                     .accessibilityActions {
-                        ForEach(Status.menuOrder.filter { $0 != status }, id: \.self) { option in
+                        ForEach(Status.choices(for: item.properties.kind).filter { $0 != status }, id: \.self) { option in
                             Button(option.rawValue) { setStatus(option) }
                         }
                     }
@@ -256,7 +256,7 @@ private struct QuietLine: View {
         }
         if p.kind == .project {
             let progress = model.index.progress(of: model.index[item.path] ?? item)
-            parts.append("\(progress.done) of \(progress.total) tasks done")
+            if !progress.isOngoing { parts.append("\(progress.done) of \(progress.total) tasks done") }
         } else if p.kind == .area {
             let projects = model.index.projects(in: item).count
             parts.append("\(projects == 1 ? "1 project" : "\(projects) projects") · \(tasks(model.index.tasks(in: item).count))")
@@ -303,7 +303,7 @@ struct PhoneChips: View {
                             if isArea {
                                 AreaIcon(size: 15)
                             } else {
-                                ProgressRing(fraction: model.index.progress(of: parent).fraction).foregroundStyle(theme.color(\.accent))
+                                ProgressRing(model.index.progress(of: parent)).foregroundStyle(theme.color(\.accent))
                             }
                             Text(parent.title).lineLimit(1)
                         }

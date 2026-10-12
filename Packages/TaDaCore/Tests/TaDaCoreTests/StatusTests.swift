@@ -8,6 +8,7 @@ import Testing
     #expect(Status(reading: " done ") == .done)
     #expect(Status(reading: "blocked") == .blocked)
     #expect(Status(reading: "cancelled") == .cancelled)
+    #expect(Status(reading: "ongoing") == .ongoing)
 }
 
 @Test func statusRejectsOtherValues() {
@@ -17,9 +18,14 @@ import Testing
 }
 
 @Test func statusWritesCanonicalForms() {
-    #expect(Status.allCases.map(\.rawValue) == ["Not Started", "Doing", "Done", "Blocked", "Cancelled"])
+    #expect(Status.allCases.map(\.rawValue) == ["Not Started", "Doing", "Done", "Blocked", "Cancelled", "Ongoing"])
 }
 
 @Test func doneAndCancelledAreClosed() {
     #expect(Status.allCases.filter(\.isClosed) == [.done, .cancelled])
+}
+
+@Test func onlyProjectsOfferOngoing() {
+    #expect(Status.choices(for: .project) == [.notStarted, .doing, .ongoing, .blocked, .done, .cancelled])
+    #expect(Status.choices(for: .task) == [.notStarted, .doing, .blocked, .done, .cancelled])
 }

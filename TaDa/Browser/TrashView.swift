@@ -162,7 +162,7 @@ struct TrashView: View {
                 if p.kind == .area {
                     AreaIcon().padding(.top, 2)
                 } else if isProject {
-                    ProgressRing(fraction: ProjectProgress(project: item, tasks: tasks.map(\.item)).fraction)
+                    ProgressRing(ProjectProgress(project: item, tasks: tasks.map(\.item)))
                         .foregroundStyle(theme.color(\.accent))
                         .padding(.top, 2)
                 } else {

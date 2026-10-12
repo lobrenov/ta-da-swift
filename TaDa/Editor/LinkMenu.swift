@@ -28,8 +28,8 @@ struct LinkMenuSource {
 struct LinkChoice: Hashable, Identifiable {
     enum Icon: Hashable {
         case task(Status)
-        /// Done/total of the project's tasks.
-        case project(Double)
+        /// The project's progress.
+        case project(ProjectProgress)
         case area
         case note
         case image(URL)
@@ -103,7 +103,7 @@ final class LinkMenuSearch {
             return LinkChoice(path: item.path, icon: .task(item.properties.status), title: item.title,
                               hint: index.parent(of: item)?.title ?? "Loose task")
         case .project:
-            return LinkChoice(path: item.path, icon: .project(index.progress(of: item).fraction), title: item.title, hint: "Project")
+            return LinkChoice(path: item.path, icon: .project(index.progress(of: item)), title: item.title, hint: "Project")
         case .area:
             return LinkChoice(path: item.path, icon: .area, title: item.title, hint: "Area")
         case .note:
@@ -128,8 +128,8 @@ struct LinkChoiceIcon: View {
                 let (marker, tint) = StatusCheckbox.box(for: status, theme: theme)
                 InlineCheckboxView(marker: marker, tint: tint, background: theme.bg)
                     .frame(width: size, height: size)
-            case .project(let fraction):
-                ProgressRing(fraction: fraction)
+            case .project(let progress):
+                ProgressRing(progress)
                     .foregroundStyle(theme.color(\.accent))
                     .scaleEffect(size / 14)
             case .area:

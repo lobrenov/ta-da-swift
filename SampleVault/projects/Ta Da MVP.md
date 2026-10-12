@@ -1,6 +1,6 @@
 ---
 type: project
-status: Doing
+status: Ongoing
 area: "[[Personal]]"
 createdDate: 2026-09-14
 tags: [dev/swift]

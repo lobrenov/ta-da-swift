@@ -128,13 +128,13 @@ extension AppModel.Domain {
 /// A project's heading inside a list: its ring and title over a rule.
 struct ProjectGroupHeader: View {
     let project: Item
-    let fraction: Double
+    let progress: ProjectProgress
     @Environment(\.theme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
-                ProgressRing(fraction: fraction).foregroundStyle(theme.color(\.accent))
+                ProgressRing(progress).foregroundStyle(theme.color(\.accent))
                 Text(project.title).fontWeight(.semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
             }
             .padding(.horizontal, 10)
@@ -169,12 +169,12 @@ struct AreaGroupHeader: View {
 /// A project's heading under its area's: its ring and title, smaller and without a rule.
 struct ProjectSubheader: View {
     let project: Item
-    let fraction: Double
+    let progress: ProjectProgress
     @Environment(\.theme) private var theme
 
     var body: some View {
         HStack(spacing: 8) {
-            ProgressRing(fraction: fraction).foregroundStyle(theme.color(\.accent))
+            ProgressRing(progress).foregroundStyle(theme.color(\.accent))
             Text(project.title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(theme.color(\.fg)).lineLimit(1)
         }
         .padding(.horizontal, 10)

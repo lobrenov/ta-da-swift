@@ -198,7 +198,7 @@ private struct PickingBars: ViewModifier {
                     nav.endPicking()
                     Task { for path in paths { await model.setStatus(status, in: path) } }
                 }) {
-                    ForEach(Status.menuOrder, id: \.self) { Text($0.rawValue).tag(Optional($0)) }
+                    ForEach(Status.choices(for: tasks.isEmpty ? .project : .task), id: \.self) { Text($0.rawValue).tag(Optional($0)) }
                 } label: {
                     Label("Status", systemImage: "circle.dashed")
                 }

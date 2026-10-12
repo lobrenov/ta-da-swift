@@ -32,7 +32,7 @@ struct PhoneTaskListScreen: View {
                     if parent.properties.kind == .area {
                         PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id)
                     } else {
-                        PhoneProjectHeader(project: parent, fraction: model.index.progress(of: parent).fraction)
+                        PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
                     }
                 }
                 ForEach(group.tasks) { task in
@@ -316,10 +316,13 @@ struct PhoneProjectScreen: View {
             } content: {
                 VStack(alignment: .leading, spacing: 12) {
                     PhoneChips(model: model, item: project)
-                    Text(((subtasks.total > 0 ? ["Subtasks \(subtasks.done)/\(subtasks.total)"] : [])
-                          + ["\(progress.done) of \(progress.total) tasks done"]).joined(separator: " · "))
-                        .scaledFont(size: 13)
-                        .foregroundStyle(theme.color(\.muted))
+                    let line = (subtasks.total > 0 ? ["Subtasks \(subtasks.done)/\(subtasks.total)"] : [])
+                        + (progress.isOngoing ? [] : ["\(progress.done) of \(progress.total) tasks done"])
+                    if !line.isEmpty {
+                        Text(line.joined(separator: " · "))
+                            .scaledFont(size: 13)
+                            .foregroundStyle(theme.color(\.muted))
+                    }
                     Button { nav.push(.file(path)) } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "doc.text").foregroundStyle(theme.color(\.muted))

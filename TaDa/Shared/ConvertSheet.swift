@@ -112,7 +112,10 @@ struct ConvertSheet: View {
         .padding(20)
         .frame(width: 480)
         .onAppear { kind = request.kind }
-        .onChange(of: kind) { if kind == .project, case .project = parent { parent = nil } }
+        .onChange(of: kind) {
+            if kind == .project, case .project = parent { parent = nil }
+            if !Status.choices(for: kind).contains(status) { status = .notStarted }
+        }
         .task { await load() }
     }
 
@@ -153,7 +156,7 @@ struct ConvertSheet: View {
 
     private var statusMenu: some View {
         Menu {
-            ForEach(Status.allCases, id: \.self) { value in
+            ForEach(Status.choices(for: kind), id: \.self) { value in
                 Button(value.rawValue) { status = value }
             }
         } label: {

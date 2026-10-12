@@ -85,7 +85,7 @@ private struct StatusPropertyChip: View {
         .accessibilityLabel("Status")
         .accessibilityValue(status.rawValue)
         .accessibilityActions {
-            ForEach(StatusChoice.order.filter { $0 != status }, id: \.self) { option in
+            ForEach(Status.choices(for: item.properties.kind).filter { $0 != status }, id: \.self) { option in
                 Button(option.rawValue) { Task { await model.setStatus(option, in: item.path) } }
             }
         }
@@ -117,7 +117,7 @@ private struct ParentPropertyChip: View {
                     if isArea {
                         AreaIcon(size: 13)
                     } else {
-                        ProgressRing(fraction: model.index.progress(of: parent).fraction)
+                        ProgressRing(model.index.progress(of: parent))
                             .foregroundStyle(theme.color(\.accent))
                     }
                     Text(parent.title)
@@ -343,11 +343,11 @@ private struct QuietLine: View {
                 switch p.kind {
                 case .project:
                     let progress = model.index.progress(of: item)
-                    ProgressRing(fraction: progress.fraction)
+                    ProgressRing(progress)
                         .foregroundStyle(theme.color(\.accent))
                         .scaleEffect(12 / 14)
                         .frame(width: 12, height: 12)
-                    Text("Project · \(progress.done) of \(progress.total) tasks done")
+                    Text(progress.isOngoing ? "Project" : "Project · \(progress.done) of \(progress.total) tasks done")
                 case .area:
                     AreaIcon(size: 12)
                     Text("Area · ^[\(model.index.projects(in: item).count) project](inflect: true) · ^[\(model.index.tasks(in: item).count) task](inflect: true)")

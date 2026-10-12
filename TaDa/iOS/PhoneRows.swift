@@ -178,7 +178,7 @@ struct PhoneProjectRow: View {
         VStack(spacing: 0) {
             Button { nav.push(.project(project.path)) } label: {
                 HStack(spacing: 12) {
-                    ProgressRing(fraction: progress.fraction)
+                    ProgressRing(progress)
                         .scaleEffect(22 / 14)
                         .foregroundStyle(theme.color(\.accent))
                         .frame(width: 24)
@@ -214,7 +214,7 @@ struct PhoneProjectRow: View {
 
     @ViewBuilder private func meta(_ project: Item) -> some View {
         let p = project.properties
-        let summary = "\(p.status.rawValue) · \(progress.done) of \(progress.total) done"
+        let summary = progress.isOngoing ? p.status.rawValue : "\(p.status.rawValue) · \(progress.done) of \(progress.total) done"
         if showsDates {
             let subtasks = project.subtasks
             HStack(spacing: 12) {
@@ -335,12 +335,12 @@ struct PhoneAreaHeader: View {
 /// A project's heading inside Today: its ring and title.
 struct PhoneProjectHeader: View {
     let project: Item
-    let fraction: Double
+    let progress: ProjectProgress
     @Environment(\.theme) private var theme
 
     var body: some View {
         HStack(spacing: 8) {
-            ProgressRing(fraction: fraction).foregroundStyle(theme.color(\.accent))
+            ProgressRing(progress).foregroundStyle(theme.color(\.accent))
             Text(project.title).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
         }
         .padding(.horizontal, 16)
@@ -406,7 +406,7 @@ struct PhoneFileMenu: View {
             nav.play(.pick)
             Task { await model.setStatus(status, in: path) }
         }) {
-            ForEach(Status.menuOrder, id: \.self) { Text($0.rawValue).tag($0) }
+            ForEach(Status.choices(for: item.properties.kind), id: \.self) { Text($0.rawValue).tag($0) }
         } label: {
             Label("Status", systemImage: "circle.dashed")
         }
@@ -429,10 +429,5 @@ struct PhoneFileMenu: View {
             Task { await model.moveToTrash([path]) }
         }
     }
-}
-
-extension Status {
-    /// The order status menus list them in.
-    static let menuOrder: [Status] = [.notStarted, .doing, .blocked, .done, .cancelled]
 }
 #endif

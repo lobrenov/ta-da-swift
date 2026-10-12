@@ -69,7 +69,7 @@ final class PropertyPicker {
     func pickStatus(of item: Item, model: AppModel, anchor: ScreenAnchor) {
         guard let window = anchor.window, toggle(item.path, "status", anchor: anchor.rect) else { return }
         let current = item.properties.status
-        let choices = StatusChoice.order.map { StatusChoice(status: $0, isCurrent: $0 == current) }
+        let choices = Status.choices(for: item.properties.kind).map { StatusChoice(status: $0, isCurrent: $0 == current) }
         statusMenu.show([PopupMenuSection(label: "Status", items: choices)], highlight: choices.firstIndex(where: \.isCurrent),
                         theme: model.theme, below: anchor.rect, inset: 0, gap: 6, in: window) { [weak self] choice in
             self?.close()
@@ -342,9 +342,6 @@ struct ScreenAnchorReader: NSViewRepresentable {
 
 /// A row of the status menu.
 struct StatusChoice: PopupMenuItem {
-    /// The order the menu lists them in.
-    static let order: [Status] = [.notStarted, .doing, .blocked, .done, .cancelled]
-
     let status: Status
     let isCurrent: Bool
 
@@ -511,7 +508,7 @@ private struct ProjectChoiceRow: View {
     @ViewBuilder private var icon: some View {
         switch choice {
         case .project(let progress, _):
-            ProgressRing(fraction: progress.fraction).foregroundStyle(theme.color(\.accent))
+            ProgressRing(progress).foregroundStyle(theme.color(\.accent))
         case .area, .createArea:
             AreaIcon().environment(\.theme, theme)
         case .loose:

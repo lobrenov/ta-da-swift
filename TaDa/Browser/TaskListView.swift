@@ -80,9 +80,9 @@ struct TaskListView: View {
             case .area:
                 AreaGroupHeader(area: parent)
             case .project where model.index.area(of: parent) != nil:
-                ProjectSubheader(project: parent, fraction: model.index.progress(of: parent).fraction)
+                ProjectSubheader(project: parent, progress: model.index.progress(of: parent))
             case .project:
-                ProjectGroupHeader(project: parent, fraction: model.index.progress(of: parent).fraction)
+                ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent))
             case .task, .note:
                 EmptyView()
             }

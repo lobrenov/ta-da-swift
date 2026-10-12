@@ -50,7 +50,7 @@ private struct LinkedTasksTable: View {
     let reveal: (String) -> Void
     @Environment(\.theme) private var theme
 
-    private static let order: [Status] = [.doing, .blocked, .notStarted, .done, .cancelled]
+    private static let order: [Status] = [.doing, .ongoing, .blocked, .notStarted, .done, .cancelled]
 
     var body: some View {
         let sorted = tasks.enumerated().sorted { a, b in

@@ -174,7 +174,7 @@ struct PhoneSearchResults: View {
                 ForEach(projects) { project in
                     Button { nav.push(.project(project.path)) } label: {
                         HStack(spacing: 12) {
-                            ProgressRing(fraction: model.index.progress(of: project).fraction)
+                            ProgressRing(model.index.progress(of: project))
                                 .scaleEffect(22 / 14)
                                 .foregroundStyle(theme.color(\.accent))
                                 .frame(width: 24)

@@ -16,7 +16,7 @@ public enum GeneratedVault {
         var files: [(String, String)] = []
 
         for (i, title) in projects.enumerated() {
-            var fm = ["type: project", "status: \(i % 7 == 0 ? "Done" : i % 2 == 0 ? "Doing" : "Not Started")", "area: Area \(i % 5)"]
+            var fm = ["type: project", "status: \(i % 7 == 0 ? "Done" : i % 2 == 0 ? "Doing" : i % 10 == 1 ? "Ongoing" : "Not Started")", "area: Area \(i % 5)"]
             if i % 3 == 0 { fm.append("deadline: \(today.adding(days: random.next(in: -10...90)))") }
             files.append(("projects/\(title).md", file(fm, "The \(title.lowercased()) project.\n\nNotes and context for it.\n")))
         }
