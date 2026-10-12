@@ -79,7 +79,7 @@ struct SidebarView: View {
         }
     }
 
-    /// Untagged, then the tag tree: 16pt per level, the last segment only, a parent folding from its chevron.
+    /// Untagged, then the tag tree: roots aligned with Untagged, 16pt per level, the last segment only, a parent folding from its chevron.
     @ViewBuilder private var tags: some View {
         row(.tag(nil), count: model.untaggedCount)
         Spacer().frame(height: 10)
@@ -94,40 +94,35 @@ struct SidebarView: View {
         }
     }
 
-    /// A tag: its fold chevron (for a parent) in a 10pt slot, then a row with its glyph, last segment and count.
+    /// A tag: a row with its glyph, last segment and count, and for a parent a fold chevron in the row's leading padding.
     private func tagRow(_ node: TagNode, depth: Int) -> some View {
         let path = node.tag.path
         let folded = model.isTagFolded(path)
-        return HStack(spacing: 0) {
-            Group {
-                if node.children.isEmpty {
-                    Color.clear
-                } else {
-                    Button { model.toggleTagFolded(path) } label: {
-                        Image(systemName: folded ? "chevron.right" : "chevron.down")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(theme.color(\.muted))
-                            .frame(width: 10, height: 30)
-                            .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(folded ? "Expand \(node.tag.name)" : "Collapse \(node.tag.name)")
+        return SidebarRow(selected: model.domain == .tag(path) && !model.isSearching, height: 30, count: node.count) {
+            model.show(.tag(path))
+            picked()
+        } icon: {
+            Image(systemName: "tag")
+                .font(.system(size: 11))
+                .foregroundStyle(theme.color(\.accent))
+                .frame(width: 16)
+                .accessibilityHidden(true)
+        } label: {
+            Text(node.tag.leaf)
+        }
+        .accessibilityLabel("Tag \(node.tag.name)")
+        .overlay(alignment: .leading) {
+            if !node.children.isEmpty {
+                Button { model.toggleTagFolded(path) } label: {
+                    Image(systemName: folded ? "chevron.right" : "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(theme.color(\.muted))
+                        .frame(width: 10, height: 30)
+                        .contentShape(.rect)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(folded ? "Expand \(node.tag.name)" : "Collapse \(node.tag.name)")
             }
-            .frame(width: 10)
-            SidebarRow(selected: model.domain == .tag(path) && !model.isSearching, height: 30, count: node.count) {
-                model.show(.tag(path))
-                picked()
-            } icon: {
-                Image(systemName: "tag")
-                    .font(.system(size: 11))
-                    .foregroundStyle(theme.color(\.accent))
-                    .frame(width: 16)
-                    .accessibilityHidden(true)
-            } label: {
-                Text(node.tag.leaf)
-            }
-            .accessibilityLabel("Tag \(node.tag.name)")
         }
         .padding(.leading, CGFloat(depth) * 16)
     }
