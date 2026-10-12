@@ -127,6 +127,21 @@ struct DesignRenderTests {
         try await render(HotkeysSettingsView(model: hotkeys).themed(by: hotkeys).frame(height: 594, alignment: .top), width: 700,
                          to: output.appending(path: "settings-hotkeys.png"))
 
+        // Quick Entry on the design's data, in the default dark scheme: empty, typed, an area, and a taken name.
+        model.usesSchemePerAppearance = false
+        model.appearance = .dark
+        var typed = QuickEntryDraft()
+        typed.title = "Call Bea about the venue"
+        var area = typed.changingKind(to: .area)
+        area.title = "Wellbeing"
+        var taken = typed.changingKind(to: .project)
+        taken.title = "Ta Da MVP"
+        for (name, draft) in [("empty", QuickEntryDraft()), ("typed", typed), ("area", area), ("taken", taken)] {
+            let view = QuickEntryView(model: model, draft: .constant(draft), create: { _ in }, close: {})
+                .themed(by: model).padding(20).frame(height: 300, alignment: .top)
+            try await render(view, width: 600, to: output.appending(path: "quick-entry-\(name).png"))
+        }
+
         // The window's sidebar is glass, which doesn't draw here, so the sidebar also renders on its own.
         areas.domain = .area("areas/Personal.md")
         try await render(SidebarView(model: areas).themed(by: areas), width: 240, to: output.appending(path: "area-sidebar.png"))

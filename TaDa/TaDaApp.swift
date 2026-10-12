@@ -28,12 +28,20 @@ struct TaDaApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel.forLaunch()
     private let hotkeys = HotkeyService()
+    private lazy var quickEntry = QuickEntryPanel(model: model)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotificationCenter.default.addObserver(forName: .NSCalendarDayChanged, object: nil, queue: .main) { [model] _ in
             MainActor.assumeIsolated { model.today = LocalDate(Date()) }
         }
+        hotkeys.onPress = { [weak self] in self?.hotkeyPressed() }
         registerHotkey()
+    }
+
+    /// Opens or closes Quick Entry; with no folder open, brings Ta Da forward to choose one.
+    private func hotkeyPressed() {
+        guard model.state == .ready else { return NSApp.activate() }
+        quickEntry.toggle()
     }
 
     /// Registers the hotkey in the settings, and again whenever it changes or recording starts or stops.

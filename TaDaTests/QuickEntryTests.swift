@@ -94,3 +94,29 @@ struct QuickEntryTests {
         #expect(try press(40, "k", []) == nil)
     }
 }
+
+@MainActor
+struct QuickEntryPanelTests {
+    @Test func opensAFloatingPanelOnEverySpaceAndCreatesFromIt() async throws {
+        let folder = try TestFolder(["projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n"])
+        let model = await folder.model()
+        let quickEntry = QuickEntryPanel(model: model)
+        quickEntry.open()
+        let panel = try #require(quickEntry.panel)
+        #expect(panel.level == .floating && panel.styleMask.contains(.nonactivatingPanel))
+        #expect(panel.collectionBehavior.contains(.canJoinAllSpaces) && panel.collectionBehavior.contains(.fullScreenAuxiliary))
+        #expect(panel.frame.width == 560)
+
+        quickEntry.toggle()
+        #expect(!quickEntry.isOpen && !panel.isVisible)
+
+        quickEntry.open()
+        var draft = QuickEntryDraft()
+        draft.title = "Book venue"
+        draft.parent = .project("Ta Da MVP")
+        quickEntry.create(draft, opening: false)
+        #expect(!quickEntry.isOpen)
+        while model.index["tasks/Book venue.md"] == nil { await Task.yield() }
+        #expect(try folder.read("tasks/Book venue.md") == draft.text(today: model.today))
+    }
+}

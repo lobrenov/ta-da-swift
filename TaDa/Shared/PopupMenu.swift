@@ -499,7 +499,7 @@ struct PopupFooter: View {
 }
 
 /// A key cap and what it does, for a popup's footer.
-private struct MenuKeyHint: View {
+struct MenuKeyHint: View {
     let key: String
     let label: String
     let theme: Theme

@@ -48,7 +48,7 @@ The milestones run in order in one worktree. Each ends with its check passing.
 ### M2 — Panel
 - `QuickEntryPanel` (`QuickEntry/QuickEntryPanel.swift`): an `NSPanel` with `.nonactivatingPanel`, floating level, `canJoinAllSpaces` and `fullScreenAuxiliary`, that becomes key; centred on the pointer's screen; closes on `windowDidResignKey` and esc. Opening makes a new `QuickEntryDraft` and view.
 - `QuickEntryView` (`QuickEntry/QuickEntryView.swift`): the switch, the title field, the area note, the path line and warning, the footer and its buttons, themed by `AppModel.theme`.
-- The panel's `performKeyEquivalent` takes ↵ and ⌘↵ (creating as decided) and, once M3 lands, ⇧⌘M, ⌘S and ⌘D.
+- The Create and Create and Open buttons take ↵ and ⌘↵ as keyboard shortcuts, and a hidden cancel button esc; M3 adds ⇧⌘M, ⌘S and ⌘D.
 - ⌘↵ calls `NSApp.activate()`, brings the main window forward (un-minimising it) and `openLink(to:)`.
 - Check: from Safari, ⌃Space and type at once: the title fills and Safari keeps its menu bar; click away closes; reopen is empty; ↵ writes the file and Safari is in front; ⌘↵ shows each destination in the canvas's table; works in a full-screen app and on a second display.
 
