@@ -75,23 +75,20 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
         panel.setFrameOrigin(CGPoint(x: panel.frame.minX, y: top - panel.frame.height))
     }
 
-    /// Writes the file; when `opening`, brings Ta Da forward while the key press is handled, before the panel closes,
-    /// and shows the file there. A failure brings Ta Da forward to show its error.
+    /// Writes the file; when `opening`, brings Ta Da forward and shows it there. A failure brings Ta Da forward to show
+    /// its error.
     func create(_ draft: QuickEntryDraft, opening: Bool) {
-        if opening { Self.bringTaDaForward() }
         close()
         Task { [model] in
-            guard let path = await model.create(draft) else { return Self.bringTaDaForward() }
-            if opening { model.openLink(to: path) }
+            guard let path = await model.create(draft) else { return NSApp.activate() }
+            guard opening else { return }
+            NSApp.activate()
+            if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("main") == true }) {
+                window.deminiaturize(nil)
+                window.makeKeyAndOrderFront(nil)
+            }
+            model.openLink(to: path)
         }
-    }
-
-    /// Activates Ta Da with its main window in front and key.
-    private static func bringTaDaForward() {
-        NSApp.activate()
-        guard let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("main") == true }) else { return }
-        window.deminiaturize(nil)
-        window.makeKeyAndOrderFront(nil)
     }
 
     /// A borderless panel that can take the keyboard.
