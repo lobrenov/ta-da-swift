@@ -57,8 +57,9 @@ struct QuickEntryTests {
                      (draft(.area, "Personal"), "areas/Personal 2.md"),
                      (draft(.task, "Notes"), "tasks/Notes 2.md"),
                      (draft(.task, "New: plan"), "tasks/New - plan.md")]
+        let taken = model.quickEntryTakenNames()
         for (draft, expected) in cases {
-            #expect(model.quickEntryPath(for: draft) == expected)
+            #expect(AppModel.quickEntryPath(for: draft, taken: taken) == expected)
         }
         for (draft, expected) in cases.prefix(1) + cases.dropFirst(2) {
             #expect(await model.create(draft) == expected)
@@ -109,6 +110,20 @@ struct QuickEntryPanelTests {
 
         quickEntry.toggle()
         #expect(!quickEntry.isOpen && !panel.isVisible)
+
+        quickEntry.open()
+        let escape = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                                                   windowNumber: panel.windowNumber, context: nil, characters: "\u{1b}",
+                                                   charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53))
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(panel.performKeyEquivalent(with: escape))
+        #expect(!quickEntry.isOpen)
+
+        quickEntry.open()
+        let other = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 200, height: 100), styleMask: [.titled], backing: .buffered, defer: false)
+        other.makeKeyAndOrderFront(nil)
+        while quickEntry.isOpen { await Task.yield() }
+        other.orderOut(nil)
 
         quickEntry.open()
         var draft = QuickEntryDraft()

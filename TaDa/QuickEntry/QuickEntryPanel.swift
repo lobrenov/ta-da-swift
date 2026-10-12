@@ -16,22 +16,15 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
         self.model = model
     }
 
-    var isOpen: Bool { panel != nil }
+    var isOpen: Bool { panel?.isVisible == true }
 
     func toggle() {
         if isOpen { close() } else { open() }
     }
 
+    /// Shows the panel with a new view, so the last opening's view goes outside its own callbacks.
     func open() {
-        let panel = Panel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
-        panel.level = .floating
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = true
-        panel.isReleasedWhenClosed = false
-        panel.hidesOnDeactivate = false
-        panel.delegate = self
+        let panel = panel ?? makePanel()
         panel.contentView = NSHostingView(rootView: QuickEntryContent(model: model, create: { [weak self] draft, opening in
             self?.create(draft, opening: opening)
         }, close: { [weak self] in self?.close() }))
@@ -42,31 +35,47 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
             panel.setFrameOrigin(CGPoint(x: visible.midX - size.width / 2, y: visible.midY - size.height / 2))
         }
         top = panel.frame.maxY
-        self.panel = panel
         panel.makeKeyAndOrderFront(nil)
     }
 
     func close() {
-        guard let panel else { return }
-        self.panel = nil
-        panel.delegate = nil
-        panel.orderOut(nil)
+        panel?.orderOut(nil)
     }
 
+    private func makePanel() -> NSPanel {
+        let panel = Panel(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
+        panel.level = .floating
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = true
+        panel.isReleasedWhenClosed = false
+        panel.hidesOnDeactivate = false
+        panel.delegate = self
+        self.panel = panel
+        return panel
+    }
+
+    /// Closes unless the keyboard went to one of the panel's own menus.
     func windowDidResignKey(_ notification: Notification) {
-        close()
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let panel, NSApp.keyWindow?.parent !== panel else { return }
+            close()
+        }
     }
 
     func windowDidResize(_ notification: Notification) {
-        guard let panel, panel.frame.maxY != top else { return }
+        guard let panel, panel.isVisible, panel.frame.maxY != top else { return }
         panel.setFrameOrigin(CGPoint(x: panel.frame.minX, y: top - panel.frame.height))
     }
 
-    /// Writes the file; when `opening`, brings Ta Da forward and shows it there.
+    /// Writes the file; when `opening`, brings Ta Da forward and shows it there. A failure brings Ta Da forward to show
+    /// its error.
     func create(_ draft: QuickEntryDraft, opening: Bool) {
         close()
         Task { [model] in
-            guard let path = await model.create(draft), opening else { return }
+            guard let path = await model.create(draft) else { return NSApp.activate() }
+            guard opening else { return }
             NSApp.activate()
             if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("main") == true }) {
                 window.deminiaturize(nil)
@@ -88,9 +97,12 @@ private struct QuickEntryContent: View {
     let create: (QuickEntryDraft, Bool) -> Void
     let close: () -> Void
     @State private var draft = QuickEntryDraft()
+    /// Read once per opening: nothing else writes while the panel has the keyboard.
+    @State private var taken: [Item.Kind: Set<String>] = [:]
 
     var body: some View {
-        QuickEntryView(model: model, draft: $draft, create: { create(draft, $0) }, close: close)
+        QuickEntryView(model: model, draft: $draft, taken: taken, create: { create(draft, $0) }, close: close)
+            .onAppear { taken = model.quickEntryTakenNames() }
             .themed(by: model)
     }
 }

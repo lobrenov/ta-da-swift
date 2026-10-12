@@ -36,7 +36,7 @@ The milestones run in order in one worktree. Each ends with its check passing.
 - Check: `NewFileTests` for project and area tags; `QuickEntryDraftTests` for every kind's text, the kind switch, and a draft parsing back (`Item(parsing:)`) to the same properties.
 
 ### A1 — App model and hotkey
-- `AppModel.create(_ draft: QuickEntryDraft) async -> String?` through the existing `create`, with `index.projectFilenames()` as `taken` for a project. `quickEntryPath(for:)` for the line under the chips, numbered as `Vault.create` numbers it.
+- `AppModel.create(_ draft: QuickEntryDraft) async -> String?` through the existing `create`, with `index.projectFilenames()` as `taken` for a project. `quickEntryTakenNames()` (read once per opening) and `quickEntryPath(for:taken:)` for the line under the chips, numbered as `Vault.create` numbers it.
 - `Hotkey` (`QuickEntry/Hotkey.swift`): key code, modifiers and key name, the display string (⌃Space), kept in `SettingsStore` as `AppModel.quickEntryHotkey`.
 - `HotkeyService` (`QuickEntry/HotkeyService.swift`): registers one hotkey with Carbon, reports success or failure, calls back on the main actor; a turned-on macOS shortcut on the same keys counts as taken (`CopySymbolicHotKeys`). `AppDelegate` owns it and re-registers when the setting changes.
 - Check: `QuickEntryTests` create each kind with every field and with a taken name, and cover `Hotkey` storage and display; macOS and iOS builds.

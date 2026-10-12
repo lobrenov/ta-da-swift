@@ -6,6 +6,8 @@ import TaDaCore
 struct QuickEntryView: View {
     let model: AppModel
     @Binding var draft: QuickEntryDraft
+    /// The names a new file of each kind is numbered against.
+    let taken: [Item.Kind: Set<String>]
     /// Creates the file; true also opens it in Ta Da.
     let create: (_ opening: Bool) -> Void
     let close: () -> Void
@@ -102,7 +104,7 @@ struct QuickEntryView: View {
     /// The file to be written, and a warning when its name is taken and gets a number.
     @ViewBuilder
     private var fileLine: some View {
-        let path = model.quickEntryPath(for: draft)
+        let path = AppModel.quickEntryPath(for: draft, taken: taken)
         let name = FileNaming.sanitise(draft.title)
         HStack(spacing: 6) {
             Image(systemName: "doc")

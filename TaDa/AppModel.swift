@@ -1597,11 +1597,19 @@ import TaDaCore
                      taken: draft.kind == .project ? index.projectFilenames() : [])
     }
 
-    /// The path `create(_:)` would give the draft.
-    func quickEntryPath(for draft: QuickEntryDraft) -> String {
-        let inFolder = vault?.filenames(in: draft.folder) ?? []
-        let taken = draft.kind == .project ? index.projectFilenames() : []
-        return draft.folder + "/" + FileNaming.filename(for: draft.title, existing: taken.union(inFolder))
+    /// The names `create(_:)` numbers a new file against, by kind: its folder's files, and for a project every project's.
+    func quickEntryTakenNames() -> [Item.Kind: Set<String>] {
+        var taken: [Item.Kind: Set<String>] = [:]
+        for kind in [Item.Kind.task, .project, .area] {
+            let folder = QuickEntryDraft().changingKind(to: kind).folder
+            taken[kind] = (vault?.filenames(in: folder) ?? []).union(kind == .project ? index.projectFilenames() : [])
+        }
+        return taken
+    }
+
+    /// The path `create(_:)` would give the draft, given `quickEntryTakenNames()`.
+    static func quickEntryPath(for draft: QuickEntryDraft, taken: [Item.Kind: Set<String>]) -> String {
+        draft.folder + "/" + FileNaming.filename(for: draft.title, existing: taken[draft.kind] ?? [])
     }
 
     private func create(_ text: String, in folder: String, title: String = "Untitled", taken: Set<String> = []) async -> String? {

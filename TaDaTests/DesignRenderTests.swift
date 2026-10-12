@@ -137,7 +137,7 @@ struct DesignRenderTests {
         var taken = typed.changingKind(to: .project)
         taken.title = "Ta Da MVP"
         for (name, draft) in [("empty", QuickEntryDraft()), ("typed", typed), ("area", area), ("taken", taken)] {
-            let view = QuickEntryView(model: model, draft: .constant(draft), create: { _ in }, close: {})
+            let view = QuickEntryView(model: model, draft: .constant(draft), taken: model.quickEntryTakenNames(), create: { _ in }, close: {})
                 .themed(by: model).padding(20).frame(height: 300, alignment: .top)
             try await render(view, width: 600, to: output.appending(path: "quick-entry-\(name).png"))
         }
