@@ -71,6 +71,9 @@ func closedStatusSetsCompletedDate(kind: Item.Kind, status: Status) throws {
     #expect(project.parent == nil)
     #expect(full(.task, parent: .area("Personal")).changingKind(to: .project).parent == .area("Personal"))
     #expect(full(.project, parent: .area("Personal")).changingKind(to: .task) == full(.task, parent: .area("Personal")))
+    var ongoing = full(.project, parent: nil)
+    ongoing.status = .ongoing
+    #expect(ongoing.changingKind(to: .task).status == .notStarted, "a task can't be Ongoing")
 
     let area = task.changingKind(to: .area)
     var expected = QuickEntryDraft()

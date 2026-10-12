@@ -510,7 +510,7 @@ struct ProgressRing: View {
     var body: some View {
         Group {
             if ongoing {
-                Image(systemName: "checklist").font(.system(size: 11, weight: .medium))
+                Image(systemName: "checklist").resizable().scaledToFit().frame(width: 12, height: 12)
             } else {
                 ZStack {
                     Circle().stroke(lineWidth: 1.4)

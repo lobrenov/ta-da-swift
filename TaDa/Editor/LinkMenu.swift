@@ -28,11 +28,15 @@ struct LinkMenuSource {
 struct LinkChoice: Hashable, Identifiable {
     enum Icon: Hashable {
         case task(Status)
-        /// The project's progress.
-        case project(ProjectProgress)
+        /// Done/total of the project's tasks, or an Ongoing project's checklist.
+        case project(fraction: Double, ongoing: Bool)
         case area
         case note
         case image(URL)
+
+        static func project(_ progress: ProjectProgress) -> Icon {
+            .project(fraction: progress.fraction, ongoing: progress.isOngoing)
+        }
     }
 
     let path: String
@@ -128,8 +132,8 @@ struct LinkChoiceIcon: View {
                 let (marker, tint) = StatusCheckbox.box(for: status, theme: theme)
                 InlineCheckboxView(marker: marker, tint: tint, background: theme.bg)
                     .frame(width: size, height: size)
-            case .project(let progress):
-                ProgressRing(progress)
+            case .project(let fraction, let ongoing):
+                ProgressRing(fraction: fraction, ongoing: ongoing)
                     .foregroundStyle(theme.color(\.accent))
                     .scaleEffect(size / 14)
             case .area:

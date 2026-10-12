@@ -47,7 +47,7 @@ public struct QuickEntryDraft: Equatable, Sendable {
         draft.title = title
         draft.tags = tags
         guard kind != .area, kind != .note else { return draft }
-        draft.status = status
+        draft.status = Status.choices(for: kind).contains(status) ? status : .notStarted
         draft.dueDate = dueDate
         draft.deadline = deadline
         draft.parent = kind == .project && parent?.areaTitle == nil ? nil : parent
