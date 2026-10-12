@@ -1,4 +1,5 @@
-// Menu commands: ⌘N/⇧⌘N/⌥⌘N new task/project/area; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
+// Menu commands: ⌘N/⇧⌘N/⌥⌘N new task/project/area; File ▸ New Note and New Folder; File ▸ Convert to for the open or
+// picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on, ⇧⌘M move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu.
 #if os(macOS)
@@ -8,6 +9,16 @@ import TaDaCore
 struct AppCommands: Commands {
     @Bindable var model: AppModel
     @FocusedValue(\.editor) private var editor
+
+    /// The open or picked file, when it's one note.
+    private var pickedNote: String? {
+        guard model.picked.count == 1, let path = model.picked.first, model.index[path]?.properties.kind == .note else { return nil }
+        return path
+    }
+
+    private func convert(to kind: Item.Kind) {
+        if let pickedNote { model.convertRequest = AppModel.ConvertRequest(path: pickedNote, kind: kind) }
+    }
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -20,7 +31,17 @@ struct AppCommands: Commands {
             Button("New Area") { Task { await model.newArea() } }
                 .keyboardShortcut("n", modifiers: [.command, .option])
                 .disabled(model.state != .ready)
+            Button("New Note") { Task { await model.newNote() } }
+                .disabled(model.state != .ready)
+            Button("New Folder") { Task { await model.newFolder() } }
+                .disabled(model.state != .ready)
             Divider()
+            Menu("Convert to") {
+                Button("Task…") { convert(to: .task) }
+                Button("Project…") { convert(to: .project) }
+                Button("Area…") { convert(to: .area) }
+            }
+            .disabled(pickedNote == nil)
             Button("Reveal in Finder") { model.revealInFinder(model.picked.sorted()) }
                 .disabled(model.picked.isEmpty)
         }

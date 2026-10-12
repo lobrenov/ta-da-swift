@@ -118,6 +118,9 @@ struct DesignRenderTests {
         try await render(notes, to: output.appending(path: "notes-tag.png"))
         notes.domain = .folder("Meetings/2026")
         try await render(SidebarView(model: notes).themed(by: notes), width: 240, to: output.appending(path: "notes-sidebar.png"))
+        let request = AppModel.ConvertRequest(path: "Meetings/Ark planning call.md", kind: .task)
+        try await render(ConvertSheet(model: notes, request: request).themed(by: notes), width: 480,
+                         to: output.appending(path: "notes-convert.png"))
         notes.appearance = .light
         notes.domain = .folder("Meetings")
         notes.selection = "Meetings/Ark planning call.md"

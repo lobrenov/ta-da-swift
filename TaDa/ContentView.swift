@@ -22,6 +22,10 @@ struct ContentView: View {
             DeleteFilesDialog(model: model, request: request)
                 .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
         }
+        .sheet(item: $model.convertRequest) { request in
+            ConvertSheet(model: model, request: request)
+                .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
+        }
         .sheet(item: Binding { model.completionConfirmation }
                          set: { if $0 == nil, let request = model.completionConfirmation { Task { await model.answerCompletion(request, tasksAs: nil) } } }) { request in
             CompletionDialog(model: model, request: request)
