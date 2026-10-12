@@ -38,15 +38,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Registers the hotkey in the settings, and again whenever it changes.
     private func registerHotkey() {
-        let hotkey = withObservationTracking { model.quickEntryHotkey } onChange: { [weak self] in
+        withObservationTracking { _ = model.quickEntryHotkey } onChange: { [weak self] in
             Task { @MainActor in self?.registerHotkey() }
         }
-        model.quickEntryHotkeyTaken = !hotkeys.register(hotkey)
+        refreshHotkey()
+    }
+
+    /// Registers the hotkey and notes whether its keys are taken.
+    private func refreshHotkey() {
+        model.quickEntryHotkeyTaken = !hotkeys.register(model.quickEntryHotkey)
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {
         // Catches anything the folder watcher missed (or everything, if it couldn't start).
         Task { await model.refresh() }
+        // The keys may have been freed in System Settings.
+        refreshHotkey()
     }
 
     func applicationDidResignActive(_ notification: Notification) {

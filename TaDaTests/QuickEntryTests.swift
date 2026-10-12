@@ -12,6 +12,7 @@ struct QuickEntryTests {
             "projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n",
             "areas/Personal.md": "---\ntype: area\n---\n",
             "tasks/Call Bea.md": "---\ntype: task\nstatus: Not Started\n---\n",
+            "tasks/Notes.md": "Not a Ta Da file\n",
             ".logbook/2026-09/Shipped.md": "---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n",
         ])
     }
@@ -53,6 +54,7 @@ struct QuickEntryTests {
                      (draft(.project, "Ta Da MVP"), "projects/Ta Da MVP 2.md"),
                      (draft(.project, "Shipped"), "projects/Shipped 2.md"),
                      (draft(.area, "Personal"), "areas/Personal 2.md"),
+                     (draft(.task, "Notes"), "tasks/Notes 2.md"),
                      (draft(.task, "New: plan"), "tasks/New - plan.md")]
         for (draft, expected) in cases {
             #expect(model.quickEntryPath(for: draft) == expected)
@@ -70,6 +72,8 @@ struct QuickEntryTests {
         first.quickEntryHotkey = chord
         #expect(AppModel(defaults: folder.defaults).quickEntryHotkey == chord)
         #expect(chord.displayString == "⌥⇧⌘K")
+        #expect(Hotkey(chord.dictionary) == chord)
+        #expect(Hotkey(["keyCode": 49]) == nil && Hotkey(["keyCode": "x", "modifiers": 4096, "key": "Space"]) == nil)
 
         first.quickEntryHotkey = nil
         #expect(AppModel(defaults: folder.defaults).quickEntryHotkey == nil)

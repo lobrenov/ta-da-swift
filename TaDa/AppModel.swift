@@ -335,7 +335,12 @@ import TaDaCore
         recentFiles = defaults.stringArray(forKey: Keys.recentFiles) ?? []
         sidebarMode = defaults.string(forKey: Keys.sidebarMode).flatMap(SidebarMode.init) ?? .projects
         foldedTags = Set(defaults.stringArray(forKey: Keys.foldedTags) ?? [])
-        quickEntryHotkey = defaults.dictionary(forKey: Keys.quickEntryHotkey).map { Hotkey($0) } ?? .quickEntryDefault
+        // Missing: the default. Stored `[:]`: cleared.
+        if let stored = defaults.dictionary(forKey: Keys.quickEntryHotkey) {
+            quickEntryHotkey = Hotkey(stored)
+        } else {
+            quickEntryHotkey = .quickEntryDefault
+        }
     }
 
     // MARK: Folder
@@ -1590,9 +1595,9 @@ import TaDaCore
                      taken: draft.kind == .project ? index.projectFilenames() : [])
     }
 
-    /// The path `create(_:)` would give the draft, as far as the index knows the folder's files.
+    /// The path `create(_:)` would give the draft.
     func quickEntryPath(for draft: QuickEntryDraft) -> String {
-        let inFolder = index.items.keys.filter { Vault.folder(of: $0) == draft.folder }.map { Item.title(ofPath: $0) + ".md" }
+        let inFolder = vault?.filenames(in: draft.folder) ?? []
         let taken = draft.kind == .project ? index.projectFilenames() : []
         return draft.folder + "/" + FileNaming.filename(for: draft.title, existing: taken.union(inFolder))
     }
