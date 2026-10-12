@@ -20,6 +20,18 @@ struct SidebarView: View {
     @FocusState private var searchFocused: Bool
     /// The folder whose name is being typed: one just made, or one picked for Rename.
     @State private var namingFolder: String?
+    /// The list on show: `model.sidebarMode`, swapped with a slide, toward the trailing edge when the new one is to the right.
+    @State private var listed: AppModel.SidebarMode
+    @State private var slidesForward = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(model: AppModel, takesSearchFocus: Bool = true, focusesSearch: Bool = false, picked: @escaping () -> Void = {}) {
+        self.model = model
+        self.takesSearchFocus = takesSearchFocus
+        self.focusesSearch = focusesSearch
+        self.picked = picked
+        _listed = State(initialValue: model.sidebarMode)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -39,11 +51,15 @@ struct SidebarView: View {
                     SidebarModeSwitch(mode: $model.sidebarMode)
                         .padding(.top, 12)
                         .padding(.bottom, 6)
-                    switch model.sidebarMode {
-                    case .projects: hierarchy
-                    case .tags: tags
-                    case .notes: notes
+                    VStack(alignment: .leading, spacing: 2) {
+                        switch listed {
+                        case .projects: hierarchy
+                        case .tags: tags
+                        case .notes: notes
+                        }
                     }
+                    .id(listed)
+                    .transition(listTransition)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
@@ -54,6 +70,10 @@ struct SidebarView: View {
             newButtons
         }
         .background(theme.color(\.side))
+        .onChange(of: model.sidebarMode) { old, new in
+            slidesForward = new.position > old.position
+            withAnimation(.sidebarSlide) { listed = new }
+        }
         .onChange(of: model.searchFocusRequest) { if takesSearchFocus { searchFocused = true } }
         .onChange(of: model.folderNameFocus, initial: true) {
             // A hidden sidebar leaves it to the floating one, as it does search.
@@ -63,6 +83,10 @@ struct SidebarView: View {
         }
         .onAppear { if focusesSearch { searchFocused = true } }
         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
+    }
+
+    private var listTransition: AnyTransition {
+        reduceMotion ? .opacity : .push(from: slidesForward ? .trailing : .leading)
     }
 
     /// Loose tasks, the active projects without an area, then each area with its active projects.

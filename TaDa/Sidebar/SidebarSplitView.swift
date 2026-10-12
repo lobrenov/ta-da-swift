@@ -65,7 +65,7 @@ struct SidebarSplitView: View {
                     .transition(.move(edge: .leading))
             }
         }
-        .animation(.snappy(duration: 0.25), value: state.floats)
+        .animation(.sidebarSlide, value: state.floats)
     }
 
     /// Hides the sidebar when the window is too narrow for it, as it opens or resizes, and shows it again when there's
@@ -77,7 +77,7 @@ struct SidebarSplitView: View {
     /// Slides the split view's sidebar in or out to `columns`, if there are any.
     private func slide(to columns: NavigationSplitViewVisibility?) {
         guard let columns else { return }
-        withAnimation { state.columns = columns } completion: { state.slid() }
+        withAnimation(.sidebarSlide) { state.columns = columns } completion: { state.slid() }
     }
 
     /// Two-finger swipes, for `SidebarState.swiped` or the sidebar's view, and the mouse's back (button 3) and forward
@@ -141,9 +141,23 @@ private struct WindowReader: NSViewRepresentable {
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }
+
+extension Animation {
+    /// The sidebar's slide, and the sidebar lists' sliding past each other.
+    static let sidebarSlide = Animation.snappy(duration: 0.25)
+}
 #endif
 
 extension AppModel.SidebarMode {
+    /// Tasks, Tags, Notes: 0, 1, 2.
+    var position: Int {
+        switch self {
+        case .projects: 0
+        case .tags: 1
+        case .notes: 2
+        }
+    }
+
     /// Tasks → Tags → Notes; Notes stays.
     var next: Self {
         switch self {
