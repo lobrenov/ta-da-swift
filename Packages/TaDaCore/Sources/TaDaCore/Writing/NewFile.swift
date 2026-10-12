@@ -23,6 +23,11 @@ public enum NewFile {
         block(["type: area", "createdDate: \(today)"], tags: tags)
     }
 
+    /// A note always gets `tags:`, `[]` when there are none.
+    public static func note(tags: [Tag] = [], today: LocalDate) -> String {
+        tags.isEmpty ? block(["createdDate: \(today)", "tags: []"], tags: []) : block(["createdDate: \(today)"], tags: tags)
+    }
+
     private static func block(_ keys: [String], tags: [Tag]) -> String {
         var keys = keys
         if !tags.isEmpty { keys.append("tags: [\(tags.unique.map { FrontmatterEditor.flowItem($0.name) }.joined(separator: ", "))]") }

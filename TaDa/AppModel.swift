@@ -683,7 +683,7 @@ import TaDaCore
         switch item.properties.kind {
         case .project: domain = .project(path)
         case .area: domain = .area(path)
-        case .task: break
+        case .task, .note: break
         }
         selection = path
     }
@@ -963,7 +963,7 @@ import TaDaCore
                 let result: (path: String, relinked: [Item], failed: [String]) = switch kind {
                 case .project: try vault.renameProject(at: path, to: title, index: index)
                 case .area: try vault.renameArea(at: path, to: title, index: index)
-                case .task, nil: (path: try vault.rename(path, to: title), relinked: [], failed: [])
+                case .task, .note, nil: (path: try vault.rename(path, to: title), relinked: [], failed: [])
                 }
                 return (result.path, try [vault.load(result.path, presenter: presenter)].compactMap { $0 } + result.relinked, result.failed)
             }
@@ -1172,7 +1172,7 @@ import TaDaCore
         var files: [Item] = []
         for item in items {
             let taken = switch item.properties.kind {
-            case .task: [item]
+            case .task, .note: [item]
             case .project: [item] + index.tasks(in: item)
             case .area: [item] + index.projects(in: item) + index.allTasks(in: item)
             }
@@ -1496,7 +1496,7 @@ import TaDaCore
         let target: Parent? = switch parent?.properties.kind {
         case .project: .project(parent!.title)
         case .area: .area(parent!.title)
-        case .task, nil: nil
+        case .task, .note, nil: nil
         }
         guard parent == nil || target != nil else { return }
         if editDraft(paths.first, { if $0.kind == .task || target?.key != "project" { $0.parent = target } }) { return }
@@ -1560,7 +1560,7 @@ import TaDaCore
         switch parent?.properties.kind {
         case .project: NewFile.task(project: parent?.title, tags: tags, today: today)
         case .area: NewFile.task(area: parent?.title, tags: tags, today: today)
-        case .task, nil: NewFile.task(tags: tags, today: today)
+        case .task, .note, nil: NewFile.task(tags: tags, today: today)
         }
     }
 

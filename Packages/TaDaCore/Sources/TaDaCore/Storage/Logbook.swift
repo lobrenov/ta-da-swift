@@ -20,7 +20,7 @@ extension Vault {
         var moved: [String: String] = [:]
         var firstError: (any Error)?
         var named: Set<String> = []
-        let items = paths.compactMap { index[$0] }.filter { !$0.isLogged && $0.properties.kind != .area }
+        let items = paths.compactMap { index[$0] }.filter { !$0.isLogged && [.task, .project].contains($0.properties.kind) }
         for item in items where moved[item.path] == nil {
             do {
                 moved[item.path] = try moveFile(item, into: Self.logbookFolder(for: item.properties.completedDate ?? today),
@@ -92,7 +92,7 @@ extension VaultIndex {
     public func filesToLog(completedBefore before: LocalDate?) -> [Item] {
         liveItems.filter { item in
             let p = item.properties
-            guard p.kind != .area, p.status.isClosed, !waitsForOpenTasks(item) else { return false }
+            guard p.kind == .task || p.kind == .project, p.status.isClosed, !waitsForOpenTasks(item) else { return false }
             guard let before, let completed = p.completedDate else { return true }
             return completed < before
         }.sorted(by: Self.byTitle)

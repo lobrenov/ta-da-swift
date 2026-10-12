@@ -37,7 +37,7 @@ struct PropertyChipRow<Trailing: View>: View {
             switch item.properties.kind {
             case .task: ParentPropertyChip(model: model, task: item)
             case .project: AreaPropertyChip(model: model, project: item)
-            case .area: EmptyView()
+            case .area, .note: EmptyView()
             }
             DatePropertyChip(kind: .due, model: model, item: item)
             DatePropertyChip(kind: .deadline, model: model, item: item)
@@ -351,6 +351,9 @@ private struct QuietLine: View {
                         .strokeBorder(theme.color(\.muted), lineWidth: 1.3)
                         .frame(width: 11, height: 11)
                     Text("Task")
+                case .note:
+                    NoteIcon(size: 12)
+                    Text("Note")
                 }
             }
             if let created = p.createdDate {

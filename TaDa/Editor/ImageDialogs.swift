@@ -57,6 +57,7 @@ struct ImageDialogText {
         case .task: model.index.parent(of: item)?.title ?? "Loose task"
         case .project: "Project"
         case .area: "Area"
+        case .note: "Note"
         }
     }
 
@@ -66,12 +67,13 @@ struct ImageDialogText {
 }
 
 extension AppModel {
-    /// The link menu's icon for `item`: its status box, progress ring or area icon.
+    /// The link menu's icon for `item`: its status box, progress ring, area icon or page.
     func linkIcon(of item: Item) -> LinkChoice.Icon {
         switch item.properties.kind {
         case .task: .task(item.properties.status)
         case .project: .project(index.progress(of: item).fraction)
         case .area: .area
+        case .note: .note
         }
     }
 }

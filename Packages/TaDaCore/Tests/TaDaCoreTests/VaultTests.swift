@@ -13,7 +13,8 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
         let vault = Vault(root: folder)
         #expect(vault.markdownPaths() == ["deep/er/b.MD", "notes/note.md", "projects/P.md", "root.md", "tasks/a.md"])
         let index = await vault.loadIndex()
-        #expect(index.items.keys.sorted() == ["deep/er/b.MD", "projects/P.md", "root.md", "tasks/a.md"])
+        #expect(index.items.keys.sorted() == ["deep/er/b.MD", "notes/note.md", "projects/P.md", "root.md", "tasks/a.md"])
+        #expect(index["notes/note.md"]?.properties.kind == .note)
         #expect(index["deep/er/b.MD"]?.title == "b")
     }
 }
@@ -188,7 +189,7 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
         let changes = vault.changes(since: known)
         #expect(changes.changed.keys.sorted() == ["notes/N.md", "tasks/A.md", "tasks/C.md"])
         #expect(changes.changed["tasks/A.md"]??.properties.status == .done)
-        #expect(changes.changed["notes/N.md"]! == nil)
+        #expect(changes.changed["notes/N.md"]??.properties.kind == .note)
         #expect(changes.removed == ["tasks/B.md"])
         #expect(vault.changes(since: changes.dates).isEmpty)
     }

@@ -23,8 +23,9 @@ struct LargeVaultTests {
         let files = GeneratedVault.files(today: Self.today)
         #expect(files.count == 1200)
         let items = files.compactMap { Item(parsing: $0.text, path: $0.path) }
-        #expect(items.count == 1000)
+        #expect(items.count == 1200)
         let index = VaultIndex(items)
+        #expect(index.notes.count == 200)
         #expect(index.projects.count == 50)
         #expect(Set(index.tasks.map(\.properties.status)) == Set(Status.allCases))
         #expect(index.tasks.contains { index.warnings(for: $0).contains(.unresolvedProject("Missing project")) })
@@ -41,7 +42,7 @@ struct LargeVaultTests {
             let (dates, scanTime) = await time("modification dates") { vault.modificationDates() }
             #expect(dates.count == 1200)
             let (index, loadTime) = await time("load index") { await vault.loadIndex() }
-            #expect(index.items.count == 1000)
+            #expect(index.items.count == 1200)
             let (changes, refreshTime) = await time("refresh, nothing changed") { vault.changes(since: dates) }
             #expect(changes.isEmpty)
             #expect(scanTime < 1 && loadTime < 4 && refreshTime < 1)

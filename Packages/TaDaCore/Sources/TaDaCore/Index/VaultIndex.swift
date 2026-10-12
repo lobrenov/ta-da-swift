@@ -54,6 +54,7 @@ public struct VaultIndex: Sendable {
     public var tasks: [Item] { liveItems.filter { $0.properties.kind == .task } }
     public var projects: [Item] { liveItems.filter { $0.properties.kind == .project } }
     public var areas: [Item] { liveItems.filter { $0.properties.kind == .area } }
+    public var notes: [Item] { liveItems.filter { $0.properties.kind == .note } }
     /// Logged tasks and projects.
     public var logged: [Item] { items.values.filter(\.isLogged) }
 
@@ -79,7 +80,7 @@ public struct VaultIndex: Sendable {
     /// `project` uses its own `area`. Nil when there's none or it doesn't resolve.
     public func area(of item: Item) -> Item? {
         switch item.properties.kind {
-        case .area: return nil
+        case .area, .note: return nil
         case .project: return item.properties.area.flatMap { area(titled: $0.title) }
         case .task:
             if item.properties.project != nil { return project(of: item).flatMap { area(of: $0) } }
@@ -90,7 +91,7 @@ public struct VaultIndex: Sendable {
     /// The file a task or project is filed under: a task's project, else its area; a project's area.
     public func parent(of item: Item) -> Item? {
         switch item.properties.kind {
-        case .area: nil
+        case .area, .note: nil
         case .project: area(of: item)
         case .task: project(of: item) ?? item.properties.area.flatMap { area(titled: $0.title) }
         }
@@ -172,7 +173,7 @@ public struct VaultIndex: Sendable {
         case .area:
             guard area(titled: title)?.path == parent.path else { return [] }
             return (filedByAreaTitle[title] ?? []).compactMap { items[$0] }.sorted(by: Self.byTitle)
-        case .task:
+        case .task, .note:
             return []
         }
     }

@@ -152,6 +152,7 @@ struct TrashView: View {
         case .area: "Area · deleted with \(count(contents?.projects.count ?? 0, "project")) and \(count(contents?.tasks.count ?? 0, "task"))"
         case .project: p.area?.title ?? "Project"
         case .task: p.project?.title ?? p.area?.title ?? "Loose task"
+        case .note: "Note"
         }
         return Button {
             model.click(entry.id)

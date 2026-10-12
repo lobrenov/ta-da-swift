@@ -100,7 +100,7 @@ extension Vault {
             switch item.properties.kind {
             case .project: paths += index.tasks(in: item).map(\.path)
             case .area: paths += index.projects(in: item).map(\.path) + index.allTasks(in: item).map(\.path)
-            case .task: break
+            case .task, .note: break
             }
         }
         for path in paths { _ = try moveFile(path, into: Self.trashFolder) }
@@ -251,7 +251,7 @@ extension Vault {
             case .area:
                 let contents = TrashedItem.contents(of: entry.item, in: trashed)
                 all.formUnion((contents.projects + contents.tasks).map(\.item.path))
-            case .task: break
+            case .task, .note: break
             }
         }
         let live = Set(index.items.values.flatMap(\.embeds).compactMap { $0.attachmentName?.lowercased() })

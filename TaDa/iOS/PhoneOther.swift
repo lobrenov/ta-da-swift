@@ -366,6 +366,8 @@ struct PhoneTrashScreen: View {
             parts.append("Project · \(linked) linked task\(linked == 1 ? "" : "s")" + (item.properties.area.map { " · \($0.title)" } ?? ""))
         case .task:
             parts.append(item.properties.project?.title ?? item.properties.area?.title ?? "Loose task")
+        case .note:
+            parts.append("Note")
         }
         if let deleted = trashed.deleted {
             parts.append("Deleted \(LocalDate(deleted).formatted(.weekdayDayMonth))")
