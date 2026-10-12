@@ -7,12 +7,17 @@ import TaDaCore
 
 /// Clicking the title edits it in place on `code`. Return or a click anywhere else in the window renames the file;
 /// esc keeps the old title.
-/// A file just created (`model.titleFocus`) starts out editing, its title selected.
+/// A file just created (`model.titleFocus`, or `focus`) starts out editing, its title selected. A notes folder's name
+/// passes its own `rename` and no `focus`.
 struct InlineTitleField<Label: View>: View {
     let model: AppModel
     let path: String
     let height: CGFloat
     let font: Font
+    /// The model's request to start editing this title; nil for none.
+    var focus: ReferenceWritableKeyPath<AppModel, String?>? = \.titleFocus
+    /// Renames from the new title; by default, the file at `path`.
+    var rename: ((String) async -> Void)? = nil
     /// The title as it shows when not editing.
     @ViewBuilder var label: Label
     @State private var draft = ""
@@ -68,9 +73,9 @@ struct InlineTitleField<Label: View>: View {
             }
         }
         .padding(.leading, -6)
-        .onChange(of: model.titleFocus, initial: true) {
-            guard model.titleFocus == path else { return }
-            model.titleFocus = nil
+        .onChange(of: focus.flatMap { model[keyPath: $0] }, initial: true) {
+            guard let focus, model[keyPath: focus] == path else { return }
+            model[keyPath: focus] = nil
             begin()
         }
     }
@@ -102,7 +107,9 @@ struct InlineTitleField<Label: View>: View {
         editing = false
         let new = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !new.isEmpty, new != title else { return }
-        Task { await model.rename(path, to: new) }
+        Task {
+            if let rename { await rename(new) } else { await model.rename(path, to: new) }
+        }
     }
 }
 #endif

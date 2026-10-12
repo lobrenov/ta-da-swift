@@ -12,6 +12,13 @@ extension View {
     func fileMenu(_ model: AppModel, path: String, cornerRadius: CGFloat = 7) -> some View {
         modifier(FileMenuTrigger(model: model, path: path, cornerRadius: cornerRadius))
     }
+
+    /// Opens a menu of `actions` the same way, for something that isn't a file, such as a notes folder. `target` names
+    /// it in `model.menuTarget` while the menu is open.
+    func actionMenu(_ model: AppModel, target: String, cornerRadius: CGFloat = 7,
+                    actions: @escaping () -> [FileMenuAction]) -> some View {
+        modifier(FileMenuTrigger(model: model, path: target, cornerRadius: cornerRadius, actions: actions))
+    }
 }
 
 /// One row of the file menu.
@@ -155,9 +162,10 @@ final class FileMenu {
         }
     }
 
-    /// Opens the menu for `path` with its top-left corner at `point` (screen coordinates) in `window`.
-    func show(for path: String, at point: CGPoint, in window: NSWindow, model: AppModel) {
-        show(FileMenuAction.actions(for: path, model: model, at: point, in: window), at: point, in: window, theme: model.theme)
+    /// Opens the menu for `path` (or `actions`, when given) with its top-left corner at `point` (screen coordinates) in
+    /// `window`.
+    func show(for path: String, actions: [FileMenuAction]? = nil, at point: CGPoint, in window: NSWindow, model: AppModel) {
+        show(actions ?? FileMenuAction.actions(for: path, model: model, at: point, in: window), at: point, in: window, theme: model.theme)
         self.model = model
         model.menuTarget = path
     }
@@ -219,13 +227,15 @@ private struct FileMenuTrigger: ViewModifier {
     let model: AppModel
     let path: String
     let cornerRadius: CGFloat
+    /// The menu's actions; a file's own when nil.
+    var actions: (() -> [FileMenuAction])? = nil
     @Environment(\.theme) private var theme
 
     func body(content: Content) -> some View {
         content
             .overlay {
                 RightClickReader { point, window in
-                    FileMenu.shared.show(for: path, at: point, in: window, model: model)
+                    FileMenu.shared.show(for: path, actions: actions?(), at: point, in: window, model: model)
                 }
                 .accessibilityHidden(true)
             }
@@ -237,7 +247,7 @@ private struct FileMenuTrigger: ViewModifier {
                 }
             }
             .accessibilityActions {
-                ForEach(Array(FileMenuAction.actions(for: path, model: model).enumerated()), id: \.offset) { _, action in
+                ForEach(Array((actions?() ?? FileMenuAction.actions(for: path, model: model)).enumerated()), id: \.offset) { _, action in
                     Button(action.title, action: action.run)
                 }
             }

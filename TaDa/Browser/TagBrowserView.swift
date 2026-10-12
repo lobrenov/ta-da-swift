@@ -1,5 +1,6 @@
 // A tag's page beside the document pane, or Untagged's: its header with a count line and child tags, then its tagged
-// areas and projects, its open tasks in Today's groups with Loose last, and their Completed group, each foldable.
+// areas and projects, its open tasks in Today's groups with Loose last, their Completed group, then its notes, each
+// foldable.
 // Completed starts folded. A tag includes its children's files.
 #if os(macOS)
 import SwiftUI
@@ -21,7 +22,7 @@ struct TagBrowserView: View {
         let open = page.groups.flatMap(\.tasks)
         let rows = rows(page, open: open, untagged: tag == nil)
 
-        return BrowserColumn(model: model, paths: rows.compactMap(\.taskPath), spacing: 1) {
+        return BrowserColumn(model: model, paths: rows.compactMap(\.filePath), spacing: 1) {
             header(tag, page: page, open: open.count)
         } content: {
             ForEach(rows) { row in
@@ -30,6 +31,8 @@ struct TagBrowserView: View {
                 case let .parent(item): parentRow(item)
                 case let .group(group): groupHeader(group)
                 case let .task(task): taskRow(task)
+                case let .noteFile(note):
+                    NoteRow(item: note, selected: model.isSelected(note.path), showsFolder: true) { model.click(note.path) }
                 case let .note(text):
                     Text(text)
                         .font(.system(size: 12.5))
@@ -47,6 +50,7 @@ struct TagBrowserView: View {
         case parent(Item)
         case group(TaskGroup)
         case task(Item)
+        case noteFile(Item)
         case note(String)
 
         var id: String {
@@ -55,15 +59,21 @@ struct TagBrowserView: View {
             case .parent(let item): "parent:" + item.path
             case .group(let group): "group:" + group.id
             case .task(let task): task.path
+            case .noteFile(let note): note.path
             case .note: "note"
             }
         }
 
-        /// The task's path, for the arrow keys.
-        var taskPath: String? { if case .task(let task) = self { task.path } else { nil } }
+        /// The task's or note's path, for the arrow keys.
+        var filePath: String? {
+            switch self {
+            case .task(let item), .noteFile(let item): item.path
+            default: nil
+            }
+        }
     }
 
-    /// Tagged areas and projects, Tasks in Today's groups (Loose last) and Completed, each under its fold header.
+    /// Tagged areas and projects, Tasks in Today's groups (Loose last), Completed and Notes, each under its fold header.
     private func rows(_ page: TagBrowser, open: [Item], untagged: Bool) -> [Row] {
         let parentsTitle = untagged ? "Areas and projects" : "Tagged areas and projects"
         var rows: [Row] = []
@@ -80,6 +90,10 @@ struct TagBrowserView: View {
             rows.append(.fold("Completed", count: page.completed.count, first: false))
             if !isFolded("Completed") { rows += page.completed.map(Row.task) }
         }
+        if !page.notes.isEmpty {
+            rows.append(.fold("Notes", count: page.notes.count, first: false))
+            if !isFolded("Notes") { rows += page.notes.map(Row.noteFile) }
+        }
         return rows
     }
 
@@ -90,7 +104,8 @@ struct TagBrowserView: View {
         if areas > 0 { counts.append(areas == 1 ? "1 area" : "\(areas) areas") }
         if projects > 0 { counts.append(projects == 1 ? "1 project" : "\(projects) projects") }
         counts.append(open == 1 ? "1 open task" : "\(open) open tasks")
-        if tag == nil { counts.insert("Areas, projects and tasks with no tags", at: 0) }
+        if !page.notes.isEmpty { counts.append(page.notes.count == 1 ? "1 note" : "\(page.notes.count) notes") }
+        if tag == nil { counts.insert("Areas, projects, tasks and notes with no tags", at: 0) }
         if !page.children.isEmpty { counts.append("includes its child tags") }
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
