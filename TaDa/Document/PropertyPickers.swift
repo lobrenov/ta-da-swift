@@ -34,7 +34,7 @@ final class PropertyPicker {
     /// What the project or area menu needs to refresh as its search changes.
     @ObservationIgnored private var projectMenuContext: ProjectMenuContext?
     /// What tagMenu needs to refresh as its search changes and after each pick.
-    @ObservationIgnored private var tagMenuContext: (path: String, model: AppModel, anchor: CGRect, window: NSWindow)?
+    @ObservationIgnored private var tagMenuContext: (path: String, model: AppModel, anchor: CGRect, window: NSWindow, gap: CGFloat)?
     /// The row the file menu's Move, Schedule or Set Deadline… came from, ringed while the picker is open.
     @ObservationIgnored private var ringed: (model: AppModel, path: String)?
 
@@ -115,9 +115,18 @@ final class PropertyPicker {
 
     /// Opens tagMenu for `item` under `anchor`, or closes it when it's open. A pick adds or removes the tag and the menu
     /// stays open.
-    func pickTags(of item: Item, model: AppModel, anchor: ScreenAnchor) {
-        guard let window = anchor.window, toggle(item.path, "tags", anchor: anchor.rect) else { return }
-        tagMenuContext = (item.path, model, anchor.rect, window)
+    func pickTags(of item: Item, model: AppModel, anchor: ScreenAnchor, gap: CGFloat = 6) {
+        guard let window = anchor.window else { return }
+        pickTags(of: item, model: model, below: anchor.rect, gap: gap, in: window)
+    }
+
+    /// Opens tagMenu for `item` below `rect` (screen coordinates), or closes it when it's open. `ringed` is a row to
+    /// ring while it's open.
+    func pickTags(of item: Item, model: AppModel, below rect: CGRect, gap: CGFloat = 6, in window: NSWindow,
+                  ringing ringed: String? = nil) {
+        guard toggle(item.path, "tags", anchor: rect) else { return }
+        tagMenuContext = (item.path, model, rect, window, gap)
+        ring(ringed, model: model)
         tagMenu.query = ""
         showTags()
     }
@@ -240,7 +249,7 @@ final class PropertyPicker {
         guard open?.key == "tags", let context = tagMenuContext, let item = context.model.index[context.path] else { return }
         let menu = TagChoice.menu(item: item, tree: context.model.tagTree, query: tagMenu.query, keeping: keeping)
         tagMenu.show(menu.sections, highlight: menu.highlight, theme: context.model.theme, below: context.anchor,
-                     inset: 0, gap: 6, in: context.window) { [weak self] choice in
+                     inset: 0, gap: context.gap, in: context.window) { [weak self] choice in
             self?.pickTag(choice)
         }
     }

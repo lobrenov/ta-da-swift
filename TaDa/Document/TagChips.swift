@@ -26,6 +26,11 @@ struct TagChipRow: View {
             }
             .buttonStyle(AddTagStyle(isOpen: PropertyPicker.shared.isOpen(item.path, "tags")))
             .background(ScreenAnchorReader(anchor: anchor))
+            .onChange(of: model.propertyMenuRequest) { _, request in
+                guard let request, request.menu == .tags, request.onChip, request.anchor == item.path else { return }
+                model.propertyMenuRequest = nil
+                PropertyPicker.shared.pickTags(of: item, model: model, anchor: anchor)
+            }
             .accessibilityLabel("Add a tag")
             if !inText.isEmpty {
                 Text("In text")

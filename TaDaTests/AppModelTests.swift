@@ -395,6 +395,25 @@ struct AppModelTests {
         #expect(model.propertyMenuRequest?.onChip == false)
     }
 
+    @Test func showTagMenuAsksTheOpenFilesChipAndNeedsAnOpenFile() async {
+        let model = await folder.model()
+        model.showTagMenu()
+        #expect(model.propertyMenuRequest == nil, "no open file")
+
+        let paths = ["tasks/Loose.md", "tasks/Due today.md"]
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
+        model.selection = paths[1]
+        model.showTagMenu()
+        #expect(model.propertyMenuRequest?.menu == .tags)
+        #expect(model.propertyMenuRequest?.paths == [paths[1]] && model.propertyMenuRequest?.onChip == true)
+
+        model.propertyMenuRequest = nil
+        model.selection = paths[0]
+        model.extendSelection(to: paths[1])
+        model.showTagMenu()
+        #expect(model.propertyMenuRequest == nil, "picked files aren't an open file")
+    }
+
     @Test func settingSeveralDatesWritesOnlyTheOnesThatChange() async throws {
         let model = await folder.model()
         let files = ["tasks/Due today.md", "tasks/Loose.md", "projects/Ta Da MVP.md"]

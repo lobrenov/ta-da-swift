@@ -65,6 +65,8 @@ private struct TaskDragSource: ViewModifier {
                 case .project: PropertyPicker.shared.pickProject(of: items, model: model, anchor: anchor, gap: 4)
                 case .area: PropertyPicker.shared.pickArea(of: items, model: model, anchor: anchor, gap: 4)
                 case .date(let kind): PropertyPicker.shared.pickDate(kind, of: items, model: model, anchor: anchor, gap: 4)
+                case .tags:
+                    if let item = items.first { PropertyPicker.shared.pickTags(of: item, model: model, anchor: anchor, gap: 4) }
                 }
             }
     }

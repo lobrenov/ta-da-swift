@@ -126,8 +126,8 @@ import TaDaCore
     var trashNote: String?
     /// The file whose file menu is open; its row is ringed.
     var menuTarget: String?
-    /// ⇧⌘M's request for the project or area menu, or ⌘S's and ⌘D's for a date's calendar. The view it names opens the
-    /// menu and sets this back to nil.
+    /// ⇧⌘M's request for the project or area menu, ⌘S's and ⌘D's for a date's calendar, or ⌘T's for tagMenu. The view
+    /// it names opens the menu and sets this back to nil.
     var propertyMenuRequest: PropertyMenuRequest?
     struct PropertyMenuRequest: Equatable {
         let id = UUID()
@@ -142,6 +142,7 @@ import TaDaCore
             case project
             case area
             case date(AgendaEntry.Kind)
+            case tags
         }
     }
     /// Deleting an area, or files that embed images, waits here for the user to confirm; `confirmTrash(_:images:)`
@@ -1456,6 +1457,12 @@ import TaDaCore
     /// date chip or the first picked row.
     func showDateMenu(_ kind: AgendaEntry.Kind) {
         requestMenu(.date(kind), for: dateTargets())
+    }
+
+    /// ⌘T: asks for tagMenu for the open file, under its + Tag chip.
+    func showTagMenu() {
+        guard let selection, index[selection] != nil else { return }
+        requestMenu(.tags, for: [selection])
     }
 
     private func requestMenu(_ menu: PropertyMenuRequest.Menu, for paths: [String]) {
