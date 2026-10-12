@@ -21,7 +21,6 @@ struct ProjectDocumentView: View {
                         WarningList(warnings: model.index.warnings(for: project))
                         Hairline()
                         BodyEditor(model: model, document: document)
-                            .frame(maxWidth: 736, alignment: .leading)
                         LinkedTasksTable(model: model, project: project, tasks: tasks) { revealed = $0 }
                             .padding(.top, 6)
                         Spacer(minLength: 0)
