@@ -11,6 +11,13 @@ struct SidebarStateTests {
         state.slid()
     }
 
+    @Test func swipesStepThroughToDoTagsAndNotesAndStopAtTheEnds() {
+        #expect(AppModel.SidebarMode.projects.next == .tags && AppModel.SidebarMode.tags.next == .notes)
+        #expect(AppModel.SidebarMode.notes.next == .notes)
+        #expect(AppModel.SidebarMode.notes.previous == .tags && AppModel.SidebarMode.tags.previous == .projects)
+        #expect(AppModel.SidebarMode.projects.previous == .projects)
+    }
+
     @Test func aNarrowWindowHidesTheSidebarAndAWideOneBringsItBack() {
         var state = SidebarState()
         #expect(state.fit(narrow: true) == .detailOnly)

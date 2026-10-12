@@ -11,11 +11,13 @@ import TaDaCore
         case area(String)
         /// A tag's page, by the tag's path (lowercased); nil for Untagged.
         case tag(String?)
+        /// A notes folder's page, by vault-relative path; `""` for Loose, the top level.
+        case folder(String)
     }
 
-    /// What the sidebar lists under Trash: the area and project hierarchy, or the tag tree.
+    /// What the sidebar lists under Trash: the area and project hierarchy (Tasks), the tag tree, or the notes folders.
     enum SidebarMode: String {
-        case projects, tags
+        case projects, tags, notes
     }
 
     enum VaultState: Equatable {
@@ -39,6 +41,7 @@ import TaDaCore
             trashNote = nil
             switch domain {
             case .tag: sidebarMode = .tags
+            case .folder: sidebarMode = .notes
             case .loose, .project, .area: sidebarMode = .projects
             default: break
             }
@@ -233,13 +236,17 @@ import TaDaCore
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
     }
-    /// The sidebar's Projects | Tags switch.
+    /// The sidebar's Tasks | Tags | Notes switch.
     var sidebarMode: SidebarMode {
         didSet { defaults.set(sidebarMode.rawValue, forKey: Keys.sidebarMode) }
     }
     /// The tag tree's folded parents, by tag path.
     private(set) var foldedTags: Set<String> {
         didSet { defaults.set(foldedTags.sorted(), forKey: Keys.foldedTags) }
+    }
+    /// The Notes tree's folded folders, by path.
+    private(set) var foldedFolders: Set<String> {
+        didSet { defaults.set(foldedFolders.sorted(), forKey: Keys.foldedFolders) }
     }
     /// The files opened last, most recent first, for the link menu's Recent: eight besides the open one.
     private(set) var recentFiles: [String] {
@@ -293,6 +300,14 @@ import TaDaCore
         if foldedTags.remove(path) == nil { foldedTags.insert(path) }
     }
 
+    func isFolderFolded(_ path: String) -> Bool {
+        foldedFolders.contains(path)
+    }
+
+    func toggleFolderFolded(_ path: String) {
+        if foldedFolders.remove(path) == nil { foldedFolders.insert(path) }
+    }
+
     /// How long an edit waits before it's saved.
     @ObservationIgnored var saveDelay = Duration.milliseconds(600)
     private let defaults: any SettingsStore
@@ -322,6 +337,7 @@ import TaDaCore
         static let recentFiles = "recentFiles"
         static let sidebarMode = "sidebarMode"
         static let foldedTags = "foldedTags"
+        static let foldedFolders = "foldedFolders"
         static let lastLogged = "lastLogged"
         static let quickEntryHotkey = "quickEntryHotkey"
     }
@@ -339,6 +355,7 @@ import TaDaCore
         recentFiles = defaults.stringArray(forKey: Keys.recentFiles) ?? []
         sidebarMode = defaults.string(forKey: Keys.sidebarMode).flatMap(SidebarMode.init) ?? .projects
         foldedTags = Set(defaults.stringArray(forKey: Keys.foldedTags) ?? [])
+        foldedFolders = Set(defaults.stringArray(forKey: Keys.foldedFolders) ?? [])
         // Missing: the default. Stored `[:]`: cleared.
         if let stored = defaults.dictionary(forKey: Keys.quickEntryHotkey) {
             quickEntryHotkey = Hotkey(stored)
@@ -395,7 +412,9 @@ import TaDaCore
         // Dates first: anything that changes while the index loads shows up as changed on the next refresh.
         fileDates = await Self.run { vault.modificationDates() }
         let loaded = await vault.loadIndex()
+        knownFolders = []
         updateIndex { $0 = loaded }
+        await rescanFolders(vault)
         trash = await Self.run { vault.trashedItems() }
         trashedAttachments = await Self.run { vault.trashedAttachments() }
         attachments = await Self.run { vault.attachmentPaths() }
@@ -465,6 +484,7 @@ import TaDaCore
                 guard self.vault?.root == vault.root else { return }
                 fileDates = changes.dates
                 await apply(changes, from: vault)
+                await rescanFolders(vault)
                 trash = await Self.run { vault.trashedItems() }
                 trashedAttachments = await Self.run { vault.trashedAttachments() }
                 trashSelection.formIntersection(trash.map(\.id) + trashedAttachments.map(\.id))
@@ -677,19 +697,21 @@ import TaDaCore
         }
     }
 
-    /// Shows a file: a project or area opens as its own page in its domain; a task opens beside the current list.
+    /// Shows a file: a project or area opens as its own page in its domain; a task opens beside the current list; a note
+    /// opens in its folder.
     func open(_ path: String) {
         guard let item = index[path] else { return }
         switch item.properties.kind {
         case .project: domain = .project(path)
         case .area: domain = .area(path)
+        case .note: domain = .folder(Vault.folder(of: path))
         case .task: break
         }
         selection = path
     }
 
     /// Follows a link to a file: a logged file opens in the Logbook; a project or area opens as its own page; a task
-    /// opens in its project's or area's page, or in Loose tasks.
+    /// opens in its project's or area's page, or in Loose tasks; a note opens in its folder.
     func openLink(to path: String) {
         guard let item = index[path] else { return }
         if item.isLogged {
@@ -870,6 +892,7 @@ import TaDaCore
     /// Completes an open task or reopens a done or cancelled one. Only `status` and `completedDate` change. A project
     /// goes through `setStatus(_:in:)`, which asks first when it has open tasks.
     func toggleCompletion(_ item: Item) async {
+        guard item.properties.kind != .note else { return }
         if item.properties.kind == .project {
             return await setStatus(item.properties.status.isClosed ? .notStarted : .done, in: item.path)
         }
@@ -908,6 +931,7 @@ import TaDaCore
     /// sets its Done or Cancelled project to Doing; a logged file that's reopened goes back to `tasks/` or `projects/`.
     func setStatus(_ status: Status, in path: String, confirmed: Bool = false) async {
         if editDraft(path, { $0.status = status }) { return }
+        guard index[path]?.properties.kind != .note else { return }
         if !confirmed, status.isClosed, let item = index[path], item.properties.kind == .project {
             let tasks = index.openTasks(in: item)
             if !tasks.isEmpty {
@@ -963,7 +987,7 @@ import TaDaCore
                 let result: (path: String, relinked: [Item], failed: [String]) = switch kind {
                 case .project: try vault.renameProject(at: path, to: title, index: index)
                 case .area: try vault.renameArea(at: path, to: title, index: index)
-                case .task, nil: (path: try vault.rename(path, to: title), relinked: [], failed: [])
+                case .task, .note, nil: (path: try vault.rename(path, to: title), relinked: [], failed: [])
                 }
                 return (result.path, try [vault.load(result.path, presenter: presenter)].compactMap { $0 } + result.relinked, result.failed)
             }
@@ -1172,7 +1196,7 @@ import TaDaCore
         var files: [Item] = []
         for item in items {
             let taken = switch item.properties.kind {
-            case .task: [item]
+            case .task, .note: [item]
             case .project: [item] + index.tasks(in: item)
             case .area: [item] + index.projects(in: item) + index.allTasks(in: item)
             }
@@ -1196,14 +1220,15 @@ import TaDaCore
         }
     }
 
-    /// Moves trashed files back to `tasks/`, `projects/` and `areas/`, each bringing back its parents.
+    /// Moves trashed files back to `tasks/`, `projects/` and `areas/`, each bringing back its parents, and notes back to
+    /// their folders.
     func restore(_ paths: Set<String>) async {
         guard let vault else { return }
         let paths = Array(paths)
         do {
             let index = index, today = today
             let restored = try await Self.run { try vault.restore(paths, index: index, today: today) }
-            let folders = Set(restored.map { Vault.folder(of: $0) + "/" }).sorted()
+            let folders = Set(restored.map { Vault.folder(of: $0).isEmpty ? "the top level" : Vault.folder(of: $0) + "/" }).sorted()
             trashNote = "\(restored.count == 1 ? "1 item" : "\(restored.count) items") restored to \(folders.formatted(.list(type: .and)))"
         } catch {
             errorMessage = Self.couldNot("restore the files", error)
@@ -1440,6 +1465,7 @@ import TaDaCore
 
     /// The files a due date or deadline is set on, in list order. With `path` (a right-clicked or dragged row): the
     /// picked tasks when it's one of them, else just it. Without: the picked tasks, else the open file.
+    /// Notes are left out.
     func dateTargets(for path: String? = nil) -> [String] {
         let paths: Set<String>
         if let path {
@@ -1448,7 +1474,7 @@ import TaDaCore
             paths = multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
         }
         let order = arrowKeyList?.paths ?? []
-        return paths.filter { index[$0] != nil }
+        return paths.filter { index[$0].map { $0.properties.kind != .note } ?? false }
             .sorted { (order.firstIndex(of: $0) ?? .max, $0) < (order.firstIndex(of: $1) ?? .max, $1) }
     }
 
@@ -1496,7 +1522,7 @@ import TaDaCore
         let target: Parent? = switch parent?.properties.kind {
         case .project: .project(parent!.title)
         case .area: .area(parent!.title)
-        case .task, nil: nil
+        case .task, .note, nil: nil
         }
         guard parent == nil || target != nil else { return }
         if editDraft(paths.first, { if $0.kind == .task || target?.key != "project" { $0.parent = target } }) { return }
@@ -1532,6 +1558,11 @@ import TaDaCore
 
     // MARK: New files
 
+    /// ⌘N: a new note on a notes folder's page, else a new task.
+    func newTaskOrNote() async {
+        if case .folder = domain { await newNote() } else { await newTask() }
+    }
+
     /// Creates an untitled task and selects it with its title ready to type. On a project's or area's page it's filed
     /// there; in Today it's due today; on a tag's page it carries the tag, and on Untagged it stays there; anywhere else
     /// it opens in Loose tasks.
@@ -1560,7 +1591,7 @@ import TaDaCore
         switch parent?.properties.kind {
         case .project: NewFile.task(project: parent?.title, tags: tags, today: today)
         case .area: NewFile.task(area: parent?.title, tags: tags, today: today)
-        case .task, nil: NewFile.task(tags: tags, today: today)
+        case .task, .note, nil: NewFile.task(tags: tags, today: today)
         }
     }
 
@@ -1645,9 +1676,171 @@ import TaDaCore
             if let item = Item(parsing: text, path: path) { updateIndex { $0.update(item) } }
             return path
         } catch {
-            errorMessage = Self.couldNot("create a file in “\(folder)”", error)
+            errorMessage = Self.couldNot("create a file in “\(folder.isEmpty ? folderDisplayName : folder)”", error)
             return nil
         }
+    }
+
+    // MARK: Notes
+
+    /// The folder whose page shows; `""` for Loose, nil outside Notes.
+    var shownFolder: String? {
+        if case let .folder(path) = domain { path } else { nil }
+    }
+
+    /// A folder whose name field should take focus (a folder just made).
+    var folderNameFocus: String?
+    /// Convert to Task…, Project… or Area… asked for this note; the window shows the convert sheet.
+    var convertRequest: ConvertRequest?
+    struct ConvertRequest: Equatable, Identifiable {
+        let id = UUID()
+        let path: String
+        let kind: Item.Kind
+    }
+    /// Moving a folder to the trash waits here for the user to confirm; `confirmTrashFolder(_:)` goes ahead.
+    var folderTrashConfirmation: FolderTrashConfirmation?
+    struct FolderTrashConfirmation: Equatable, Identifiable {
+        let id = UUID()
+        let path: String
+        /// The notes in it and its subfolders.
+        let count: Int
+    }
+
+    /// Creates an untitled note, with `createdDate`, in the folder whose page shows (else at the top level), and opens it
+    /// there with its title ready to type.
+    func newNote() async {
+        let folder = shownFolder ?? ""
+        guard let path = await create(NewFile.note(today: today), in: folder) else { return }
+        titleFocus = path
+        if domain != .folder(folder) { domain = .folder(folder) }
+        selection = path
+    }
+
+    /// Creates "Untitled folder" in `parent`, or the folder whose page shows (else at the top level), its name ready to
+    /// type.
+    func newFolder(in parent: String? = nil) async {
+        guard let vault else { return }
+        let parent = parent ?? shownFolder ?? ""
+        do {
+            let path = try await Self.run { try vault.createFolder(named: "Untitled folder", in: parent) }
+            knownFolders.insert(path)
+            foldedFolders.remove(parent)
+            updateNotes()
+            folderNameFocus = path
+        } catch {
+            errorMessage = Self.couldNot("create a folder in “\(parent.isEmpty ? folderDisplayName : parent)”", error)
+        }
+    }
+
+    /// Renames a folder; links written with its path follow it, and so do the open file, the folder page and folds.
+    func renameFolder(_ path: String, to name: String) async {
+        let current = String(path.split(separator: "/").last ?? "")
+        guard !name.trimmingCharacters(in: .whitespaces).isEmpty, name != current else { return }
+        await moveFiles(path, isFolder: true, failure: "rename “\(current)”") { vault, index, _ in
+            try vault.renameFolder(path, to: name, index: index)
+        }
+    }
+
+    /// Asks before moving a folder to the trash, naming how many notes go.
+    func trashFolder(_ path: String) {
+        folderTrashConfirmation = FolderTrashConfirmation(path: path, count: index.notes.count { $0.path.hasPrefix(path + "/") })
+    }
+
+    /// Moves the folder `request` asked about into `.trash/` whole. A folder page in it shows its parent.
+    func confirmTrashFolder(_ request: FolderTrashConfirmation) async {
+        if folderTrashConfirmation?.id == request.id { folderTrashConfirmation = nil }
+        guard let vault else { return }
+        let path = request.path
+        let isInside = { (file: String) in file == path || file.hasPrefix(path + "/") }
+        if let document, isInside(document.path) {
+            await save(document)
+            guard !document.isDirty else {
+                errorMessage = "“\(Item.title(ofPath: document.path))” changed outside Ta Da. Choose which version to keep before deleting it."
+                return
+            }
+        }
+        // Before the write, as a refresh while it runs can show Loose.
+        let shown = shownFolder
+        do {
+            _ = try await Self.run { try vault.trashFolder(path) }
+        } catch {
+            errorMessage = Self.couldNot("move “\(Item.title(ofPath: path))” to the trash", error)
+            return
+        }
+        if let selection, isInside(selection) { self.selection = nil }
+        knownFolders = knownFolders.filter { !isInside($0) }
+        if let shown, isInside(shown) { domain = .folder(Vault.folder(of: path)) }
+        await refresh()
+    }
+
+    /// Moves a note into `folder` (`""` for the top level); links written with its path follow it.
+    func moveNote(_ path: String, to folder: String) async {
+        await moveFiles(path, isFolder: false, failure: "move “\(Item.title(ofPath: path))”") { vault, index, _ in
+            try vault.moveNote(path, to: folder, index: index)
+        }
+    }
+
+    /// Converts a note to a task, project or area, filed under `parent`, and opens it in Tasks.
+    func convert(_ path: String, to kind: Item.Kind, status: Status = .notStarted, parent: Parent? = nil) async {
+        guard let newPath = await moveFiles(path, isFolder: false, failure: "convert “\(Item.title(ofPath: path))”", { vault, index, today in
+            try vault.convert(path, to: kind, status: status, parent: parent, index: index, today: today)
+        }), index[newPath]?.properties.kind == kind else { return }
+        openLink(to: newPath)
+    }
+
+    /// Runs a write that moves the file at `path`, or every file in the folder at `path`, saving the open file first.
+    /// The folder page, the selection, the open file, Recent and folds follow; then the index is refreshed from disk.
+    /// Returns the new path; nil when it failed.
+    @discardableResult
+    private func moveFiles(_ path: String, isFolder: Bool, failure: String,
+                           _ work: @escaping @Sendable (Vault, VaultIndex, LocalDate) throws -> Relinked) async -> String? {
+        guard let vault else { return nil }
+        let isInside = { (file: String) in file == path || isFolder && file.hasPrefix(path + "/") }
+        if let document, isInside(document.path) {
+            await save(document)
+            guard !document.isDirty else {
+                errorMessage = "“\(Item.title(ofPath: document.path))” changed outside Ta Da. Choose which version to keep before moving it."
+                return nil
+            }
+        }
+        // Before the write, as a refresh while it runs can clear the selection or show Loose, and before the folder page
+        // changes, which clears the selection too.
+        let selected = selection, shown = shownFolder
+        let index = index, today = today
+        let result: Relinked
+        do {
+            result = try await Self.run { try work(vault, index, today) }
+        } catch {
+            errorMessage = Self.couldNot(failure, error)
+            return nil
+        }
+        let newPath = result.path
+        guard newPath != path else { return path }
+        let moved = { (file: String) in isInside(file) ? newPath + file.dropFirst(path.count) : file }
+        if isFolder {
+            knownFolders = Set(knownFolders.map(moved))
+            foldedFolders = Set(foldedFolders.map(moved))
+            if let shown, isInside(shown) { domain = .folder(moved(shown)) }
+        }
+        let followed = document.flatMap { isInside($0.path) ? $0 : nil }
+        if let followed {
+            followed.path = moved(followed.path)
+            followed.isRemovedOnDisk = false
+        }
+        if let selected, isInside(selected) { selection = moved(selected) }
+        if recentFiles.contains(where: isInside) { recentFiles = recentFiles.map(moved) }
+        await refresh()
+        if let followed, followed === document {
+            // A refresh during the write may already have seen the file at its new path, so this one didn't reload it.
+            await reload(followed, from: vault)
+            if followed.isDirty { await save(followed) }
+            if let item = followed.item, index[item.path] != item { updateIndex { $0.update(item) } }
+        }
+        if !result.failed.isEmpty {
+            let names = result.failed.map { "“\(Item.title(ofPath: $0))”" }.formatted()
+            errorMessage = "Ta Da moved “\(Item.title(ofPath: path))”, but the links in \(names) still point to the old place."
+        }
+        return newPath
     }
 
     // MARK: Lists
@@ -1666,10 +1859,17 @@ import TaDaCore
     private(set) var logbook: [Item] = []
     /// Every tag in use and its parents, with counts.
     private(set) var tagTree: [TagNode] = []
-    /// Areas, projects and tasks without a tag.
+    /// Areas, projects, tasks and notes without a tag.
     private(set) var untaggedCount = 0
-    /// Areas, projects and tasks with a tag.
+    /// Areas, projects, tasks and notes with a tag.
     private(set) var taggedCount = 0
+    /// The Notes tree, below Loose.
+    private(set) var folderTree: [FolderNode] = []
+    /// The notes at the top level.
+    private(set) var looseNoteCount = 0
+    /// Folders known to be on disk: the empty ones and those holding notes at the last scan, and the ones Ta Da made
+    /// since. A folder stays in the tree when its last note goes, until a scan finds it gone.
+    private var knownFolders: Set<String> = []
     /// The iPhone's tag screens' lists, by tag path (nil for Untagged), while each shows.
     private(set) var phoneTagPages: [String?: TagBrowser] = [:]
     /// The tag whose page shows, spelled as the index shows it, or as last shown once no file carries it; nil
@@ -1710,6 +1910,7 @@ import TaDaCore
             }
             patch(&page.areasAndProjects)
             patch(&page.completed)
+            patch(&page.notes)
             for i in page.groups.indices { patch(&page.groups[i].tasks) }
             return page
         }
@@ -1728,6 +1929,25 @@ import TaDaCore
         logbook = index.items.values.filter { $0.properties.kind != .area && ($0.isLogged || $0.properties.status.isClosed) }
             .sorted(by: VaultIndex.byTitle)
         updateTags()
+        updateNotes()
+    }
+
+    /// Assigning a value equal to the old one would still redraw the Notes sidebar.
+    private func updateNotes() {
+        let tree = index.folderTree(folders: knownFolders), loose = index.looseNotes().count
+        if tree != folderTree { folderTree = tree }
+        if loose != looseNoteCount { looseNoteCount = loose }
+    }
+
+    /// Finds the folders on disk again. A folder page whose folder is gone shows Loose.
+    private func rescanFolders(_ vault: Vault) async {
+        let empty = await Self.run { vault.emptyFolders() }
+        let known = empty.union(index.notes.map { Vault.folder(of: $0.path) }.filter { !$0.isEmpty })
+        if known != knownFolders {
+            knownFolders = known
+            updateNotes()
+        }
+        if let folder = shownFolder, !folder.isEmpty, !(await Self.run { vault.folderExists(folder) }) { domain = .folder("") }
     }
 
     /// The tag tree, the tagged and Untagged counts and the tag pages.

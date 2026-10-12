@@ -82,7 +82,7 @@ extension DomainHeader where Trailing == EmptyView {
 }
 
 extension AppModel.Domain {
-    /// The sidebar's name for the domain, or the project's or area's title.
+    /// The sidebar's name for the domain, or the project's, area's or folder's title.
     var title: String {
         switch self {
         case .today: "Today"
@@ -92,6 +92,7 @@ extension AppModel.Domain {
         case .trash: "Trash"
         case .project(let path), .area(let path): Item.title(ofPath: path)
         case .tag(let path): path.flatMap(Tag.init)?.leaf ?? "Untagged"
+        case .folder(let path): path.isEmpty ? "Loose" : String(path.split(separator: "/").last ?? "")
         }
     }
 
@@ -106,6 +107,7 @@ extension AppModel.Domain {
         case .project: "circle.dotted"
         case .area: "cube"
         case .tag(let path): path == nil ? "tag.slash" : "tag"
+        case .folder(let path): path.isEmpty ? "tray" : "folder"
         }
     }
 
@@ -118,6 +120,7 @@ extension AppModel.Domain {
         case .trash: \.muted
         case .area: \.doing
         case .tag(let path): path == nil ? \.muted : \.accent
+        case .folder: \.link
         }
     }
 }

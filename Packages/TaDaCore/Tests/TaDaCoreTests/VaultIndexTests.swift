@@ -167,3 +167,25 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
     index.update(makeItem("tasks/Old.md", "type: task\nstatus: Done\ntags: [old]"))
     #expect(index.paths(carrying: "old") == ["tasks/Old.md"])
 }
+
+@Test func titlesResolveToTaDaFilesBeforeNotes() {
+    var index = VaultIndex([
+        makeItem("Ark.md", "tags: []"),
+        makeItem("Meetings/Ark.md", "tags: []"),
+        makeItem("projects/Ark.md", "type: project\nstatus: Doing"),
+        makeItem(".logbook/2026-09/Ark.md", "type: task\nstatus: Done"),
+    ])
+    #expect(index.items(titled: "ark").map(\.path) == ["projects/Ark.md", "Ark.md", "Meetings/Ark.md", ".logbook/2026-09/Ark.md"])
+    index.update(makeItem("Ark.md", "type: area"))
+    #expect(index.items(titled: "Ark").map(\.path) == ["Ark.md", "projects/Ark.md", "Meetings/Ark.md", ".logbook/2026-09/Ark.md"])
+}
+
+@Test func notesAreNeverFiledOrParents() {
+    let note = makeItem("Ark.md", "project: \"[[Ta Da MVP]]\"\narea: \"[[Work]]\"")
+    let area = makeItem("areas/Work.md", "type: area")
+    let index = VaultIndex([project, area, note])
+    #expect(note.properties.kind == .note && note.properties.project == nil && note.properties.area == nil)
+    #expect(index.parent(of: note) == nil && index.area(of: note) == nil)
+    #expect(index.tasks(in: project).isEmpty && index.tasks(in: area).isEmpty && index.projects(in: area).isEmpty)
+    #expect(index.notes.map(\.path) == ["Ark.md"])
+}

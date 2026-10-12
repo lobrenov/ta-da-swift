@@ -49,8 +49,42 @@ import Testing
     "---\ntype: task\nnever closed\n",
     "",
 ])
-func itemIgnoresNonTaDaFiles(_ text: String) {
-    #expect(Item(parsing: text, path: "x.md") == nil)
+func untypedFilesAreNotesOnlyAtNotePaths(_ text: String) {
+    #expect(Item(parsing: text, path: "x.md")?.properties.kind == .note)
+    #expect(Item(parsing: text, path: "Meetings/x.md")?.properties.kind == .note)
+    #expect(Item(parsing: text, path: "tasks/x.md") == nil)
+}
+
+@Test func notePaths() {
+    for path in ["Note.md", "A/B/Note.MD", "Meetings/tasks/Note.md", ".trash/Note.md", ".trash/Meetings/Note.md"] {
+        #expect(Item.isNotePath(path), "\(path)")
+    }
+    for path in ["tasks/Note.md", "Projects/Note.md", "areas/x/Note.md", "attachments/Note.md", ".logbook/2026-10/Note.md",
+                 ".obsidian/Note.md", "A/.hidden/Note.md", ".Note.md", "Note.txt", ".trash/attachments/Note.md"] {
+        #expect(!Item.isNotePath(path), "\(path)")
+    }
+}
+
+@Test func typedFilesAreNeverNotes() throws {
+    let item = try #require(Item(parsing: "---\ntype: Task\nstatus: Doing\n---\n", path: "Meetings/x.md"))
+    #expect(item.properties.kind == .task)
+}
+
+@Test func noteReadsCreatedDateAndTagsOnly() throws {
+    let text = "---\ncreatedDate: 2026-10-04\ntags: [work, ark]\nstatus: Done\ndueDate: 2026-10-05\narea: \"[[Work]]\"\n---\n- [x] A\n- [ ] B\n- [-] C\n#plan\n"
+    let item = try #require(Item(parsing: text, path: "Meetings/Ark.md"))
+    #expect(item.properties.kind == .note)
+    #expect(item.properties.createdDate == LocalDate("2026-10-04"))
+    #expect(item.tags.map(\.tag.path) == ["work", "ark", "plan"])
+    #expect(item.properties.status == .notStarted && item.properties.dueDate == nil && item.properties.area == nil)
+    #expect(item.subtasks == (done: 1, total: 2))
+    #expect(item.warnings.isEmpty)
+}
+
+@Test func noteWithBrokenYAMLLoadsWithAWarning() throws {
+    let item = try #require(Item(parsing: "---\ntags: [a\n---\nBody\n", path: "Broken.md"))
+    #expect(item.properties.kind == .note)
+    #expect(item.warnings.count == 1)
 }
 
 @Test func itemWithBrokenYAMLStillLoads() throws {
@@ -59,7 +93,7 @@ func itemIgnoresNonTaDaFiles(_ text: String) {
     #expect(item.warnings.count == 1)
 }
 
-/// Every SampleVault file parses cleanly; the note without frontmatter is ignored.
+/// Every SampleVault file parses cleanly; the note without frontmatter is a note.
 @Test func sampleVaultParses() throws {
     let files = try sampleFiles()
     #expect(files.count > 20)
@@ -67,8 +101,9 @@ func itemIgnoresNonTaDaFiles(_ text: String) {
     var items: [String: Item] = [:]
     for file in files {
         let title = file.deletingPathExtension().lastPathComponent
-        guard let item = Item(parsing: try String(contentsOf: file, encoding: .utf8), path: file.lastPathComponent) else {
-            #expect(file.path.contains("/notes/"), "\(title) didn't parse")
+        let item = try #require(Item(parsing: try String(contentsOf: file, encoding: .utf8), path: file.lastPathComponent), "\(title) didn't parse")
+        guard item.properties.kind != .note else {
+            #expect(file.path.contains("/notes/"), "\(title) is a note")
             continue
         }
         // The design's tasks name an area beside their project, which ignores it.

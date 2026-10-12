@@ -17,7 +17,7 @@ public enum PropertyReader {
         guard let root, root.mapping != nil else { return nil }
 
         var reader = Reader(root: root)
-        guard let kind = reader.text("type").flatMap({ Item.Kind(rawValue: $0.lowercased()) }) else { return nil }
+        guard let kind = reader.text("type").flatMap(Self.kind) else { return nil }
         var properties = Properties(kind: kind)
 
         if kind != .area {
@@ -44,6 +44,24 @@ public enum PropertyReader {
         properties.dueDate = reader.date("dueDate")
         properties.deadline = reader.date("deadline")
         properties.repeatRule = reader.text("repeat")
+        properties.tags = reader.tags()
+        return (properties, reader.warnings)
+    }
+
+    /// A note's frontmatter: `createdDate` and `tags:` only. No frontmatter, or YAML that isn't a mapping, reads as
+    /// nothing; invalid YAML adds a warning.
+    public static func readNote(_ yaml: String?) -> (properties: Properties, warnings: [Warning]) {
+        var properties = Properties(kind: .note)
+        guard let yaml else { return (properties, []) }
+        let root: Node?
+        do {
+            root = try Yams.compose(yaml: yaml)
+        } catch {
+            return (properties, [invalidYAML(error)])
+        }
+        guard let root, root.mapping != nil else { return (properties, []) }
+        var reader = Reader(root: root)
+        properties.createdDate = reader.date("createdDate")
         properties.tags = reader.tags()
         return (properties, reader.warnings)
     }
@@ -105,9 +123,14 @@ public enum PropertyReader {
             let value = line.dropFirst("type:".count)
                 .trimmingCharacters(in: .whitespaces)
                 .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
-            return Item.Kind(rawValue: value.lowercased())
+            return kind(value)
         }
         return nil
+    }
+
+    /// `task`, `project` or `area`, ignoring case.
+    private static func kind(_ text: String) -> Item.Kind? {
+        Item.Kind(rawValue: text.lowercased()).flatMap { $0 == .note ? nil : $0 }
     }
 
     private static func invalidYAML(_ error: any Error) -> Warning {

@@ -84,6 +84,50 @@ public struct Vault: Sendable {
         return dates
     }
 
+    /// Folders that hold no files at any depth: outside hidden folders, packages and the top-level `areas/`, `projects/`,
+    /// `tasks/` and `attachments/`. Hidden files don't count, but iCloud Drive's placeholders for files not downloaded yet
+    /// do. A full walk of the folder: call it off the main actor.
+    public func emptyFolders() -> Set<String> {
+        let keys: Set<URLResourceKey> = [.isDirectoryKey, .isPackageKey]
+        // Not `.skipsHiddenFiles`, so placeholders are seen. Other hidden files and folders are skipped below.
+        guard let entries = FileManager.default.enumerator(
+            at: root, includingPropertiesForKeys: Array(keys), options: [.skipsPackageDescendants]
+        ) else { return [] }
+        let rootComponents = root.pathComponents.count
+        var folders: Set<String> = [], filled: Set<String> = []
+        for case let url as URL in entries {
+            let components = url.standardizedFileURL.pathComponents.dropFirst(rootComponents)
+            let path = components.joined(separator: "/")
+            let values = try? url.resourceValues(forKeys: keys)
+            let name = url.lastPathComponent
+            if name.hasPrefix(".") {
+                if values?.isDirectory == true {
+                    entries.skipDescendants()
+                    continue
+                }
+                guard Self.placeholderOriginal(name) != nil else { continue }
+            }
+            if values?.isDirectory == true, values?.isPackage != true {
+                if components.count == 1, Item.reservedFolders.contains(path.lowercased()) {
+                    entries.skipDescendants()
+                } else {
+                    folders.insert(path)
+                }
+            } else {
+                var folder = Self.folder(of: path)
+                while !folder.isEmpty, filled.insert(folder).inserted { folder = Self.folder(of: folder) }
+            }
+        }
+        return folders.subtracting(filled)
+    }
+
+    /// Whether `path` is a folder on disk.
+    public func folderExists(_ path: String) -> Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: url(for: path).path(percentEncoded: false), isDirectory: &isDirectory)
+            && isDirectory.boolValue
+    }
+
     /// Markdown files and images that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show
     /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders other than `.logbook/` are skipped.
     public func placeholderPaths() -> [String] {
@@ -261,6 +305,11 @@ public struct Vault: Sendable {
             copied = range.upperBound
         }
         return result + body[copied...]
+    }
+
+    /// `folder/name`, or `name` when `folder` is empty.
+    public static func join(_ folder: String, _ name: String) -> String {
+        folder.isEmpty ? name : folder + "/" + name
     }
 
     /// `tasks/Name.md` → `tasks`; `Name.md` → empty.

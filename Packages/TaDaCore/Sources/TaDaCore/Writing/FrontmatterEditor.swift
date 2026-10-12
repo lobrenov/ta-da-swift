@@ -31,6 +31,34 @@ public enum FrontmatterEditor {
         return file.text
     }
 
+    /// Inserts keys straight after the opening `---`, ahead of the others, or creates the frontmatter block if there is
+    /// none. Keys already in the block aren't checked.
+    public static func insertAtTop(_ keys: [(key: String, value: PropertyValue)], in text: String) -> String {
+        var file = Lines(text)
+        let lines = keys.flatMap { rendered($0.key, $0.value) }
+        guard closingFence(file) != nil else {
+            let ending = file.ending
+            return (["---"] + lines + ["---"]).map { $0 + ending }.joined() + text
+        }
+        let ending = endingOf(file.lines[0])
+        file.lines.insert(contentsOf: lines.map { Substring($0 + ending) }, at: 1)
+        return file.text
+    }
+
+    /// Whether the frontmatter has the key, with or without a value.
+    public static func contains(_ key: String, in text: String) -> Bool {
+        let file = Lines(text)
+        return closingFence(file).flatMap { keyRange(key, in: file, closing: $0) } != nil
+    }
+
+    /// Whether the frontmatter has the key with something written after it, on its line or the lines below.
+    public static func hasValue(_ key: String, in text: String) -> Bool {
+        let file = Lines(text)
+        guard let closing = closingFence(file), let range = keyRange(key, in: file, closing: closing) else { return false }
+        let value = Lines.content(file.lines[range.lowerBound]).dropFirst(key.count + 1)
+        return range.count > 1 || value.contains { !$0.isWhitespace }
+    }
+
     /// Empties an existing key, leaving `key:`. A missing key stays missing.
     public static func clear(_ key: String, in text: String) -> String {
         var file = Lines(text)

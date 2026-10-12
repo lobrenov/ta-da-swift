@@ -41,14 +41,14 @@ private let today = LocalDate("2026-10-09")!
     }
 }
 
-@Test func trashedItemsLeaveOutOtherNotesAndHiddenFiles() async throws {
+@Test func trashedItemsLeaveOutHiddenFiles() async throws {
     try await withTemporaryFolder { folder in
         try writeFile(task, ".trash/Task.md", in: folder)
         try writeFile("An Obsidian note\n", ".trash/Note.md", in: folder)
         try writeFile(task, ".trash/sub/Nested.md", in: folder)
         try writeFile(task, ".trash/.hidden.md", in: folder)
         try writeFile(task, ".trash/.git/Inside.md", in: folder)
-        #expect(Set(Vault(root: folder).trashedItems().map(\.id)) == [".trash/Task.md", ".trash/sub/Nested.md"])
+        #expect(Set(Vault(root: folder).trashedItems().map(\.id)) == [".trash/Task.md", ".trash/Note.md", ".trash/sub/Nested.md"])
     }
 }
 

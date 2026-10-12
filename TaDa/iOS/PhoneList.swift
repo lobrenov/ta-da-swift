@@ -164,8 +164,9 @@ struct PhoneSearchResults: View {
         let results = model.index.search(query)
         let projects = results.filter { $0.properties.kind == .project }
         let tasks = results.filter { $0.properties.kind == .task }
+        let notes = results.filter { $0.properties.kind == .note }
         LazyVStack(alignment: .leading, spacing: 0) {
-            if results.isEmpty {
+            if projects.isEmpty, tasks.isEmpty, notes.isEmpty {
                 ContentUnavailableView.search(text: query).padding(.top, 60)
             }
             if !projects.isEmpty {
@@ -198,6 +199,10 @@ struct PhoneSearchResults: View {
                 ForEach(tasks) { task in
                     PhoneTaskRow(model: model, item: task, search: (words, place(of: task)))
                 }
+            }
+            if !notes.isEmpty {
+                PhoneSectionHeader(title: "Notes", count: notes.count)
+                ForEach(notes) { PhoneNoteRow(model: model, note: $0) }
             }
             PickingBarClearance()
         }

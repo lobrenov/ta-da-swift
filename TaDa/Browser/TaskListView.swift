@@ -83,7 +83,7 @@ struct TaskListView: View {
                 ProjectSubheader(project: parent, fraction: model.index.progress(of: parent).fraction)
             case .project:
                 ProjectGroupHeader(project: parent, fraction: model.index.progress(of: parent).fraction)
-            case .task:
+            case .task, .note:
                 EmptyView()
             }
         }

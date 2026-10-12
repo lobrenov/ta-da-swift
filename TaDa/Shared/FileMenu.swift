@@ -1,5 +1,6 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on an area,
-// project or task. Rows add it with `.fileMenu(model, path:)`. Move, Schedule, Set Deadline…, Tags… (one file),
+// project, task or note. Rows add it with `.fileMenu(model, path:)`. A note's menu (also its page's Note ▾) has Task…,
+// Project… and Area… to convert it, Tags… and Move to Folder… (a row's), Reveal in Finder and Move to Trash. Move, Schedule, Set Deadline…, Tags… (one file),
 // Reveal in Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Tags…,
 // Reveal in Finder and Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
 #if os(macOS)
@@ -11,6 +12,13 @@ extension View {
     /// Opens the file menu on a right-click or control-click, and rings the row while it's open.
     func fileMenu(_ model: AppModel, path: String, cornerRadius: CGFloat = 7) -> some View {
         modifier(FileMenuTrigger(model: model, path: path, cornerRadius: cornerRadius))
+    }
+
+    /// Opens a menu of `actions` the same way, for something that isn't a file, such as a notes folder. `target` names
+    /// it in `model.menuTarget` while the menu is open.
+    func actionMenu(_ model: AppModel, target: String, cornerRadius: CGFloat = 7,
+                    actions: @escaping () -> [FileMenuAction]) -> some View {
+        modifier(FileMenuTrigger(model: model, path: target, cornerRadius: cornerRadius, actions: actions))
     }
 }
 
@@ -31,6 +39,9 @@ struct FileMenuAction: PopupMenuItem {
     static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
         if let area = model.index[path], area.properties.kind == .area {
             return areaActions(for: area, model: model, at: point, in: window)
+        }
+        if model.index[path]?.properties.kind == .note {
+            return noteActions(for: path, model: model, onRow: true, at: point, in: window)
         }
         guard path.hasPrefix(Vault.trashFolder + "/") else {
             let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
@@ -84,6 +95,67 @@ struct FileMenuAction: PopupMenuItem {
                 Task { await model.discard(paths) }
             },
         ]
+    }
+
+    /// Task…, Project… and Area… (converting it), each with its kind's icon and the folder it goes to; on a row, Tags… and Move to Folder… (when
+    /// there's a folder to move to); then Reveal in Finder and Move to Trash. A right-click on a picked note reveals or
+    /// trashes every picked file. Without a point (VoiceOver's actions), Tags… opens the note first and Move to Folder…
+    /// is left out.
+    static func noteActions(for path: String, model: AppModel, onRow: Bool, at point: CGPoint?, in window: NSWindow?) -> [FileMenuAction] {
+        let paths = onRow && model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
+        let trash = FileMenuAction(title: paths.count == 1 ? "Move to Trash" : "Move \(paths.count) Files to Trash",
+                                   systemImage: "trash", shortcut: "⌘⌫", startsGroup: paths.count == 1) {
+            Task { await model.moveToTrash(paths) }
+        }
+        guard paths.count == 1 else { return [reveal(paths, model: model), trash] }
+        let convert: [FileMenuAction] = [(Item.Kind.task, "Task", "checkmark.square", Vault.taskFolder),
+                                         (.project, "Project", "checklist", Vault.projectFolder),
+                                         (.area, "Area", "cube", Vault.areaFolder)].map { kind, name, icon, folder in
+            FileMenuAction(title: "\(name)…", systemImage: icon, shortcut: folder + "/") {
+                model.convertRequest = AppModel.ConvertRequest(path: path, kind: kind)
+            }
+        }
+        var actions = convert
+        if onRow {
+            // Without a row to open it under, the note's page opens and its Tags row takes the request.
+            var tagsAction = point != nil ? tags(path, model: model, at: point, in: window)
+                : FileMenuAction(title: "Tags…", systemImage: "tag", shortcut: "⌘T") {
+                    model.selection = path
+                    model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: .tags, paths: [path], anchor: path, onChip: true)
+                }
+            tagsAction.startsGroup = true
+            actions.append(tagsAction)
+            let folders = moveTargets(for: path, model: model)
+            if let point, let window, !folders.isEmpty {
+                actions.append(FileMenuAction(title: "Move to Folder…", systemImage: "folder", shortcut: "") {
+                    showFolders(folders, for: path, model: model, at: point, in: window)
+                })
+            }
+        }
+        var revealAction = reveal([path], model: model)
+        revealAction.startsGroup = true
+        return actions + [revealAction, trash]
+    }
+
+    /// The folders a note can move to: Loose, then the tree, indented, less its own folder.
+    static func moveTargets(for path: String, model: AppModel) -> [(path: String, title: String)] {
+        func rows(_ nodes: [FolderNode], depth: Int) -> [(path: String, title: String)] {
+            nodes.flatMap { [($0.path, String(repeating: "   ", count: depth) + $0.name)] + rows($0.children, depth: depth + 1) }
+        }
+        let current = Vault.folder(of: path)
+        return ([("", "Loose")] + rows(model.folderTree, depth: 0)).filter { $0.path != current }
+    }
+
+    /// A menu of `folders` that moves the note at `path` to the one picked.
+    private static func showFolders(_ folders: [(path: String, title: String)], for path: String, model: AppModel,
+                                    at point: CGPoint, in window: NSWindow) {
+        let actions = folders.map { folder in
+            FileMenuAction(title: folder.title, systemImage: folder.path.isEmpty ? "tray" : "folder", shortcut: "") {
+                Task { await model.moveNote(path, to: folder.path) }
+            }
+        }
+        model.menuTarget = path
+        FileMenu.shared.show(actions, at: point, in: window, theme: model.theme) { model.menuTarget = nil }
     }
 
     /// An area's page opens before a new file is made in it, so the file lands there.
@@ -155,9 +227,10 @@ final class FileMenu {
         }
     }
 
-    /// Opens the menu for `path` with its top-left corner at `point` (screen coordinates) in `window`.
-    func show(for path: String, at point: CGPoint, in window: NSWindow, model: AppModel) {
-        show(FileMenuAction.actions(for: path, model: model, at: point, in: window), at: point, in: window, theme: model.theme)
+    /// Opens the menu for `path` (or `actions`, when given) with its top-left corner at `point` (screen coordinates) in
+    /// `window`.
+    func show(for path: String, actions: [FileMenuAction]? = nil, at point: CGPoint, in window: NSWindow, model: AppModel) {
+        show(actions ?? FileMenuAction.actions(for: path, model: model, at: point, in: window), at: point, in: window, theme: model.theme)
         self.model = model
         model.menuTarget = path
     }
@@ -219,13 +292,15 @@ private struct FileMenuTrigger: ViewModifier {
     let model: AppModel
     let path: String
     let cornerRadius: CGFloat
+    /// The menu's actions; a file's own when nil.
+    var actions: (() -> [FileMenuAction])? = nil
     @Environment(\.theme) private var theme
 
     func body(content: Content) -> some View {
         content
             .overlay {
                 RightClickReader { point, window in
-                    FileMenu.shared.show(for: path, at: point, in: window, model: model)
+                    FileMenu.shared.show(for: path, actions: actions?(), at: point, in: window, model: model)
                 }
                 .accessibilityHidden(true)
             }
@@ -237,7 +312,7 @@ private struct FileMenuTrigger: ViewModifier {
                 }
             }
             .accessibilityActions {
-                ForEach(Array(FileMenuAction.actions(for: path, model: model).enumerated()), id: \.offset) { _, action in
+                ForEach(Array((actions?() ?? FileMenuAction.actions(for: path, model: model)).enumerated()), id: \.offset) { _, action in
                     Button(action.title, action: action.run)
                 }
             }

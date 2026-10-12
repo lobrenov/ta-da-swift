@@ -84,6 +84,8 @@ struct WorkspaceView: View {
             }
         case let .tag(path):
             split { TagBrowserView(model: model, path: path).id(model.domain) }
+        case let .folder(path):
+            split { FolderBrowserView(model: model, folder: path).id(model.domain) }
         }
     }
 

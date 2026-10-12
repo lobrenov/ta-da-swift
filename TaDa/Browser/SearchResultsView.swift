@@ -1,4 +1,4 @@
-// Search matches in the browser column: tasks as rows, projects with their rings. Titles that match come first.
+// Search matches in the browser column: tasks and notes as rows, projects with their rings. Titles that match come first.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -9,8 +9,8 @@ struct SearchResultsView: View {
 
     var body: some View {
         let results = model.index.search(model.searchText)
-        // Tasks only: picking a project leaves the search for its page.
-        BrowserColumn(model: model, paths: results.filter { $0.properties.kind == .task }.map(\.path), spacing: 1,
+        // Tasks and notes only: picking a project leaves the search for its page.
+        BrowserColumn(model: model, paths: results.filter { [.task, .note].contains($0.properties.kind) }.map(\.path), spacing: 1,
                       empty: results.isEmpty ? noMatches : nil) {
             DomainHeader(title: "Search", systemImage: "magnifyingglass", tint: \.muted) {
                 Text("\(results.count) match\(results.count == 1 ? "" : "es")")
@@ -20,6 +20,8 @@ struct SearchResultsView: View {
                 Group {
                     if item.properties.kind == .project {
                         projectRow(item)
+                    } else if item.properties.kind == .note {
+                        NoteRow(item: item, selected: model.isSelected(item.path), showsFolder: true) { model.click(item.path) }
                     } else {
                         TaskRow(item: item, selected: model.isSelected(item.path), today: model.today,
                                 onToggle: { Task { await model.toggleCompletion(item) } },
@@ -34,7 +36,7 @@ struct SearchResultsView: View {
 
     private var noMatches: EmptyState {
         EmptyState(systemImage: "magnifyingglass", title: "No matches",
-                   message: "No task or project has every word of “\(model.searchText)” in its title, summary or area.")
+                   message: "No task, project or note has every word of “\(model.searchText)” in its title, summary or area.")
     }
 
     private func projectRow(_ project: Item) -> some View {

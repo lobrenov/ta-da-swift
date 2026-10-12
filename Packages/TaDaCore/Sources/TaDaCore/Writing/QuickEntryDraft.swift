@@ -17,6 +17,7 @@ public struct QuickEntryDraft: Equatable, Sendable {
         case .task: Vault.taskFolder
         case .project: Vault.projectFolder
         case .area: Vault.areaFolder
+        case .note: ""
         }
     }
 
@@ -29,8 +30,10 @@ public struct QuickEntryDraft: Equatable, Sendable {
             NewFile.project(area: parent?.areaTitle, tags: tags, today: today)
         case .area:
             NewFile.area(tags: tags, today: today)
+        case .note:
+            NewFile.note(tags: tags, today: today)
         }
-        guard kind != .area else { return text }
+        guard kind != .area, kind != .note else { return text }
         if status != .notStarted { text = Completion.setStatus(status, in: text, today: today) }
         if let dueDate { text = FrontmatterEditor.set("dueDate", to: .date(dueDate), in: text) }
         if let deadline { text = FrontmatterEditor.set("deadline", to: .date(deadline), in: text) }
@@ -43,7 +46,7 @@ public struct QuickEntryDraft: Equatable, Sendable {
         draft.kind = kind
         draft.title = title
         draft.tags = tags
-        guard kind != .area else { return draft }
+        guard kind != .area, kind != .note else { return draft }
         draft.status = status
         draft.dueDate = dueDate
         draft.deadline = deadline

@@ -101,6 +101,31 @@ struct DesignRenderTests {
         tags.sidebarMode = .projects
         try await render(SidebarView(model: tags).themed(by: tags), width: 240, to: output.appending(path: "tag-sidebar-projects.png"))
 
+        // Notes, on TaDaCore's NoteVault fixture, in the default dark scheme.
+        let noteVault = URL(filePath: #filePath).deletingLastPathComponent()
+            .appending(path: "../Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/NoteVault").standardized
+        AppModel.setLastLogged(noteVault, to: LocalDate("2026-10-02")!, in: defaults)
+        let notes = AppModel(defaults: defaults)
+        notes.today = LocalDate("2026-10-02")!
+        await notes.choose(noteVault)
+        notes.appearance = .dark
+        notes.domain = .folder("Meetings")
+        notes.selection = "Meetings/Ark planning call.md"
+        try await render(notes, to: output.appending(path: "notes-folder.png"))
+        notes.domain = .folder("")
+        try await render(notes, to: output.appending(path: "notes-loose.png"))
+        notes.domain = .tag("work")
+        try await render(notes, to: output.appending(path: "notes-tag.png"))
+        notes.domain = .folder("Meetings/2026")
+        try await render(SidebarView(model: notes).themed(by: notes), width: 240, to: output.appending(path: "notes-sidebar.png"))
+        let request = AppModel.ConvertRequest(path: "Meetings/Ark planning call.md", kind: .task)
+        try await render(ConvertSheet(model: notes, request: request).themed(by: notes), width: 480,
+                         to: output.appending(path: "notes-convert.png"))
+        notes.appearance = .light
+        notes.domain = .folder("Meetings")
+        notes.selection = "Meetings/Ark planning call.md"
+        try await render(notes, to: output.appending(path: "notes-folder-light.png"))
+
         // The Logbook, on a copy of the design's data with its completed files logged, one completed and one cancelled
         // today, in the default dark scheme.
         let copy = FileManager.default.temporaryDirectory.appending(path: "DesignVault-\(UUID().uuidString)", directoryHint: .isDirectory)

@@ -113,6 +113,8 @@ struct QuickEntryView: View {
                 .frame(width: 12, height: 12)
         case .area:
             AreaIcon(size: 12)
+        case .note:
+            NoteIcon(size: 12)
         }
     }
 

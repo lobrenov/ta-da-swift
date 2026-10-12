@@ -90,7 +90,7 @@ struct SidebarSplitView: View {
                       let direction = swipe.track(event.phase, dx: SidebarSwipe.fingersDX(event), dy: event.scrollingDeltaY)
                 else { return }
                 if state.switchesViews(overSidebar: event.locationInWindow.x < sidebarWidth, swiping: true) {
-                    model.sidebarMode = direction == .left ? .tags : .projects
+                    model.sidebarMode = direction == .left ? model.sidebarMode.next : model.sidebarMode.previous
                 } else {
                     state.swiped(direction) { SidebarSwipe.scrollsLeft(event) }
                 }
@@ -102,7 +102,7 @@ struct SidebarSplitView: View {
             let used = MainActor.assumeIsolated {
                 guard let window = anchor.window, eventWindow === window, [3, 4].contains(button),
                       state.switchesViews(overSidebar: x < sidebarWidth, swiping: false) else { return false }
-                model.sidebarMode = button == 3 ? .projects : .tags
+                model.sidebarMode = button == 3 ? model.sidebarMode.previous : model.sidebarMode.next
                 return true
             }
             return used ? nil : event
@@ -142,3 +142,21 @@ private struct WindowReader: NSViewRepresentable {
     }
 }
 #endif
+
+extension AppModel.SidebarMode {
+    /// Tasks → Tags → Notes; Notes stays.
+    var next: Self {
+        switch self {
+        case .projects: .tags
+        case .tags, .notes: .notes
+        }
+    }
+
+    /// Notes → Tags → Tasks; Tasks stays.
+    var previous: Self {
+        switch self {
+        case .notes: .tags
+        case .tags, .projects: .projects
+        }
+    }
+}

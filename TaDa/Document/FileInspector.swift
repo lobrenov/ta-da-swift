@@ -123,6 +123,8 @@ struct FileInspector: View {
             guard !p.status.isClosed else { return [Place(.logbook, reason: "not logged yet")] }
             return [index.area(of: item).map { Place(.area($0.path), reason: "area") }
                 ?? Place(.project(item.path), title: "Projects", reason: "not done")]
+        case .note:
+            return []
         case .task:
             break
         }

@@ -8,8 +8,8 @@ public struct VaultIndex: Sendable {
     public private(set) var items: [String: Item] = [:]
     /// Every item's title, lowercased.
     public private(set) var titles: Set<String> = []
-    /// Lowercased title → paths, files outside `.logbook/` first, then by path, so resolution is stable when titles
-    /// repeat across folders and prefers a file that isn't logged.
+    /// Lowercased title → paths: live tasks, projects and areas first, then notes, then logged files, each by path, so
+    /// resolution is stable when titles repeat across folders and prefers a live Ta Da file.
     private var pathsByTitle: [String: [String]] = [:]
     /// Lowercased title of a task's `project` link → the tasks' paths.
     private var tasksByProjectTitle: [String: Set<String>] = [:]
@@ -21,6 +21,8 @@ public struct VaultIndex: Sendable {
     private var embeddersByName: [String: Set<String>] = [:]
     /// Tag path → the paths of the items that aren't logged and carry it (not counting its children).
     private var pathsByTag: [String: Set<String>] = [:]
+    /// Folder (`""` for the top level) → the paths of the notes straight in it.
+    private var notesByFolder: [String: Set<String>] = [:]
     /// Tag path → the tag as spelled by the carrier with the first path, and that path, for each tag in `pathsByTag`.
     private var tagsByPath: [String: (tag: Tag, path: String)] = [:]
 
@@ -35,11 +37,14 @@ public struct VaultIndex: Sendable {
         if let old = items.updateValue(item, forKey: item.path) {
             removeLinks(of: old)
             removeTags(of: old)
+            Self.remove(old.path, at: Vault.folder(of: old.path), from: &notesByFolder)
+            if (old.properties.kind == .note) != (item.properties.kind == .note) { sortTitle(of: item.path) }
         } else {
             addTitle(of: item.path)
         }
         addLinks(of: item)
         addTags(of: item)
+        if item.properties.kind == .note, !item.isLogged { notesByFolder[Vault.folder(of: item.path), default: []].insert(item.path) }
     }
 
     public mutating func remove(_ path: String) {
@@ -47,6 +52,7 @@ public struct VaultIndex: Sendable {
         removeTitle(of: path)
         removeLinks(of: old)
         removeTags(of: old)
+        Self.remove(path, at: Vault.folder(of: path), from: &notesByFolder)
     }
 
     /// Items that aren't logged.
@@ -54,6 +60,7 @@ public struct VaultIndex: Sendable {
     public var tasks: [Item] { liveItems.filter { $0.properties.kind == .task } }
     public var projects: [Item] { liveItems.filter { $0.properties.kind == .project } }
     public var areas: [Item] { liveItems.filter { $0.properties.kind == .area } }
+    public var notes: [Item] { notesByFolder.values.flatMap { $0 }.compactMap { items[$0] } }
     /// Logged tasks and projects.
     public var logged: [Item] { items.values.filter(\.isLogged) }
 
@@ -61,10 +68,13 @@ public struct VaultIndex: Sendable {
     /// Parents carried by no file are left out.
     var carriedTags: [Tag] { tagsByPath.values.map(\.tag) }
 
+    /// The paths of the notes straight in `folder`, by folder.
+    var notePathsByFolder: [String: Set<String>] { notesByFolder }
+
     /// The paths of the items that aren't logged and carry this tag path itself, not its children.
     func paths(carrying path: String) -> Set<String> { pathsByTag[path] ?? [] }
 
-    /// Items with this title, ignoring case; one that isn't logged comes first, then the first by path.
+    /// Items with this title, ignoring case: live tasks, projects and areas, then notes, then logged files, each by path.
     public func items(titled title: String) -> [Item] {
         (pathsByTitle[title.lowercased()] ?? []).compactMap { items[$0] }
     }
@@ -79,7 +89,7 @@ public struct VaultIndex: Sendable {
     /// `project` uses its own `area`. Nil when there's none or it doesn't resolve.
     public func area(of item: Item) -> Item? {
         switch item.properties.kind {
-        case .area: return nil
+        case .area, .note: return nil
         case .project: return item.properties.area.flatMap { area(titled: $0.title) }
         case .task:
             if item.properties.project != nil { return project(of: item).flatMap { area(of: $0) } }
@@ -90,7 +100,7 @@ public struct VaultIndex: Sendable {
     /// The file a task or project is filed under: a task's project, else its area; a project's area.
     public func parent(of item: Item) -> Item? {
         switch item.properties.kind {
-        case .area: nil
+        case .area, .note: nil
         case .project: area(of: item)
         case .task: project(of: item) ?? item.properties.area.flatMap { area(titled: $0.title) }
         }
@@ -172,7 +182,7 @@ public struct VaultIndex: Sendable {
         case .area:
             guard area(titled: title)?.path == parent.path else { return [] }
             return (filedByAreaTitle[title] ?? []).compactMap { items[$0] }.sorted(by: Self.byTitle)
-        case .task:
+        case .task, .note:
             return []
         }
     }
@@ -180,8 +190,14 @@ public struct VaultIndex: Sendable {
     private mutating func addTitle(of path: String) {
         let title = Item.title(ofPath: path).lowercased()
         pathsByTitle[title, default: []].append(path)
-        pathsByTitle[title]?.sort { (Item.isLogged($0) ? 1 : 0, $0) < (Item.isLogged($1) ? 1 : 0, $1) }
+        sortTitle(of: path)
         titles.insert(title)
+    }
+
+    /// Re-sorts the paths that share this path's title.
+    private mutating func sortTitle(of path: String) {
+        func rank(_ path: String) -> Int { Item.isLogged(path) ? 2 : items[path]?.properties.kind == .note ? 1 : 0 }
+        pathsByTitle[Item.title(ofPath: path).lowercased()]?.sort { (rank($0), $0) < (rank($1), $1) }
     }
 
     private mutating func removeTitle(of path: String) {

@@ -82,3 +82,9 @@ func closedStatusSetsCompletedDate(kind: Item.Kind, status: Status) throws {
     let back = area.changingKind(to: .task)
     #expect(back.status == .notStarted && back.parent == nil && back.dueDate == nil && back.tags == task.tags)
 }
+
+@Test func noteDraftWritesANoteAtTheTopLevel() throws {
+    let draft = full(.task, parent: .project("Ta Da MVP")).changingKind(to: .note)
+    #expect(draft.parent == nil && draft.status == .notStarted && draft.dueDate == nil && draft.folder.isEmpty)
+    #expect(draft.text(today: today) == "---\ncreatedDate: 2026-10-12\ntags: [people/bea]\n---\n")
+}

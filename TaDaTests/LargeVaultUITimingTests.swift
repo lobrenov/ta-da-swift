@@ -34,7 +34,7 @@ struct LargeVaultUITimingTests {
 
     @Test func typingAndArrowKeysStayQuick() async throws {
         let model = await folder.model(today: Self.today)
-        #expect(model.index.items.count == 1000)
+        #expect(model.index.items.count == 1200)
         let today = model.index.grouped(model.index.today(Self.today)).flatMap(\.tasks).map(\.path)
         model.selection = today[0]
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 800),

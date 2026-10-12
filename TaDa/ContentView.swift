@@ -22,6 +22,10 @@ struct ContentView: View {
             DeleteFilesDialog(model: model, request: request)
                 .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
         }
+        .sheet(item: $model.convertRequest) { request in
+            ConvertSheet(model: model, request: request)
+                .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
+        }
         .sheet(item: Binding { model.completionConfirmation }
                          set: { if $0 == nil, let request = model.completionConfirmation { Task { await model.answerCompletion(request, tasksAs: nil) } } }) { request in
             CompletionDialog(model: model, request: request)
@@ -46,7 +50,19 @@ struct ContentView: View {
         } message: { _ in
             Text(TrashConfirmationText(model: model).message)
         }
+        .alert(folderTrashTitle,
+               isPresented: Binding { model.folderTrashConfirmation != nil } set: { if !$0 { model.folderTrashConfirmation = nil } },
+               presenting: model.folderTrashConfirmation) { request in
+            Button("Move to Trash", role: .destructive) { Task { await model.confirmTrashFolder(request) } }
+            Button("Cancel", role: .cancel) {}
+        } message: { request in
+            Text(request.count == 0 ? "It holds no notes." : "Its \(request.count == 1 ? "note goes" : "\(request.count) notes go") with it. You can restore them from Trash.")
+        }
         .task { await model.start() }
+    }
+
+    private var folderTrashTitle: String {
+        "Move “\(model.folderTrashConfirmation.map { Item.title(ofPath: $0.path) } ?? "")” to the Trash?"
     }
 }
 

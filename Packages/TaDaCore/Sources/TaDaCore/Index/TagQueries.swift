@@ -17,6 +17,8 @@ public struct TagBrowser: Hashable, Sendable {
     public var groups: [TaskGroup]
     /// Done and Cancelled tasks, by title.
     public var completed: [Item]
+    /// Notes, by title.
+    public var notes: [Item]
     /// The tag's children in the tag tree; none for Untagged.
     public var children: [TagNode]
 }
@@ -54,7 +56,7 @@ extension VaultIndex {
             .sorted(by: Self.byTitle)
     }
 
-    /// Areas, projects and tasks that aren't logged and carry no tag, sorted by title.
+    /// Areas, projects, tasks and notes that aren't logged and carry no tag, sorted by title.
     public func untagged() -> [Item] {
         liveItems.filter(\.tags.isEmpty).sorted(by: Self.byTitle)
     }
@@ -69,6 +71,7 @@ extension VaultIndex {
             areasAndProjects: files.filter { $0.properties.kind == .area } + files.filter { $0.properties.kind == .project },
             groups: groups,
             completed: tasks.filter(\.properties.status.isClosed),
+            notes: files.filter { $0.properties.kind == .note },
             children: tag.flatMap { node(for: $0, in: tagTree()) }?.children ?? []
         )
     }

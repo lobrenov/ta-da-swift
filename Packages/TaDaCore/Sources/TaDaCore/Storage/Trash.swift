@@ -93,17 +93,21 @@ extension Vault {
     public static let trashedAttachmentFolder = ".trash/attachments"
 
     /// Moves a file into `.trash/`, creating the folder if needed. A project takes the tasks linked to it; an area
-    /// takes its projects, their tasks and its own tasks. Returns the paths that were moved, the file first.
+    /// takes its projects, their tasks and its own tasks. A note keeps its folder inside `.trash/`. Returns the paths that
+    /// were moved, the file first.
     public func moveToTrash(_ path: String, index: VaultIndex) throws -> [String] {
         var paths = [path]
         if let item = index[path] {
             switch item.properties.kind {
             case .project: paths += index.tasks(in: item).map(\.path)
             case .area: paths += index.projects(in: item).map(\.path) + index.allTasks(in: item).map(\.path)
-            case .task: break
+            case .task, .note: break
             }
         }
-        for path in paths { _ = try moveFile(path, into: Self.trashFolder) }
+        for path in paths {
+            let isNote = index[path]?.properties.kind == .note
+            _ = try moveFile(path, into: isNote ? Self.join(Self.trashFolder, Self.folder(of: path)) : Self.trashFolder)
+        }
         return paths
     }
 
@@ -129,7 +133,7 @@ extension Vault {
         }
     }
 
-    /// The Ta Da files in `.trash/`, most recently deleted first. Other notes and hidden files are left out.
+    /// The Ta Da files and notes in `.trash/`, most recently deleted first. Hidden files are left out.
     public func trashedItems() -> [TrashedItem] {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .addedToDirectoryDateKey]
         // Not `.skipsHiddenFiles`: in iCloud Drive it finds nothing inside `.trash`. Hidden files are skipped below.
@@ -151,7 +155,8 @@ extension Vault {
         }
     }
 
-    /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, numbering names that are taken. Each brings back
+    /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, and notes back to their folder (made again if it's
+    /// gone; the top level if a file has its name), numbering names that are taken. Folders left empty in `.trash/` go. Each brings back
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
     /// in the vault (outside `.logbook/`) or `.trash/` is created by name (a project under a title no other project has). When a parent's name had to change, the link follows it.
     /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
@@ -173,8 +178,11 @@ extension Vault {
             let properties = entry.item.properties
             let parent: Parent? = properties.project.map { .project($0.title) } ?? properties.area.map { .area($0.title) }
             let parentTitle = try parent.map { try bringBack($0) }
-            let kind = properties.kind
-            let path = try moveFile(entry.item.path, into: kind == .area ? Self.areaFolder : kind == .project ? Self.projectFolder : Self.taskFolder)
+            var folder = Self.restoreFolder(of: entry.item)
+            if !folder.isEmpty, !folderExists(folder), FileManager.default.fileExists(atPath: url(for: folder).path(percentEncoded: false)) {
+                folder = ""
+            }
+            let path = try moveFile(entry.item.path, into: folder)
             if let parent, let parentTitle, parentTitle != parent.title {
                 try relink(path, key: parent.key, from: parent.title, to: parentTitle)
             }
@@ -234,6 +242,7 @@ extension Vault {
                 return result + body[copied...]
             }
         }
+        pruneTrash()
         return restored
     }
 
@@ -251,7 +260,7 @@ extension Vault {
             case .area:
                 let contents = TrashedItem.contents(of: entry.item, in: trashed)
                 all.formUnion((contents.projects + contents.tasks).map(\.item.path))
-            case .task: break
+            case .task, .note: break
             }
         }
         let live = Set(index.items.values.flatMap(\.embeds).compactMap { $0.attachmentName?.lowercased() })
@@ -267,18 +276,52 @@ extension Vault {
                 firstError = firstError ?? error
             }
         }
+        pruneTrash()
         if let firstError { throw DiscardError(failed: failed, firstError: firstError) }
     }
 
-    /// Moves a file into `folder`, creating it if needed, keeping its filename unless that's taken there or among
+    /// Where a trashed file goes back to: its kind's folder, or a note's folder.
+    private static func restoreFolder(of item: Item) -> String {
+        switch item.properties.kind {
+        case .area: areaFolder
+        case .project: projectFolder
+        case .task: taskFolder
+        case .note: String(folder(of: item.path).dropFirst(trashFolder.count).drop { $0 == "/" })
+        }
+    }
+
+    /// Removes the folders in `.trash/` (other than `.trash/attachments/`) that nothing is left in.
+    func pruneTrash() {
+        let manager = FileManager.default
+        func prune(_ path: String) -> Bool {
+            let names = (try? manager.contentsOfDirectory(atPath: url(for: path).path(percentEncoded: false))) ?? []
+            var isEmpty = true
+            for name in names {
+                let child = Self.join(path, name)
+                if folderExists(child), child != Self.trashedAttachmentFolder, prune(child) {
+                    try? manager.removeItem(at: folderURL(child))
+                } else {
+                    isEmpty = false
+                }
+            }
+            return isEmpty
+        }
+        _ = prune(Self.trashFolder)
+    }
+
+    /// The name a file at `path` keeps when it moves among `existing` filenames: its own, or numbered when that's taken
+    /// (ignoring case).
+    public static func movedName(of path: String, existing: Set<String>) -> String {
+        let current = String(path.split(separator: "/").last ?? "")
+        guard existing.contains(where: { $0.lowercased() == current.lowercased() }) else { return current }
+        let (base, ext) = FileNaming.split(current)
+        return FileNaming.filename(for: base, extension: ext, existing: existing)
+    }
+
+    /// Moves a file into `folder` (`""` for the top level), creating it if needed, keeping its filename unless that's taken there or among
     /// `taken`. Returns the new path.
     func moveFile(_ path: String, into folder: String, taken: Set<String> = []) throws -> String {
-        let current = String(path.split(separator: "/").last ?? "")
-        let existing = filenames(in: folder).union(taken)
-        let isTaken = existing.contains { $0.lowercased() == current.lowercased() }
-        let (base, ext) = FileNaming.split(current)
-        let filename = isTaken ? FileNaming.filename(for: base, extension: ext, existing: existing) : current
-        let newPath = folder + "/" + filename
+        let newPath = Self.join(folder, Self.movedName(of: path, existing: filenames(in: folder).union(taken)))
         try FileManager.default.createDirectory(at: root.appending(path: folder, directoryHint: .isDirectory),
                                                 withIntermediateDirectories: true)
         try CoordinatedFileIO.move(url(for: path), to: url(for: newPath))

@@ -1,6 +1,6 @@
 # Ta Da file format
 
-Every task, project and area is one markdown file. YAML frontmatter holds the structured data; the body is free markdown. Files must stay readable and editable in Obsidian or any text editor.
+Every task, project, area and note is one markdown file. YAML frontmatter holds the structured data; the body is free markdown. Files must stay readable and editable in Obsidian or any text editor.
 
 ## Example
 
@@ -25,15 +25,15 @@ Bring the project instruction files in line with how I actually work now.
 
 ## Identity
 
-- **Kind** comes only from `type: task`, `type: project` or `type: area` (any case). Files without either value are not Ta Da files and are ignored. This lets Ta Da share a folder (or an Obsidian vault) with other notes.
+- **Kind** comes from `type: task`, `type: project` or `type: area` (any case). A `.md` file without one of these is a **note**, unless it sits in a hidden folder or under the top-level `areas/`, `projects/`, `tasks/` or `attachments/` (any case), where it's ignored. A typed file is never a note, wherever it sits. This lets Ta Da share a folder (or an Obsidian vault) with other notes.
 - **Title** is the filename without `.md`. Renaming a file renames it.
-- **Location** doesn't matter. The whole chosen folder is scanned recursively; hidden folders, `.obsidian` and `.trash` are skipped, except `.logbook` (see Logging). New files are created in `tasks/`, `projects/` and `areas/`.
+- **Location** doesn't matter. The whole chosen folder is scanned recursively; hidden folders, `.obsidian` and `.trash` are skipped, except `.logbook` (see Logging). New tasks, projects and areas are created in `tasks/`, `projects/` and `areas/`; new notes in the folder they're made in.
 
 ## Properties
 
 | Key | Applies to | Value | Notes |
 |---|---|---|---|
-| `type` | all | `task` \| `project` \| `area` | Required |
+| `type` | tasks, projects, areas | `task` \| `project` \| `area` | Required; a note has none |
 | `status` | tasks, projects | `Not Started` \| `Doing` \| `Done` \| `Blocked` \| `Cancelled` | Read case-insensitively; written in this exact form. Missing or unknown values read as `Not Started`, with a warning |
 | `project` | tasks | wikilink `"[[Project title]]"` | Optional. The **only** thing that makes a task belong to a project. If the link doesn't resolve, the task has no parent and gets a warning |
 | `area` | tasks, projects | wikilink `"[[Area title]]"` | Optional. Files a project, or a task with no project, under an area. Plain text (`area: Personal`) reads as the title. If it doesn't resolve, the file has no parent and gets a warning |
@@ -44,6 +44,7 @@ Bring the project instruction files in line with how I actually work now.
 | `repeat` | both | text | Displayed only; no recurrence yet |
 | `tags` | all | list of tags | Optional. A flow list, a block list, or one string split on commas. Items may hold spaces; a leading `#` is dropped. See Tags |
 
+- A note reads only `createdDate` and `tags`. It has no status, parent or dates; any other keys stay untouched and unread. A note's frontmatter that isn't valid YAML reads as empty, with a warning.
 - An area's frontmatter is `type`, `createdDate` and optional `tags`; its body is free markdown. Areas have no status or dates, and Ta Da doesn't write them.
 - `contexts` is no longer read. Like any unknown key, it stays in the file untouched.
 - Dates are calendar days in local time, with no times or time zones. They are read as plain strings, never as YAML timestamps.
@@ -68,7 +69,7 @@ Bring the project instruction files in line with how I actually work now.
   | `[-]` | Cancelled | left out of the total |
 
   The other reference markers (`[?] [!] [*] ["] [l] [b] [i] [S] [I] [p] [c] [f] [k] [w] [u] [d]`) are icons only. They render as checkboxes but aren't subtasks.
-- **Links**: `[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]` and `[[folder/Title]]` resolve to the file with that title, case-insensitively. Body links are links only; they never set a parent.
+- **Links**: `[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]` and `[[folder/Title]]` resolve to the file with that title, case-insensitively: a task, project or area first, then a note, then a logged file. Body links are links only; they never set a parent.
 - **Embeds**: the same with a leading `!`, e.g. `![[front.jpg]]` or `![[front.jpg|300]]`. Embeds aren't links, so they aren't backlinks. An embed whose target ends in an image extension (`avif bmp gif heic jpeg jpg png svg tif tiff webp`, any case) shows that attachment.
 
 ## Tags
@@ -78,7 +79,17 @@ Bring the project instruction files in line with how I actually work now.
 - **Identity**: tags match ignoring case, and show as first written in the folder. Empty segments and a trailing `/` are dropped (`home/` is `home`).
 - **Nesting**: `/` nests, so `home/garden` is a child of `home`. A parent shows its children's files too, and exists whether or not any file carries it alone.
 - An area's or project's tags don't apply to its tasks.
-- **Counts**: the areas, projects and tasks, completed or not, carrying the tag or a child of it. Files in `.trash/` and `.logbook/` aren't counted. **Untagged** is every area, project and task with no tag.
+- **Counts**: the areas, projects, tasks and notes, completed or not, carrying the tag or a child of it. Files in `.trash/` and `.logbook/` aren't counted. **Untagged** is every area, project, task and note with no tag.
+
+## Notes
+
+- **Folders**: notes are browsed by folder. The Notes tree holds the folders with a note at any depth, the folders that hold no files at all (iCloud Drive placeholders count as files), and their parents, leaving out hidden folders, packages and the top-level `areas/`, `projects/`, `tasks/` and `attachments/`. A folder is named by its last path segment, sorted by name ignoring case, and counts the notes in it and its subfolders. **Loose** is the folder's top level and counts only its own notes.
+- **Subtasks** in a note count as a task's do.
+- Today, Upcoming, Loose tasks, the project and area pages and the Logbook never list notes; tags, Search, links, backlinks and the link menu include them.
+- **Making**: a new note is `Untitled.md` in the chosen folder (Loose: the top level), with `createdDate: <today>` and `tags: []`. A new folder is `Untitled folder`. Folder names follow the filename rules, numbering a taken name.
+- **Renaming a folder** keeps it in its parent, numbering a taken name, and rewrites body links written with its path (`[[Meetings/Ark]]`).
+- **Moving a note** to another folder keeps its filename, numbering a taken one, and rewrites body links written with its path, and links by title when the name changed.
+- **Converting** a note to a task, project or area splices `type`, `status` (not for an area), the parent's link (a task's `project` or `area`, a project's `area`) and `createdDate` (only when it has no value) straight after the opening `---`, ahead of the note's keys; keys it already has are set in place, and a `project` or `area` key the parent doesn't name is emptied. A note with no frontmatter gets the block. A Done or Cancelled status also sets `completedDate`; any other empties it. The file then moves to `tasks/`, `projects/` or `areas/`, keeping its filename unless that's taken there (for a project, also by any other project's title, live or logged), and body links written with its path follow it, as do links by title when the name changed. The body is untouched.
 
 ## Attachments
 
@@ -96,12 +107,12 @@ Bring the project instruction files in line with how I actually work now.
 - Today and Upcoming list tasks only; a project's own dates show on its page.
 - **Loose tasks** are open tasks with no resolvable `project` and no resolvable `area`. A **loose project** has no resolvable `area`.
 - **Projects** in the sidebar are those not completed: loose projects first, then each area with its projects. Progress is Done/total of linked tasks, logged ones included; Cancelled tasks are left out of the total.
-- **Deleting** moves the file into `.trash/` in the folder (the folder Obsidian also uses), keeping its filename unless that's taken there. A project takes its linked tasks. An area takes its projects, their tasks and its own tasks, and Ta Da asks first. Logged files stay in `.logbook/`. Files that embed attachments also ask first, listing each attachment once: those ticked go with the files, and an attachment that a file staying in the folder embeds starts unticked. The file's contents don't change; the date it was deleted is when it was added to `.trash/`.
+- **Deleting** moves the file into `.trash/` in the folder (the folder Obsidian also uses), keeping its filename unless that's taken there. A project takes its linked tasks. An area takes its projects, their tasks and its own tasks, and Ta Da asks first. Logged files stay in `.logbook/`. Files that embed attachments also ask first, listing each attachment once: those ticked go with the files, and an attachment that a file staying in the folder embeds starts unticked. The file's contents don't change; the date it was deleted is when it was added to `.trash/`. A note keeps its folder inside `.trash/` (`.trash/Meetings/Ark.md`). **Deleting a folder** asks first, naming how many notes go, then moves it whole to the same path in `.trash/`, merging into a folder already there and numbering taken names; a folder that holds no files is removed instead.
 - **Deleting an attachment** moves it into `.trash/attachments/`, keeping its filename unless that's taken there. Attachments go with a deleted file or on their own; embeds of them stay in every file and show as missing.
 - A trashed attachment **went with** a trashed file when its filename is the embed's filename, or that name numbered (`front 2.jpg`, when `front.jpg` was taken in `.trash/attachments/`); of those, the one trashed nearest the file.
-- **Restoring** moves a task to `tasks/`, a project to `projects/` and an area to `areas/`, numbering a taken name. Restoring brings back parents, never children: a task brings back its project and that project's area, or its area; a project brings back its area; an area comes back alone. A parent that's only in `.logbook/` doesn't count; a parent that isn't in the folder or `.trash/` is created by name (a project under a title no other project has). If a parent's name had to change, the restored file's link is rewritten. Each restored file brings back the attachments that went with it, and a trashed attachment can be restored alone; both go to `attachments/`, numbering a taken name. An embed that no longer resolves to its restored attachment (renamed by numbering, or restored to another folder) is rewritten to it.
-- **Delete Forever** on a project also removes its trashed tasks; on an area, its trashed projects, their tasks and its own tasks. Each removed file takes the attachments that went with it, except those that a trashed file that stays, or a file outside `.trash/`, embeds. Delete Forever and Empty Trash move the Ta Da files and attachments in `.trash/` to the system Trash (on iOS, deleting them where that isn't supported, outside iCloud Drive; a failure doesn't stop the others); other notes there are left alone.
-- **Logging** moves completed tasks and projects into `.logbook/<yyyy-MM>/` (by `completedDate`, else today), numbering a taken name, and for a project any other project's title, live or logged (`Monthly accounts 2`); if a project's name changes, its tasks' `project:` links follow. Ta Da logs each folder once a day, when it opens or the day changes, the files completed before that day (a run that fails is tried again at the next open or day change); Log Now in the Logbook logs every completed file. A completed project with open tasks waits, with its tasks: Log Now asks whether they're completed or cancelled. Areas aren't logged. Logged files keep their contents and their embeds, and links to them still resolve, after a file of the same title outside `.logbook/`; they're left out of Today, Upcoming, Loose tasks, the project and area pages, Search and the link menu.
+- **Restoring** moves a task to `tasks/`, a project to `projects/` and an area to `areas/`, numbering a taken name. A note goes back to its folder, which is made again if it's gone (so a deleted folder's notes bring it back), or to the top level when a file has the folder's name. Folders left empty in `.trash/` are removed. Restoring brings back parents, never children: a task brings back its project and that project's area, or its area; a project brings back its area; an area comes back alone. A parent that's only in `.logbook/` doesn't count; a parent that isn't in the folder or `.trash/` is created by name (a project under a title no other project has). If a parent's name had to change, the restored file's link is rewritten. Each restored file brings back the attachments that went with it, and a trashed attachment can be restored alone; both go to `attachments/`, numbering a taken name. An embed that no longer resolves to its restored attachment (renamed by numbering, or restored to another folder) is rewritten to it.
+- **Delete Forever** on a project also removes its trashed tasks; on an area, its trashed projects, their tasks and its own tasks. Each removed file takes the attachments that went with it, except those that a trashed file that stays, or a file outside `.trash/`, embeds. Delete Forever and Empty Trash move the Ta Da files (notes included) and attachments in `.trash/` to the system Trash (on iOS, deleting them where that isn't supported, outside iCloud Drive; a failure doesn't stop the others); other files there are left alone.
+- **Logging** moves completed tasks and projects into `.logbook/<yyyy-MM>/` (by `completedDate`, else today), numbering a taken name, and for a project any other project's title, live or logged (`Monthly accounts 2`); if a project's name changes, its tasks' `project:` links follow. Ta Da logs each folder once a day, when it opens or the day changes, the files completed before that day (a run that fails is tried again at the next open or day change); Log Now in the Logbook logs every completed file. A completed project with open tasks waits, with its tasks: Log Now asks whether they're completed or cancelled. Areas and notes aren't logged. Logged files keep their contents and their embeds, and links to them still resolve, after a file of the same title outside `.logbook/`; they're left out of Today, Upcoming, Loose tasks, the project and area pages, Search and the link menu.
 - **Reopening a logged file** (any status that isn't Done or Cancelled: at once in Ta Da, or at the next day's logging when set in another app) moves it back to `tasks/` or `projects/`, numbering a taken name (for a project, also any other project's title). A task whose project is logged brings it back too, set to `Doing` with `completedDate` cleared; the project's other logged tasks stay. An open task whose project is logged does the same: when its status is set in Ta Da, and at the next day's logging when it's changed in another app.
 
 ## Writing rules (how Ta Da edits files)
@@ -115,4 +126,5 @@ Bring the project instruction files in line with how I actually work now.
 - Attachment filenames follow the same rules on the name before the extension, and keep the extension: a taken `front.jpg` becomes `front 2.jpg`.
 - **Tags** are written only in `tags:`. Adding one that's already there (ignoring case) does nothing. A flow list stays flow and a block list stays block; an empty key, or a string of comma-separated tags, becomes a flow list. A missing key is added as `tags: [name]` after `createdDate`, or before the closing `---` without one. Removing the last tag leaves `tags:` with no value. A value that can't be spliced safely (a block scalar, or a string or a commented flow list over several lines) is left alone. Inline tags are never rewritten. A task created from a tag gets `tags: [name]`; a file made in Quick Entry gets its tags as a flow list after `createdDate`.
 - Moving a file to another parent writes one key and empties the other, in one write.
+- Converting a note inserts its keys straight after the opening `---` (see Notes), in the same line style as other writes.
 - Renaming a project rewrites the `project:` link in each of its tasks (logged ones too) as `"[[New title]]"`, and renaming an area rewrites the `area:` link in its projects and its own tasks (logged ones too), in one coordinated read and write per file and only if the file still links to it. Renaming any file also rewrites the `[[ ]]` links to its title in the bodies of the files that link to it, itself included, keeping each link's folder, `.md`, heading and alias; links in code are left alone, and nothing is rewritten while another `.md` file in the folder, Ta Da's or not, still has the old title.

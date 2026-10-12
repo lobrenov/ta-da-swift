@@ -29,7 +29,8 @@ struct AppModelTests {
     @Test func choosingAFolderLoadsItAndCounts() async {
         let model = await folder.model(today: LocalDate("2026-10-02")!)
         #expect(model.state == .ready)
-        #expect(model.index.items.count == 5)
+        #expect(model.index.items.count == 6)
+        #expect(model.index.notes.map(\.path) == ["notes/Note.md"])
         #expect(model.todayCount == 2, "open tasks only; Done-today doesn't count")
         #expect(model.looseCount == 1)
         #expect(model.projects.map { "\($0.project.title) \($0.open)/\($0.total)" } == ["Ta Da MVP 1/2"])
@@ -265,14 +266,14 @@ struct AppModelTests {
         model.show(.project("projects/Ta Da MVP.md"))
         await model.moveToTrash(["projects/Ta Da MVP.md"])
         #expect(model.domain == .today)
-        #expect(model.index.items.keys.sorted() == ["projects/Shipped.md", "tasks/Loose.md"])
+        #expect(model.index.items.keys.sorted() == ["notes/Note.md", "projects/Shipped.md", "tasks/Loose.md"])
         #expect(Set(model.trash.map(\.id)) == [".trash/Ta Da MVP.md", ".trash/Due today.md", ".trash/Done.md"])
 
         model.show(.trash)
         model.trashSelection = [".trash/Due today.md", ".trash/Done.md"]
         await model.restore(model.trashSelection)
         #expect(model.trash.isEmpty && model.trashSelection.isEmpty)
-        #expect(model.index.items.count == 5)
+        #expect(model.index.items.count == 6)
         #expect(model.projects.map { "\($0.project.title) \($0.open)/\($0.total)" } == ["Ta Da MVP 1/2"])
         #expect(model.trashNote == "3 items restored to projects/ and tasks/")
     }
@@ -296,7 +297,7 @@ struct AppModelTests {
         model.extendSelection(to: paths[0])
         await model.moveToTrash(model.multiSelection.sorted())
         #expect(model.multiSelection.isEmpty && model.errorMessage == nil)
-        #expect(model.index.items.keys.sorted() == ["projects/Shipped.md", "projects/Ta Da MVP.md", "tasks/Done.md"])
+        #expect(model.index.items.keys.sorted() == ["notes/Note.md", "projects/Shipped.md", "projects/Ta Da MVP.md", "tasks/Done.md"])
         #expect(model.trash.count == 2)
     }
 

@@ -1,7 +1,9 @@
-/// One task, project or area file, as parsed from its text.
+/// One task, project, area or note file, as parsed from its text.
 public struct Item: Hashable, Sendable, Identifiable {
     public enum Kind: String, Sendable {
         case task, project, area
+        /// A Markdown file without `type: task|project|area`, at a note path (`Item.isNotePath`).
+        case note
     }
 
     /// Path relative to the vault folder, e.g. `tasks/Pick a test framework.md`.
@@ -48,10 +50,18 @@ public struct Item: Hashable, Sendable, Identifiable {
     /// Whether a path is in `.logbook/`.
     public static func isLogged(_ path: String) -> Bool { path.hasPrefix(Vault.logbookFolder + "/") }
 
-    /// Nil when the text isn't a Ta Da file (no `type: task`, `type: project` or `type: area`).
+    /// A note when the text has no `type: task`, `type: project` or `type: area` and the path is a note path; nil when
+    /// it's neither.
     public init?(parsing text: String, path: String) {
         let split = FrontmatterSplitter.split(text)
-        guard let yaml = split.yaml, let read = PropertyReader.read(yaml) else { return nil }
+        let read: (properties: Properties, warnings: [Warning])
+        if let yaml = split.yaml, let typed = PropertyReader.read(yaml) {
+            read = typed
+        } else if Self.isNotePath(path) {
+            read = PropertyReader.readNote(split.yaml)
+        } else {
+            return nil
+        }
         let body = BodyScanner.scan(split.body, firstLineIndex: split.bodyFirstLineIndex)
         self.path = path
         title = Self.title(ofPath: path)
@@ -69,6 +79,19 @@ public struct Item: Hashable, Sendable, Identifiable {
 }
 
 extension Item {
+    /// The top-level folders whose files are never notes.
+    public static let reservedFolders: Set<String> = [Vault.areaFolder, Vault.projectFolder, Vault.taskFolder, Vault.attachmentFolder]
+
+    /// Whether an untyped file at `path` is a note: a `.md` file outside hidden folders and the top-level `areas/`,
+    /// `projects/`, `tasks/` and `attachments/` (ignoring case). A path in `.trash/` is judged by the rest of it.
+    public static func isNotePath(_ path: String) -> Bool {
+        var parts = path.split(separator: "/")
+        if parts.first == Substring(Vault.trashFolder) { parts.removeFirst() }
+        guard let name = parts.last, name.lowercased().hasSuffix(".md") else { return false }
+        if parts.count > 1, reservedFolders.contains(parts[0].lowercased()) { return false }
+        return !parts.contains { $0.hasPrefix(".") }
+    }
+
     /// `folder/Name.md` → `Name`.
     public static func title(ofPath path: String) -> String {
         let name = path.split(separator: "/").last.map(String.init) ?? path
@@ -79,11 +102,11 @@ extension Item {
 /// The frontmatter keys Ta Da understands. Other keys are left alone.
 public struct Properties: Hashable, Sendable {
     public var kind: Item.Kind
-    /// Always Not Started on areas, which have no status.
+    /// Always Not Started on areas and notes, which have no status.
     public var status: Status = .notStarted
-    /// The area a project or task is filed under; always nil on areas, and on tasks with a `project`.
+    /// The area a project or task is filed under; always nil on areas and notes, and on tasks with a `project`.
     public var area: WikiLink?
-    /// Tasks only; always nil on projects and areas.
+    /// Tasks only; always nil on projects, areas and notes.
     public var project: WikiLink?
     public var createdDate: LocalDate?
     public var completedDate: LocalDate?

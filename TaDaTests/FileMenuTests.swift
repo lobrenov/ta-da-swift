@@ -1,3 +1,4 @@
+import AppKit
 import CoreTransferable
 import Foundation
 import Testing
@@ -39,6 +40,48 @@ struct FileMenuTests {
         let actions = FileMenuAction.actions(for: ".trash/One.md", model: model)
         #expect(actions.map(\.title) == ["Restore", "Reveal in Finder", "Delete Forever"])
         #expect(actions.first { $0.title == "Reveal in Finder" }?.shortcut == "")
+    }
+
+    @Test func aNotesMenuConvertsMovesAndTrashes() async throws {
+        try folder.write("A note\n", "Meetings/Ark.md")
+        let model = await folder.model()
+        let row = FileMenuAction.noteActions(for: "Meetings/Ark.md", model: model, onRow: true, at: .zero, in: NSWindow())
+        #expect(row.map(\.title) == ["Task…", "Project…", "Area…", "Tags…", "Move to Folder…",
+                                     "Reveal in Finder", "Move to Trash"])
+        let page = FileMenuAction.noteActions(for: "Meetings/Ark.md", model: model, onRow: false, at: nil, in: nil)
+        #expect(page.map(\.title) == ["Task…", "Project…", "Area…", "Reveal in Finder", "Move to Trash"])
+        #expect(page.prefix(3).map(\.shortcut) == ["tasks/", "projects/", "areas/"])
+        page[1].run()
+        #expect(model.convertRequest?.path == "Meetings/Ark.md" && model.convertRequest?.kind == .project)
+        page[4].run()
+        for _ in 0..<100 where model.trash.isEmpty { try await Task.sleep(for: .milliseconds(20)) }
+        #expect(model.index["Meetings/Ark.md"] == nil && model.trash.map(\.id) == [".trash/Meetings/Ark.md"])
+    }
+
+    @Test func aNotesMenuMovesToFoldersAndActsOnPickedNotes() async throws {
+        try folder.write("A\n", "Meetings/Ark.md")
+        try folder.write("B\n", "Meetings/Budget.md")
+        try folder.write("C\n", "Loose.md")
+        let model = await folder.model()
+        let window = NSWindow()
+        let row = FileMenuAction.noteActions(for: "Meetings/Ark.md", model: model, onRow: true, at: .zero, in: window)
+        #expect(row.map(\.title).contains("Move to Folder…"))
+        #expect(FileMenuAction.moveTargets(for: "Meetings/Ark.md", model: model).map(\.path) == [""])
+        #expect(FileMenuAction.moveTargets(for: "Loose.md", model: model).map(\.path) == ["Meetings"])
+        #expect(!titles("Meetings/Ark.md", model).contains("Move to Folder…"), "VoiceOver's actions have no point to open it at")
+
+        model.show(.folder("Meetings"))
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: ["Meetings/Ark.md", "Meetings/Budget.md"], allowsMultipleSelection: true)
+        model.selection = "Meetings/Ark.md"
+        model.extendSelection(to: "Meetings/Budget.md")
+        #expect(titles("Meetings/Ark.md", model) == ["Reveal in Finder", "Move 2 Files to Trash"])
+    }
+
+    @Test func tagsWithoutAPointOpensTheNote() async throws {
+        try folder.write("A\n", "Meetings/Ark.md")
+        let model = await folder.model()
+        FileMenuAction.actions(for: "Meetings/Ark.md", model: model).first { $0.title == "Tags…" }?.run()
+        #expect(model.selection == "Meetings/Ark.md" && model.propertyMenuRequest?.onChip == true)
     }
 
     @Test func tagsOpensTheMenuForTheOneFileTheMenuActsOn() async {

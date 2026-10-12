@@ -1,6 +1,7 @@
-// Sidebar: search, Today and Upcoming, Logbook, Trash with its count, then the Projects | Tags switch. Projects lists
+// Sidebar: search, Today and Upcoming, Logbook, Trash with its count, then the Tasks | Tags | Notes switch. Tasks lists
 // Loose tasks, active projects without an area, then each area with its active projects under it; Tags lists Untagged
-// and the tag tree. Then the folder line, Settings and the New buttons. Task rows drop onto Today, Loose tasks, the
+// and the tag tree; Notes lists Loose (the top level) and the folder tree. Then the folder line, Settings and the New
+// buttons. Task rows drop onto Today, Loose tasks, the
 // projects and the areas; project rows drop onto the areas.
 import SwiftUI
 import TaDaCore
@@ -17,6 +18,8 @@ struct SidebarView: View {
     @Environment(\.theme) private var theme
     @Environment(\.openSettings) private var openSettings
     @FocusState private var searchFocused: Bool
+    /// The folder whose name is being typed: one just made, or one picked for Rename.
+    @State private var namingFolder: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -39,6 +42,7 @@ struct SidebarView: View {
                     switch model.sidebarMode {
                     case .projects: hierarchy
                     case .tags: tags
+                    case .notes: notes
                     }
                 }
                 .padding(.horizontal, 10)
@@ -51,6 +55,12 @@ struct SidebarView: View {
         }
         .background(theme.color(\.side))
         .onChange(of: model.searchFocusRequest) { if takesSearchFocus { searchFocused = true } }
+        .onChange(of: model.folderNameFocus, initial: true) {
+            // A hidden sidebar leaves it to the floating one, as it does search.
+            guard takesSearchFocus, let path = model.folderNameFocus else { return }
+            model.folderNameFocus = nil
+            name(path)
+        }
         .onAppear { if focusesSearch { searchFocused = true } }
         .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 340)
     }
@@ -92,6 +102,118 @@ struct SidebarView: View {
         ForEach(model.visibleTags, id: \.node.id) { entry in
             tagRow(entry.node, depth: entry.depth)
         }
+    }
+
+    /// Loose, the top level, then the folder tree: roots aligned with Loose, 16pt per level, a parent folding from its
+    /// chevron.
+    @ViewBuilder private var notes: some View {
+        row(.folder(""), count: model.looseNoteCount, title: "Loose")
+        Spacer().frame(height: 10)
+        if model.folderTree.isEmpty {
+            Text("No folders yet")
+                .font(.system(size: 12))
+                .foregroundStyle(theme.color(\.muted))
+                .padding(.horizontal, 10)
+        }
+        ForEach(visibleFolders, id: \.node.id) { entry in
+            folderRow(entry.node, depth: entry.depth)
+        }
+    }
+
+    /// The folder tree's rows, less the folded folders' children.
+    private var visibleFolders: [(node: FolderNode, depth: Int)] {
+        func rows(_ nodes: [FolderNode], depth: Int) -> [(node: FolderNode, depth: Int)] {
+            nodes.flatMap { [($0, depth)] + (model.isFolderFolded($0.path) ? [] : rows($0.children, depth: depth + 1)) }
+        }
+        return rows(model.folderTree, depth: 0)
+    }
+
+    /// A folder: a row with its icon, name and count, a fold chevron in the leading padding for a parent, and the folder
+    /// menu. While it's being named, a field in place of the row.
+    @ViewBuilder private func folderRow(_ node: FolderNode, depth: Int) -> some View {
+        let path = node.path
+        let folded = model.isFolderFolded(path)
+        Group {
+            if namingFolder == path {
+                HStack(spacing: 10) {
+                    Image(systemName: "folder")
+                        .font(.system(size: 12))
+                        .foregroundStyle(theme.color(\.link))
+                        .frame(width: 16)
+                        .accessibilityHidden(true)
+                    InlineTitleField(model: model, path: path, height: 30, font: .system(size: 13), focus: nil,
+                                     rename: { name in
+                                         guard FolderBrowserView.node(path, in: model.folderTree) != nil else { return }
+                                         await model.renameFolder(path, to: name)
+                                     },
+                                     onEnd: { if namingFolder == path { namingFolder = nil } }) {
+                        Text(node.name)
+                    }
+                }
+                .padding(.leading, 10)
+            } else {
+                SidebarRow(selected: model.domain == .folder(path) && !model.isSearching, height: 30, count: node.count) {
+                    model.show(.folder(path))
+                    picked()
+                } icon: {
+                    Image(systemName: "folder")
+                        .font(.system(size: 12))
+                        .foregroundStyle(theme.color(\.link))
+                        .frame(width: 16)
+                        .accessibilityHidden(true)
+                } label: {
+                    Text(node.name)
+                }
+                .accessibilityLabel("Folder \(path)")
+                .actionMenu(model, target: "folder:" + path) { folderActions(path) }
+            }
+        }
+        .overlay(alignment: .leading) {
+            if !node.children.isEmpty, namingFolder != path {
+                Button { model.toggleFolderFolded(path) } label: {
+                    Image(systemName: folded ? "chevron.right" : "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(theme.color(\.muted))
+                        .frame(width: 10, height: 30)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(folded ? "Expand \(node.name)" : "Collapse \(node.name)")
+            }
+        }
+        .padding(.leading, CGFloat(depth) * 16)
+    }
+
+    /// The folder menu: New Note, New Folder, Rename, Reveal in Finder, Move to Trash. New files go in the folder, whose
+    /// page opens first.
+    private func folderActions(_ path: String) -> [FileMenuAction] {
+        [
+            FileMenuAction(title: "New Note", systemImage: "plus", shortcut: "") {
+                model.show(.folder(path))
+                Task { await model.newNote() }
+            },
+            FileMenuAction(title: "New Folder", systemImage: "folder.badge.plus", shortcut: "") {
+                Task { await model.newFolder(in: path) }
+            },
+            FileMenuAction(title: "Rename", systemImage: "pencil", shortcut: "", startsGroup: true) { name(path) },
+            FileMenuAction(title: "Reveal in Finder", systemImage: "arrow.up.forward.square", shortcut: "") {
+                model.revealInFinder([path])
+            },
+            FileMenuAction(title: "Move to Trash", systemImage: "trash", shortcut: "", startsGroup: true) {
+                model.trashFolder(path)
+            },
+        ]
+    }
+
+    /// Shows the name field for the folder at `path`, unfolding its parents.
+    private func name(_ path: String) {
+        var parent = Vault.folder(of: path)
+        while !parent.isEmpty {
+            if model.isFolderFolded(parent) { model.toggleFolderFolded(parent) }
+            parent = Vault.folder(of: parent)
+        }
+        // The field that was open renames as it goes.
+        namingFolder = path
     }
 
     /// A tag: a row with its glyph, last segment and count, and for a parent a fold chevron in the row's leading padding.
@@ -246,9 +368,14 @@ struct SidebarView: View {
 
     private var newButtons: some View {
         HStack(spacing: 6) {
-            newButton("Task", label: "New task") { await model.newTask() }
-            newButton("Project", label: "New project") { await model.newProject() }
-            newButton("Area", label: "New area") { await model.newArea() }
+            if model.sidebarMode == .notes {
+                newButton("Note", label: "New note") { await model.newNote() }
+                newButton("Folder", label: "New folder") { await model.newFolder() }
+            } else {
+                newButton("Task", label: "New task") { await model.newTask() }
+                newButton("Project", label: "New project") { await model.newProject() }
+                newButton("Area", label: "New area") { await model.newArea() }
+            }
         }
         .padding(.horizontal, 10)
         .padding(.bottom, 12)
@@ -263,16 +390,20 @@ struct SidebarView: View {
     }
 }
 
-/// The Projects | Tags switch: two segments on a `surface` track, the picked one on `bg` in semibold `strong`.
+/// The Tasks | Tags | Notes switch: three equal segments on a `surface` track, the picked one on `bg` in semibold
+/// `strong`.
 private struct SidebarModeSwitch: View {
     @Binding var mode: AppModel.SidebarMode
     @Environment(\.theme) private var theme
 
     var body: some View {
         HStack(spacing: 2) {
-            segment(.projects, "Projects") { AreaIcon(size: 13) }
+            segment(.projects, "Tasks") { AreaIcon(size: 13) }
             segment(.tags, "Tags") {
                 Image(systemName: "tag").font(.system(size: 11)).foregroundStyle(theme.color(\.accent))
+            }
+            segment(.notes, "Notes") {
+                Image(systemName: "doc.text").font(.system(size: 11)).foregroundStyle(theme.color(\.link))
             }
         }
         .padding(2)
@@ -284,7 +415,7 @@ private struct SidebarModeSwitch: View {
     private func segment(_ value: AppModel.SidebarMode, _ title: String, @ViewBuilder icon: () -> some View) -> some View {
         let selected = mode == value
         return Button { mode = value } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 icon()
                 Text(title)
             }

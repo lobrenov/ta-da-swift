@@ -1,4 +1,4 @@
-// A task's, project's or area's file: title, property chips (none for an area), tags and a quiet line, then the body in the
+// A task's, project's, area's or note's file: title, property chips (none for an area or note), tags and a quiet line, then the body in the
 // live editor (or the whole file in Source), and for a project its linked tasks. The tab bar gives way to a toolbar of
 // the file's actions.
 #if os(iOS)
@@ -99,7 +99,7 @@ struct PhoneFileScreen: View {
             TitleField(model: model, document: document, size: 28)
             if let item = document.item {
                 if item.properties.kind != .area {
-                    PhoneChips(model: model, item: model.index[item.path] ?? item)
+                    if item.properties.kind != .note { PhoneChips(model: model, item: model.index[item.path] ?? item) }
                     PhoneTagChips(model: model, item: model.index[item.path] ?? item)
                 }
                 QuietLine(model: model, item: item)
@@ -150,7 +150,7 @@ struct PhoneFileScreen: View {
         }
         if let item = document?.item {
             ToolbarItemGroup(placement: .bottomBar) {
-                if item.properties.kind != .area {
+                if item.properties.kind == .task || item.properties.kind == .project {
                     let status = item.properties.status
                     let setStatus = { (status: Status) in
                         nav.play(.pick)
@@ -244,7 +244,7 @@ private struct QuietLine: View {
     var body: some View {
         let p = item.properties
         var parts = [p.kind.rawValue]
-        if p.kind != .area { parts.append(p.status.rawValue) }
+        if p.kind == .task || p.kind == .project { parts.append(p.status.rawValue) }
         if p.kind == .task, p.project != nil, let area = model.index.area(of: item) {
             parts.append("in \(area.title)")
         }

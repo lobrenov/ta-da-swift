@@ -31,6 +31,7 @@ struct LinkChoice: Hashable, Identifiable {
         /// Done/total of the project's tasks.
         case project(Double)
         case area
+        case note
         case image(URL)
     }
 
@@ -38,7 +39,7 @@ struct LinkChoice: Hashable, Identifiable {
     let icon: Icon
     /// The file's title, or the image's filename.
     let title: String
-    /// A task's project or area, or Loose task; Project or Area; nothing for an image.
+    /// A task's project or area, or Loose task; Project or Area; a note's folder, or Note; nothing for an image.
     let hint: String
     /// What an image's embed names it by: its filename, or its path when the filename finds another image first.
     var embedTarget: String?
@@ -105,11 +106,14 @@ final class LinkMenuSearch {
             return LinkChoice(path: item.path, icon: .project(index.progress(of: item).fraction), title: item.title, hint: "Project")
         case .area:
             return LinkChoice(path: item.path, icon: .area, title: item.title, hint: "Area")
+        case .note:
+            let folder = Vault.folder(of: item.path)
+            return LinkChoice(path: item.path, icon: .note, title: item.title, hint: folder.isEmpty ? "Note" : folder)
         }
     }
 }
 
-/// A link menu row's icon: a task's status box, a project's ring, an area's cube or an image's thumbnail.
+/// A link menu row's icon: a task's status box, a project's ring, an area's cube, a note's page or an image's thumbnail.
 struct LinkChoiceIcon: View {
     let icon: LinkChoice.Icon
     let search: LinkMenuSearch
@@ -130,6 +134,8 @@ struct LinkChoiceIcon: View {
                     .scaleEffect(size / 14)
             case .area:
                 AreaIcon(size: size + 2)
+            case .note:
+                NoteIcon(size: size + 2)
             case .image(let url):
                 if let image = search.thumbnail(url) {
                     Image(decorative: image, scale: 1)

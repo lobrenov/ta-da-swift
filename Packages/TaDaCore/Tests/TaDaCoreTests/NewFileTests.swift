@@ -57,3 +57,11 @@ private let today = LocalDate("2026-10-02")!
     #expect(NewFile.project(tags: [], today: today) == NewFile.project(today: today))
     #expect(NewFile.area(tags: [], today: today) == NewFile.area(today: today))
 }
+
+@Test func newNoteParsesBack() throws {
+    #expect(NewFile.note(today: today) == "---\ncreatedDate: 2026-10-02\ntags: []\n---\n")
+    let text = NewFile.note(tags: [Tag("work/ark")!], today: today)
+    #expect(text == "---\ncreatedDate: 2026-10-02\ntags: [work/ark]\n---\n")
+    let note = try #require(Item(parsing: text, path: "Meetings/Untitled.md"))
+    #expect(note.properties.kind == .note && note.properties.createdDate == today && note.warnings.isEmpty)
+}

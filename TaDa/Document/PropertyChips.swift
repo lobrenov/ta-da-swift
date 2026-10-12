@@ -13,11 +13,15 @@ struct PropertyChips: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if item.properties.kind != .area {
+            switch item.properties.kind {
+            case .task, .project:
                 PropertyChipRow(model: model, item: item)
                 TagChipRow(model: model, item: item)
                 QuietLine(model: model, item: item)
-            } else {
+            case .note:
+                TagChipRow(model: model, item: item)
+                QuietLine(model: model, item: item)
+            case .area:
                 QuietLine(model: model, item: item)
                 TagChipRow(model: model, item: item)
             }
@@ -37,7 +41,7 @@ struct PropertyChipRow<Trailing: View>: View {
             switch item.properties.kind {
             case .task: ParentPropertyChip(model: model, task: item)
             case .project: AreaPropertyChip(model: model, project: item)
-            case .area: EmptyView()
+            case .area, .note: EmptyView()
             }
             DatePropertyChip(kind: .due, model: model, item: item)
             DatePropertyChip(kind: .deadline, model: model, item: item)
@@ -324,8 +328,9 @@ private struct PropertyChipBody<Label: View>: View {
     }
 }
 
-/// The file's type (a project's with its progress, an area's with its counts), a task's area through its project,
-/// the days it was created and completed, and the files that link here (a menu of them), in `muted`.
+/// The file's type (a project's with its progress, an area's with its counts, a note's as the note menu, then its folder
+/// and subtasks), a task's area through its project, the days it was created (a note without `createdDate`: last
+/// edited) and completed, and the files that link here (a menu of them), in `muted`.
 private struct QuietLine: View {
     let model: AppModel
     let item: Item
@@ -351,10 +356,28 @@ private struct QuietLine: View {
                         .strokeBorder(theme.color(\.muted), lineWidth: 1.3)
                         .frame(width: 11, height: 11)
                     Text("Task")
+                case .note:
+                    NoteMenuButton(model: model, path: item.path)
+                }
+            }
+            if p.kind == .note {
+                let folder = Vault.folder(of: item.path)
+                HStack(spacing: 4) {
+                    Image(systemName: folder.isEmpty ? "tray" : "folder").font(.system(size: 10))
+                    Text(folder.isEmpty ? "Loose" : folder)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("In \(folder.isEmpty ? "Loose" : folder)")
+                let subtasks = item.subtasks
+                if subtasks.total > 0 {
+                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                         spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
                 }
             }
             if let created = p.createdDate {
                 Text("Created \(created.relativeLabel(today: model.today))")
+            } else if p.kind == .note, let document = model.document, document.path == item.path, let modified = document.modified {
+                Text("Edited \(LocalDate(modified).relativeLabel(today: model.today))")
             }
             if p.kind == .task, p.project != nil, let area = model.index.area(of: item) {
                 HStack(spacing: 6) {
@@ -386,6 +409,50 @@ private struct QuietLine: View {
         .font(.system(size: 11.5))
         .foregroundStyle(theme.color(\.muted))
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// Note ▾: the note's page icon and type, opening the note menu under it.
+private struct NoteMenuButton: View {
+    let model: AppModel
+    let path: String
+    @State private var anchor = ScreenAnchor()
+    @State private var hovering = false
+    @State private var isOpen = false
+    /// When the menu last closed; a click that closed it doesn't open it again.
+    @State private var closed = Date.distantPast
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Button(action: toggle) {
+            HStack(spacing: 5) {
+                NoteIcon(size: 12)
+                Text("Note")
+                Image(systemName: "chevron.down").font(.system(size: 7, weight: .bold))
+            }
+            .padding(.horizontal, 6)
+            .frame(height: 20)
+            .background(hovering || isOpen ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 5))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, -6)
+        .background(ScreenAnchorReader(anchor: anchor))
+        .onHover { hovering = $0 }
+        .accessibilityLabel("Note menu")
+        .help("Convert, reveal or delete this note")
+    }
+
+    private func toggle() {
+        guard !isOpen, Date().timeIntervalSince(closed) > 0.3, let window = anchor.window else { return }
+        let rect = anchor.rect
+        let point = CGPoint(x: rect.minX, y: rect.minY - 2)
+        let actions = FileMenuAction.noteActions(for: path, model: model, onRow: false, at: point, in: window)
+        FileMenu.shared.show(actions, at: point, in: window, theme: model.theme) {
+            isOpen = false
+            closed = Date()
+        }
+        isOpen = true
     }
 }
 
