@@ -5,6 +5,9 @@ area: "[[Work]]"
 contexts:
   - "@computer"
 createdDate: 2026-09-25
+tags:
+  - admin
+  - work/billing
 dueDate: 2026-10-02
 repeat: Weekly · Fri
 ---

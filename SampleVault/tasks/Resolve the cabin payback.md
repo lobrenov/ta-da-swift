@@ -8,7 +8,7 @@ createdDate: 2026-09-29
 deadline: 2026-10-02
 completedDate:
 ---
-Settle the split from the long weekend.
+Settle the split from the long weekend. #money
 
 ## Subtasks
 

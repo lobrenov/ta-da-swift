@@ -15,4 +15,5 @@ Work not yet built.
 - iOS UI tests.
 - TestFlight for iPhone, with the paid Apple Developer Program: Personal Team builds expire after 7 days.
 - Alias display in TaDaMarkdown: `[[Target|Alias]]` shows the target name.
+- Renaming and deleting a tag across files.
 - Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, code blocks, and the caret's line in mono on `code`.

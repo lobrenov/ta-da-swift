@@ -42,6 +42,7 @@ Bring the project instruction files in line with how I actually work now.
 | `dueDate` | both | `YYYY-MM-DD` | Optional |
 | `deadline` | both | `YYYY-MM-DD` | Optional |
 | `repeat` | both | text | Displayed only; no recurrence yet |
+| `tags` | all | list of tags | Optional. A flow list, a block list, or one string split on commas. Items may hold spaces; a leading `#` is dropped. See Tags |
 
 - An area's frontmatter is `type` and `createdDate`; its body is free markdown. Areas have no status or dates, and Ta Da doesn't write them.
 - `contexts` is no longer read. Like any unknown key, it stays in the file untouched.
@@ -69,6 +70,15 @@ Bring the project instruction files in line with how I actually work now.
   The other reference markers (`[?] [!] [*] ["] [l] [b] [i] [S] [I] [p] [c] [f] [k] [w] [u] [d]`) are icons only. They render as checkboxes but aren't subtasks.
 - **Links**: `[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]` and `[[folder/Title]]` resolve to the file with that title, case-insensitively. Body links are links only; they never set a parent.
 - **Embeds**: the same with a leading `!`, e.g. `![[front.jpg]]` or `![[front.jpg|300]]`. Embeds aren't links, so they aren't backlinks. An embed whose target ends in an image extension (`avif bmp gif heic jpeg jpg png svg tif tiff webp`, any case) shows that attachment.
+
+## Tags
+
+- A file's tags are its `tags:` items and its inline `#tags`, merged; a tag carried twice counts once.
+- **Inline tags**: `#` at a line start or after whitespace, then letters, digits, `_`, `-` and `/`, with at least one character that isn't a digit. Any other character, a comma or space included, ends the tag. Code, HTML, link text, URLs and `[[…]]` links hold none, so `[[Note#Heading]]` and a heading's `# ` aren't tags.
+- **Identity**: tags match ignoring case, and show as first written in the folder. Empty segments and a trailing `/` are dropped (`home/` is `home`).
+- **Nesting**: `/` nests, so `home/garden` is a child of `home`. A parent shows its children's files too, and exists whether or not any file carries it alone.
+- An area's or project's tags don't apply to its tasks.
+- **Counts**: the areas, projects and tasks, completed or not, carrying the tag or a child of it. Files in `.trash/` and `.logbook/` aren't counted. **Untagged** is every area, project and task with no tag.
 
 ## Attachments
 
@@ -103,5 +113,6 @@ Bring the project instruction files in line with how I actually work now.
 - Written values: dates as `YYYY-MM-DD` (unquoted); links quoted as `"[[Title]]"`; lists in block style with quoted items (`[]` when empty); text plain when it starts with a letter and YAML can't misread it (e.g. as `yes`, a comment or a mapping), otherwise double-quoted.
 - Filenames come from titles. Ta Da replaces `/ : \ * ? " < > |` and the Obsidian link-breakers `[ ] # ^ |`: a `:` becomes ` -` (so "Game Jam: Starfall" becomes `Game Jam - Starfall.md`), `/ \ |` become `-`, and the rest are dropped. Leading dots and repeated spaces are removed, names are capped at 200 bytes, and an empty name becomes `Untitled`. If the name is taken (ignoring case), it adds ` 2`, ` 3`, and so on. A project's name is also taken by any other project's title, live or logged, when it's created, renamed, restored or logged, so a title never resolves to a logged project's tasks.
 - Attachment filenames follow the same rules on the name before the extension, and keep the extension: a taken `front.jpg` becomes `front 2.jpg`.
+- **Tags** are written only in `tags:`. Adding one that's already there (ignoring case) does nothing. A flow list stays flow and a block list stays block; an empty key, or a string of comma-separated tags, becomes a flow list. A missing key is added as `tags: [name]` after `createdDate`, or before the closing `---` without one. Removing the last tag leaves `tags:` with no value. A value that can't be spliced safely (a block scalar, or a string or a commented flow list over several lines) is left alone. Inline tags are never rewritten. A task created from a tag gets `tags: [name]`.
 - Moving a file to another parent writes one key and empties the other, in one write.
 - Renaming a project rewrites the `project:` link in each of its tasks (logged ones too) as `"[[New title]]"`, and renaming an area rewrites the `area:` link in its projects and its own tasks (logged ones too), in one coordinated read and write per file and only if the file still links to it. Renaming any file also rewrites the `[[ ]]` links to its title in the bodies of the files that link to it, itself included, keeping each link's folder, `.md`, heading and alias; links in code are left alone, and nothing is rewritten while another `.md` file in the folder, Ta Da's or not, still has the old title.
