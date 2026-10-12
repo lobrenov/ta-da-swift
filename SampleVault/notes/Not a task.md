@@ -1,3 +1,3 @@
-This note has no Ta Da frontmatter, so Ta Da ignores it, even though it contains a checklist.
+This note has no Ta Da frontmatter, so Ta Da lists it under Notes, in the notes folder. Its checklist counts as its subtasks.
 
-- [ ] This is not a subtask of anything
+- [ ] This is a subtask of the note, not of a task
