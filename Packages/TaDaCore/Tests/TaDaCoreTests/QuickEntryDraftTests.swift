@@ -40,6 +40,7 @@ private func full(_ kind: Item.Kind, parent: Parent?) -> QuickEntryDraft {
 @Test func projectDraftWritesEveryField() throws {
     let draft = full(.project, parent: .area("Personal"))
     #expect(draft.folder == "projects")
+    #expect(draft.text(today: today) == "---\ntype: project\nstatus: Doing\narea: \"[[Personal]]\"\ncreatedDate: 2026-10-12\ntags: [people/bea]\ndueDate: 2026-10-14\ndeadline: 2026-10-20\n---\n")
     let item = try #require(Item(parsing: draft.text(today: today), path: "projects/Call Bea.md"))
     #expect(item.properties.kind == .project && item.properties.status == .doing && item.warnings.isEmpty)
     #expect(item.properties.area?.title == "Personal")
@@ -53,11 +54,13 @@ private func full(_ kind: Item.Kind, parent: Parent?) -> QuickEntryDraft {
     #expect(draft.text(today: today) == "---\ntype: area\ncreatedDate: 2026-10-12\ntags: [people/bea]\n---\n")
 }
 
-@Test func closedStatusSetsCompletedDate() throws {
+@Test(arguments: [(Item.Kind.task, Status.done), (.task, .cancelled), (.project, .done)])
+func closedStatusSetsCompletedDate(kind: Item.Kind, status: Status) throws {
     var draft = QuickEntryDraft()
-    draft.status = .done
-    let item = try #require(Item(parsing: draft.text(today: today), path: "t.md"))
-    #expect(item.properties.status == .done && item.properties.completedDate == today)
+    draft.kind = kind
+    draft.status = status
+    let item = try #require(Item(parsing: draft.text(today: today), path: "f.md"))
+    #expect(item.properties.status == status && item.properties.completedDate == today)
 }
 
 @Test func changingKindKeepsWhatTheKindHas() {
@@ -67,6 +70,7 @@ private func full(_ kind: Item.Kind, parent: Parent?) -> QuickEntryDraft {
     #expect(project.status == .doing && project.dueDate == task.dueDate && project.deadline == task.deadline)
     #expect(project.parent == nil)
     #expect(full(.task, parent: .area("Personal")).changingKind(to: .project).parent == .area("Personal"))
+    #expect(full(.project, parent: .area("Personal")).changingKind(to: .task) == full(.task, parent: .area("Personal")))
 
     let area = task.changingKind(to: .area)
     var expected = QuickEntryDraft()

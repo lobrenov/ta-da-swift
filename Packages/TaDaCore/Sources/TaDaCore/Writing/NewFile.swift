@@ -1,6 +1,6 @@
-/// The text of a file Ta Da creates. The title isn't written: it's the filename.
+/// The text of a file Ta Da creates. The title isn't written: it's the filename. Tags go in `tags:` as a flow list.
 public enum NewFile {
-    /// A task names one parent: its project, or else its area. Tags go in `tags:` as a flow list, here and below.
+    /// A task names one parent: its project, or else its area.
     public static func task(project: String? = nil, area: String? = nil, tags: [Tag] = [], today: LocalDate) -> String {
         var keys = ["type: task", "status: Not Started"]
         if let project {
