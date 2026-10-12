@@ -84,6 +84,33 @@ public struct Vault: Sendable {
         return dates
     }
 
+    /// Folders that hold no files at any depth, as `folderTree` shows them: outside hidden folders, packages and the
+    /// top-level `areas/`, `projects/`, `tasks/` and `attachments/`. Hidden files don't count.
+    public func emptyFolders() -> Set<String> {
+        let keys: Set<URLResourceKey> = [.isDirectoryKey, .isPackageKey]
+        guard let entries = FileManager.default.enumerator(
+            at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else { return [] }
+        let rootComponents = root.pathComponents.count
+        var folders: Set<String> = [], filled: Set<String> = []
+        for case let url as URL in entries {
+            let components = url.standardizedFileURL.pathComponents.dropFirst(rootComponents)
+            let path = components.joined(separator: "/")
+            let values = try? url.resourceValues(forKeys: keys)
+            if values?.isDirectory == true, values?.isPackage != true {
+                if components.count == 1, Item.reservedFolders.contains(path.lowercased()) {
+                    entries.skipDescendants()
+                } else {
+                    folders.insert(path)
+                }
+            } else {
+                var folder = Self.folder(of: path)
+                while !folder.isEmpty, filled.insert(folder).inserted { folder = Self.folder(of: folder) }
+            }
+        }
+        return folders.subtracting(filled)
+    }
+
     /// Markdown files and images that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show
     /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders other than `.logbook/` are skipped.
     public func placeholderPaths() -> [String] {
