@@ -1,4 +1,4 @@
-// Sidebar: search, Today and Upcoming, Logbook, Trash with its count, then the To Do | Tags | Notes switch. To Do lists
+// Sidebar: search, Today and Upcoming, Logbook, Trash with its count, then the Tasks | Tags | Notes switch. Tasks lists
 // Loose tasks, active projects without an area, then each area with its active projects under it; Tags lists Untagged
 // and the tag tree; Notes lists Loose (the top level) and the folder tree. Then the folder line, Settings and the New
 // buttons. Task rows drop onto Today, Loose tasks, the
@@ -390,7 +390,7 @@ struct SidebarView: View {
     }
 }
 
-/// The To Do | Tags | Notes switch: three equal segments on a `surface` track, the picked one on `bg` in semibold
+/// The Tasks | Tags | Notes switch: three equal segments on a `surface` track, the picked one on `bg` in semibold
 /// `strong`.
 private struct SidebarModeSwitch: View {
     @Binding var mode: AppModel.SidebarMode
@@ -398,7 +398,7 @@ private struct SidebarModeSwitch: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            segment(.projects, "To Do") { AreaIcon(size: 13) }
+            segment(.projects, "Tasks") { AreaIcon(size: 13) }
             segment(.tags, "Tags") {
                 Image(systemName: "tag").font(.system(size: 11)).foregroundStyle(theme.color(\.accent))
             }

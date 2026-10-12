@@ -15,7 +15,7 @@ import TaDaCore
         case folder(String)
     }
 
-    /// What the sidebar lists under Trash: the area and project hierarchy (To Do), the tag tree, or the notes folders.
+    /// What the sidebar lists under Trash: the area and project hierarchy (Tasks), the tag tree, or the notes folders.
     enum SidebarMode: String {
         case projects, tags, notes
     }
@@ -236,7 +236,7 @@ import TaDaCore
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
     }
-    /// The sidebar's To Do | Tags | Notes switch.
+    /// The sidebar's Tasks | Tags | Notes switch.
     var sidebarMode: SidebarMode {
         didSet { defaults.set(sidebarMode.rawValue, forKey: Keys.sidebarMode) }
     }
@@ -1558,6 +1558,11 @@ import TaDaCore
 
     // MARK: New files
 
+    /// ⌘N: a new note on a notes folder's page, else a new task.
+    func newTaskOrNote() async {
+        if case .folder = domain { await newNote() } else { await newTask() }
+    }
+
     /// Creates an untitled task and selects it with its title ready to type. On a project's or area's page it's filed
     /// there; in Today it's due today; on a tag's page it carries the tag, and on Untagged it stays there; anywhere else
     /// it opens in Loose tasks.
@@ -1775,7 +1780,7 @@ import TaDaCore
         }
     }
 
-    /// Converts a note to a task, project or area, filed under `parent`, and opens it in To Do.
+    /// Converts a note to a task, project or area, filed under `parent`, and opens it in Tasks.
     func convert(_ path: String, to kind: Item.Kind, status: Status = .notStarted, parent: Parent? = nil) async {
         guard let newPath = await moveFiles(path, isFolder: false, failure: "convert “\(Item.title(ofPath: path))”", { vault, index, today in
             try vault.convert(path, to: kind, status: status, parent: parent, index: index, today: today)

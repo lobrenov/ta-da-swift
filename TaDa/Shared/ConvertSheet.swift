@@ -1,6 +1,6 @@
 // Converting a note to a task, project or area: a window sheet for `model.convertRequest` (ContentView shows it) with a
 // Task | Project | Area switch, status and parent menus (not for an area), where the file moves, the frontmatter lines
-// added, and what happens to its checkboxes and links. Convert writes it and opens the file in To Do.
+// added, and what happens to its checkboxes and links. Convert writes it and opens the file in Tasks.
 import SwiftUI
 import TaDaCore
 

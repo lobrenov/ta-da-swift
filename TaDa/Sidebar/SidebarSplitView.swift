@@ -144,7 +144,7 @@ private struct WindowReader: NSViewRepresentable {
 #endif
 
 extension AppModel.SidebarMode {
-    /// To Do → Tags → Notes; Notes stays.
+    /// Tasks → Tags → Notes; Notes stays.
     var next: Self {
         switch self {
         case .projects: .tags
@@ -152,7 +152,7 @@ extension AppModel.SidebarMode {
         }
     }
 
-    /// Notes → Tags → To Do; To Do stays.
+    /// Notes → Tags → Tasks; Tasks stays.
     var previous: Self {
         switch self {
         case .notes: .tags

@@ -59,6 +59,11 @@ struct NoteModelTests {
         model.show(.loose)
         await model.newNote()
         #expect(model.domain == .folder("") && model.selection == "Untitled.md")
+        await model.newTaskOrNote()
+        #expect(model.selection == "Untitled 2.md")
+        model.show(.loose)
+        await model.newTaskOrNote()
+        #expect(model.domain == .loose && model.selection == "tasks/Untitled.md")
 
         model.show(.folder("Meetings"))
         model.toggleFolderFolded("Meetings")

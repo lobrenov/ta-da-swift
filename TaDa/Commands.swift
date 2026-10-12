@@ -1,4 +1,4 @@
-// Menu commands: ⌘N/⇧⌘N/⌥⌘N new task/project/area; File ▸ New Note and New Folder; File ▸ Convert to for the open or
+// Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; File ▸ Convert to for the open or
 // picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on, ⇧⌘M move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu.
@@ -22,7 +22,7 @@ struct AppCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
-            Button("New Task") { Task { await model.newTask() } }
+            Button("New Task/Note") { Task { await model.newTaskOrNote() } }
                 .keyboardShortcut("n")
                 .disabled(model.state != .ready)
             Button("New Project") { Task { await model.newProject() } }
@@ -30,8 +30,6 @@ struct AppCommands: Commands {
                 .disabled(model.state != .ready)
             Button("New Area") { Task { await model.newArea() } }
                 .keyboardShortcut("n", modifiers: [.command, .option])
-                .disabled(model.state != .ready)
-            Button("New Note") { Task { await model.newNote() } }
                 .disabled(model.state != .ready)
             Button("New Folder") { Task { await model.newFolder() } }
                 .disabled(model.state != .ready)

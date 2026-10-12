@@ -163,7 +163,7 @@ On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a check
 
 | Keys | Action |
 | --- | --- |
-| ⌘N / ⇧⌘N / ⌥⌘N | New task (filed under the project or area on screen) / New project (under the area on screen) / New area |
+| ⌘N / ⇧⌘N / ⌥⌘N | New task (filed under the project or area on screen), or a new note in the notes folder on screen / New project (under the area on screen) / New area |
 | File ▸ Reveal in Finder (no keys) | Select the picked or open files in Finder (`AppModel.picked`); the file menu has it too |
 | ⌥⌘F | Search files |
 | ⌃Space (Settings ▸ Hotkeys) | Open or close Quick Entry, from any app. In it: ↵ create, ⌘↵ create and open, esc close, ⇧⌘M, ⌘S and ⌘D the parent and date menus |
