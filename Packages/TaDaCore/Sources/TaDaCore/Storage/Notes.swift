@@ -23,8 +23,7 @@ extension Vault {
         let name = FileNaming.folderName(for: name, existing: filenames(in: parent).subtracting([current]))
         guard name != current else { return (path, [], []) }
         let newPath = Self.join(parent, name)
-        try CoordinatedFileIO.move(root.appending(path: path, directoryHint: .isDirectory),
-                                   to: root.appending(path: newPath, directoryHint: .isDirectory))
+        try CoordinatedFileIO.move(folderURL(path), to: folderURL(newPath))
         let moved = { (file: String) in file.hasPrefix(path + "/") ? newPath + file.dropFirst(path.count) : file }
         let (relinked, failed) = rewriteLinks(in: index, moved: moved) { target in
             target.range(of: path + "/", options: [.anchored, .caseInsensitive]).map { newPath + "/" + target[$0.upperBound...] }
@@ -32,17 +31,39 @@ extension Vault {
         return (newPath, relinked, failed)
     }
 
-    /// Moves a folder whole into `.trash/`, keeping its parent folders there and numbering its name if it's taken.
-    /// Returns its path in `.trash/`.
+    /// Moves a folder whole to the same path inside `.trash/`, merging it into a folder already there (as when one of its
+    /// notes was trashed before) and numbering the files whose names are taken. A folder that holds no files is removed
+    /// instead. Returns its path in `.trash/`.
     public func trashFolder(_ path: String) throws -> String {
-        let parent = Self.join(Self.trashFolder, Self.folder(of: path))
-        let name = FileNaming.folderName(for: String(path.split(separator: "/").last ?? ""), existing: filenames(in: parent))
-        let newPath = Self.join(parent, name)
-        try FileManager.default.createDirectory(at: root.appending(path: parent, directoryHint: .isDirectory),
-                                                withIntermediateDirectories: true)
-        try CoordinatedFileIO.move(root.appending(path: path, directoryHint: .isDirectory),
-                                   to: root.appending(path: newPath, directoryHint: .isDirectory))
-        return newPath
+        let trashed = Self.join(Self.trashFolder, path)
+        if emptyFolders().contains(path) {
+            try FileManager.default.removeItem(at: folderURL(path))
+        } else {
+            try merge(path, into: trashed)
+        }
+        return trashed
+    }
+
+    /// Moves the folder `source` to `destination`, or, when that's taken, moves its contents in, folder by folder.
+    private func merge(_ source: String, into destination: String) throws {
+        let manager = FileManager.default
+        guard folderExists(destination) else {
+            try manager.createDirectory(at: folderURL(Self.folder(of: destination)), withIntermediateDirectories: true)
+            return try CoordinatedFileIO.move(folderURL(source), to: folderURL(destination))
+        }
+        for name in try manager.contentsOfDirectory(atPath: folderURL(source).path(percentEncoded: false)) {
+            let child = Self.join(source, name)
+            if folderExists(child) {
+                try merge(child, into: Self.join(destination, name))
+            } else {
+                _ = try moveFile(child, into: destination)
+            }
+        }
+        try manager.removeItem(at: folderURL(source))
+    }
+
+    func folderURL(_ path: String) -> URL {
+        root.appending(path: path, directoryHint: .isDirectory)
     }
 
     /// Moves a note into `folder` (`""` for the top level), numbering its name if it's taken there, and rewrites links
@@ -54,13 +75,22 @@ extension Vault {
 
     /// Converts a note to a task, project or area: splices the keys in (`NoteConversion.text`), then moves the file to
     /// `tasks/`, `projects/` or `areas/`, numbering a name that's taken there or, for a project, by another project, logged
-    /// or not; links to it follow. Returns its new path.
+    /// or not; links to it follow. When the move fails, the note's text is put back. Returns its new path.
     public func convert(_ path: String, to kind: Item.Kind, status: Status = .notStarted, parent: Parent? = nil,
                         index: VaultIndex, today: LocalDate) throws -> Relinked {
         guard kind != .note, index[path]?.properties.kind == .note else { return (path, [], []) }
-        _ = try update(path) { NoteConversion.text($0, to: kind, status: status, parent: parent, today: today) }
+        var original = ""
+        _ = try update(path) { text in
+            original = text
+            return NoteConversion.text(text, to: kind, status: status, parent: parent, today: today)
+        }
         let folder = kind == .area ? Self.areaFolder : kind == .project ? Self.projectFolder : Self.taskFolder
-        return try move(path, into: folder, taken: kind == .project ? index.projectFilenames() : [], index: index)
+        do {
+            return try move(path, into: folder, taken: kind == .project ? index.projectFilenames() : [], index: index)
+        } catch {
+            _ = try? CoordinatedFileIO.update(url(for: path)) { _ in original }
+            throw error
+        }
     }
 
     /// Moves a file and points the links to it at its new path, and at its new title if that changed and its old title

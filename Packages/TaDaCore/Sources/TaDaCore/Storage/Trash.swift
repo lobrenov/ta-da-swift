@@ -156,7 +156,7 @@ extension Vault {
     }
 
     /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, and notes back to their folder (made again if it's
-    /// gone), numbering names that are taken. Each brings back
+    /// gone; the top level if a file has its name), numbering names that are taken. Folders left empty in `.trash/` go. Each brings back
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
     /// in the vault (outside `.logbook/`) or `.trash/` is created by name (a project under a title no other project has). When a parent's name had to change, the link follows it.
     /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
@@ -178,7 +178,11 @@ extension Vault {
             let properties = entry.item.properties
             let parent: Parent? = properties.project.map { .project($0.title) } ?? properties.area.map { .area($0.title) }
             let parentTitle = try parent.map { try bringBack($0) }
-            let path = try moveFile(entry.item.path, into: Self.restoreFolder(of: entry.item))
+            var folder = Self.restoreFolder(of: entry.item)
+            if !folder.isEmpty, !folderExists(folder), FileManager.default.fileExists(atPath: url(for: folder).path(percentEncoded: false)) {
+                folder = ""
+            }
+            let path = try moveFile(entry.item.path, into: folder)
             if let parent, let parentTitle, parentTitle != parent.title {
                 try relink(path, key: parent.key, from: parent.title, to: parentTitle)
             }
@@ -238,6 +242,7 @@ extension Vault {
                 return result + body[copied...]
             }
         }
+        pruneTrash()
         return restored
     }
 
@@ -271,6 +276,7 @@ extension Vault {
                 firstError = firstError ?? error
             }
         }
+        pruneTrash()
         if let firstError { throw DiscardError(failed: failed, firstError: firstError) }
     }
 
@@ -282,6 +288,25 @@ extension Vault {
         case .task: taskFolder
         case .note: String(folder(of: item.path).dropFirst(trashFolder.count).drop { $0 == "/" })
         }
+    }
+
+    /// Removes the folders in `.trash/` (other than `.trash/attachments/`) that nothing is left in.
+    func pruneTrash() {
+        let manager = FileManager.default
+        func prune(_ path: String) -> Bool {
+            let names = (try? manager.contentsOfDirectory(atPath: url(for: path).path(percentEncoded: false))) ?? []
+            var isEmpty = true
+            for name in names {
+                let child = Self.join(path, name)
+                if folderExists(child), child != Self.trashedAttachmentFolder, prune(child) {
+                    try? manager.removeItem(at: folderURL(child))
+                } else {
+                    isEmpty = false
+                }
+            }
+            return isEmpty
+        }
+        _ = prune(Self.trashFolder)
     }
 
     /// Moves a file into `folder` (`""` for the top level), creating it if needed, keeping its filename unless that's taken there or among

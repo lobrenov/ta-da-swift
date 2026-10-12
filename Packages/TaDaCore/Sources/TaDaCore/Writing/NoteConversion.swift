@@ -1,8 +1,8 @@
 /// The frontmatter a note gets when it's converted to a task, project or area. The body is untouched.
 public enum NoteConversion {
     /// The keys converting writes, in order: `type`, `status` (not for an area), the parent's link (a task's project or
-    /// area, a project's area), and `createdDate` unless the note has one.
-    public static func keys(to kind: Item.Kind, status: Status, parent: Parent?, createdDate: LocalDate?,
+    /// area, a project's area), and `createdDate` unless the note has one with a value.
+    public static func keys(to kind: Item.Kind, status: Status, parent: Parent?, hasCreatedDate: Bool,
                             today: LocalDate) -> [(key: String, value: PropertyValue)] {
         var keys: [(key: String, value: PropertyValue)] = [("type", .text(kind.rawValue))]
         if kind != .area { keys.append(("status", .text(status.rawValue))) }
@@ -11,7 +11,7 @@ public enum NoteConversion {
         case let (.task, .area(title)?), let (.project, .area(title)?): keys.append(("area", .link(title: title)))
         default: break
         }
-        if createdDate == nil { keys.append(("createdDate", .date(today))) }
+        if !hasCreatedDate { keys.append(("createdDate", .date(today))) }
         return keys
     }
 
@@ -19,8 +19,8 @@ public enum NoteConversion {
     /// block), keys it already has are set in place, and a `project` or `area` key the parent doesn't name is emptied. A
     /// Done or Cancelled status also sets `completedDate`; any other empties it.
     public static func text(_ text: String, to kind: Item.Kind, status: Status, parent: Parent?, today: LocalDate) -> String {
-        let createdDate = Item(parsing: text, path: "Note.md")?.properties.createdDate
-        let keys = keys(to: kind, status: status, parent: parent, createdDate: createdDate, today: today)
+        let keys = keys(to: kind, status: status, parent: parent,
+                        hasCreatedDate: FrontmatterEditor.hasValue("createdDate", in: text), today: today)
         var result = FrontmatterEditor.insertAtTop(keys.filter { !FrontmatterEditor.contains($0.key, in: text) }, in: text)
         for (key, value) in keys where FrontmatterEditor.contains(key, in: text) {
             result = FrontmatterEditor.set(key, to: value, in: result)

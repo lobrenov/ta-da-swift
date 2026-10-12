@@ -51,6 +51,14 @@ public enum FrontmatterEditor {
         return closingFence(file).flatMap { keyRange(key, in: file, closing: $0) } != nil
     }
 
+    /// Whether the frontmatter has the key with something written after it, on its line or the lines below.
+    public static func hasValue(_ key: String, in text: String) -> Bool {
+        let file = Lines(text)
+        guard let closing = closingFence(file), let range = keyRange(key, in: file, closing: closing) else { return false }
+        let value = Lines.content(file.lines[range.lowerBound]).dropFirst(key.count + 1)
+        return range.count > 1 || value.contains { !$0.isWhitespace }
+    }
+
     /// Empties an existing key, leaving `key:`. A missing key stays missing.
     public static func clear(_ key: String, in text: String) -> String {
         var file = Lines(text)
