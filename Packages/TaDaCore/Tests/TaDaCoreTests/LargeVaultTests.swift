@@ -45,7 +45,9 @@ struct LargeVaultTests {
             #expect(index.items.count == 1200)
             let (changes, refreshTime) = await time("refresh, nothing changed") { vault.changes(since: dates) }
             #expect(changes.isEmpty)
-            #expect(scanTime < 1 && loadTime < 4 && refreshTime < 1)
+            let (empty, folderScanTime) = await time("empty folders") { vault.emptyFolders() }
+            #expect(empty.isEmpty)
+            #expect(scanTime < 1 && loadTime < 4 && refreshTime < 1 && folderScanTime < 1)
 
             let today = Self.today
             let (_, queryTime) = await time("sidebar and lists") {
@@ -55,6 +57,8 @@ struct LargeVaultTests {
                 _ = index.grouped(index.today(today))
                 _ = index.upcoming(after: today)
                 _ = index.search("review")
+                _ = index.folderTree(folders: empty)
+                _ = index.notes(in: "notes")
             }
             #expect(queryTime < 0.5)
 

@@ -23,33 +23,46 @@ private func describe(_ nodes: [FolderNode], depth: Int = 0) -> [String] {
 }
 
 @Test func emptyFoldersLeaveOutFilledHiddenAndReservedFolders() {
-    #expect(Vault(root: noteVault).emptyFolders() == ["Empty"])
+    #expect(Vault(root: noteVault).emptyFolders() == ["Empty", "Typed/Sub"])
 }
 
 @Test func emptyFoldersCountNestedEmptyFolders() async throws {
     try await withTemporaryFolder { folder in
-        for path in ["A/B/C", "D/E", "tasks/Inside", ".hidden/F", "Bundle.app/G"] {
+        for path in ["A/B/C", "D/E", "Tasks/Inside", "Work/tasks/Sub", ".hidden/F", "Bundle.app/G", "X/Bundle.app/H", "P"] {
             try FileManager.default.createDirectory(at: folder.appending(path: path), withIntermediateDirectories: true)
         }
         try writeFile("note", "D/note.md", in: folder)
-        #expect(Vault(root: folder).emptyFolders() == ["A", "A/B", "A/B/C", "D/E"])
+        try writeFile("", "P/.Waiting.md.icloud", in: folder)
+        try writeFile("", "A/B/.DS_Store", in: folder)
+        #expect(Vault(root: folder).emptyFolders() == ["A", "A/B", "A/B/C", "D/E", "Work", "Work/tasks", "Work/tasks/Sub"])
+        #expect(Vault(root: folder).folderExists("A/B") && !Vault(root: folder).folderExists("D/note.md"))
     }
 }
 
 @Test func folderTreeRollsUpCountsAndSortsByName() async {
     let index = await noteIndex()
-    #expect(describe(index.folderTree(emptyFolders: Vault(root: noteVault).emptyFolders())) == [
+    #expect(describe(index.folderTree(folders: Vault(root: noteVault).emptyFolders())) == [
         "Empty 0",
         "Meetings 2",
         "  2026 1",
+        "Typed 0",
+        "  Sub 0",
         "Work 1",
         "  Clients 1",
     ])
 }
 
+@Test func aKnownFolderStaysWhenItsLastNoteGoes() async {
+    var index = await noteIndex()
+    let known = Set(index.notes.map { Vault.folder(of: $0.path) }.filter { !$0.isEmpty })
+    index.remove("Meetings/2026/Standup.md")
+    #expect(index.notes(in: "Meetings/2026").isEmpty)
+    #expect(describe(index.folderTree(folders: known)).prefix(2) == ["Meetings 1", "  2026 0"])
+}
+
 @Test func folderTreeAddsTheParentsOfEmptyFolders() {
     let index = VaultIndex([makeItem("b/Note.md", "tags: []")])
-    #expect(describe(index.folderTree(emptyFolders: ["a/x/y", "C/z"])) == ["a 0", "  x 0", "    y 0", "b 1", "C 0", "  z 0"])
+    #expect(describe(index.folderTree(folders: ["a/x/y", "C/z"])) == ["a 0", "  x 0", "    y 0", "b 1", "C 0", "  z 0"])
 }
 
 @Test func notesInAFolderLeaveOutSubfolders() async {

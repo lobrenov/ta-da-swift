@@ -21,6 +21,8 @@ public struct VaultIndex: Sendable {
     private var embeddersByName: [String: Set<String>] = [:]
     /// Tag path → the paths of the items that aren't logged and carry it (not counting its children).
     private var pathsByTag: [String: Set<String>] = [:]
+    /// Folder (`""` for the top level) → the paths of the notes straight in it.
+    private var notesByFolder: [String: Set<String>] = [:]
     /// Tag path → the tag as spelled by the carrier with the first path, and that path, for each tag in `pathsByTag`.
     private var tagsByPath: [String: (tag: Tag, path: String)] = [:]
 
@@ -35,12 +37,14 @@ public struct VaultIndex: Sendable {
         if let old = items.updateValue(item, forKey: item.path) {
             removeLinks(of: old)
             removeTags(of: old)
+            Self.remove(old.path, at: Vault.folder(of: old.path), from: &notesByFolder)
             if (old.properties.kind == .note) != (item.properties.kind == .note) { sortTitle(of: item.path) }
         } else {
             addTitle(of: item.path)
         }
         addLinks(of: item)
         addTags(of: item)
+        if item.properties.kind == .note, !item.isLogged { notesByFolder[Vault.folder(of: item.path), default: []].insert(item.path) }
     }
 
     public mutating func remove(_ path: String) {
@@ -48,6 +52,7 @@ public struct VaultIndex: Sendable {
         removeTitle(of: path)
         removeLinks(of: old)
         removeTags(of: old)
+        Self.remove(path, at: Vault.folder(of: path), from: &notesByFolder)
     }
 
     /// Items that aren't logged.
@@ -55,13 +60,16 @@ public struct VaultIndex: Sendable {
     public var tasks: [Item] { liveItems.filter { $0.properties.kind == .task } }
     public var projects: [Item] { liveItems.filter { $0.properties.kind == .project } }
     public var areas: [Item] { liveItems.filter { $0.properties.kind == .area } }
-    public var notes: [Item] { liveItems.filter { $0.properties.kind == .note } }
+    public var notes: [Item] { notesByFolder.values.flatMap { $0 }.compactMap { items[$0] } }
     /// Logged tasks and projects.
     public var logged: [Item] { items.values.filter(\.isLogged) }
 
     /// Every tag carried by an item that isn't logged, spelled as in the carrier with the first path, in no order.
     /// Parents carried by no file are left out.
     var carriedTags: [Tag] { tagsByPath.values.map(\.tag) }
+
+    /// The paths of the notes straight in `folder`, by folder.
+    var notePathsByFolder: [String: Set<String>] { notesByFolder }
 
     /// The paths of the items that aren't logged and carry this tag path itself, not its children.
     func paths(carrying path: String) -> Set<String> { pathsByTag[path] ?? [] }
