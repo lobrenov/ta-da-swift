@@ -101,7 +101,7 @@ struct WorkspaceView: View {
     }
 
     /// The browser column, the rule and the document pane at their narrowest.
-    static let minWidth: CGFloat = 320 + 1 + 360
+    nonisolated static let minWidth: CGFloat = 320 + 1 + 360
 
     /// A browser column and the document pane, with a rule between them.
     private func split(@ViewBuilder browser: () -> some View) -> some View {
