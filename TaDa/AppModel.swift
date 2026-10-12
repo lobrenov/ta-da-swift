@@ -245,6 +245,12 @@ import TaDaCore
     private(set) var recentFiles: [String] {
         didSet { defaults.set(recentFiles, forKey: Keys.recentFiles) }
     }
+    /// The global hotkey that opens Quick Entry; nil when cleared.
+    var quickEntryHotkey: Hotkey? {
+        didSet { defaults.set(quickEntryHotkey?.dictionary ?? [:], forKey: Keys.quickEntryHotkey) }
+    }
+    /// Another app or a macOS shortcut has `quickEntryHotkey`'s keys.
+    var quickEntryHotkeyTaken = false
     /// The system appearance, kept current by `themed(by:)`.
     var systemIsDark = Appearance.systemIsDark
 
@@ -313,6 +319,7 @@ import TaDaCore
         static let sidebarMode = "sidebarMode"
         static let foldedTags = "foldedTags"
         static let lastLogged = "lastLogged"
+        static let quickEntryHotkey = "quickEntryHotkey"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -328,6 +335,7 @@ import TaDaCore
         recentFiles = defaults.stringArray(forKey: Keys.recentFiles) ?? []
         sidebarMode = defaults.string(forKey: Keys.sidebarMode).flatMap(SidebarMode.init) ?? .projects
         foldedTags = Set(defaults.stringArray(forKey: Keys.foldedTags) ?? [])
+        quickEntryHotkey = defaults.dictionary(forKey: Keys.quickEntryHotkey).map { Hotkey($0) } ?? .quickEntryDefault
     }
 
     // MARK: Folder
@@ -1574,6 +1582,19 @@ import TaDaCore
               let area = index[path] else { return nil }
         await setParent(area, of: paths)
         return path
+    }
+
+    /// Writes Quick Entry's draft as a new file, numbering its name if it's taken. Returns the new path.
+    func create(_ draft: QuickEntryDraft) async -> String? {
+        await create(draft.text(today: today), in: draft.folder, title: draft.title,
+                     taken: draft.kind == .project ? index.projectFilenames() : [])
+    }
+
+    /// The path `create(_:)` would give the draft, as far as the index knows the folder's files.
+    func quickEntryPath(for draft: QuickEntryDraft) -> String {
+        let inFolder = index.items.keys.filter { Vault.folder(of: $0) == draft.folder }.map { Item.title(ofPath: $0) + ".md" }
+        let taken = draft.kind == .project ? index.projectFilenames() : []
+        return draft.folder + "/" + FileNaming.filename(for: draft.title, existing: taken.union(inFolder))
     }
 
     private func create(_ text: String, in folder: String, title: String = "Untitled", taken: Set<String> = []) async -> String? {

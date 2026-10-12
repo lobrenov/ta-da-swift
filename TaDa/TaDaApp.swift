@@ -23,15 +23,25 @@ struct TaDaApp: App {
     }
 }
 
-/// Refreshes when the app becomes active, saves when it resigns and before it quits, and moves `today`
-/// on when the day changes.
+/// Refreshes when the app becomes active, saves when it resigns and before it quits, moves `today` on when the day
+/// changes, and keeps Quick Entry's hotkey registered.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel.forLaunch()
+    private let hotkeys = HotkeyService()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotificationCenter.default.addObserver(forName: .NSCalendarDayChanged, object: nil, queue: .main) { [model] _ in
             MainActor.assumeIsolated { model.today = LocalDate(Date()) }
         }
+        registerHotkey()
+    }
+
+    /// Registers the hotkey in the settings, and again whenever it changes.
+    private func registerHotkey() {
+        let hotkey = withObservationTracking { model.quickEntryHotkey } onChange: { [weak self] in
+            Task { @MainActor in self?.registerHotkey() }
+        }
+        model.quickEntryHotkeyTaken = !hotkeys.register(hotkey)
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {

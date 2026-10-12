@@ -36,10 +36,10 @@ The milestones run in order in one worktree. Each ends with its check passing.
 - Check: `NewFileTests` for project and area tags; `QuickEntryDraftTests` for every kind's text, the kind switch, and a draft parsing back (`Item(parsing:)`) to the same properties.
 
 ### A1 — App model and hotkey
-- `AppModel.create(_ draft: QuickEntryDraft) async -> String?` through the existing `create`, with `index.projectFilenames()` as `taken` for a project. `quickEntryFilename(for:)` for the line under the chips, from `FileNaming.filename(for:existing:)` and the index's filenames in the folder.
-- `Hotkey` (`QuickEntry/Hotkey.swift`): key code and modifiers, the display string (⌃Space), Codable for `SettingsStore`.
-- `HotkeyService` (`QuickEntry/HotkeyService.swift`): registers one hotkey with Carbon, reports success or failure, calls back on the main actor. `AppDelegate` owns it and re-registers when the setting changes.
-- Check: `AppModelTests` create each kind with every field and with a taken name; `QuickEntryTests` for `Hotkey` storage and display; macOS build.
+- `AppModel.create(_ draft: QuickEntryDraft) async -> String?` through the existing `create`, with `index.projectFilenames()` as `taken` for a project. `quickEntryPath(for:)` for the line under the chips, from `FileNaming.filename(for:existing:)` and the index's filenames in the folder.
+- `Hotkey` (`QuickEntry/Hotkey.swift`): key code, modifiers and key name, the display string (⌃Space), kept in `SettingsStore` as `AppModel.quickEntryHotkey`.
+- `HotkeyService` (`QuickEntry/HotkeyService.swift`): registers one hotkey with Carbon, reports success or failure, calls back on the main actor; a turned-on macOS shortcut on the same keys counts as taken (`CopySymbolicHotKeys`). `AppDelegate` owns it and re-registers when the setting changes.
+- Check: `QuickEntryTests` create each kind with every field and with a taken name, and cover `Hotkey` storage and display; macOS and iOS builds.
 
 ### M1 — Settings ▸ Hotkeys
 - `SettingsView.Page.hotkeys` and `HotkeysSettingsView`: the recorder (`HotkeyRecorder`, a key-taking view while recording), Restore Default, Clear, the taken warning with Open Keyboard Settings (`x-apple.systempreferences:com.apple.Keyboard-Settings.extension`), and the IN QUICK ENTRY list.
