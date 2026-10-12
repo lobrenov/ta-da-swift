@@ -36,16 +36,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         registerHotkey()
     }
 
-    /// Registers the hotkey in the settings, and again whenever it changes.
+    /// Registers the hotkey in the settings, and again whenever it changes or recording starts or stops.
     private func registerHotkey() {
-        withObservationTracking { _ = model.quickEntryHotkey } onChange: { [weak self] in
+        withObservationTracking { _ = (model.quickEntryHotkey, model.isRecordingHotkey) } onChange: { [weak self] in
             Task { @MainActor in self?.registerHotkey() }
         }
         refreshHotkey()
     }
 
-    /// Registers the hotkey and notes whether its keys are taken.
+    /// Registers the hotkey, or none while a new one is recorded, and notes whether its keys are taken.
     private func refreshHotkey() {
+        guard !model.isRecordingHotkey else {
+            hotkeys.register(nil)
+            return
+        }
         model.quickEntryHotkeyTaken = !hotkeys.register(model.quickEntryHotkey)
     }
 

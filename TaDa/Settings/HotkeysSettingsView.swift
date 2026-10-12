@@ -4,8 +4,9 @@ import SwiftUI
 
 struct HotkeysSettingsView: View {
     @Bindable var model: AppModel
-    @State private var isRecording = false
     @Environment(\.theme) private var theme
+
+    private var isRecording: Bool { model.isRecordingHotkey }
 
     var body: some View {
         SettingsPage(title: "Hotkeys", summary: "Shortcuts that work in any app while Ta Da is open.", spacing: 18) {
@@ -61,14 +62,14 @@ struct HotkeysSettingsView: View {
                     .foregroundStyle(theme.color(\.muted))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            HotkeyRecorder(hotkey: $model.quickEntryHotkey, isRecording: $isRecording, isTaken: model.quickEntryHotkeyTaken)
+            HotkeyRecorder(hotkey: $model.quickEntryHotkey, isRecording: $model.isRecordingHotkey, isTaken: model.quickEntryHotkeyTaken)
             iconButton("arrow.counterclockwise", help: "Restore ⌃Space", label: "Restore the default, Control Space",
                        disabled: model.quickEntryHotkey == .quickEntryDefault) {
-                isRecording = false
+                model.isRecordingHotkey = false
                 model.quickEntryHotkey = .quickEntryDefault
             }
             iconButton("xmark", help: "Clear", label: "Clear the shortcut", disabled: model.quickEntryHotkey == nil) {
-                isRecording = false
+                model.isRecordingHotkey = false
                 model.quickEntryHotkey = nil
             }
         }
@@ -136,13 +137,14 @@ struct HotkeysSettingsView: View {
     }
 }
 
-/// The hotkey's keys in a field; a click records the next chord, esc or another click cancels.
+/// The hotkey's keys in a field; a click records the next chord, esc, another click or leaving the window cancels.
 struct HotkeyRecorder: View {
     @Binding var hotkey: Hotkey?
     @Binding var isRecording: Bool
     let isTaken: Bool
     @State private var monitor: Any?
     @Environment(\.theme) private var theme
+    @Environment(\.controlActiveState) private var activeState
 
     var body: some View {
         Button {
@@ -176,12 +178,17 @@ struct HotkeyRecorder: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Quick Entry")
-        .accessibilityValue(isRecording ? "Recording" : hotkey?.displayString ?? "None")
+        .accessibilityValue(isRecording ? "Recording" : hotkey?.spokenString ?? "None")
         .onChange(of: isRecording) { _, recording in recording ? startMonitor() : stopMonitor() }
-        .onDisappear { isRecording = false }
+        .onChange(of: activeState) { _, state in if state != .key { isRecording = false } }
+        .onDisappear {
+            stopMonitor()
+            isRecording = false
+        }
     }
 
     private func startMonitor() {
+        stopMonitor()
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 53 {
                 isRecording = false

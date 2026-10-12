@@ -124,7 +124,7 @@ struct DesignRenderTests {
         let hotkeys = AppModel(defaults: TestSettings())
         hotkeys.appearance = .dark
         hotkeys.quickEntryHotkeyTaken = true
-        try await render(HotkeysSettingsView(model: hotkeys).themed(by: hotkeys).frame(height: 594), width: 700,
+        try await render(HotkeysSettingsView(model: hotkeys).themed(by: hotkeys).frame(height: 594, alignment: .top), width: 700,
                          to: output.appending(path: "settings-hotkeys.png"))
 
         // The window's sidebar is glass, which doesn't draw here, so the sidebar also renders on its own.

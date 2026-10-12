@@ -72,7 +72,7 @@ struct QuickEntryTests {
         let chord = Hotkey(keyCode: 40, modifiers: Hotkey.option | Hotkey.command | Hotkey.shift, key: "K")
         first.quickEntryHotkey = chord
         #expect(AppModel(defaults: folder.defaults).quickEntryHotkey == chord)
-        #expect(chord.displayString == "⌥⇧⌘K")
+        #expect(chord.displayString == "⌥⇧⌘K" && chord.spokenString == "Option Shift Command K")
         #expect(Hotkey(chord.dictionary) == chord)
         #expect(Hotkey(["keyCode": 49]) == nil && Hotkey(["keyCode": "x", "modifiers": 4096, "key": "Space"]) == nil)
 

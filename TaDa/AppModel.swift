@@ -251,6 +251,8 @@ import TaDaCore
     }
     /// Another app or a macOS shortcut has `quickEntryHotkey`'s keys.
     var quickEntryHotkeyTaken = false
+    /// Settings ▸ Hotkeys is recording a new hotkey, so the current one is let go.
+    var isRecordingHotkey = false
     /// The system appearance, kept current by `themed(by:)`.
     var systemIsDark = Appearance.systemIsDark
 

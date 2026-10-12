@@ -18,6 +18,12 @@ struct Hotkey: Equatable {
     /// The modifiers then the key, e.g. ⌃Space.
     var displayString: String { (modifierSymbols + [key]).joined() }
 
+    /// For VoiceOver, e.g. Control Space.
+    var spokenString: String {
+        ([(Self.control, "Control"), (Self.option, "Option"), (Self.shift, "Shift"), (Self.command, "Command")]
+            .filter { modifiers & $0.0 != 0 }.map(\.1) + [key]).joined(separator: " ")
+    }
+
     /// The modifiers in the system's order: ⌃⌥⇧⌘.
     var modifierSymbols: [String] {
         [(Self.control, "⌃"), (Self.option, "⌥"), (Self.shift, "⇧"), (Self.command, "⌘")]
