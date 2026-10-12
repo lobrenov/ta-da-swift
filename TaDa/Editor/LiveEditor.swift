@@ -32,6 +32,8 @@ struct LiveEditor: View {
     var onLinkClick: (String) -> Void = { _ in }
     /// Receives a clicked `#tag`, as written, without `#`; without it, tags draw as bubbles but don't open.
     var onTagClick: ((String) -> Void)? = nil
+    /// When set, the editor takes the keyboard with the caret at the end of its text, then calls it (Mac).
+    var onTakeFocus: (() -> Void)? = nil
 
     @State private var slashCommand = SlashCommandProxy()
     #if os(macOS)
@@ -92,6 +94,7 @@ struct LiveEditor: View {
             onTagClick: onTagClick
         )
         .focusedValue(\.editor, slashCommand)
+        .task(id: onTakeFocus != nil) { await takeFocus() }
         .onAppear { slashCommand.triggers = triggers }
         .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .onDisappear {
@@ -194,6 +197,22 @@ struct LiveEditor: View {
         let text = choice.markdown
         slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
     }
+
+    #if os(macOS)
+    /// Waits up to a second for the text view to be in a window, then gives it the keyboard as `onTakeFocus` asks.
+    private func takeFocus() async {
+        guard let onTakeFocus else { return }
+        for _ in 0..<50 {
+            if let textView = slashCommand.textView, let window = textView.window {
+                window.makeFirstResponder(textView)
+                textView.setSelectedRange(NSRange(location: (textView.string as NSString).length, length: 0))
+                onTakeFocus()
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+    }
+    #endif
 
     /// Replaces the `#` query with the tag's full path and a space, and puts the caret after it.
     private func insertTag(_ node: TagNode) {

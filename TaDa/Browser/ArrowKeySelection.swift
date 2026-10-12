@@ -45,10 +45,11 @@ private struct ArrowKeyList: ViewModifier {
                 model.arrowKeyList = AppModel.ArrowKeyList(id: id, paths: paths, allowsMultipleSelection: allowsMultipleSelection)
                 model.keepPicked(in: paths)
             }
-            // Picking a row gives the list the keyboard, from an editor too. Not for a new file, whose title is
-            // about to take it.
+            // Picking a row gives the list the keyboard, from an editor too. Not for a new file, whose title or body
+            // is about to take it.
             .onChange(of: model.selection) { _, selection in
-                guard let selection, paths.contains(selection), model.titleFocus != selection else { return }
+                guard let selection, paths.contains(selection), model.titleFocus != selection, model.bodyFocus != selection
+                else { return }
                 keys.view?.takeKeyboard()
             }
             .onDisappear { if model.arrowKeyList?.id == id { model.arrowKeyList = nil } }
@@ -100,7 +101,7 @@ final class ListKeyView: NSView {
     }
 
     private func takeKeyboardIfFree() {
-        guard let window, !(window.firstResponder is NSTextView), model.titleFocus == nil else { return }
+        guard let window, !(window.firstResponder is NSTextView), model.titleFocus == nil, model.bodyFocus == nil else { return }
         takeKeyboard()
     }
 

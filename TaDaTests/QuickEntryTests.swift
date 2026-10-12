@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 import Testing
 import TaDaCore
 @testable import TaDa
@@ -200,5 +201,26 @@ struct QuickEntryPanelTests {
         #expect(!quickEntry.isOpen)
         #expect(await within { model.index["tasks/Book venue.md"] != nil })
         #expect(try folder.read("tasks/Book venue.md") == draft.text(today: model.today))
+    }
+
+    @Test func anOpenedFilesBodyTakesTheKeyboardWhenAsked() async throws {
+        let folder = try TestFolder([
+            "tasks/Book venue.md": "---\ntype: task\nstatus: Not Started\n---\nCall first.\n",
+            "tasks/Other.md": "---\ntype: task\nstatus: Not Started\n---\n",
+        ])
+        let model = await folder.model()
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 800),
+                              styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        window.contentView = NSHostingView(rootView: ContentView(model: model))
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil) }
+        try await Task.sleep(for: .milliseconds(400))
+
+        model.bodyFocus = "tasks/Book venue.md"
+        model.openLink(to: "tasks/Book venue.md")
+        #expect(await within { model.bodyFocus == nil })
+        let editor = try #require(window.firstResponder as? NSTextView)
+        #expect(!editor.isFieldEditor && editor.string.hasPrefix("Call first."))
+        #expect(editor.selectedRange() == NSRange(location: (editor.string as NSString).length, length: 0))
     }
 }
