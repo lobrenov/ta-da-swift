@@ -174,3 +174,29 @@ func readerReadsTags(_ yaml: String, _ tags: [String]) throws {
     let read = try #require(PropertyReader.read("type: area\ntags:\n  a: b\n"))
     #expect(read.properties.tags.isEmpty && read.warnings == [.unexpectedValue(key: "tags")])
 }
+
+@Test func noteReaderReadsCreatedDateAndTagsOnly() {
+    let read = PropertyReader.readNote("createdDate: 2026-10-04\ntags: [a, b]\nstatus: Done\ncustom: kept\n")
+    #expect(read.properties.kind == .note && read.properties.createdDate == LocalDate("2026-10-04"))
+    #expect(read.properties.tags.map(\.name) == ["a", "b"] && read.properties.status == .notStarted)
+    #expect(read.warnings.isEmpty)
+}
+
+@Test func noteReaderReadsNothingFromMissingOrNonMappingYAML() {
+    for yaml in [nil, "", "- a\n- b\n", "just text\n"] as [String?] {
+        let read = PropertyReader.readNote(yaml)
+        #expect(read.properties == Properties(kind: .note) && read.warnings.isEmpty, "\(String(describing: yaml))")
+    }
+}
+
+@Test func noteReaderWarnsOnInvalidYAMLAndBadDates() {
+    #expect(PropertyReader.readNote("tags: [a\n").warnings.count == 1)
+    #expect(PropertyReader.readNote("createdDate: soon\n").warnings == [.invalidDate(key: "createdDate", value: "soon")])
+}
+
+@Test func brokenYAMLWithTypeNoteIsANoteOnlyAtNotePaths() {
+    let text = "---\ntype: note\ntags: [a\n---\n"
+    #expect(Item(parsing: text, path: "x.md")?.properties.kind == .note)
+    #expect(Item(parsing: text, path: "tasks/x.md") == nil)
+    #expect(Item(parsing: "---\ntags: [a\n---\n", path: "tasks/x.md") == nil)
+}

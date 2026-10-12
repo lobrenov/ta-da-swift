@@ -8,8 +8,8 @@ public struct VaultIndex: Sendable {
     public private(set) var items: [String: Item] = [:]
     /// Every item's title, lowercased.
     public private(set) var titles: Set<String> = []
-    /// Lowercased title → paths, files outside `.logbook/` first, then by path, so resolution is stable when titles
-    /// repeat across folders and prefers a file that isn't logged.
+    /// Lowercased title → paths: live tasks, projects and areas first, then notes, then logged files, each by path, so
+    /// resolution is stable when titles repeat across folders and prefers a live Ta Da file.
     private var pathsByTitle: [String: [String]] = [:]
     /// Lowercased title of a task's `project` link → the tasks' paths.
     private var tasksByProjectTitle: [String: Set<String>] = [:]
@@ -35,6 +35,7 @@ public struct VaultIndex: Sendable {
         if let old = items.updateValue(item, forKey: item.path) {
             removeLinks(of: old)
             removeTags(of: old)
+            if (old.properties.kind == .note) != (item.properties.kind == .note) { sortTitle(of: item.path) }
         } else {
             addTitle(of: item.path)
         }
@@ -65,7 +66,7 @@ public struct VaultIndex: Sendable {
     /// The paths of the items that aren't logged and carry this tag path itself, not its children.
     func paths(carrying path: String) -> Set<String> { pathsByTag[path] ?? [] }
 
-    /// Items with this title, ignoring case; one that isn't logged comes first, then the first by path.
+    /// Items with this title, ignoring case: live tasks, projects and areas, then notes, then logged files, each by path.
     public func items(titled title: String) -> [Item] {
         (pathsByTitle[title.lowercased()] ?? []).compactMap { items[$0] }
     }
@@ -181,8 +182,14 @@ public struct VaultIndex: Sendable {
     private mutating func addTitle(of path: String) {
         let title = Item.title(ofPath: path).lowercased()
         pathsByTitle[title, default: []].append(path)
-        pathsByTitle[title]?.sort { (Item.isLogged($0) ? 1 : 0, $0) < (Item.isLogged($1) ? 1 : 0, $1) }
+        sortTitle(of: path)
         titles.insert(title)
+    }
+
+    /// Re-sorts the paths that share this path's title.
+    private mutating func sortTitle(of path: String) {
+        func rank(_ path: String) -> Int { Item.isLogged(path) ? 2 : items[path]?.properties.kind == .note ? 1 : 0 }
+        pathsByTitle[Item.title(ofPath: path).lowercased()]?.sort { (rank($0), $0) < (rank($1), $1) }
     }
 
     private mutating func removeTitle(of path: String) {

@@ -870,6 +870,7 @@ import TaDaCore
     /// Completes an open task or reopens a done or cancelled one. Only `status` and `completedDate` change. A project
     /// goes through `setStatus(_:in:)`, which asks first when it has open tasks.
     func toggleCompletion(_ item: Item) async {
+        guard item.properties.kind != .note else { return }
         if item.properties.kind == .project {
             return await setStatus(item.properties.status.isClosed ? .notStarted : .done, in: item.path)
         }
@@ -908,6 +909,7 @@ import TaDaCore
     /// sets its Done or Cancelled project to Doing; a logged file that's reopened goes back to `tasks/` or `projects/`.
     func setStatus(_ status: Status, in path: String, confirmed: Bool = false) async {
         if editDraft(path, { $0.status = status }) { return }
+        guard index[path]?.properties.kind != .note else { return }
         if !confirmed, status.isClosed, let item = index[path], item.properties.kind == .project {
             let tasks = index.openTasks(in: item)
             if !tasks.isEmpty {
@@ -1440,6 +1442,7 @@ import TaDaCore
 
     /// The files a due date or deadline is set on, in list order. With `path` (a right-clicked or dragged row): the
     /// picked tasks when it's one of them, else just it. Without: the picked tasks, else the open file.
+    /// Notes are left out.
     func dateTargets(for path: String? = nil) -> [String] {
         let paths: Set<String>
         if let path {
@@ -1448,7 +1451,7 @@ import TaDaCore
             paths = multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
         }
         let order = arrowKeyList?.paths ?? []
-        return paths.filter { index[$0] != nil }
+        return paths.filter { index[$0].map { $0.properties.kind != .note } ?? false }
             .sorted { (order.firstIndex(of: $0) ?? .max, $0) < (order.firstIndex(of: $1) ?? .max, $1) }
     }
 

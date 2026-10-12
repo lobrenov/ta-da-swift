@@ -8,7 +8,7 @@ struct SearchResultsView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let results = model.index.search(model.searchText)
+        let results = model.index.search(model.searchText).filter { $0.properties.kind != .note }
         // Tasks only: picking a project leaves the search for its page.
         BrowserColumn(model: model, paths: results.filter { $0.properties.kind == .task }.map(\.path), spacing: 1,
                       empty: results.isEmpty ? noMatches : nil) {

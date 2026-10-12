@@ -13,11 +13,15 @@ struct PropertyChips: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if item.properties.kind != .area {
+            switch item.properties.kind {
+            case .task, .project:
                 PropertyChipRow(model: model, item: item)
                 TagChipRow(model: model, item: item)
                 QuietLine(model: model, item: item)
-            } else {
+            case .note:
+                TagChipRow(model: model, item: item)
+                QuietLine(model: model, item: item)
+            case .area:
                 QuietLine(model: model, item: item)
                 TagChipRow(model: model, item: item)
             }
