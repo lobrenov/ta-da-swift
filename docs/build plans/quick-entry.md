@@ -55,8 +55,8 @@ The milestones run in order in one worktree. Each ends with its check passing.
 ### M3 — Chips, menus and tags in the panel
 - `AppModel.quickEntryDraft` holds the draft, and `quickEntryItem` gives it as an `Item` at `AppModel.quickEntryDraftPath`, which isn't a file. The pickers' writers (`setStatus`, `setParent`, `setDate`, `addTag`, `removeTag`) edit the draft for that path instead of writing; `item(at:)` gives tagMenu the draft. Chip, picker, anchor and dismissal code stay as they are.
 - `QuickEntryView`: `PropertyChipRow` and `TagChipRow` on the draft's item. Hidden buttons take ⇧⌘M, ⌘S and ⌘D and set `propertyMenuRequest` for the draft's chips.
-- tagMenu for a draft: Added in place of In this file; Create #name adds the tag to the draft only.
-- The panel stays open while one of its menus has the keyboard, and closes when Ta Da resigns active.
+- tagMenu for a draft: Added in place of In this file; Create #name adds the tag to the draft only. The project and area menus' New project… and New Area… create that file, as elsewhere, and file the draft under it.
+- The panel stays open while one of its menus has the keyboard, and closes when neither has it.
 - Check: `QuickEntryTests` for each draft pick (status, parent, area, dates, add, remove and create a tag) and that a draft pick writes no file; ⇧⌘M and ⌘S open their menus in the panel; renders compared with the canvas's `QuickEntry` states.
 
 ### D1 — Docs

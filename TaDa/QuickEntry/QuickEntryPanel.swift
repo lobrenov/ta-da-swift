@@ -15,10 +15,8 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
     init(model: AppModel) {
         self.model = model
         super.init()
-        // A click in another app, even while one of the panel's menus has the keyboard.
-        NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.close() }
-        }
+        // The panel, or one of its menus, losing the keyboard: a click in another app or another Ta Da window.
+        NotificationCenter.default.addObserver(self, selector: #selector(keyLeft), name: NSWindow.didResignKeyNotification, object: nil)
     }
 
     var isOpen: Bool { panel?.isVisible == true }
@@ -63,10 +61,11 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
         return panel
     }
 
-    /// Closes unless one of the panel's own menus is open: a menu with a search field takes the keyboard.
-    func windowDidResignKey(_ notification: Notification) {
+    /// Closes once neither the panel nor one of its menus has the keyboard; a menu with a search field takes it.
+    @objc private func keyLeft(_ notification: Notification) {
+        guard let panel, let window = notification.object as? NSWindow, window === panel || window.parent === panel else { return }
         DispatchQueue.main.async { [weak self] in
-            guard let self, let panel, !panel.isKeyWindow, panel.childWindows?.contains(where: \.isVisible) != true else { return }
+            guard let self, panel.isVisible, !panel.isKeyWindow, panel.childWindows?.contains(where: \.isKeyWindow) != true else { return }
             close()
         }
     }
