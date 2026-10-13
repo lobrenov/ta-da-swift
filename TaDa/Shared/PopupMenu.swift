@@ -343,7 +343,13 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if let prompt = model.searchPrompt { PopupSearchField(model: model, prompt: prompt) }
+            if let prompt = model.searchPrompt {
+                PopupField(prompt: prompt, systemImage: "magnifyingglass", text: Binding { model.query } set: { query in
+                    guard query != model.query else { return }
+                    model.query = query
+                    model.onSearch(query)
+                }, theme: theme, revision: model.revision)
+            }
             ScrollViewReader { scroller in
                 ScrollView { list }
                     .scrollIndicators(.automatic)
@@ -429,35 +435,42 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
     }
 }
 
-/// The search field above a menu's list, in `surface`. It takes the keyboard each time the menu shows.
-private struct PopupSearchField<Item: PopupMenuItem>: View {
-    let model: PopupMenuModel<Item>
+/// The text field at the top of a popup (a menu's search, the calendar's typed date), in `surface`, with a
+/// muted `note` on its right. It takes the keyboard each time `revision` changes.
+struct PopupField: View {
     let prompt: String
+    let systemImage: String
+    @Binding var text: String
+    var note: String?
+    let theme: Theme
+    let revision: Int
     @FocusState private var focused: Bool
 
     var body: some View {
-        let theme = model.theme
         HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
+            Image(systemName: systemImage)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(theme.color(\.muted))
                 .accessibilityHidden(true)
-            TextField(prompt, text: Binding { model.query } set: { query in
-                guard query != model.query else { return }
-                model.query = query
-                model.onSearch(query)
-            },
-                      prompt: Text(prompt).foregroundStyle(theme.color(\.muted)))
+            TextField(prompt, text: $text, prompt: Text(prompt).foregroundStyle(theme.color(\.muted)))
                 .textFieldStyle(.plain)
                 .foregroundStyle(theme.color(\.strong))
                 .focused($focused)
+            if let note {
+                Text(note)
+                    .font(.system(size: 12))
+                    .foregroundStyle(theme.color(\.muted))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .accessibilityHidden(true)
+            }
         }
         .font(.system(size: 13))
         .padding(.horizontal, 10)
         .frame(height: PopupMenuStyle.searchHeight - 4)
         .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
         .padding(2)
-        .onChange(of: model.revision, initial: true) { focused = true }
+        .onChange(of: revision, initial: true) { focused = true }
     }
 }
 

@@ -179,20 +179,14 @@ struct PropertyPickerTests {
         model.order = .monthDay
         model.phrase = "5/12"
         #expect(model.cursor == LocalDate("2027-05-12")!)
-        #expect(model.clearPhrase() && model.match == nil && model.cursor == model.today, "back to today")
-        #expect(!model.clearPhrase())
+        #expect(model.note == LocalDate("2027-05-12")!.formatted(.weekdayDayMonth))
+        model.phrase = ""
+        #expect(model.match == nil && model.note == nil && model.cursor == model.today, "back to today")
         model.selected = LocalDate("2026-11-02")!
-        model.phrase = "fr"
-        #expect(model.deleteBackward() && model.deleteBackward() && model.cursor == LocalDate("2026-11-02")!, "back to the date set")
-    }
-
-    @Test func onlyDateCharactersType() {
-        let model = CalendarPickerModel()
-        #expect(!model.type(" ") && !model.type("") && !model.deleteBackward())
-        #expect(!model.type("é") && !model.type("\t") && !model.type("\u{F700}"), "an arrow key's character")
-        #expect(model.type("fri 25/12-1.+3:00,") && model.phrase == "fri 25/12-1.+3:00,")
-        #expect(model.type(String(repeating: "x", count: 22)) && !model.type("x"), "40 at most")
-        #expect(model.deleteBackward() && model.phrase.count == 39)
+        model.phrase = "xyz"
+        #expect(model.note == "No match · \(model.today.formatted(.weekdayDayMonth))", "the day ↵ sets")
+        model.phrase = ""
+        #expect(model.cursor == LocalDate("2026-11-02")!, "back to the date set")
     }
 
     @Test func theArrowsMoveTheTypedDay() {

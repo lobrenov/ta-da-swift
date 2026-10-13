@@ -33,10 +33,10 @@ Starting point, as checked on 2026-10-13:
 Prefixes count while typing, in this order: `t` and `to` → today, `tom` → tomorrow, `tu` → Tuesday, `th` → Thursday, `s` and `sa` → Saturday, `su` → Sunday, `m`, `w`, `f` → their weekdays, `n`/`ne`/`nex`/`next` → next week. Case and surrounding spaces are ignored. An impossible date (`31/2`) is no match.
 
 ### Calendar
-- The header row shows the typed phrase in place of DUE DATE or DEADLINE, with a caret, and on the right the day ↵ sets in muted text ("Fri 16 Oct"), or "No match · Fri 16 Oct". The panel keeps its height.
-- ASCII letters, digits, space, `/`, `.`, `-`, `+`, `:` and `,` type (40 at most); ⌫ deletes; ←↑↓→ still move the cursor, and keep the phrase. ⌘ and ⌃ shortcuts go on to the window.
+- A text field at the top (the move menu's search field, `PopupField`, with a calendar icon and "Type a date: fri, 3d, 25/12") has the keyboard while the calendar is open, with the usual text editing. On its right, in muted text, the day ↵ sets ("Fri 16 Oct"), or "No match · Fri 16 Oct".
+- ↑↓ move the cursor a week; ←→ move it a day while the field is empty, and the caret once something is typed. Arrows keep the phrase.
 - esc with a phrase clears it; esc again closes.
-- Footer hints: Move, Type a date, Close before the first key; Set, Delete, Clear after.
+- Footer hints: ←↑↓→ Move, ↵ Set, esc Close; once something is typed, ↑↓ Move, ↵ Set, esc Clear.
 - VoiceOver announces each match ("Friday 16 Oct"), or "No match" and the cursor's day.
 
 ## Milestones
