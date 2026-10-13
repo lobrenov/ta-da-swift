@@ -18,4 +18,5 @@ Work not yet built.
 - Alias display in TaDaMarkdown: `[[Target|Alias]]` shows the target name.
 - Renaming and deleting a tag across files.
 - Integrations: reminders as links that open Reminders, and completing a reminder from Ta Da (Ta Da only reads Calendar and Reminders).
+- Typed dates (`DatePhrase`) in Quick Entry's title and the iPhone date sheet, and in languages other than English.
 - Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, code blocks, and the caret's line in mono on `code`.
