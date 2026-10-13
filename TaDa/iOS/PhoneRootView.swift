@@ -99,6 +99,7 @@ struct PhoneRootView: View {
                     case let .project(path): PhoneProjectScreen(model: model, path: path)
                     case let .area(path): PhoneAreaScreen(model: model, path: path)
                     case let .settings(section): PhoneSettingsScreen(model: model, section: section)
+                    case .integrations: PhoneIntegrationsScreen(store: model.integrations)
                     case .logbook: PhoneLogbookScreen(model: model)
                     case .trash: PhoneTrashScreen(model: model)
                     case .tags: PhoneTagsScreen(model: model)
