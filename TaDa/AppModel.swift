@@ -1787,6 +1787,7 @@ import TaDaCore
         }
         if let selection, isInside(selection) { self.selection = nil }
         knownFolders = knownFolders.filter { !isInside($0) }
+        updateNotes()
         if let shown, isInside(shown) { domain = .folder(Vault.folder(of: path)) }
         await refresh()
     }
@@ -1838,6 +1839,7 @@ import TaDaCore
         if isFolder {
             knownFolders = Set(knownFolders.map(moved))
             foldedFolders = Set(foldedFolders.map(moved))
+            updateNotes()
             if let shown, isInside(shown) { domain = .folder(moved(shown)) }
         }
         let followed = document.flatMap { isInside($0.path) ? $0 : nil }

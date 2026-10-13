@@ -86,6 +86,16 @@ struct NoteModelTests {
         #expect(try folder.read("Links.md") == "[[Calls/Ark call]]\n")
     }
 
+    @Test func renamingAndTrashingAnEmptyFolderUpdateTheTree() async {
+        let model = await folder.model()
+        await model.newFolder(in: "Meetings")
+        await model.renameFolder("Meetings/Untitled folder", to: "Calls")
+        #expect(tree(model) == ["Empty 0", "Meetings 2", "Meetings/2026 1", "Meetings/Calls 0"])
+        model.trashFolder("Meetings/Calls")
+        if let request = model.folderTrashConfirmation { await model.confirmTrashFolder(request) }
+        #expect(!exists("Meetings/Calls") && tree(model) == ["Empty 0", "Meetings 2", "Meetings/2026 1"])
+    }
+
     @Test func trashingAFolderAsksFirstAndShowsItsParent() async {
         let model = await folder.model()
         model.show(.folder("Meetings/2026"))
