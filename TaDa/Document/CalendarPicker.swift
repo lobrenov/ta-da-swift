@@ -26,8 +26,7 @@ final class CalendarPicker {
         panel = PopupPanel { CalendarPickerView(model: model) }
         panel.onKey = { [weak self] event in self?.handleKey(event) ?? false }
         panel.onEscape = { [weak self] in
-            guard let self, !model.phrase.isEmpty else { return false }
-            model.phrase = ""
+            guard let self, model.clearPhrase() else { return false }
             announcePhrase()
             return true
         }
@@ -44,6 +43,7 @@ final class CalendarPicker {
         model.other = other
         model.today = today
         model.order = .system
+        model.firstWeekday = Calendar.current.firstWeekday
         model.phrase = ""
         model.cursor = selected ?? today
         model.theme = theme
@@ -86,7 +86,8 @@ final class CalendarPicker {
     }
 
     private func announcePhrase() {
-        announceToVoiceOver(model.phrase.isEmpty ? model.kind.name : model.match?.formatted(.wideWeekdayDayMonth) ?? "No date")
+        announceToVoiceOver(model.phrase.isEmpty ? model.kind.name
+                            : model.match?.formatted(.wideWeekdayDayMonth) ?? "No match, \(model.cursor.formatted(.wideWeekdayDayMonth))")
     }
 }
 
@@ -105,11 +106,12 @@ final class CalendarPickerModel {
     var theme = Theme.all[0]
     /// Which a typed numeric date gives first.
     var order = DayOrder.dayMonth
+    /// The locale's first weekday (1 = Sunday), for Next week.
+    var firstWeekday = 2
     /// The date typed so far. Each change moves the cursor to the day it gives, if any.
     var phrase = "" {
         didSet {
-            match = phrase.isEmpty ? nil : DatePhrase.parse(phrase, today: today, order: order,
-                                                            firstWeekday: Calendar.current.firstWeekday)
+            match = phrase.isEmpty ? nil : DatePhrase.parse(phrase, today: today, order: order, firstWeekday: firstWeekday)
             if let match { moveCursor(to: match) }
         }
     }
@@ -129,8 +131,7 @@ final class CalendarPickerModel {
 
     /// Moves the cursor to the same day `months` away, or that month's last day when it's shorter.
     func move(months: Int) {
-        let start = month.addingMonths(months)
-        moveCursor(to: start.adding(days: min(cursor.day, start.days(to: start.addingMonths(1))) - 1))
+        moveCursor(to: cursor.adding(months: months) ?? cursor)
         if !phrase.isEmpty { match = cursor }
     }
 
@@ -143,10 +144,20 @@ final class CalendarPickerModel {
         return true
     }
 
-    /// Removes the typed date's last character. Returns whether there was one.
+    /// Removes the typed date's last character, and with the last one moves the cursor back to the date set, or
+    /// today. Returns whether there was one.
     func deleteBackward() -> Bool {
         guard !phrase.isEmpty else { return false }
         phrase.removeLast()
+        if phrase.isEmpty { moveCursor(to: selected ?? today) }
+        return true
+    }
+
+    /// Empties the typed date and moves the cursor back to the date set, or today. Returns whether there was one.
+    func clearPhrase() -> Bool {
+        guard !phrase.isEmpty else { return false }
+        phrase = ""
+        moveCursor(to: selected ?? today)
         return true
     }
 
@@ -197,7 +208,7 @@ private struct CalendarPickerView: View {
                 HStack(spacing: 6) {
                     QuickDayButton(title: "Today", day: model.today, model: model)
                     QuickDayButton(title: "Tomorrow", day: model.today.adding(days: 1), model: model)
-                    QuickDayButton(title: "Next week", day: model.today.nextWeek(), model: model)
+                    QuickDayButton(title: "Next week", day: model.today.nextWeek(firstWeekday: model.firstWeekday), model: model)
                 }
                 HStack(spacing: 2) {
                     Text(model.month.formatted(.monthYear))
@@ -258,7 +269,7 @@ private struct CalendarPickerView: View {
         }
         .accessibilityLabel("Typed date, \(model.phrase)")
         Spacer(minLength: 8)
-        Text(model.match?.formatted(.weekdayDayMonth) ?? "No date")
+        Text(model.match?.formatted(.weekdayDayMonth) ?? "No match · \(model.cursor.formatted(.weekdayDayMonth))")
             .font(.system(size: 12))
             .foregroundStyle(theme.color(\.muted))
             .lineLimit(1)

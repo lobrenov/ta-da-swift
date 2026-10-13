@@ -76,7 +76,7 @@ struct PhoneDateSheet: View {
             ("Today", "star.fill", today),
             ("Tomorrow", "sun.max", today.adding(days: 1)),
             ("This Weekend", "sofa", today.thisWeekend),
-            ("Next Week", "arrow.right.circle", today.nextWeek()),
+            ("Next Week", "arrow.right.circle", today.nextWeek(firstWeekday: Calendar.current.firstWeekday)),
         ]
         return ScrollView(.horizontal) {
             HStack(spacing: 8) {

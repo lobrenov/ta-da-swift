@@ -8,7 +8,7 @@ public enum DayOrder: Sendable {
 
 /// Reads a typed date such as "fri", "3d", "dec 25" or "25/12" as a day. A phrase without a year never gives a
 /// day before today; a weekday is its soonest coming day, today included, with or without "next". Times
-/// ("3pm", "at 15:00", "at 3") are ignored. A word's start counts as the word, so a phrase matches while it's typed:
+/// ("3pm", "at 15:00", "at 3", and "fri 3" and "15:" on the way) are ignored. A word's start counts as the word, so a phrase matches while it's typed:
 /// "t" is today, "tu" Tuesday, "n" next week.
 public enum DatePhrase {
     public static func parse(_ text: String, today: LocalDate, order: DayOrder, firstWeekday: Int) -> LocalDate? {
@@ -20,6 +20,13 @@ public enum DatePhrase {
             ?? dayNumber(phrase, today: today)
             ?? numeric(phrase, today: today, order: order)
             ?? dayAndMonthName(phrase, today: today)
+            ?? namedWithHour(words, today: today, firstWeekday: firstWeekday)
+    }
+
+    /// "fri 3", while "fri 3pm" is typed: a named day and an hour.
+    private static func namedWithHour(_ words: [String], today: LocalDate, firstWeekday: Int) -> LocalDate? {
+        guard words.count > 1, words.last!.wholeMatch(of: /[0-9]{1,2}/) != nil else { return nil }
+        return named(words.dropLast().joined(separator: " "), today: today, firstWeekday: firstWeekday)
     }
 
     /// The lowercased words, without commas, times, "at" and the hour after it, and "the", and without separators
@@ -32,8 +39,12 @@ public enum DatePhrase {
             defer { afterAt = word == "at" }
             if afterAt, word.wholeMatch(of: /[0-9]{1,2}/) != nil { continue }
             if word == "at" || word == "the" || isTime(word) { continue }
-            if word == "am" || word == "pm", let last = words.last, last.wholeMatch(of: /[0-9]{1,2}/) != nil {
-                words.removeLast()
+            // "fri 3 pm" drops the 3; "dec 3 pm" keeps it as the day.
+            if word == "am" || word == "pm" {
+                if let last = words.last, last.wholeMatch(of: /[0-9]{1,2}/) != nil,
+                   words.count < 2 || month(named: Substring(words[words.count - 2])) == nil {
+                    words.removeLast()
+                }
                 continue
             }
             words.append(word)
@@ -46,7 +57,7 @@ public enum DatePhrase {
     }
 
     private static func isTime(_ word: String) -> Bool {
-        word.wholeMatch(of: /[0-9]{1,2}(:[0-9]{2})?(am|pm|a|p)/) != nil || word.wholeMatch(of: /[0-9]{1,2}:[0-9]{2}/) != nil
+        word.wholeMatch(of: /[0-9]{1,2}(:[0-9]{0,2})?(am|pm|a|p)/) != nil || word.wholeMatch(of: /[0-9]{1,2}:[0-9]{0,2}/) != nil
     }
 
     // MARK: Words
@@ -111,17 +122,8 @@ public enum DatePhrase {
         }
         if "days".hasPrefix(unit) { return today.adding(days: count) }
         if "weeks".hasPrefix(unit) || unit == "wk" || unit == "wks" { return today.adding(days: count * 7) }
-        if "months".hasPrefix(unit) || unit == "mos" { return adding(months: count, to: today) }
-        if "years".hasPrefix(unit) || unit == "yr" || unit == "yrs" { return adding(months: count * 12, to: today) }
-        return nil
-    }
-
-    /// The same day `months` away, or that month's last day when it's shorter; nil past year 9999.
-    private static func adding(months: Int, to day: LocalDate) -> LocalDate? {
-        let index = day.year * 12 + (day.month - 1) + months
-        for last in stride(from: day.day, through: max(day.day - 3, 1), by: -1) {
-            if let date = LocalDate(year: index / 12, month: index % 12 + 1, day: last) { return date }
-        }
+        if "months".hasPrefix(unit) || unit == "mos" { return today.adding(months: count) }
+        if "years".hasPrefix(unit) || unit == "yr" || unit == "yrs" { return today.adding(months: count * 12) }
         return nil
     }
 

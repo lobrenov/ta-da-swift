@@ -257,7 +257,7 @@ private struct DatePropertyChip: View {
         .accessibilityActions {
             Button("Today") { set(model.today) }
             Button("Tomorrow") { set(model.today.adding(days: 1)) }
-            Button("Next week") { set(model.today.nextWeek()) }
+            Button("Next week") { set(model.today.nextWeek(firstWeekday: Calendar.current.firstWeekday)) }
             if date != nil {
                 Button("Clear") { set(nil) }
             }

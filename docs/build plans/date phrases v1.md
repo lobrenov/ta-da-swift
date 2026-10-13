@@ -10,11 +10,11 @@ Starting point, as checked on 2026-10-13:
 
 ## Decisions
 - **Parser**: our own, in TaDaCore, with no dependencies. English words only.
-- **Live**: every keystroke parses the phrase; the cursor (and month) moves to the match. ↵ sets the cursor. With no match the cursor stays where it was.
+- **Live**: every keystroke parses the phrase; the cursor (and month) moves to the match. ↵ sets the cursor. With no match the cursor stays where it was. Deleting or clearing the phrase returns the cursor to the date set, or today.
 - **Forward only**: a phrase without a year never gives a day before today. A weekday is its soonest coming day; `next` changes nothing (`next fri` = `fri`). A day number is its soonest coming day of that number. A date with no year is its soonest coming one.
 - **Today's weekday**: `fri` on a Friday is today.
 - **Numeric dates**: the day/month order follows the system's short date format (Settings ▸ General ▸ Language & Region), read in the app and passed to the parser.
-- **Times**: ignored (`fri 3pm` = `fri`).
+- **Times**: ignored (`fri 3pm` = `fri`), also while typed (`fri 3`, `tomorrow 15:`).
 - **Scope**: the Mac's dateMenu only. Not Quick Entry's title, not the iPhone date sheet.
 
 ### Phrases
@@ -33,11 +33,11 @@ Starting point, as checked on 2026-10-13:
 Prefixes count while typing, in this order: `t` and `to` → today, `tom` → tomorrow, `tu` → Tuesday, `th` → Thursday, `s` and `sa` → Saturday, `su` → Sunday, `m`, `w`, `f` → their weekdays, `n`/`ne`/`nex`/`next` → next week. Case and surrounding spaces are ignored. An impossible date (`31/2`) is no match.
 
 ### Calendar
-- The header row shows the typed phrase in place of DUE DATE or DEADLINE, with a caret, and on the right the match in muted text ("Fri 16 Oct") or "No date". The panel keeps its height.
-- Letters, digits, space, `/`, `.`, `-` and `+` type; ⌫ deletes; ←↑↓→ still move the cursor, and keep the phrase.
+- The header row shows the typed phrase in place of DUE DATE or DEADLINE, with a caret, and on the right the day ↵ sets in muted text ("Fri 16 Oct"), or "No match · Fri 16 Oct". The panel keeps its height.
+- ASCII letters, digits, space, `/`, `.`, `-`, `+`, `:` and `,` type (40 at most); ⌫ deletes; ←↑↓→ still move the cursor, and keep the phrase. ⌘ and ⌃ shortcuts go on to the window.
 - esc with a phrase clears it; esc again closes.
-- Footer hints: "type a date" before the first key.
-- VoiceOver announces each match ("Friday 16 October") or "No date".
+- Footer hints: Move, Type a date, Close before the first key; Set, Delete, Clear after.
+- VoiceOver announces each match ("Friday 16 Oct"), or "No match" and the cursor's day.
 
 ## Milestones
 The milestones run in order. Each ends with its check passing.

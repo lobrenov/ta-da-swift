@@ -80,13 +80,22 @@ extension LocalDate {
         return LocalDate(year: index / 12, month: index % 12 + 1, day: 1)!
     }
 
+    /// The same day `months` away, or that month's last day when it's shorter; nil outside years 1 to 9999.
+    public func adding(months: Int) -> LocalDate? {
+        let index = year * 12 + (month - 1) + months
+        for last in stride(from: day, through: max(day - 3, 1), by: -1) {
+            if let date = LocalDate(year: index / 12, month: index % 12 + 1, day: last) { return date }
+        }
+        return nil
+    }
+
     /// The coming Saturday, or this day on a Saturday or Sunday.
     public var thisWeekend: LocalDate {
         weekday == 1 ? self : adding(days: 7 - weekday)
     }
 
     /// The first day of the week after this day's, from `firstWeekday` (1 = Sunday, as in `Calendar`).
-    public func nextWeek(firstWeekday: Int = Calendar.current.firstWeekday) -> LocalDate {
+    public func nextWeek(firstWeekday: Int) -> LocalDate {
         adding(days: 7 - (weekday - firstWeekday + 7) % 7)
     }
 

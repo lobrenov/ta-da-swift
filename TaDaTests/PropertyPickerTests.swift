@@ -179,8 +179,11 @@ struct PropertyPickerTests {
         model.order = .monthDay
         model.phrase = "5/12"
         #expect(model.cursor == LocalDate("2027-05-12")!)
-        model.phrase = ""
-        #expect(model.match == nil && model.cursor == LocalDate("2027-05-12")!)
+        #expect(model.clearPhrase() && model.match == nil && model.cursor == model.today, "back to today")
+        #expect(!model.clearPhrase())
+        model.selected = LocalDate("2026-11-02")!
+        model.phrase = "fr"
+        #expect(model.deleteBackward() && model.deleteBackward() && model.cursor == LocalDate("2026-11-02")!, "back to the date set")
     }
 
     @Test func onlyDateCharactersType() {

@@ -57,6 +57,14 @@ func localDateRejects(_ text: String) {
     #expect(LocalDate("2026-01-31")!.addingMonths(-1).description == "2025-12-01")
 }
 
+@Test func addingMonthsKeepsTheDayOrTheMonthsLast() {
+    #expect(LocalDate("2026-01-31")!.adding(months: 1)?.description == "2026-02-28")
+    #expect(LocalDate("2028-01-31")!.adding(months: 1)?.description == "2028-02-29")
+    #expect(LocalDate("2026-03-31")!.adding(months: -1)?.description == "2026-02-28")
+    #expect(LocalDate("2026-10-13")!.adding(months: 14)?.description == "2027-12-13")
+    #expect(LocalDate("2026-10-13")!.adding(months: 12 * 8000) == nil)
+}
+
 @Test func thisWeekendIsTheComingSaturdayOrToday() {
     #expect(LocalDate("2026-10-02")!.thisWeekend == LocalDate("2026-10-03")!)
     #expect(LocalDate("2026-10-03")!.thisWeekend == LocalDate("2026-10-03")!)
