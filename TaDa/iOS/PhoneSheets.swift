@@ -75,8 +75,8 @@ struct PhoneDateSheet: View {
         let choices: [(String, String, LocalDate)] = [
             ("Today", "star.fill", today),
             ("Tomorrow", "sun.max", today.adding(days: 1)),
-            ("This Weekend", "sofa", CalendarPickerModel.thisWeekend(after: today)),
-            ("Next Week", "arrow.right.circle", CalendarPickerModel.nextWeek(after: today)),
+            ("This Weekend", "sofa", today.thisWeekend),
+            ("Next Week", "arrow.right.circle", today.nextWeek(firstWeekday: Calendar.current.firstWeekday)),
         ]
         return ScrollView(.horizontal) {
             HStack(spacing: 8) {

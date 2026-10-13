@@ -1,5 +1,6 @@
 // The calendar under a dueDate or deadline chip: its month in a popup panel like Upcoming's calendar, with
-// Today, Tomorrow, Next week and Clear. The arrow keys move a cursor through the days and ↵ sets it.
+// Today, Tomorrow, Next week and Clear. A date typed in its field ("fri", "3d", "25/12") moves a cursor to it,
+// and ↵ sets it.
 import SwiftUI
 import TaDaCore
 #if os(macOS)
@@ -22,9 +23,12 @@ final class CalendarPicker {
     init() {
         let model = CalendarPickerModel()
         self.model = model
-        panel = PopupPanel { CalendarPickerView(model: model) }
-        panel.onKey = { [weak self] event in
-            self?.handleKey(event)
+        panel = PopupPanel(becomesKey: true) { CalendarPickerView(model: model) }
+        panel.onKey = { [weak self] event in self?.handleKey(event) ?? false }
+        panel.onEscape = { [weak self] in
+            guard let self, !model.phrase.isEmpty else { return false }
+            model.phrase = ""
+            announceToVoiceOver(model.kind.name)
             return true
         }
         model.onMonthChange = { [weak self] in self?.layout() }
@@ -35,16 +39,20 @@ final class CalendarPicker {
     /// from Clear.
     func show(_ kind: AgendaEntry.Kind, selected: LocalDate?, other: LocalDate?, today: LocalDate, theme: Theme,
               below anchor: CGRect, gap: CGFloat = 6, in parent: NSWindow, set: @escaping (LocalDate?) -> Void) {
+        self.anchor = anchor
+        self.gap = gap
+        self.parent = parent
         model.kind = kind
         model.selected = selected
         model.other = other
         model.today = today
+        model.order = .system
+        model.firstWeekday = Calendar.current.firstWeekday
+        model.phrase = ""
         model.cursor = selected ?? today
         model.theme = theme
         model.set = set
-        self.anchor = anchor
-        self.gap = gap
-        self.parent = parent
+        model.revision += 1
         layout()
         announceToVoiceOver("\(kind.name), \(model.cursor.formatted(.weekdayDayMonthYear))")
     }
@@ -57,22 +65,18 @@ final class CalendarPicker {
                    below: anchor, inset: 0, gap: gap, in: parent)
     }
 
-    private func handleKey(_ event: NSEvent) {
-        switch event.specialKey {
-        case .leftArrow: model.move(days: -1)
-        case .rightArrow: model.move(days: 1)
-        case .upArrow: model.move(days: -7)
-        case .downArrow: model.move(days: 7)
-        case .carriageReturn, .enter: return model.set(model.cursor)
-        default: return
-        }
-        announceToVoiceOver(model.cursor.formatted(.weekdayDayMonthYear))
+    /// Takes ↵; other keys go to the field.
+    private func handleKey(_ event: NSEvent) -> Bool {
+        guard event.modifierFlags.isDisjoint(with: [.command, .control]),
+              event.specialKey == .carriageReturn || event.specialKey == .enter else { return false }
+        model.set(model.cursor)
+        return true
     }
 }
 
 #endif
 
-/// The calendar's state: which date it sets, the date it has, and the cursor the arrow keys move.
+/// The calendar's state: which date it sets, the date it has, and the cursor a typed date moves.
 @Observable
 final class CalendarPickerModel {
     var kind = AgendaEntry.Kind.due
@@ -83,34 +87,50 @@ final class CalendarPickerModel {
     /// The day ↵ sets. The calendar shows its month.
     var cursor = LocalDate(Date())
     var theme = Theme.all[0]
+    /// Which a typed numeric date gives first.
+    var order = DayOrder.dayMonth
+    /// The locale's first weekday (1 = Sunday), for Next week.
+    var firstWeekday = 2
+    /// The date typed so far. Each change moves the cursor to the day it gives, if any; emptying it moves the
+    /// cursor back to the date set, or today.
+    var phrase = "" {
+        didSet {
+            guard phrase != oldValue else { return }
+            match = phrase.isEmpty ? nil : DatePhrase.parse(phrase, today: today, order: order, firstWeekday: firstWeekday)
+            if let match {
+                moveCursor(to: match)
+            } else if phrase.isEmpty {
+                moveCursor(to: selected ?? today)
+            }
+        }
+    }
+    /// Bumped each time the calendar shows, which gives its field the keyboard.
+    var revision = 0
+    /// The day ↵ sets while a date is typed: the one it gives, or where the month buttons moved since. Nil when
+    /// the typed date gives none.
+    private(set) var match: LocalDate?
     @ObservationIgnored var set: (LocalDate?) -> Void = { _ in }
     /// Called when the cursor moves into another month, which can have another number of weeks.
     @ObservationIgnored var onMonthChange: () -> Void = {}
 
     var month: LocalDate { cursor.startOfMonth }
 
-    func move(days: Int) { moveCursor(to: cursor.adding(days: days)) }
-
     /// Moves the cursor to the same day `months` away, or that month's last day when it's shorter.
     func move(months: Int) {
-        let start = month.addingMonths(months)
-        moveCursor(to: start.adding(days: min(cursor.day, start.days(to: start.addingMonths(1))) - 1))
+        moveCursor(to: cursor.adding(months: months) ?? cursor)
+        if !phrase.isEmpty { match = cursor }
+    }
+
+    /// The day ↵ sets while a date is typed, or that the typed date gives none; nil while nothing is.
+    var note: String? {
+        guard !phrase.isEmpty else { return nil }
+        return match?.formatted(.weekdayDayMonth) ?? "No match · \(cursor.formatted(.weekdayDayMonth))"
     }
 
     private func moveCursor(to day: LocalDate) {
         let before = month
         cursor = day
         if month != before { onMonthChange() }
-    }
-
-    /// The coming Saturday, or `today` on a Saturday or Sunday.
-    static func thisWeekend(after today: LocalDate) -> LocalDate {
-        today.weekday == 1 ? today : today.adding(days: 7 - today.weekday)
-    }
-
-    /// The first day of the week after `today`'s, by the locale's first weekday.
-    static func nextWeek(after today: LocalDate, calendar: Calendar = .current) -> LocalDate {
-        today.adding(days: 7 - (today.weekday - calendar.firstWeekday + 7) % 7)
     }
 }
 
@@ -119,7 +139,7 @@ final class CalendarPickerModel {
 private enum CalendarMetrics {
     static let width: CGFloat = 288
     static let padding: CGFloat = 6
-    static let inset = EdgeInsets(top: 6, leading: 6, bottom: 2, trailing: 6)
+    static let inset = EdgeInsets(top: 6, leading: 6, bottom: 4, trailing: 6)
     static let spacing: CGFloat = 10
     static let header: CGFloat = 18
     static let quickDay: CGFloat = 24
@@ -127,12 +147,11 @@ private enum CalendarMetrics {
     static let weekdays: CGFloat = 14
     static let week: CGFloat = 30
     static let weekSpacing: CGFloat = 2
-    static let footerGap: CGFloat = 6
 
     static func height(weeks: Int) -> CGFloat {
         let grid = CGFloat(weeks) * week + CGFloat(weeks - 1) * weekSpacing
-        return padding * 2 + inset.top + inset.bottom + header + quickDay + monthRow + weekdays + spacing * 4 + grid
-            + footerGap + PopupMenuStyle.footerHeight
+        return padding * 2 + PopupMenuStyle.searchHeight + inset.top + inset.bottom + header + quickDay + monthRow + weekdays
+            + spacing * 4 + grid
     }
 }
 
@@ -144,12 +163,17 @@ private struct CalendarPickerView: View {
         let grid = MonthGrid(model.month)
         let columns = Array(repeating: GridItem(.flexible(minimum: 0), spacing: 0), count: 7)
         VStack(spacing: 0) {
+            PopupField(prompt: "Type a date: fri, 3d, 25/12", systemImage: "calendar", text: Binding { model.phrase } set: { phrase in
+                guard phrase != model.phrase else { return }
+                model.phrase = phrase
+                announceToVoiceOver(model.note ?? model.kind.name)
+            }, note: model.note, theme: theme, revision: model.revision)
             VStack(alignment: .leading, spacing: CalendarMetrics.spacing) {
                 header
                 HStack(spacing: 6) {
                     QuickDayButton(title: "Today", day: model.today, model: model)
                     QuickDayButton(title: "Tomorrow", day: model.today.adding(days: 1), model: model)
-                    QuickDayButton(title: "Next week", day: CalendarPickerModel.nextWeek(after: model.today), model: model)
+                    QuickDayButton(title: "Next week", day: model.today.nextWeek(firstWeekday: model.firstWeekday), model: model)
                 }
                 HStack(spacing: 2) {
                     Text(model.month.formatted(.monthYear))
@@ -182,8 +206,6 @@ private struct CalendarPickerView: View {
                 .accessibilityLabel(model.month.formatted(.monthYear))
             }
             .padding(CalendarMetrics.inset)
-            PopupFooter(hints: [("←↑↓→", "Move"), ("↵", "Set"), ("esc", "Close")], theme: theme)
-                .padding(.top, CalendarMetrics.footerGap)
         }
         .popupChrome(theme: theme, width: CalendarMetrics.width, padding: CalendarMetrics.padding)
     }

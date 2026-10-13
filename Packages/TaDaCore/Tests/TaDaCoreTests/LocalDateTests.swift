@@ -50,3 +50,31 @@ func localDateRejects(_ text: String) {
     #expect(LocalDate("2026-10-03")!.adding(days: 2).description == "2026-10-05")
     #expect(LocalDate(LocalDate("2026-10-04")!.date(in: melbourne), calendar: melbourne).description == "2026-10-04")
 }
+
+@Test func localDateMonths() {
+    #expect(LocalDate("2026-10-14")!.startOfMonth.description == "2026-10-01")
+    #expect(LocalDate("2026-10-14")!.addingMonths(3).description == "2027-01-01")
+    #expect(LocalDate("2026-01-31")!.addingMonths(-1).description == "2025-12-01")
+}
+
+@Test func addingMonthsKeepsTheDayOrTheMonthsLast() {
+    #expect(LocalDate("2026-01-31")!.adding(months: 1)?.description == "2026-02-28")
+    #expect(LocalDate("2028-01-31")!.adding(months: 1)?.description == "2028-02-29")
+    #expect(LocalDate("2026-03-31")!.adding(months: -1)?.description == "2026-02-28")
+    #expect(LocalDate("2026-10-13")!.adding(months: 14)?.description == "2027-12-13")
+    #expect(LocalDate("2026-10-13")!.adding(months: 12 * 8000) == nil)
+}
+
+@Test func thisWeekendIsTheComingSaturdayOrToday() {
+    #expect(LocalDate("2026-10-02")!.thisWeekend == LocalDate("2026-10-03")!)
+    #expect(LocalDate("2026-10-03")!.thisWeekend == LocalDate("2026-10-03")!)
+    #expect(LocalDate("2026-10-04")!.thisWeekend == LocalDate("2026-10-04")!)
+    #expect(LocalDate("2026-10-05")!.thisWeekend == LocalDate("2026-10-10")!)
+}
+
+@Test func nextWeekIsTheFirstDayOfTheFollowingWeek() {
+    #expect(LocalDate("2026-10-02")!.nextWeek(firstWeekday: 2) == LocalDate("2026-10-05")!)
+    #expect(LocalDate("2026-10-05")!.nextWeek(firstWeekday: 2) == LocalDate("2026-10-12")!)
+    #expect(LocalDate("2026-10-04")!.nextWeek(firstWeekday: 2) == LocalDate("2026-10-05")!)
+    #expect(LocalDate("2026-10-02")!.nextWeek(firstWeekday: 1) == LocalDate("2026-10-04")!)
+}

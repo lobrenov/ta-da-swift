@@ -42,14 +42,16 @@ extension LocalDate {
         if self == today.startOfMonth { return "Later in \(formatted(.month))" }
         return year == today.year ? formatted(.month) : formatted(.monthYear)
     }
+}
 
-    /// The first day of this day's month.
-    var startOfMonth: LocalDate { LocalDate(year: year, month: month, day: 1)! }
-
-    /// The first day of the month `months` away.
-    func addingMonths(_ months: Int) -> LocalDate {
-        let index = year * 12 + (month - 1) + months
-        return LocalDate(year: index / 12, month: index % 12 + 1, day: 1)!
+extension DayOrder {
+    /// The order of the day and month in the system's short date format (Language & Region).
+    static var system: DayOrder {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        let format = formatter.dateFormat ?? ""
+        guard let day = format.firstIndex(of: "d"), let month = format.firstIndex(of: "M") else { return .dayMonth }
+        return day < month ? .dayMonth : .monthDay
     }
 }
 
