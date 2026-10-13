@@ -18,6 +18,8 @@ enum PhoneRoute: Hashable {
     case area(String)
     /// Settings, scrolled to a section.
     case settings(SettingsSection)
+    /// Settings ▸ Integrations: Calendar and Reminders.
+    case integrations
     case logbook
     case trash
     /// Untagged and the tag tree.
@@ -29,7 +31,7 @@ enum PhoneRoute: Hashable {
     var path: String? {
         switch self {
         case let .file(path), let .project(path), let .area(path): path
-        case .settings, .logbook, .trash, .tags, .tag: nil
+        case .settings, .integrations, .logbook, .trash, .tags, .tag: nil
         }
     }
 }

@@ -1,4 +1,4 @@
-// The Other tab: Tags, Logbook and Trash, and Settings (Vault, Themes, Editor, Haptics), with the folder's sync state under them.
+// The Other tab: Tags, Logbook and Trash, and Settings (Vault, Themes, Editor, Integrations, Haptics), with the folder's sync state under them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -30,6 +30,9 @@ struct PhoneOtherScreen: View {
                 NavigationLink(value: PhoneRoute.settings(.editor)) {
                     row("Editor", "pencil", tint: \.doing, value: "")
                 }
+                NavigationLink(value: PhoneRoute.integrations) {
+                    row("Integrations", "calendar", tint: \.deadline, value: integrationsValue)
+                }
                 NavigationLink(value: PhoneRoute.settings(.haptics)) {
                     row("Haptics", "hand.tap", tint: \.due, value: model.haptics ? "On" : "Off")
                 }
@@ -44,6 +47,16 @@ struct PhoneOtherScreen: View {
         .scrollContentBackground(.hidden)
         .background(theme.color(\.bg))
         .navigationTitle("Other")
+    }
+
+    /// "Events and reminders", "Events", "Reminders" or "Off".
+    private var integrationsValue: String {
+        switch (model.integrations.isShown(.events), model.integrations.isShown(.reminders)) {
+        case (true, true): "Events and reminders"
+        case (true, false): "Events"
+        case (false, true): "Reminders"
+        case (false, false): "Off"
+        }
     }
 
     private func row(_ title: String, _ symbol: String, tint: KeyPath<Theme, PlatformColor>, value: String) -> some View {

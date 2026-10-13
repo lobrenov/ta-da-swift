@@ -344,6 +344,7 @@ import TaDaCore
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
         self.defaults = defaults
+        integrations = IntegrationsStore(defaults: defaults)
         themeSet = defaults.string(forKey: Keys.themeSet).flatMap(ThemeSet.named) ?? .standard
         appearance = defaults.string(forKey: Keys.appearance).flatMap(Appearance.init) ?? .system
         usesSchemePerAppearance = defaults.bool(forKey: Keys.usesSchemePerAppearance)
@@ -362,6 +363,8 @@ import TaDaCore
         } else {
             quickEntryHotkey = .quickEntryDefault
         }
+        // After launch: the event store is slow to make.
+        Task { updateIntegrations() }
     }
 
     // MARK: Folder
@@ -1892,6 +1895,22 @@ import TaDaCore
     /// The lists of the tag page or Untagged, while one shows.
     private(set) var tagPage: TagBrowser?
 
+    /// Calendar events and Reminders, shown before each day's tasks in Today and Upcoming.
+    let integrations: IntegrationsStore
+    var todayEvents: [DayEvent] { integrations.todayEvents }
+    var todayReminders: [ExternalReminder] { integrations.todayReminders }
+    var upcomingEvents: [LocalDate: [DayEvent]] { integrations.upcomingEvents }
+    var upcomingReminders: [LocalDate: [ExternalReminder]] { integrations.upcomingReminders }
+    /// Reminders due after `day`, by month, for Upcoming's later months.
+    func remindersByMonth(after day: LocalDate) -> [LocalDate: [ExternalReminder]] {
+        Dictionary(grouping: upcomingReminders.filter { $0.key > day }.sorted { $0.key < $1.key }.flatMap(\.value)) { $0.due!.startOfMonth }
+    }
+
+    /// Whether any event covers `day`, for the month calendar's and week strip's dots.
+    func hasEvents(on day: LocalDate) -> Bool {
+        day == today ? !todayEvents.isEmpty : upcomingEvents[day] != nil
+    }
+
     var todayCount: Int { todayTasks.count { !$0.properties.status.isClosed } }
     var looseCount: Int { looseTasks.count }
 
@@ -1944,6 +1963,22 @@ import TaDaCore
             .sorted(by: VaultIndex.byTitle)
         updateTags()
         updateNotes()
+        updateIntegrations()
+    }
+
+    /// Fetches events and reminders from today to the later of Upcoming's last date and the end of next month, which
+    /// the month calendar shows, but no more than a year ahead.
+    private func updateIntegrations() {
+        integrations.update(today: today, through: Self.integrationsWindowEnd(today: today, upcomingLast: upcoming.last?.date))
+    }
+
+    static func integrationsWindowEnd(today: LocalDate, upcomingLast: LocalDate?) -> LocalDate {
+        min(max(upcomingLast ?? today, endOfNextMonth(after: today)), today.adding(days: 365))
+    }
+
+    static func endOfNextMonth(after day: LocalDate) -> LocalDate {
+        let (year, month) = day.month >= 11 ? (day.year + 1, day.month - 10) : (day.year, day.month + 2)
+        return LocalDate(year: year, month: month, day: 1)!.adding(days: -1)
     }
 
     /// Assigning a value equal to the old one would still redraw the Notes sidebar.
