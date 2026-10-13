@@ -344,6 +344,7 @@ import TaDaCore
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
         self.defaults = defaults
+        integrations = IntegrationsStore(defaults: defaults)
         themeSet = defaults.string(forKey: Keys.themeSet).flatMap(ThemeSet.named) ?? .standard
         appearance = defaults.string(forKey: Keys.appearance).flatMap(Appearance.init) ?? .system
         usesSchemePerAppearance = defaults.bool(forKey: Keys.usesSchemePerAppearance)
@@ -362,6 +363,7 @@ import TaDaCore
         } else {
             quickEntryHotkey = .quickEntryDefault
         }
+        updateIntegrations()
     }
 
     // MARK: Folder
@@ -1892,6 +1894,13 @@ import TaDaCore
     /// The lists of the tag page or Untagged, while one shows.
     private(set) var tagPage: TagBrowser?
 
+    /// Calendar events and Reminders, shown before each day's tasks in Today and Upcoming.
+    let integrations: IntegrationsStore
+    var todayEvents: [DayEvent] { integrations.todayEvents }
+    var todayReminders: [ExternalReminder] { integrations.todayReminders }
+    var upcomingEvents: [LocalDate: [DayEvent]] { integrations.upcomingEvents }
+    var upcomingReminders: [LocalDate: [ExternalReminder]] { integrations.upcomingReminders }
+
     var todayCount: Int { todayTasks.count { !$0.properties.status.isClosed } }
     var looseCount: Int { looseTasks.count }
 
@@ -1944,6 +1953,18 @@ import TaDaCore
             .sorted(by: VaultIndex.byTitle)
         updateTags()
         updateNotes()
+        updateIntegrations()
+    }
+
+    /// Fetches events and reminders from today to the later of Upcoming's last date and the end of next month, which
+    /// the month calendar shows.
+    private func updateIntegrations() {
+        integrations.update(today: today, through: max(upcoming.last?.date ?? today, Self.endOfNextMonth(after: today)))
+    }
+
+    static func endOfNextMonth(after day: LocalDate) -> LocalDate {
+        let (year, month) = day.month >= 11 ? (day.year + 1, day.month - 10) : (day.year, day.month + 2)
+        return LocalDate(year: year, month: month, day: 1)!.adding(days: -1)
     }
 
     /// Assigning a value equal to the old one would still redraw the Notes sidebar.
