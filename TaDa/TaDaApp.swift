@@ -66,6 +66,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { await model.refresh() }
         // Calendar or Reminders access may have changed in System Settings.
         model.integrations.refresh()
+        // So could badges.
+        Task { await model.notifications.refresh() }
         // The keys may have been freed in System Settings.
         refreshHotkey()
     }
@@ -105,6 +107,7 @@ struct TaDaApp: App {
                 // A suspended app can miss the day change.
                 model.today = LocalDate(Date())
                 model.integrations.refresh()
+                Task { await model.notifications.refresh() }
                 Task { await model.becomeActive() }
             case .inactive:
                 if let document = model.document { Task { await model.save(document) } }

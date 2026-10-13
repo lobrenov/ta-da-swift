@@ -1,4 +1,4 @@
-// The Other tab: Tags, Logbook and Trash, and Settings (Vault, Themes, Editor, Integrations, Haptics), with the folder's sync state under them.
+// The Other tab: Tags, Logbook and Trash, and Settings (Vault, Themes, Editor, Integrations, Notifications, Haptics), with the folder's sync state under them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -32,6 +32,9 @@ struct PhoneOtherScreen: View {
                 }
                 NavigationLink(value: PhoneRoute.integrations) {
                     row("Integrations", "calendar", tint: \.deadline, value: integrationsValue)
+                }
+                NavigationLink(value: PhoneRoute.settings(.notifications)) {
+                    row("Notifications", "app.badge", tint: \.blocked, value: model.notifications.showsBadge ? "Badges" : "Off")
                 }
                 NavigationLink(value: PhoneRoute.settings(.haptics)) {
                     row("Haptics", "hand.tap", tint: \.due, value: model.haptics ? "On" : "Off")
@@ -96,6 +99,7 @@ struct PhoneSettingsScreen: View {
     let section: SettingsSection
     @State private var isPicking = false
     @Environment(\.theme) private var theme
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -126,6 +130,8 @@ struct PhoneSettingsScreen: View {
                     toggle("Tags", "#", \.tags)
                 }
                 .id(SettingsSection.editor)
+                notifications
+                    .id(SettingsSection.notifications)
                 Section {
                     Toggle("Haptics", isOn: $model.haptics)
                 } header: {
@@ -142,6 +148,25 @@ struct PhoneSettingsScreen: View {
             .navigationTitle("Settings")
             .folderImporter(isPresented: $isPicking, model: model)
             .onAppear { proxy.scrollTo(section, anchor: .top) }
+        }
+    }
+
+    private var notifications: some View {
+        let store = model.notifications
+        return Section {
+            Toggle("Badges", isOn: Binding(get: { [.on, .asking].contains(store.access) },
+                                           set: { on in Task { await store.setOn(on) } }))
+                .disabled(store.access == .asking || store.access == .denied)
+            if store.access == .denied {
+                Button("Open Notification Settings") { openURL(NotificationsStore.settingsURL) }
+                    .foregroundStyle(theme.color(\.accent))
+            }
+        } header: {
+            Text("Notifications")
+        } footer: {
+            Text(store.access == .denied
+                 ? "Ta Da can’t show badges. Turn on Allow Notifications and Badges in Settings ▸ Apps ▸ Ta Da ▸ Notifications."
+                 : "The app icon counts the open tasks due or at their deadline today or earlier, as in Today.")
         }
     }
 

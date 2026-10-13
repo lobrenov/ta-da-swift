@@ -345,6 +345,7 @@ import TaDaCore
     init(defaults: any SettingsStore = UserDefaults.standard) {
         self.defaults = defaults
         integrations = IntegrationsStore(defaults: defaults)
+        notifications = NotificationsStore(defaults: defaults)
         themeSet = defaults.string(forKey: Keys.themeSet).flatMap(ThemeSet.named) ?? .standard
         appearance = defaults.string(forKey: Keys.appearance).flatMap(Appearance.init) ?? .system
         usesSchemePerAppearance = defaults.bool(forKey: Keys.usesSchemePerAppearance)
@@ -1911,6 +1912,8 @@ import TaDaCore
         day == today ? !todayEvents.isEmpty : upcomingEvents[day] != nil
     }
 
+    /// Settings ▸ Notifications: the app icon's badge.
+    let notifications: NotificationsStore
     var todayCount: Int { todayTasks.count { !$0.properties.status.isClosed } }
     var looseCount: Int { looseTasks.count }
 
@@ -1964,6 +1967,7 @@ import TaDaCore
         updateTags()
         updateNotes()
         updateIntegrations()
+        notifications.update(count: todayCount)
     }
 
     /// Fetches events and reminders from today to the later of Upcoming's last date and the end of next month, which
