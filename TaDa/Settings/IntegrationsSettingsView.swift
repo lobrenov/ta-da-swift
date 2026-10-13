@@ -48,7 +48,7 @@ struct IntegrationsSettingsView: View {
                 .controlSize(.small)
                 .labelsHidden()
                 .tint(theme.color(\.accent))
-                .disabled(access == .asking)
+                .disabled(access == .asking || !store.canAsk(kind))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -78,7 +78,7 @@ struct IntegrationsSettingsView: View {
             case .granted: choices(kind)
             case .denied: denied(kind)
             case .asking: note("Waiting for access…")
-            case .off: note("Turn on \(kind.toggleLabel) to choose \(kind.noun).")
+            case .off: note("Turn on \(kind.toggleLabel) to choose \(kind.choiceNoun).")
             }
         }
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
@@ -162,6 +162,7 @@ private struct CalendarTick: View {
                     .overlay {
                         if isOn {
                             Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
+                                .accessibilityHidden(true)
                         }
                     }
                 Text(calendar.title)
@@ -173,7 +174,9 @@ private struct CalendarTick: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(isOn ? [.isToggle, .isSelected] : .isToggle)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isOn ? "Shown" : "Hidden")
+        .accessibilityAddTraits(.isToggle)
     }
 }
 

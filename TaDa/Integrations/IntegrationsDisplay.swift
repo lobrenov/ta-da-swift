@@ -4,7 +4,10 @@ import SwiftUI
 extension IntegrationsStore.Kind {
     /// "Calendars", "Reminders".
     var name: String { self == .events ? "Calendars" : "Reminders" }
+    /// What Ta Da can't see without access.
     var noun: String { self == .events ? "calendars" : "reminders" }
+    /// What the ticks choose.
+    var choiceNoun: String { self == .events ? "calendars" : "lists" }
     var toggleLabel: String { self == .events ? "Show events" : "Show reminders" }
     var macHint: String {
         self == .events ? "Calendar events in Today and Upcoming"
@@ -15,7 +18,7 @@ extension IntegrationsStore.Kind {
     /// Where access is turned on: System Settings' Privacy & Security pane on the Mac, Ta Da's settings on iPhone.
     var privacySettingsURL: URL {
         #if os(macOS)
-        URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_\(self == .events ? "Calendars" : "Reminders")")!
+        URL(string: "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_\(self == .events ? "Calendars" : "Reminders")")!
         #else
         URL(string: UIApplication.openSettingsURLString)!
         #endif

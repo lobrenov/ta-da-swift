@@ -22,7 +22,7 @@ struct PhoneIntegrationsScreen: View {
                                 .foregroundStyle(theme.color(\.muted))
                         }
                     }
-                    .disabled(access == .asking)
+                    .disabled(access == .asking || !store.canAsk(kind))
                 }
             }
             ForEach(IntegrationsStore.Kind.allCases, id: \.self) { kind in
@@ -62,7 +62,7 @@ struct PhoneIntegrationsScreen: View {
             case .asking:
                 Text("Waiting for access…").foregroundStyle(theme.color(\.muted))
             case .off:
-                Text("Turn on \(kind.toggleLabel) to choose \(kind.noun).")
+                Text("Turn on \(kind.toggleLabel) to choose \(kind.choiceNoun).")
                     .scaledFont(size: 15)
                     .foregroundStyle(theme.color(\.muted))
             }
@@ -88,17 +88,23 @@ struct PhoneIntegrationsScreen: View {
         } label: {
             HStack(spacing: 12) {
                 Circle().fill(Color(calendarHex: calendar.color)).frame(width: 12, height: 12)
-                Text(calendar.title).foregroundStyle(theme.color(isOn ? \.fg : \.muted))
+                Text(calendar.title)
+                    .foregroundStyle(theme.color(isOn ? \.fg : \.muted))
+                    .lineLimit(1)
+                    .layoutPriority(1)
                 Spacer()
-                Text(account).foregroundStyle(theme.color(\.muted))
+                Text(account).foregroundStyle(theme.color(\.muted)).lineLimit(1)
                 Image(systemName: "checkmark")
+                    .accessibilityHidden(true)
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.color(\.accent))
                     .opacity(isOn ? 1 : 0)
                     .frame(width: 20, alignment: .trailing)
             }
         }
-        .accessibilityAddTraits(isOn ? [.isToggle, .isSelected] : .isToggle)
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isOn ? "Shown" : "Hidden")
+        .accessibilityAddTraits(.isToggle)
     }
 }
 #endif

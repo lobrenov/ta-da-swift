@@ -95,6 +95,11 @@ final class IntegrationsStore {
         isOn(kind) && status(kind) == .fullAccess
     }
 
+    /// Whether turning the switch on can still ask: not once access is denied or restricted.
+    func canAsk(_ kind: Kind) -> Bool {
+        ![.denied, .restricted].contains(status(kind))
+    }
+
     func access(_ kind: Kind) -> Access {
         if asking.contains(kind) { return .asking }
         switch status(kind) {
