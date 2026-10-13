@@ -184,10 +184,26 @@ struct PropertyPickerTests {
     }
 
     @Test func onlyDateCharactersType() {
-        #expect("fri 25/12-1.+3:00,".allSatisfy(CalendarPickerModel.isPhraseCharacter))
-        #expect(!"é".allSatisfy(CalendarPickerModel.isPhraseCharacter))
-        #expect(!"\t".allSatisfy(CalendarPickerModel.isPhraseCharacter))
-        #expect(!"\u{F700}".allSatisfy(CalendarPickerModel.isPhraseCharacter), "an arrow key's character")
+        let model = CalendarPickerModel()
+        #expect(!model.type(" ") && !model.type("") && !model.deleteBackward())
+        #expect(!model.type("é") && !model.type("\t") && !model.type("\u{F700}"), "an arrow key's character")
+        #expect(model.type("fri 25/12-1.+3:00,") && model.phrase == "fri 25/12-1.+3:00,")
+        #expect(model.type(String(repeating: "x", count: 22)) && !model.type("x"), "40 at most")
+        #expect(model.deleteBackward() && model.phrase.count == 39)
+    }
+
+    @Test func theArrowsMoveTheTypedDay() {
+        let model = CalendarPickerModel()
+        model.today = LocalDate("2026-10-13")!
+        model.phrase = "fri"
+        model.move(days: 1)
+        #expect(model.match == LocalDate("2026-10-17")! && model.cursor == LocalDate("2026-10-17")!)
+        model.phrase = "xyz"
+        model.move(months: 1)
+        #expect(model.match == LocalDate("2026-11-17")!)
+        model.phrase = ""
+        model.move(days: 1)
+        #expect(model.match == nil)
     }
 
     // MARK: tagMenu

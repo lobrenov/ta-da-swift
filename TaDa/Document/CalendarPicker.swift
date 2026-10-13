@@ -24,13 +24,11 @@ final class CalendarPicker {
         let model = CalendarPickerModel()
         self.model = model
         panel = PopupPanel { CalendarPickerView(model: model) }
-        panel.onKey = { [weak self] event in
-            self?.handleKey(event)
-            return true
-        }
-        panel.onEscape = { [weak model] in
-            guard let model, !model.phrase.isEmpty else { return false }
+        panel.onKey = { [weak self] event in self?.handleKey(event) ?? false }
+        panel.onEscape = { [weak self] in
+            guard let self, !model.phrase.isEmpty else { return false }
             model.phrase = ""
+            announcePhrase()
             return true
         }
         model.onMonthChange = { [weak self] in self?.layout() }
@@ -65,25 +63,26 @@ final class CalendarPicker {
                    below: anchor, inset: 0, gap: gap, in: parent)
     }
 
-    private func handleKey(_ event: NSEvent) {
+    /// Takes every key but ⌘ and ⌃ shortcuts, which go on to the window.
+    private func handleKey(_ event: NSEvent) -> Bool {
+        guard event.modifierFlags.isDisjoint(with: [.command, .control]) else { return false }
         switch event.specialKey {
         case .leftArrow: model.move(days: -1)
         case .rightArrow: model.move(days: 1)
         case .upArrow: model.move(days: -7)
         case .downArrow: model.move(days: 7)
-        case .carriageReturn, .enter: return model.set(model.cursor)
+        case .carriageReturn, .enter:
+            model.set(model.cursor)
+            return true
         case .delete:
-            guard !model.phrase.isEmpty else { return }
-            model.phrase.removeLast()
-            return announcePhrase()
+            if model.deleteBackward() { announcePhrase() }
+            return true
         default:
-            guard event.modifierFlags.isDisjoint(with: [.command, .control, .option]), let typed = event.characters,
-                  typed.allSatisfy(CalendarPickerModel.isPhraseCharacter),
-                  !(model.phrase.isEmpty && typed.allSatisfy(\.isWhitespace)), model.phrase.count < 40 else { return }
-            model.phrase += typed
-            return announcePhrase()
+            if !event.modifierFlags.contains(.option), model.type(event.characters ?? "") { announcePhrase() }
+            return true
         }
         announceToVoiceOver(model.cursor.formatted(.weekdayDayMonthYear))
+        return true
     }
 
     private func announcePhrase() {
@@ -114,7 +113,8 @@ final class CalendarPickerModel {
             if let match { moveCursor(to: match) }
         }
     }
-    /// The day `phrase` gives, or nil when it gives none.
+    /// The day ↵ sets while a date is typed: the one it gives, or where the arrow keys moved since. Nil when the
+    /// typed date gives none.
     private(set) var match: LocalDate?
     @ObservationIgnored var set: (LocalDate?) -> Void = { _ in }
     /// Called when the cursor moves into another month, which can have another number of weeks.
@@ -122,12 +122,32 @@ final class CalendarPickerModel {
 
     var month: LocalDate { cursor.startOfMonth }
 
-    func move(days: Int) { moveCursor(to: cursor.adding(days: days)) }
+    func move(days: Int) {
+        moveCursor(to: cursor.adding(days: days))
+        if !phrase.isEmpty { match = cursor }
+    }
 
     /// Moves the cursor to the same day `months` away, or that month's last day when it's shorter.
     func move(months: Int) {
         let start = month.addingMonths(months)
         moveCursor(to: start.adding(days: min(cursor.day, start.days(to: start.addingMonths(1))) - 1))
+        if !phrase.isEmpty { match = cursor }
+    }
+
+    /// Adds `characters` to the typed date when they're all date characters, it doesn't start with a space and
+    /// stays under 40 characters. Returns whether it changed.
+    func type(_ characters: String) -> Bool {
+        guard !characters.isEmpty, characters.allSatisfy(Self.isPhraseCharacter),
+              !(phrase.isEmpty && characters.allSatisfy(\.isWhitespace)), phrase.count + characters.count <= 40 else { return false }
+        phrase += characters
+        return true
+    }
+
+    /// Removes the typed date's last character. Returns whether there was one.
+    func deleteBackward() -> Bool {
+        guard !phrase.isEmpty else { return false }
+        phrase.removeLast()
+        return true
     }
 
     /// Letters, digits, spaces and the separators a typed date uses.
