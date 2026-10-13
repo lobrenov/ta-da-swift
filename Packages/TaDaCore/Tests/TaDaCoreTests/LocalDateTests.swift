@@ -65,12 +65,8 @@ func localDateRejects(_ text: String) {
 }
 
 @Test func nextWeekIsTheFirstDayOfTheFollowingWeek() {
-    var mondayFirst = Calendar(identifier: .gregorian)
-    mondayFirst.firstWeekday = 2
-    #expect(LocalDate("2026-10-02")!.nextWeek(calendar: mondayFirst) == LocalDate("2026-10-05")!)
-    #expect(LocalDate("2026-10-05")!.nextWeek(calendar: mondayFirst) == LocalDate("2026-10-12")!)
-    #expect(LocalDate("2026-10-04")!.nextWeek(calendar: mondayFirst) == LocalDate("2026-10-05")!)
-    var sundayFirst = mondayFirst
-    sundayFirst.firstWeekday = 1
-    #expect(LocalDate("2026-10-02")!.nextWeek(calendar: sundayFirst) == LocalDate("2026-10-04")!)
+    #expect(LocalDate("2026-10-02")!.nextWeek(firstWeekday: 2) == LocalDate("2026-10-05")!)
+    #expect(LocalDate("2026-10-05")!.nextWeek(firstWeekday: 2) == LocalDate("2026-10-12")!)
+    #expect(LocalDate("2026-10-04")!.nextWeek(firstWeekday: 2) == LocalDate("2026-10-05")!)
+    #expect(LocalDate("2026-10-02")!.nextWeek(firstWeekday: 1) == LocalDate("2026-10-04")!)
 }

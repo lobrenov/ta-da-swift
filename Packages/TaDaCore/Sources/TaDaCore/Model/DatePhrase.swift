@@ -8,25 +8,29 @@ public enum DayOrder: Sendable {
 
 /// Reads a typed date such as "fri", "3d", "dec 25" or "25/12" as a day. A phrase without a year never gives a
 /// day before today; a weekday is its soonest coming day, today included, with or without "next". Times
-/// ("3pm", "at 15:00") are ignored. A word's start counts as the word, so a phrase matches while it's typed:
+/// ("3pm", "at 15:00", "at 3") are ignored. A word's start counts as the word, so a phrase matches while it's typed:
 /// "t" is today, "tu" Tuesday, "n" next week.
 public enum DatePhrase {
-    public static func parse(_ text: String, today: LocalDate, order: DayOrder, calendar: Calendar = .current) -> LocalDate? {
+    public static func parse(_ text: String, today: LocalDate, order: DayOrder, firstWeekday: Int) -> LocalDate? {
         let words = words(in: text)
         guard !words.isEmpty else { return nil }
         let phrase = words.joined(separator: " ")
-        return named(phrase, today: today, calendar: calendar)
+        return named(phrase, today: today, firstWeekday: firstWeekday)
             ?? relative(phrase, today: today)
             ?? dayNumber(phrase, today: today)
             ?? numeric(phrase, today: today, order: order)
             ?? dayAndMonthName(phrase, today: today)
     }
 
-    /// The lowercased words, without commas, times, "at" and "the", and without separators after the last one.
+    /// The lowercased words, without commas, times, "at" and the hour after it, and "the", and without separators
+    /// after the last one.
     private static func words(in text: String) -> [String] {
         var words: [String] = []
+        var afterAt = false
         for word in text.lowercased().replacingOccurrences(of: ",", with: " ").split(whereSeparator: \.isWhitespace) {
             let word = String(word)
+            defer { afterAt = word == "at" }
+            if afterAt, word.wholeMatch(of: /[0-9]{1,2}/) != nil { continue }
             if word == "at" || word == "the" || isTime(word) { continue }
             if word == "am" || word == "pm", let last = words.last, last.wholeMatch(of: /[0-9]{1,2}/) != nil {
                 words.removeLast()
@@ -68,8 +72,8 @@ public enum DatePhrase {
         + weekdays.map { ($0.name, .weekday($0.number)) }
         + [("weekend", .weekend), ("next week", .nextWeek), ("next month", .nextMonth), ("end of month", .endOfMonth)]
 
-    private static func named(_ phrase: String, today: LocalDate, calendar: Calendar) -> LocalDate? {
-        named(phrase).map { date(of: $0, today: today, calendar: calendar) }
+    private static func named(_ phrase: String, today: LocalDate, firstWeekday: Int) -> LocalDate? {
+        named(phrase).map { date(of: $0, today: today, firstWeekday: firstWeekday) }
     }
 
     private static func named(_ phrase: String) -> Named? {
@@ -78,30 +82,19 @@ public enum DatePhrase {
         // "on fri", "this weekend", "next tue": the lead word changes nothing.
         var rest: Substring?
         for lead in ["on ", "this ", "next "] where phrase.hasPrefix(lead) { rest = phrase.dropFirst(lead.count) }
-        if let rest, let named = exact[String(rest)] ?? phrases.first(where: { $0.phrase == rest })?.named, isDay(named) {
-            return named
-        }
+        if let rest, let named = exact[String(rest)] ?? phrases.first(where: { $0.phrase == rest })?.named { return named }
         if let named = phrases.first(where: { $0.phrase.hasPrefix(phrase) })?.named { return named }
-        if let rest, !rest.isEmpty, let named = phrases.first(where: { isDay($0.named) && $0.phrase.hasPrefix(rest) })?.named {
-            return named
-        }
+        if let rest, !rest.isEmpty { return phrases.first(where: { $0.phrase.hasPrefix(rest) })?.named }
         return nil
     }
 
-    private static func isDay(_ named: Named) -> Bool {
-        switch named {
-        case .weekday, .weekend: true
-        default: false
-        }
-    }
-
-    private static func date(of named: Named, today: LocalDate, calendar: Calendar) -> LocalDate {
+    private static func date(of named: Named, today: LocalDate, firstWeekday: Int) -> LocalDate {
         switch named {
         case .today: today
         case .tomorrow: today.adding(days: 1)
         case .weekday(let number): today.adding(days: (number - today.weekday + 7) % 7)
         case .weekend: today.thisWeekend
-        case .nextWeek: today.nextWeek(calendar: calendar)
+        case .nextWeek: today.nextWeek(firstWeekday: firstWeekday)
         case .nextMonth: today.addingMonths(1)
         case .endOfMonth: today.addingMonths(1).adding(days: -1)
         }
@@ -171,16 +164,20 @@ public enum DatePhrase {
                                  "october", "november", "december"]
 
     private static func month(named name: Substring) -> Int? {
-        if name == "sept" { return 9 }
         let matches = months.indices.filter { months[$0].hasPrefix(name) }
         return matches.count == 1 ? matches[0] + 1 : nil
     }
 
-    /// The day in `year` (two digits are 20xx), or with no year the soonest coming one, today included.
+    /// The day in `year`, or with no year the soonest coming one, today included. Two digits are 20xx, and
+    /// not before today, so typing a four-digit year doesn't pass through 20.
     private static func date(day: Int, month: Int, year: Substring?, today: LocalDate) -> LocalDate? {
         if let year {
-            guard year.count == 2 || year.count == 4, let number = Int(year) else { return nil }
-            return LocalDate(year: year.count == 2 ? 2000 + number : number, month: month, day: day)
+            guard let number = Int(year) else { return nil }
+            switch year.count {
+            case 2: return LocalDate(year: 2000 + number, month: month, day: day).flatMap { $0 >= today ? $0 : nil }
+            case 4: return LocalDate(year: number, month: month, day: day)
+            default: return nil
+            }
         }
         for year in today.year...today.year + 8 {
             if let date = LocalDate(year: year, month: month, day: day), date >= today { return date }

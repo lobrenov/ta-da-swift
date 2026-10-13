@@ -85,9 +85,9 @@ extension LocalDate {
         weekday == 1 ? self : adding(days: 7 - weekday)
     }
 
-    /// The first day of the week after this day's, by `calendar`'s first weekday.
-    public func nextWeek(calendar: Calendar = .current) -> LocalDate {
-        adding(days: 7 - (weekday - calendar.firstWeekday + 7) % 7)
+    /// The first day of the week after this day's, from `firstWeekday` (1 = Sunday, as in `Calendar`).
+    public func nextWeek(firstWeekday: Int = Calendar.current.firstWeekday) -> LocalDate {
+        adding(days: 7 - (weekday - firstWeekday + 7) % 7)
     }
 
     /// The same day at midnight in `calendar`'s time zone, for formatting and date pickers.

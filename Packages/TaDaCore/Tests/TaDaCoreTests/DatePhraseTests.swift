@@ -4,14 +4,8 @@ import Testing
 
 private let tuesday = LocalDate("2026-10-13")!
 
-private var mondayFirst: Calendar {
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.firstWeekday = 2
-    return calendar
-}
-
 private func parse(_ text: String, today: LocalDate = tuesday, order: DayOrder = .dayMonth) -> String? {
-    DatePhrase.parse(text, today: today, order: order, calendar: mondayFirst)?.description
+    DatePhrase.parse(text, today: today, order: order, firstWeekday: 2)?.description
 }
 
 @Test(arguments: [
@@ -19,12 +13,13 @@ private func parse(_ text: String, today: LocalDate = tuesday, order: DayOrder =
     ("tomorrow", "2026-10-14"), ("tmr", "2026-10-14"), ("tom", "2026-10-14"),
     ("fri", "2026-10-16"), ("friday", "2026-10-16"), ("f", "2026-10-16"), ("next fri", "2026-10-16"), ("next fr", "2026-10-16"),
     ("this friday", "2026-10-16"), ("on fri", "2026-10-16"), ("fri 3pm", "2026-10-16"), ("friday at 15:00", "2026-10-16"),
-    ("fri 3 pm", "2026-10-16"),
+    ("fri 3 pm", "2026-10-16"), ("fri at 3", "2026-10-16"), ("tomorrow at 9", "2026-10-14"),
     ("tue", "2026-10-13"), ("tu", "2026-10-13"), ("th", "2026-10-15"), ("w", "2026-10-14"), ("we", "2026-10-14"),
     ("s", "2026-10-17"), ("sa", "2026-10-17"), ("su", "2026-10-18"), ("m", "2026-10-19"), ("mon", "2026-10-19"),
-    ("next mon", "2026-10-19"), ("on t", "2026-10-13"),
-    ("weekend", "2026-10-17"), ("wee", "2026-10-17"), ("this weekend", "2026-10-17"),
-    ("next week", "2026-10-19"), ("n", "2026-10-19"), ("next", "2026-10-19"), ("next w", "2026-10-19"),
+    ("next mon", "2026-10-19"),
+    ("weekend", "2026-10-17"), ("wee", "2026-10-17"), ("this weekend", "2026-10-17"), ("wknd", "2026-10-17"),
+    ("next week", "2026-10-19"), ("n", "2026-10-19"), ("ne", "2026-10-19"), ("nex", "2026-10-19"), ("next", "2026-10-19"),
+    ("next w", "2026-10-19"), ("next wk", "2026-10-19"),
     ("next month", "2026-11-01"), ("next m", "2026-11-01"),
     ("end of month", "2026-10-31"), ("eom", "2026-10-31"), ("e", "2026-10-31"),
 ])
@@ -67,6 +62,23 @@ func datePhraseRejects(_ text: String) {
     #expect(parse("12/25", order: .dayMonth) == nil)
 }
 
+@Test(arguments: [
+    ("t", "2026-10-14"), ("to", "2026-10-14"), ("tu", "2026-10-20"), ("tue", "2026-10-20"), ("on t", "2026-10-14"),
+    ("on tomorrow", "2026-10-15"), ("this tom", "2026-10-15"), ("next t", "2026-10-14"), ("next tu", "2026-10-20"),
+    ("w", "2026-10-14"), ("wed", "2026-10-14"),
+])
+func datePhrasePrefixesOnAWednesday(_ text: String, _ expected: String) {
+    #expect(parse(text, today: LocalDate("2026-10-14")!) == expected)
+}
+
+@Test func datePhraseTwoDigitYearsDontPassThroughThePast() {
+    for typed in ["25/12/2", "25/12/20", "25/12/202", "dec 25 20", "dec 25 202"] {
+        #expect(parse(typed) == nil, "\(typed)")
+    }
+    #expect(parse("25/12/2027") == "2027-12-25")
+    #expect(parse("12/25/27", order: .monthDay) == "2027-12-25")
+}
+
 @Test func datePhraseOnAFridayGivesToday() {
     let friday = LocalDate("2026-10-16")!
     #expect(parse("fri", today: friday) == "2026-10-16")
@@ -83,4 +95,5 @@ func datePhraseRejects(_ text: String) {
     #expect(parse("jan 3", today: LocalDate("2026-12-31")!) == "2027-01-03")
     #expect(parse("tomorrow", today: LocalDate("2026-12-31")!) == "2027-01-01")
     #expect(parse("eom", today: LocalDate("2028-02-10")!) == "2028-02-29")
+    #expect(parse("29", today: LocalDate("2027-02-01")!) == "2027-03-29")
 }
