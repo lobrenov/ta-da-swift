@@ -102,16 +102,6 @@ final class CalendarPickerModel {
         cursor = day
         if month != before { onMonthChange() }
     }
-
-    /// The coming Saturday, or `today` on a Saturday or Sunday.
-    static func thisWeekend(after today: LocalDate) -> LocalDate {
-        today.weekday == 1 ? today : today.adding(days: 7 - today.weekday)
-    }
-
-    /// The first day of the week after `today`'s, by the locale's first weekday.
-    static func nextWeek(after today: LocalDate, calendar: Calendar = .current) -> LocalDate {
-        today.adding(days: 7 - (today.weekday - calendar.firstWeekday + 7) % 7)
-    }
 }
 
 #if os(macOS)
@@ -149,7 +139,7 @@ private struct CalendarPickerView: View {
                 HStack(spacing: 6) {
                     QuickDayButton(title: "Today", day: model.today, model: model)
                     QuickDayButton(title: "Tomorrow", day: model.today.adding(days: 1), model: model)
-                    QuickDayButton(title: "Next week", day: CalendarPickerModel.nextWeek(after: model.today), model: model)
+                    QuickDayButton(title: "Next week", day: model.today.nextWeek(), model: model)
                 }
                 HStack(spacing: 2) {
                     Text(model.month.formatted(.monthYear))

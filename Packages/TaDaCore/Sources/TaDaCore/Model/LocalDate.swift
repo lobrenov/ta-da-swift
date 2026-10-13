@@ -71,6 +71,25 @@ extension LocalDate {
         Self.utc.component(.weekday, from: midnightUTC)
     }
 
+    /// The first day of this day's month.
+    public var startOfMonth: LocalDate { LocalDate(year: year, month: month, day: 1)! }
+
+    /// The first day of the month `months` away.
+    public func addingMonths(_ months: Int) -> LocalDate {
+        let index = year * 12 + (month - 1) + months
+        return LocalDate(year: index / 12, month: index % 12 + 1, day: 1)!
+    }
+
+    /// The coming Saturday, or this day on a Saturday or Sunday.
+    public var thisWeekend: LocalDate {
+        weekday == 1 ? self : adding(days: 7 - weekday)
+    }
+
+    /// The first day of the week after this day's, by `calendar`'s first weekday.
+    public func nextWeek(calendar: Calendar = .current) -> LocalDate {
+        adding(days: 7 - (weekday - calendar.firstWeekday + 7) % 7)
+    }
+
     /// The same day at midnight in `calendar`'s time zone, for formatting and date pickers.
     public func date(in calendar: Calendar = .current) -> Date {
         calendar.date(from: DateComponents(year: year, month: month, day: day))!
