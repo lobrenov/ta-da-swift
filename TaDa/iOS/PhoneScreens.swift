@@ -33,6 +33,10 @@ struct PhoneTaskListScreen: View {
             }
             ForEach(events) { EventRow(event: $0, day: model.today, context: .today) }
             ForEach(reminders) { ReminderRow(reminder: $0, context: .today, today: model.today) }
+            // Tasks without a parent have no header to set them apart.
+            if !events.isEmpty || !reminders.isEmpty, groups.first?.parent == nil, !groups.isEmpty {
+                Color.clear.frame(height: 20)
+            }
             ForEach(groups) { group in
                 if let parent = group.parent {
                     if parent.properties.kind == .area {

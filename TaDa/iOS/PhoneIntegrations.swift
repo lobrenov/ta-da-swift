@@ -1,5 +1,5 @@
 // Settings ▸ Integrations on iPhone: the Show events and Show reminders switches, then the calendars and the Reminders
-// lists with checkmarks, or what to do when access is denied.
+// lists with checkmarks under each account, or what to do when access is denied.
 #if os(iOS)
 import SwiftUI
 
@@ -41,8 +41,15 @@ struct PhoneIntegrationsScreen: View {
         return Section {
             switch access {
             case .granted:
-                ForEach(store.sources(kind).flatMap { source in source.calendars.map { (source, $0) } }, id: \.1.id) { source, calendar in
-                    tick(calendar, account: source.title, kind)
+                ForEach(store.sources(kind)) { source in
+                    Text(source.title)
+                        .textCase(.uppercase)
+                        .scaledFont(size: 12, weight: .semibold)
+                        .tracking(0.7)
+                        .foregroundStyle(theme.color(\.muted))
+                        .padding(.top, 6)
+                        .accessibilityAddTraits(.isHeader)
+                    ForEach(source.calendars) { tick($0, kind) }
                 }
             case .denied:
                 Label {
@@ -81,7 +88,7 @@ struct PhoneIntegrationsScreen: View {
         .opacity(access == .off ? 0.6 : 1)
     }
 
-    private func tick(_ calendar: IntegrationsStore.ListChoice, account: String, _ kind: IntegrationsStore.Kind) -> some View {
+    private func tick(_ calendar: IntegrationsStore.ListChoice, _ kind: IntegrationsStore.Kind) -> some View {
         let isOn = !store.isHidden(calendar.id, kind)
         return Button {
             store.setHidden(isOn, calendar.id, kind)
@@ -91,9 +98,7 @@ struct PhoneIntegrationsScreen: View {
                 Text(calendar.title)
                     .foregroundStyle(theme.color(isOn ? \.fg : \.muted))
                     .lineLimit(1)
-                    .layoutPriority(1)
                 Spacer()
-                Text(account).foregroundStyle(theme.color(\.muted)).lineLimit(1)
                 Image(systemName: "checkmark")
                     .accessibilityHidden(true)
                     .fontWeight(.semibold)
