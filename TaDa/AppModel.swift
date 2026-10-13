@@ -363,7 +363,8 @@ import TaDaCore
         } else {
             quickEntryHotkey = .quickEntryDefault
         }
-        updateIntegrations()
+        // After launch: the event store is slow to make.
+        Task { updateIntegrations() }
     }
 
     // MARK: Folder
@@ -1900,6 +1901,11 @@ import TaDaCore
     var todayReminders: [ExternalReminder] { integrations.todayReminders }
     var upcomingEvents: [LocalDate: [DayEvent]] { integrations.upcomingEvents }
     var upcomingReminders: [LocalDate: [ExternalReminder]] { integrations.upcomingReminders }
+    /// Reminders due after `day`, by month, for Upcoming's later months.
+    func remindersByMonth(after day: LocalDate) -> [LocalDate: [ExternalReminder]] {
+        Dictionary(grouping: upcomingReminders.filter { $0.key > day }.sorted { $0.key < $1.key }.flatMap(\.value)) { $0.due!.startOfMonth }
+    }
+
     /// Whether any event covers `day`, for the month calendar's and week strip's dots.
     func hasEvents(on day: LocalDate) -> Bool {
         day == today ? !todayEvents.isEmpty : upcomingEvents[day] != nil
@@ -1963,8 +1969,11 @@ import TaDaCore
     /// Fetches events and reminders from today to the later of Upcoming's last date and the end of next month, which
     /// the month calendar shows, but no more than a year ahead.
     private func updateIntegrations() {
-        let last = max(upcoming.last?.date ?? today, Self.endOfNextMonth(after: today))
-        integrations.update(today: today, through: min(last, today.adding(days: 365)))
+        integrations.update(today: today, through: Self.integrationsWindowEnd(today: today, upcomingLast: upcoming.last?.date))
+    }
+
+    static func integrationsWindowEnd(today: LocalDate, upcomingLast: LocalDate?) -> LocalDate {
+        min(max(upcomingLast ?? today, endOfNextMonth(after: today)), today.adding(days: 365))
     }
 
     static func endOfNextMonth(after day: LocalDate) -> LocalDate {

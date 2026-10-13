@@ -1,5 +1,5 @@
 // A reminder in Today or Upcoming: a circle in its list's colour and its title; in Today an overdue one shows its due
-// date in `deadline`. Reminders aren't links.
+// date in `deadline`, and in Upcoming's later months each shows its date. Reminders aren't links.
 import SwiftUI
 import TaDaCore
 
@@ -8,6 +8,8 @@ struct ReminderRow: View {
     let context: IntegrationRowContext
     /// Today's date, for the overdue date; nil in Upcoming.
     var today: LocalDate?
+    /// Shows the due date, as Upcoming's later months do.
+    var dated = false
     @Environment(\.theme) private var theme
 
     private var overdueDate: String? {
@@ -15,10 +17,14 @@ struct ReminderRow: View {
         return due.formatted(.weekdayDayMonth)
     }
 
+    private var laterDate: String? {
+        dated ? reminder.due?.formatted(.weekdayDayMonth) : nil
+    }
+
     var body: some View {
         content
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Reminder: \(reminder.title)" + (overdueDate.map { ", due \($0)" } ?? ""))
+            .accessibilityLabel("Reminder: \(reminder.title)" + ((overdueDate ?? laterDate).map { ", due \($0)" } ?? ""))
     }
 
     #if os(macOS)
@@ -35,6 +41,8 @@ struct ReminderRow: View {
             Spacer(minLength: 0)
             if let overdueDate {
                 Text(overdueDate).font(.system(size: 11.5)).foregroundStyle(theme.color(\.deadline)).fixedSize()
+            } else if let laterDate {
+                Text(laterDate).font(.system(size: 11.5)).foregroundStyle(theme.color(\.muted)).fixedSize()
             }
         }
         .padding(.horizontal, 10)
@@ -55,6 +63,8 @@ struct ReminderRow: View {
                 Spacer(minLength: 0)
                 if let overdueDate {
                     Text(overdueDate).scaledFont(size: 13).foregroundStyle(theme.color(\.deadline)).fixedSize()
+                } else if let laterDate {
+                    Text(laterDate).scaledFont(size: 13).foregroundStyle(theme.color(\.muted)).fixedSize()
                 }
             }
             .padding(.trailing, 16)

@@ -21,7 +21,7 @@ Starting point, as checked on 2026-10-12:
   - Reminder: a circle in the list's colour, the title. No time. An overdue reminder in Today shows its due date in `deadline`.
 - **Multi-day events**: the start time on the first day, All day on the days in between, "until <end time>" on the last day. An all-day event that spans days shows All day on each, with "Day n of m" after the title. A timed event ending exactly at midnight doesn't reach the next day, and its last day shows All day.
 - **Past events**: an event that has ended today is dimmed (45% opacity).
-- **Reminders shown**: incomplete reminders with a due date. Today: due today or overdue. Upcoming: on their due date. Reminders without a due date never show.
+- **Reminders shown**: incomplete reminders with a due date. Today: due today or overdue. Upcoming: on their due date. Past Upcoming's seven days, reminders are listed with their date under their month (and in the Mac's "Later in" list); events there show only as calendar dots. Reminders without a due date never show.
 - **Links**: clicking or tapping an event opens Calendar. On iPhone it opens on the event's day (`calshow:` with the day's start in seconds since 2001-01-01). On the Mac it opens Calendar on whatever day it shows. Reminders aren't links.
 - **Upcoming window**: events and reminders are fetched from tomorrow to the later of the last date Upcoming lists and the end of next month, so the month calendar is covered, and no more than a year ahead.
 - **Calendar marks**: the month calendar (Mac) and week strip (iPhone) get a third, `muted` dot on days with events. The dots cover the fetched days, today through the Upcoming window.

@@ -1,4 +1,5 @@
-// A month grid with dots for open tasks' due dates and deadlines and for days with events, and the month's entries after the agenda's seven days.
+// A month grid with dots for open tasks' due dates and deadlines and for days with events, and the month's reminders and
+// entries after the agenda's seven days.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -17,6 +18,7 @@ struct MonthCalendarView: View {
         let deadlines = Set(open.compactMap(\.properties.deadline))
         let lastAgendaDay = today.adding(days: AgendaView.days)
         let later = model.upcoming.filter { $0.date > lastAgendaDay && $0.date.startOfMonth == month }
+        let laterReminders = model.remindersByMonth(after: lastAgendaDay)[month] ?? []
 
         VStack(alignment: .leading, spacing: 22) {
             VStack(alignment: .leading, spacing: 10) {
@@ -41,10 +43,27 @@ struct MonthCalendarView: View {
                     .foregroundStyle(theme.color(\.strong))
                     .padding(.bottom, 6)
                     .accessibilityAddTraits(.isHeader)
-                if later.isEmpty {
+                if later.isEmpty, laterReminders.isEmpty {
                     Text("Nothing after \(lastAgendaDay.formatted(.weekdayDayMonth)).")
                         .font(.system(size: 12))
                         .foregroundStyle(theme.color(\.muted))
+                }
+                ForEach(laterReminders) { reminder in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(reminder.due!.formatted(.weekdayDayMonth))
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(theme.color(\.muted))
+                        HStack(spacing: 8) {
+                            Circle()
+                                .strokeBorder(Color(calendarHex: reminder.color), lineWidth: 1.5)
+                                .frame(width: 11, height: 11)
+                            Text(reminder.title).lineLimit(1).foregroundStyle(theme.color(\.fg))
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .overlay(alignment: .top) { Hairline() }
+                    .accessibilityElement(children: .combine)
                 }
                 ForEach(later) { entry in
                     Button { model.selection = entry.item.path } label: {

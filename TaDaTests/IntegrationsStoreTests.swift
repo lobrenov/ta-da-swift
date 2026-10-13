@@ -1,4 +1,5 @@
 import CoreGraphics
+import EventKit
 import Foundation
 import Testing
 import TaDaCore
@@ -51,6 +52,51 @@ struct IntegrationsStoreTests {
         let timed = DateComponents(timeZone: utc, year: 2026, month: 10, day: 14, hour: 23, minute: 30)
         let moment = Calendar(identifier: .gregorian).date(from: timed)!
         #expect(IntegrationsStore.dueDay(timed) == LocalDate(moment))
+    }
+
+    @Test func windowReachesUpcomingsLastDateButNoMoreThanAYear() {
+        let today = LocalDate("2026-10-13")!
+        #expect(AppModel.integrationsWindowEnd(today: today, upcomingLast: nil) == LocalDate("2026-11-30"))
+        #expect(AppModel.integrationsWindowEnd(today: today, upcomingLast: LocalDate("2026-10-20")) == LocalDate("2026-11-30"))
+        #expect(AppModel.integrationsWindowEnd(today: today, upcomingLast: LocalDate("2027-02-01")) == LocalDate("2027-02-01"))
+        #expect(AppModel.integrationsWindowEnd(today: today, upcomingLast: LocalDate("2029-01-01")) == LocalDate("2027-10-13"))
+    }
+
+    @Test func accessFollowsTheStatusTheSwitchAndAsking() {
+        typealias Store = IntegrationsStore
+        #expect(Store.access(status: .notDetermined, isOn: false, isAsking: false) == .off)
+        #expect(Store.access(status: .notDetermined, isOn: true, isAsking: true) == .asking)
+        #expect(Store.access(status: .fullAccess, isOn: true, isAsking: false) == .granted)
+        #expect(Store.access(status: .fullAccess, isOn: false, isAsking: false) == .off)
+        for status in [EKAuthorizationStatus.denied, .restricted, .writeOnly] {
+            #expect(Store.access(status: status, isOn: true, isAsking: false) == .denied)
+        }
+    }
+
+    @Test func oneFetchFillsTodayUpcomingAndTheDots() {
+        let model = AppModel(defaults: TestSettings())
+        let today = model.today
+        func at(_ day: LocalDate, _ hour: Int) -> Date { Calendar.current.date(byAdding: .hour, value: hour, to: day.date())! }
+        let events = [
+            ExternalEvent(identifier: "a", title: "Standup", start: at(today, 9), end: at(today, 10), isAllDay: false, color: "#FF9500"),
+            ExternalEvent(identifier: "b", title: "Trip", start: at(today.adding(days: 2), 0), end: at(today.adding(days: 4), 0),
+                          isAllDay: true, color: "#1BADF8"),
+        ]
+        let reminders = [
+            ExternalReminder(identifier: "r1", title: "Overdue", due: today.adding(days: -2), color: "#FF453A"),
+            ExternalReminder(identifier: "r2", title: "Soon", due: today.adding(days: 3), color: "#0A84FF"),
+            ExternalReminder(identifier: "r3", title: "Later", due: today.adding(days: 20), color: "#0A84FF"),
+        ]
+        model.integrations.apply(events: events, reminders: reminders, window: (today, today.adding(days: 40)))
+
+        #expect(model.todayEvents.map(\.event.title) == ["Standup"])
+        #expect(model.todayReminders.map(\.title) == ["Overdue"])
+        #expect(model.upcomingEvents[today.adding(days: 3)]?.first?.placement == .allDay(day: 2, of: 2))
+        #expect(model.upcomingReminders[today.adding(days: 3)]?.map(\.title) == ["Soon"])
+        #expect(model.hasEvents(on: today) && model.hasEvents(on: today.adding(days: 2)))
+        #expect(!model.hasEvents(on: today.adding(days: 1)) && !model.hasEvents(on: today.adding(days: 4)))
+        let later = today.adding(days: 20)
+        #expect(model.remindersByMonth(after: today.adding(days: 7))[later.startOfMonth]?.map(\.title) == ["Later"])
     }
 
     @Test func coloursBecomeSRGBHex() {

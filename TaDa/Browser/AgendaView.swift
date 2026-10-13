@@ -1,5 +1,5 @@
 // Upcoming: the seven days from tomorrow (empty days included), each with its events, then its reminders, then its
-// tasks; then later entries by month. An open task gets one entry on its due date and another on its deadline.
+// tasks; then later reminders and entries by month. An open task gets one entry on its due date and another on its deadline.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -47,10 +47,12 @@ struct AgendaView: View {
             } content: {
                 week(entries, today: today)
                 let later = Dictionary(grouping: entries.filter { $0.date > lastDay }) { $0.date.startOfMonth }
-                ForEach(later.keys.sorted(), id: \.self) { month in
+                let laterReminders = model.remindersByMonth(after: lastDay)
+                ForEach(Set(later.keys).union(laterReminders.keys).sorted(), id: \.self) { month in
                     VStack(alignment: .leading, spacing: 0) {
                         DayHeader(number: nil, label: month.agendaMonthTitle(today: today), empty: false, style: style)
-                        ForEach(later[month]!) { row($0, dated: true) }
+                        ForEach(laterReminders[month] ?? []) { ReminderRow(reminder: $0, context: .upcoming, dated: true) }
+                        ForEach(later[month] ?? []) { row($0, dated: true) }
                     }
                 }
             }

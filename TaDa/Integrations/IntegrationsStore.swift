@@ -8,22 +8,20 @@ import TaDaCore
 final class IntegrationsStore {
     enum Kind: CaseIterable, Sendable {
         case events, reminders
-
-        var entityType: EKEntityType { self == .events ? .event : .reminder }
     }
 
     /// What Settings shows for a switch.
     enum Access: Equatable { case off, asking, granted, denied }
 
     /// A calendar or Reminders list, with its colour as `#RRGGBB`.
-    struct ListChoice: Identifiable, Hashable {
+    nonisolated struct ListChoice: Identifiable, Hashable, Sendable {
         var id: String
         var title: String
         var color: String
     }
 
     /// An account's calendars or lists.
-    struct Source: Identifiable, Hashable {
+    nonisolated struct Source: Identifiable, Hashable, Sendable {
         var id: String
         var title: String
         var calendars: [ListChoice]
@@ -65,6 +63,7 @@ final class IntegrationsStore {
     private let defaults: any SettingsStore
     @ObservationIgnored private var eventStore: EKEventStore?
     @ObservationIgnored private var storeObserver: (any NSObjectProtocol)?
+    @ObservationIgnored private var timeZoneObserver: (any NSObjectProtocol)?
     /// Today and the last day fetched.
     @ObservationIgnored private var window: (today: LocalDate, last: LocalDate)?
     @ObservationIgnored private var fetches = 0
@@ -101,10 +100,14 @@ final class IntegrationsStore {
     }
 
     func access(_ kind: Kind) -> Access {
-        if asking.contains(kind) { return .asking }
-        switch status(kind) {
+        Self.access(status: status(kind), isOn: isOn(kind), isAsking: asking.contains(kind))
+    }
+
+    static func access(status: EKAuthorizationStatus, isOn: Bool, isAsking: Bool) -> Access {
+        if isAsking { return .asking }
+        switch status {
         case .denied, .restricted, .writeOnly: return .denied
-        case .fullAccess: return isOn(kind) ? .granted : .off
+        case .fullAccess: return isOn ? .granted : .off
         default: return .off
         }
     }
@@ -142,10 +145,15 @@ final class IntegrationsStore {
         fetch()
     }
 
-    /// Reads access again when the app becomes active, and fetches when it changed. The calendars' own changes and a new
-    /// day fetch on their own.
+    /// Reads access again when the app becomes active. When it changed, a switch whose access went is turned off and the
+    /// store forgets what it read before fetching again. The calendars' own changes and a new day fetch on their own.
     func refresh() {
-        if readStatuses() { fetch() }
+        guard readStatuses() else { return }
+        for kind in Kind.allCases where isOn(kind) && status(kind) != .fullAccess {
+            if kind == .events { showsEvents = false } else { showsReminders = false }
+        }
+        eventStore?.reset()
+        fetch()
     }
 
     // MARK: Fetching
@@ -180,6 +188,10 @@ final class IntegrationsStore {
         storeObserver = NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: store, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.fetch() }
         }
+        // Events are placed on days in the device's time zone.
+        timeZoneObserver = NotificationCenter.default.addObserver(forName: .NSSystemTimeZoneDidChange, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.fetch() }
+        }
         return store
     }
 
@@ -187,27 +199,28 @@ final class IntegrationsStore {
         fetches += 1
         let fetch = fetches
         let showsEvents = isShown(.events), showsReminders = isShown(.reminders)
-        let store: EKEventStore? = showsEvents || showsReminders ? store() : nil
-        let calendarSources = showsEvents ? store.map { Self.sources($0.calendars(for: .event)) } ?? [] : []
-        let listSources = showsReminders ? store.map { Self.sources($0.calendars(for: .reminder)) } ?? [] : []
-        if calendarSources != self.calendarSources { self.calendarSources = calendarSources }
-        if listSources != self.listSources { self.listSources = listSources }
-        guard let window, let store else { return apply(events: [], reminders: [], window: window) }
-
+        guard showsEvents || showsReminders else {
+            calendarSources = []
+            listSources = []
+            return apply(events: [], reminders: [], window: window)
+        }
         let calendar = Calendar.current
-        let start = window.today.date(in: calendar), end = window.last.adding(days: 1).date(in: calendar)
+        let dates = window.map { ($0.today.date(in: calendar), $0.last.adding(days: 1).date(in: calendar)) }
         let hiddenCalendars = showsEvents ? hiddenCalendars : nil, hiddenLists = showsReminders ? hiddenLists : nil
-        let fetcher = Fetcher(store: store)
+        let fetcher = Fetcher(store: store())
         Task {
-            async let fetchedEvents = fetcher.events(from: start, to: end, hiding: hiddenCalendars)
-            async let fetchedReminders = fetcher.reminders(dueBefore: end, hiding: hiddenLists)
-            let (found, due) = await (fetchedEvents, fetchedReminders)
+            async let events = fetcher.events(in: dates, hiding: hiddenCalendars)
+            async let reminders = fetcher.reminders(dueBefore: dates?.1, hiding: hiddenLists)
+            let ((found, calendars), (due, lists)) = await (events, reminders)
             guard fetch == fetches else { return }
+            if calendars != calendarSources { calendarSources = calendars }
+            if lists != listSources { listSources = lists }
             apply(events: found, reminders: due, window: window)
         }
     }
 
-    private func apply(events: [ExternalEvent], reminders: [ExternalReminder], window: (today: LocalDate, last: LocalDate)?) {
+    /// Places one fetch's events and reminders in Today and on Upcoming's days.
+    func apply(events: [ExternalEvent], reminders: [ExternalReminder], window: (today: LocalDate, last: LocalDate)?) {
         let today = window?.today ?? LocalDate(Date())
         let todayEvents = DayEvent.on(today, from: events)
         let upcomingEvents = window.map { DayEvent.byDay(events, from: today.adding(days: 1), through: $0.last) } ?? [:]
@@ -222,7 +235,7 @@ final class IntegrationsStore {
 
     // MARK: EventKit values
 
-    private static func sources(_ calendars: [EKCalendar]) -> [Source] {
+    nonisolated static func sources(_ calendars: [EKCalendar]) -> [Source] {
         Dictionary(grouping: calendars) { $0.source?.sourceIdentifier ?? "" }
             .map { id, calendars in
                 Source(id: id, title: calendars.first?.source?.title ?? "Other",
@@ -267,25 +280,29 @@ final class IntegrationsStore {
 private nonisolated struct Fetcher: @unchecked Sendable {
     let store: EKEventStore
 
-    /// The events overlapping `start..<end` in the calendars not hidden; none when `hidden` is nil.
-    @concurrent nonisolated func events(from start: Date, to end: Date, hiding hidden: Set<String>?) async -> [ExternalEvent] {
-        guard let hidden else { return [] }
-        let calendars = store.calendars(for: .event).filter { !hidden.contains($0.calendarIdentifier) }
-        guard !calendars.isEmpty else { return [] }
-        return store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars))
-            .map(IntegrationsStore.event)
+    /// The calendars not hidden, by account, and their events overlapping `dates`; nothing when `hidden` is nil.
+    @concurrent nonisolated func events(in dates: (Date, Date)?, hiding hidden: Set<String>?) async -> ([ExternalEvent], [IntegrationsStore.Source]) {
+        guard let hidden else { return ([], []) }
+        let all = store.calendars(for: .event)
+        let calendars = all.filter { !hidden.contains($0.calendarIdentifier) }
+        guard let dates, !calendars.isEmpty else { return ([], IntegrationsStore.sources(all)) }
+        let events = store.events(matching: store.predicateForEvents(withStart: dates.0, end: dates.1, calendars: calendars))
+        return (events.map(IntegrationsStore.event), IntegrationsStore.sources(all))
     }
 
-    /// The incomplete reminders due before `end`, overdue ones included, in the lists not hidden; none when `hidden` is nil.
-    @concurrent nonisolated func reminders(dueBefore end: Date, hiding hidden: Set<String>?) async -> [ExternalReminder] {
-        guard let hidden else { return [] }
-        let lists = store.calendars(for: .reminder).filter { !hidden.contains($0.calendarIdentifier) }
-        guard !lists.isEmpty else { return [] }
+    /// The lists by account, and the incomplete reminders due before `end`, overdue ones included, in the lists not hidden;
+    /// nothing when `hidden` is nil.
+    @concurrent nonisolated func reminders(dueBefore end: Date?, hiding hidden: Set<String>?) async -> ([ExternalReminder], [IntegrationsStore.Source]) {
+        guard let hidden else { return ([], []) }
+        let all = store.calendars(for: .reminder)
+        let lists = all.filter { !hidden.contains($0.calendarIdentifier) }
+        guard let end, !lists.isEmpty else { return ([], IntegrationsStore.sources(all)) }
         let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: end, calendars: lists)
-        return await withCheckedContinuation { continuation in
+        let reminders = await withCheckedContinuation { continuation in
             store.fetchReminders(matching: predicate) { @Sendable found in
                 continuation.resume(returning: (found ?? []).map(IntegrationsStore.reminder))
             }
         }
+        return (reminders, IntegrationsStore.sources(all))
     }
 }

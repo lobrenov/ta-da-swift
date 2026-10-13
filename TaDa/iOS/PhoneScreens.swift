@@ -109,9 +109,11 @@ struct PhoneUpcomingScreen: View {
                 ForEach(reminders) { ReminderRow(reminder: $0, context: .upcoming) }
                 ForEach(items) { row($0, dated: false) }
             }
-            ForEach(later.keys.sorted(), id: \.self) { month in
+            let laterReminders = model.remindersByMonth(after: lastDay)
+            ForEach(Set(later.keys).union(laterReminders.keys).sorted(), id: \.self) { month in
                 DayHeader(number: nil, label: month.agendaMonthTitle(today: today), empty: false)
-                ForEach(later[month]!) { row($0, dated: true) }
+                ForEach(laterReminders[month] ?? []) { ReminderRow(reminder: $0, context: .upcoming, dated: true) }
+                ForEach(later[month] ?? []) { row($0, dated: true) }
             }
         }
     }
