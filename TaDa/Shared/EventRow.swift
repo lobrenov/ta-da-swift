@@ -17,24 +17,44 @@ struct EventRow: View {
     @Environment(\.openURL) private var openURL
     #if os(macOS)
     @State private var isHovered = false
+    #else
+    @Environment(PhoneNavigation.self) private var nav
     #endif
 
     var body: some View {
-        Button { CalendarApp.open(on: day, openURL: openURL) } label: {
-            if context == .today, !event.placement.isAllDay {
-                TimelineView(.everyMinute) { timeline in
-                    content.opacity(event.event.hasEnded(now: timeline.date) ? 0.45 : 1)
-                }
-            } else {
-                content
+        if context == .today, !event.placement.isAllDay {
+            TimelineView(.everyMinute) { timeline in
+                button(ended: event.event.hasEnded(now: timeline.date))
             }
+        } else {
+            button(ended: false)
+        }
+    }
+
+    private func button(ended: Bool) -> some View {
+        Button { CalendarApp.open(on: day, openURL: openURL) } label: {
+            content.opacity(ended ? 0.45 : 1)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Open Calendar on \(day.formatted(.weekdayDayMonth)): \(event.event.title), \(event.timeText)")
+        .accessibilityLabel(accessibilityText(ended: ended))
         #if os(macOS)
         .onHover { isHovered = $0 }
         .help("Open Calendar")
+        #else
+        // Picking rows leaves events alone.
+        .disabled(nav.isPicking)
         #endif
+    }
+
+    private func accessibilityText(ended: Bool) -> String {
+        #if os(macOS)
+        var parts = ["Open Calendar: \(event.event.title)", event.timeText]
+        #else
+        var parts = ["Open Calendar on \(day.formatted(.weekdayDayMonth)): \(event.event.title)", event.timeText]
+        #endif
+        if let span = event.spanText { parts.append(span) }
+        if ended { parts.append("ended") }
+        return parts.joined(separator: ", ")
     }
 
     #if os(macOS)

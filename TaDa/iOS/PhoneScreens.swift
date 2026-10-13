@@ -36,7 +36,7 @@ struct PhoneTaskListScreen: View {
             ForEach(groups) { group in
                 if let parent = group.parent {
                     if parent.properties.kind == .area {
-                        PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id)
+                        PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id && events.isEmpty && reminders.isEmpty)
                     } else {
                         PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
                     }
