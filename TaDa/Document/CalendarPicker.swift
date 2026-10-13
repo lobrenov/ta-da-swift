@@ -1,6 +1,6 @@
 // The calendar under a dueDate or deadline chip: its month in a popup panel like Upcoming's calendar, with
 // Today, Tomorrow, Next week and Clear. A date typed in its field ("fri", "3d", "25/12") moves a cursor to it,
-// the arrow keys move the cursor through the days, and ↵ sets it.
+// and ↵ sets it.
 import SwiftUI
 import TaDaCore
 #if os(macOS)
@@ -65,27 +65,18 @@ final class CalendarPicker {
                    below: anchor, inset: 0, gap: gap, in: parent)
     }
 
-    /// Takes ↑↓, ←→ while nothing is typed, and ↵; other keys go to the field.
+    /// Takes ↵; other keys go to the field.
     private func handleKey(_ event: NSEvent) -> Bool {
-        guard event.modifierFlags.isDisjoint(with: [.command, .control]) else { return false }
-        switch event.specialKey {
-        case .leftArrow where model.phrase.isEmpty: model.move(days: -1)
-        case .rightArrow where model.phrase.isEmpty: model.move(days: 1)
-        case .upArrow: model.move(days: -7)
-        case .downArrow: model.move(days: 7)
-        case .carriageReturn, .enter:
-            model.set(model.cursor)
-            return true
-        default: return false
-        }
-        announceToVoiceOver(model.cursor.formatted(.weekdayDayMonthYear))
+        guard event.modifierFlags.isDisjoint(with: [.command, .control]),
+              event.specialKey == .carriageReturn || event.specialKey == .enter else { return false }
+        model.set(model.cursor)
         return true
     }
 }
 
 #endif
 
-/// The calendar's state: which date it sets, the date it has, and the cursor the arrow keys move.
+/// The calendar's state: which date it sets, the date it has, and the cursor a typed date moves.
 @Observable
 final class CalendarPickerModel {
     var kind = AgendaEntry.Kind.due
@@ -115,19 +106,14 @@ final class CalendarPickerModel {
     }
     /// Bumped each time the calendar shows, which gives its field the keyboard.
     var revision = 0
-    /// The day ↵ sets while a date is typed: the one it gives, or where the arrow keys moved since. Nil when the
-    /// typed date gives none.
+    /// The day ↵ sets while a date is typed: the one it gives, or where the month buttons moved since. Nil when
+    /// the typed date gives none.
     private(set) var match: LocalDate?
     @ObservationIgnored var set: (LocalDate?) -> Void = { _ in }
     /// Called when the cursor moves into another month, which can have another number of weeks.
     @ObservationIgnored var onMonthChange: () -> Void = {}
 
     var month: LocalDate { cursor.startOfMonth }
-
-    func move(days: Int) {
-        moveCursor(to: cursor.adding(days: days))
-        if !phrase.isEmpty { match = cursor }
-    }
 
     /// Moves the cursor to the same day `months` away, or that month's last day when it's shorter.
     func move(months: Int) {
@@ -153,7 +139,7 @@ final class CalendarPickerModel {
 private enum CalendarMetrics {
     static let width: CGFloat = 288
     static let padding: CGFloat = 6
-    static let inset = EdgeInsets(top: 6, leading: 6, bottom: 2, trailing: 6)
+    static let inset = EdgeInsets(top: 6, leading: 6, bottom: 4, trailing: 6)
     static let spacing: CGFloat = 10
     static let header: CGFloat = 18
     static let quickDay: CGFloat = 24
@@ -161,12 +147,11 @@ private enum CalendarMetrics {
     static let weekdays: CGFloat = 14
     static let week: CGFloat = 30
     static let weekSpacing: CGFloat = 2
-    static let footerGap: CGFloat = 6
 
     static func height(weeks: Int) -> CGFloat {
         let grid = CGFloat(weeks) * week + CGFloat(weeks - 1) * weekSpacing
         return padding * 2 + PopupMenuStyle.searchHeight + inset.top + inset.bottom + header + quickDay + monthRow + weekdays
-            + spacing * 4 + grid + footerGap + PopupMenuStyle.footerHeight
+            + spacing * 4 + grid
     }
 }
 
@@ -221,9 +206,6 @@ private struct CalendarPickerView: View {
                 .accessibilityLabel(model.month.formatted(.monthYear))
             }
             .padding(CalendarMetrics.inset)
-            PopupFooter(hints: model.phrase.isEmpty ? [("←↑↓→", "Move"), ("↵", "Set"), ("esc", "Close")]
-                                                    : [("↑↓", "Move"), ("↵", "Set"), ("esc", "Clear")], theme: theme)
-                .padding(.top, CalendarMetrics.footerGap)
         }
         .popupChrome(theme: theme, width: CalendarMetrics.width, padding: CalendarMetrics.padding)
     }

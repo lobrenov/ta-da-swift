@@ -34,9 +34,8 @@ Prefixes count while typing, in this order: `t` and `to` → today, `tom` → to
 
 ### Calendar
 - A text field at the top (the move menu's search field, `PopupField`, with a calendar icon and "Type a date: fri, 3d, 25/12") has the keyboard while the calendar is open, with the usual text editing. On its right, in muted text, the day ↵ sets ("Fri 16 Oct"), or "No match · Fri 16 Oct".
-- ↑↓ move the cursor a week; ←→ move it a day while the field is empty, and the caret once something is typed. Arrows keep the phrase.
 - esc with a phrase clears it; esc again closes.
-- Footer hints: ←↑↓→ Move, ↵ Set, esc Close; once something is typed, ↑↓ Move, ↵ Set, esc Clear.
+- No arrow-key moves and no footer hints.
 - VoiceOver announces each match ("Friday 16 Oct"), or "No match" and the cursor's day.
 
 ## Milestones

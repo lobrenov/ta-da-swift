@@ -145,22 +145,15 @@ struct PropertyPickerTests {
         #expect(MonthGrid(LocalDate("2027-02-01")!, calendar: mondayFirst).weeks == 4, "February 2027 starts on a Monday")
     }
 
-    @Test func theCursorMovesByDayWeekAndMonth() {
+    @Test func theCursorMovesByMonth() {
         let model = CalendarPickerModel()
         var monthChanges = 0
         model.onMonthChange = { monthChanges += 1 }
-        model.cursor = LocalDate("2026-10-29")!
-        model.move(days: 1)
-        model.move(days: -7)
-        #expect(model.cursor == LocalDate("2026-10-23")! && monthChanges == 0)
-        model.move(days: 9)
-        #expect(model.cursor == LocalDate("2026-11-01")! && model.month == LocalDate("2026-11-01")! && monthChanges == 1)
-
         model.cursor = LocalDate("2027-01-31")!
         model.move(months: 1)
-        #expect(model.cursor == LocalDate("2027-02-28")!, "keeps the day, or the month's last")
+        #expect(model.cursor == LocalDate("2027-02-28")! && model.month == LocalDate("2027-02-01")!, "keeps the day, or the month's last")
         model.move(months: -2)
-        #expect(model.cursor == LocalDate("2026-12-28")! && monthChanges == 3)
+        #expect(model.cursor == LocalDate("2026-12-28")! && monthChanges == 2)
     }
 
     @Test func aTypedDateMovesTheCursorAndANonMatchKeepsIt() {
@@ -189,17 +182,17 @@ struct PropertyPickerTests {
         #expect(model.cursor == LocalDate("2026-11-02")!, "back to the date set")
     }
 
-    @Test func theArrowsMoveTheTypedDay() {
+    @Test func theMonthButtonsMoveTheTypedDay() {
         let model = CalendarPickerModel()
         model.today = LocalDate("2026-10-13")!
         model.phrase = "fri"
-        model.move(days: 1)
-        #expect(model.match == LocalDate("2026-10-17")! && model.cursor == LocalDate("2026-10-17")!)
+        model.move(months: 1)
+        #expect(model.match == LocalDate("2026-11-16")! && model.cursor == LocalDate("2026-11-16")!)
         model.phrase = "xyz"
         model.move(months: 1)
-        #expect(model.match == LocalDate("2026-11-17")!)
+        #expect(model.match == LocalDate("2026-12-16")!)
         model.phrase = ""
-        model.move(days: 1)
+        model.move(months: 1)
         #expect(model.match == nil)
     }
 
