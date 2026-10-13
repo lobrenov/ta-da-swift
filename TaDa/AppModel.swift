@@ -1900,6 +1900,10 @@ import TaDaCore
     var todayReminders: [ExternalReminder] { integrations.todayReminders }
     var upcomingEvents: [LocalDate: [DayEvent]] { integrations.upcomingEvents }
     var upcomingReminders: [LocalDate: [ExternalReminder]] { integrations.upcomingReminders }
+    /// Whether any event covers `day`, for the month calendar's and week strip's dots.
+    func hasEvents(on day: LocalDate) -> Bool {
+        day == today ? !todayEvents.isEmpty : upcomingEvents[day] != nil
+    }
 
     var todayCount: Int { todayTasks.count { !$0.properties.status.isClosed } }
     var looseCount: Int { looseTasks.count }

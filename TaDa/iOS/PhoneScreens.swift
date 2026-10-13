@@ -1,5 +1,5 @@
-// The lists the tabs open on: Today and Loose (grouped by area and project), Upcoming (a week strip over the days
-// ahead), Projects (with the areas), a project's tasks, and an area's projects and tasks.
+// The lists the tabs open on: Today and Loose (grouped by area and project; Today starts with the day's events and
+// reminders), Upcoming (a week strip over the days ahead, each with its events and reminders before its tasks), Projects (with the areas), a project's tasks, and an area's projects and tasks.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -24,9 +24,15 @@ struct PhoneTaskListScreen: View {
                   pickable: groups.flatMap(\.tasks).map(\.path), add: newTask) {
             EmptyView()
         } content: {
-            if all.isEmpty {
+            let events = kind == .today ? model.todayEvents : [], reminders = kind == .today ? model.todayReminders : []
+            if all.isEmpty, events.isEmpty, reminders.isEmpty {
                 empty.padding(.top, 60)
             }
+            if !events.isEmpty || !reminders.isEmpty {
+                Color.clear.frame(height: 12)
+            }
+            ForEach(events) { EventRow(event: $0, day: model.today, context: .today) }
+            ForEach(reminders) { ReminderRow(reminder: $0, context: .today, today: model.today) }
             ForEach(groups) { group in
                 if let parent = group.parent {
                     if parent.properties.kind == .area {
@@ -95,8 +101,12 @@ struct PhoneUpcomingScreen: View {
             ForEach(1...Self.days, id: \.self) { offset in
                 let day = today.adding(days: offset)
                 let items = entries.filter { $0.date == day }
-                DayHeader(number: "\(day.day)", label: offset == 1 ? "Tomorrow" : day.formatted(.weekday), empty: items.isEmpty)
+                let events = model.upcomingEvents[day] ?? [], reminders = model.upcomingReminders[day] ?? []
+                DayHeader(number: "\(day.day)", label: offset == 1 ? "Tomorrow" : day.formatted(.weekday),
+                          empty: items.isEmpty && events.isEmpty && reminders.isEmpty)
                     .id("day-\(offset)")
+                ForEach(events) { EventRow(event: $0, day: day, context: .upcoming) }
+                ForEach(reminders) { ReminderRow(reminder: $0, context: .upcoming) }
                 ForEach(items) { row($0, dated: false) }
             }
             ForEach(later.keys.sorted(), id: \.self) { month in
@@ -122,7 +132,7 @@ struct PhoneUpcomingScreen: View {
     }
 }
 
-/// Today and the six days after it: the weekday, the date, and dots for due dates and deadlines. Tapping a day
+/// Today and the six days after it: the weekday, the date, and dots for due dates, deadlines and events. Tapping a day
 /// scrolls to it.
 private struct WeekStrip: View {
     let model: AppModel
@@ -136,6 +146,7 @@ private struct WeekStrip: View {
                 let day = model.today.adding(days: offset)
                 let due = open.contains { $0.properties.dueDate == day }
                 let deadline = open.contains { $0.properties.deadline == day }
+                let event = model.hasEvents(on: day)
                 Button { show(offset) } label: {
                     VStack(spacing: 3) {
                         Text(day.date().formatted(.dateTime.weekday(.narrow)))
@@ -147,6 +158,7 @@ private struct WeekStrip: View {
                         HStack(spacing: 3) {
                             if due { Circle().fill(theme.color(\.due)).frame(width: 5, height: 5) }
                             if deadline { Circle().fill(theme.color(\.deadline)).frame(width: 5, height: 5) }
+                            if event { Circle().fill(theme.color(\.muted)).frame(width: 5, height: 5) }
                         }
                         .frame(height: 5)
                     }
@@ -156,7 +168,7 @@ private struct WeekStrip: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(day.formatted(.weekdayDayMonth) + (due ? ", due dates" : "") + (deadline ? ", deadlines" : ""))
+                .accessibilityLabel(day.formatted(.weekdayDayMonth) + (due ? ", due dates" : "") + (deadline ? ", deadlines" : "") + (event ? ", events" : ""))
             }
         }
         .padding(.horizontal, 12)

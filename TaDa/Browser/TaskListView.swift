@@ -1,5 +1,5 @@
 // Today and Loose tasks: a header, tasks without a parent first, then loose projects' groups, then each area's own
-// tasks under its heading followed by its projects' groups.
+// tasks under its heading followed by its projects' groups. Today starts with the day's events, then its reminders.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -13,10 +13,26 @@ struct TaskListView: View {
     var body: some View {
         let all = kind == .today ? model.todayTasks : model.looseTasks
         let groups = model.index.grouped(all)
+        let events = kind == .today ? model.todayEvents : [], reminders = kind == .today ? model.todayReminders : []
 
-        BrowserColumn(model: model, paths: groups.flatMap(\.tasks).map(\.path), spacing: 22, empty: all.isEmpty ? empty : nil) {
+        BrowserColumn(model: model, paths: groups.flatMap(\.tasks).map(\.path), spacing: 22,
+                      empty: all.isEmpty && events.isEmpty && reminders.isEmpty ? empty : nil) {
             header
         } content: {
+            if !events.isEmpty || !reminders.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    if !events.isEmpty {
+                        VStack(alignment: .leading, spacing: 1) {
+                            ForEach(events) { EventRow(event: $0, day: model.today, context: .today) }
+                        }
+                    }
+                    if !reminders.isEmpty {
+                        VStack(alignment: .leading, spacing: 1) {
+                            ForEach(reminders) { ReminderRow(reminder: $0, context: .today, today: model.today) }
+                        }
+                    }
+                }
+            }
             list(groups)
         }
     }

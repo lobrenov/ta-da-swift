@@ -1,4 +1,4 @@
-// A month grid with dots for open tasks' due dates and deadlines, and the month's entries after the agenda's seven days.
+// A month grid with dots for open tasks' due dates and deadlines and for days with events, and the month's entries after the agenda's seven days.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -86,7 +86,8 @@ struct MonthCalendarView: View {
             LazyVGrid(columns: columns, spacing: 2) {
                 ForEach(grid.days.indices, id: \.self) { i in
                     if let day = grid.days[i] {
-                        DayCell(day: day, today: today, hasDue: due.contains(day), hasDeadline: deadlines.contains(day))
+                        DayCell(day: day, today: today, hasDue: due.contains(day), hasDeadline: deadlines.contains(day),
+                                hasEvent: model.hasEvents(on: day))
                     } else {
                         Color.clear.frame(height: 34)
                     }
@@ -101,6 +102,7 @@ private struct DayCell: View {
     let today: LocalDate
     let hasDue: Bool
     let hasDeadline: Bool
+    let hasEvent: Bool
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -115,6 +117,7 @@ private struct DayCell: View {
             HStack(spacing: 2) {
                 if hasDue { Circle().fill(theme.color(\.due)).frame(width: 4, height: 4) }
                 if hasDeadline { RoundedRectangle(cornerRadius: 1).fill(theme.color(\.deadline)).frame(width: 4, height: 4) }
+                if hasEvent { Circle().fill(theme.color(\.muted)).frame(width: 4, height: 4) }
             }
             .frame(height: 4)
         }
@@ -129,6 +132,7 @@ private struct DayCell: View {
         if day == today { parts.append("today") }
         if hasDue { parts.append("tasks due") }
         if hasDeadline { parts.append("deadlines") }
+        if hasEvent { parts.append("events") }
         return parts.joined(separator: ", ")
     }
 }
