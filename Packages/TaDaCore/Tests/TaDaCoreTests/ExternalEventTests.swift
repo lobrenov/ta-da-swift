@@ -85,6 +85,16 @@ func allDayMultiDayEventIsAllDayOnEachDay(eventKitStyleEnd: Bool) throws {
     #expect(e.placement(on: day("2026-10-14"), calendar: utc) == nil)
 }
 
+@Test func allDayEventIsPlacedInTheCalendarItWasMadeIn() {
+    var utc = Calendar(identifier: .gregorian)
+    utc.timeZone = TimeZone(identifier: "UTC")!
+    // EventKit's all-day events are floating: midnight in the current time zone, placed with the same calendar.
+    let e = event("Holiday", at("2026-10-14", in: utc), at("2026-10-15", in: utc), allDay: true)
+    #expect(e.days(in: utc) == day("2026-10-14")...day("2026-10-14"))
+    // UTC midnight is 11:00 in Melbourne, so there it runs into the next day.
+    #expect(e.days(in: melbourne) == day("2026-10-14")...day("2026-10-15"))
+}
+
 @Test func daylightSavingDaysAreStillOneDay() {
     // Melbourne's clocks go forward on 4 Oct 2026 (a 23-hour day) and back on 5 Apr 2026 (a 25-hour day).
     let short = event("Event", at("2026-10-04"), at("2026-10-05"), allDay: true)

@@ -19,7 +19,7 @@ Starting point, as checked on 2026-10-12:
 - **Rows**: one line each, shorter than a task row. The calendar's or list's own colour identifies it; no calendar or list name is shown.
   - Event: a colour bar, the start time, the title. No end time.
   - Reminder: a circle in the list's colour, the title. No time. An overdue reminder in Today shows its due date in `deadline`.
-- **Multi-day events**: the start time on the first day, All day on the days in between, "until <end time>" on the last day. An all-day event that spans days shows All day on each, with "Day n of m" after the title.
+- **Multi-day events**: the start time on the first day, All day on the days in between, "until <end time>" on the last day. An all-day event that spans days shows All day on each, with "Day n of m" after the title. A timed event ending exactly at midnight doesn't reach the next day, and its last day shows All day.
 - **Past events**: an event that has ended today is dimmed (45% opacity).
 - **Reminders shown**: incomplete reminders with a due date. Today: due today or overdue. Upcoming: on their due date. Reminders without a due date never show.
 - **Links**: clicking or tapping an event opens Calendar. On iPhone it opens on the event's day (`calshow:` with the day's start in seconds since 2001-01-01). On the Mac it opens Calendar on whatever day it shows. Reminders aren't links.
