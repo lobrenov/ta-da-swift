@@ -44,6 +44,17 @@ extension LocalDate {
     }
 }
 
+extension DayOrder {
+    /// The order of the day and month in the system's short date format (Language & Region).
+    static var system: DayOrder {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        let format = formatter.dateFormat ?? ""
+        guard let day = format.firstIndex(of: "d"), let month = format.firstIndex(of: "M") else { return .dayMonth }
+        return day < month ? .dayMonth : .monthDay
+    }
+}
+
 /// A month laid out in weeks from the locale's first weekday: the weekday initials, and the month's days with
 /// nil for the days before the 1st.
 struct MonthGrid {

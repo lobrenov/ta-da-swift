@@ -70,6 +70,8 @@ final class PopupPanel<Content: View> {
     /// Takes the keys typed while the panel is open, returning whether it used each one. Nil leaves keys to
     /// the window.
     var onKey: ((NSEvent) -> Bool)?
+    /// Takes esc first, returning whether it used it; esc dismisses otherwise.
+    var onEscape: (() -> Bool)?
     /// What dismissing does; hides the panel unless set.
     var onDismiss: (() -> Void)?
 
@@ -137,7 +139,7 @@ final class PopupPanel<Content: View> {
             guard let self else { return event }
             if event.type == .keyDown {
                 if event.charactersIgnoringModifiers == String(KeyEquivalent.escape.character) {
-                    dismiss()
+                    if onEscape?() != true { dismiss() }
                     return nil
                 }
                 return onKey?(event) == true ? nil : event

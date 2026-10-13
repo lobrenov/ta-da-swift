@@ -163,6 +163,33 @@ struct PropertyPickerTests {
         #expect(model.cursor == LocalDate("2026-12-28")! && monthChanges == 3)
     }
 
+    @Test func aTypedDateMovesTheCursorAndANonMatchKeepsIt() {
+        let model = CalendarPickerModel()
+        var monthChanges = 0
+        model.onMonthChange = { monthChanges += 1 }
+        model.today = LocalDate("2026-10-13")!
+        model.cursor = model.today
+        model.order = .dayMonth
+        model.phrase = "25/12"
+        #expect(model.match == LocalDate("2026-12-25")! && model.cursor == LocalDate("2026-12-25")! && monthChanges == 1)
+        model.phrase = "25/12x"
+        #expect(model.match == nil && model.cursor == LocalDate("2026-12-25")!, "no match keeps the cursor")
+        model.phrase = "fri"
+        #expect(model.cursor == LocalDate("2026-10-16")! && monthChanges == 2)
+        model.order = .monthDay
+        model.phrase = "5/12"
+        #expect(model.cursor == LocalDate("2027-05-12")!)
+        model.phrase = ""
+        #expect(model.match == nil && model.cursor == LocalDate("2027-05-12")!)
+    }
+
+    @Test func onlyDateCharactersType() {
+        #expect("fri 25/12-1.+3:00,".allSatisfy(CalendarPickerModel.isPhraseCharacter))
+        #expect(!"é".allSatisfy(CalendarPickerModel.isPhraseCharacter))
+        #expect(!"\t".allSatisfy(CalendarPickerModel.isPhraseCharacter))
+        #expect(!"\u{F700}".allSatisfy(CalendarPickerModel.isPhraseCharacter), "an arrow key's character")
+    }
+
     // MARK: tagMenu
 
     private func tagMenu(_ query: String = "", keeping: String? = nil) -> (titles: [String?], labels: [String?], highlight: Int?) {

@@ -1,5 +1,6 @@
 // The calendar under a dueDate or deadline chip: its month in a popup panel like Upcoming's calendar, with
-// Today, Tomorrow, Next week and Clear. The arrow keys move a cursor through the days and ↵ sets it.
+// Today, Tomorrow, Next week and Clear. The arrow keys move a cursor through the days and ↵ sets it. Typing a
+// date ("fri", "3d", "25/12") moves the cursor to it.
 import SwiftUI
 import TaDaCore
 #if os(macOS)
@@ -27,6 +28,11 @@ final class CalendarPicker {
             self?.handleKey(event)
             return true
         }
+        panel.onEscape = { [weak model] in
+            guard let model, !model.phrase.isEmpty else { return false }
+            model.phrase = ""
+            return true
+        }
         model.onMonthChange = { [weak self] in self?.layout() }
     }
 
@@ -39,6 +45,8 @@ final class CalendarPicker {
         model.selected = selected
         model.other = other
         model.today = today
+        model.order = .system
+        model.phrase = ""
         model.cursor = selected ?? today
         model.theme = theme
         model.set = set
@@ -64,9 +72,22 @@ final class CalendarPicker {
         case .upArrow: model.move(days: -7)
         case .downArrow: model.move(days: 7)
         case .carriageReturn, .enter: return model.set(model.cursor)
-        default: return
+        case .delete:
+            guard !model.phrase.isEmpty else { return }
+            model.phrase.removeLast()
+            return announcePhrase()
+        default:
+            guard event.modifierFlags.isDisjoint(with: [.command, .control, .option]), let typed = event.characters,
+                  typed.allSatisfy(CalendarPickerModel.isPhraseCharacter),
+                  !(model.phrase.isEmpty && typed.allSatisfy(\.isWhitespace)), model.phrase.count < 40 else { return }
+            model.phrase += typed
+            return announcePhrase()
         }
         announceToVoiceOver(model.cursor.formatted(.weekdayDayMonthYear))
+    }
+
+    private func announcePhrase() {
+        announceToVoiceOver(model.phrase.isEmpty ? model.kind.name : model.match?.formatted(.wideWeekdayDayMonth) ?? "No date")
     }
 }
 
@@ -83,6 +104,18 @@ final class CalendarPickerModel {
     /// The day ↵ sets. The calendar shows its month.
     var cursor = LocalDate(Date())
     var theme = Theme.all[0]
+    /// Which a typed numeric date gives first.
+    var order = DayOrder.dayMonth
+    /// The date typed so far. Each change moves the cursor to the day it gives, if any.
+    var phrase = "" {
+        didSet {
+            match = phrase.isEmpty ? nil : DatePhrase.parse(phrase, today: today, order: order,
+                                                            firstWeekday: Calendar.current.firstWeekday)
+            if let match { moveCursor(to: match) }
+        }
+    }
+    /// The day `phrase` gives, or nil when it gives none.
+    private(set) var match: LocalDate?
     @ObservationIgnored var set: (LocalDate?) -> Void = { _ in }
     /// Called when the cursor moves into another month, which can have another number of weeks.
     @ObservationIgnored var onMonthChange: () -> Void = {}
@@ -95,6 +128,11 @@ final class CalendarPickerModel {
     func move(months: Int) {
         let start = month.addingMonths(months)
         moveCursor(to: start.adding(days: min(cursor.day, start.days(to: start.addingMonths(1))) - 1))
+    }
+
+    /// Letters, digits, spaces and the separators a typed date uses.
+    static func isPhraseCharacter(_ character: Character) -> Bool {
+        character.isASCII && (character.isLetter || character.isNumber || " /.-+:,".contains(character))
     }
 
     private func moveCursor(to day: LocalDate) {
@@ -172,7 +210,8 @@ private struct CalendarPickerView: View {
                 .accessibilityLabel(model.month.formatted(.monthYear))
             }
             .padding(CalendarMetrics.inset)
-            PopupFooter(hints: [("←↑↓→", "Move"), ("↵", "Set"), ("esc", "Close")], theme: theme)
+            PopupFooter(hints: model.phrase.isEmpty ? [("←↑↓→", "Move"), ("abc", "Type a date"), ("esc", "Close")]
+                                                    : [("↵", "Set"), ("⌫", "Delete"), ("esc", "Clear")], theme: theme)
                 .padding(.top, CalendarMetrics.footerGap)
         }
         .popupChrome(theme: theme, width: CalendarMetrics.width, padding: CalendarMetrics.padding)
@@ -180,21 +219,46 @@ private struct CalendarPickerView: View {
 
     private var header: some View {
         HStack {
-            Text(model.kind.name.uppercased())
-                .font(.system(size: 10.5, weight: .semibold))
-                .tracking(0.6)
-                .foregroundStyle(model.theme.color(\.muted))
-                .accessibilityAddTraits(.isHeader)
-            Spacer()
-            if model.selected != nil {
-                Button("Clear") { model.set(nil) }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 12))
-                    .foregroundStyle(model.theme.color(\.muted))
-            }
+            if model.phrase.isEmpty { label } else { typed }
         }
         .padding(.horizontal, 4)
         .frame(height: CalendarMetrics.header)
+    }
+
+    /// The typed date with a caret, and the day it gives.
+    @ViewBuilder private var typed: some View {
+        let theme = model.theme
+        HStack(spacing: 1) {
+            Text(model.phrase)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(theme.color(\.strong))
+                .lineLimit(1)
+                .truncationMode(.head)
+            Rectangle().fill(theme.color(\.accent)).frame(width: 1.5, height: 14)
+        }
+        .accessibilityLabel("Typed date, \(model.phrase)")
+        Spacer(minLength: 8)
+        Text(model.match?.formatted(.weekdayDayMonth) ?? "No date")
+            .font(.system(size: 12))
+            .foregroundStyle(theme.color(\.muted))
+            .lineLimit(1)
+            .fixedSize()
+    }
+
+    /// The date's name, and Clear when it has one.
+    @ViewBuilder private var label: some View {
+        Text(model.kind.name.uppercased())
+            .font(.system(size: 10.5, weight: .semibold))
+            .tracking(0.6)
+            .foregroundStyle(model.theme.color(\.muted))
+            .accessibilityAddTraits(.isHeader)
+        Spacer()
+        if model.selected != nil {
+            Button("Clear") { model.set(nil) }
+                .buttonStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(model.theme.color(\.muted))
+        }
     }
 }
 
