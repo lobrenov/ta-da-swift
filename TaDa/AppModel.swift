@@ -1957,9 +1957,10 @@ import TaDaCore
     }
 
     /// Fetches events and reminders from today to the later of Upcoming's last date and the end of next month, which
-    /// the month calendar shows.
+    /// the month calendar shows, but no more than a year ahead.
     private func updateIntegrations() {
-        integrations.update(today: today, through: max(upcoming.last?.date ?? today, Self.endOfNextMonth(after: today)))
+        let last = max(upcoming.last?.date ?? today, Self.endOfNextMonth(after: today))
+        integrations.update(today: today, through: min(last, today.adding(days: 365)))
     }
 
     static func endOfNextMonth(after day: LocalDate) -> LocalDate {

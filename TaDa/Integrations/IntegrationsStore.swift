@@ -137,10 +137,10 @@ final class IntegrationsStore {
         fetch()
     }
 
-    /// Reads access again and fetches: when the app becomes active, and when the calendars change.
+    /// Reads access again when the app becomes active, and fetches when it changed. The calendars' own changes and a new
+    /// day fetch on their own.
     func refresh() {
-        readStatuses()
-        fetch()
+        if readStatuses() { fetch() }
     }
 
     // MARK: Fetching
@@ -157,10 +157,14 @@ final class IntegrationsStore {
         fetch()
     }
 
-    private func readStatuses() {
+    /// Whether either changed.
+    @discardableResult
+    private func readStatuses() -> Bool {
         let events = EKEventStore.authorizationStatus(for: .event), reminders = EKEventStore.authorizationStatus(for: .reminder)
-        if events != eventStatus { eventStatus = events }
-        if reminders != reminderStatus { reminderStatus = reminders }
+        guard events != eventStatus || reminders != reminderStatus else { return false }
+        eventStatus = events
+        reminderStatus = reminders
+        return true
     }
 
     /// The one event store, made on first use and watched for changes.
@@ -179,27 +183,22 @@ final class IntegrationsStore {
         let fetch = fetches
         let showsEvents = isShown(.events), showsReminders = isShown(.reminders)
         let store: EKEventStore? = showsEvents || showsReminders ? store() : nil
-        calendarSources = showsEvents ? store.map { Self.sources($0.calendars(for: .event)) } ?? [] : []
-        listSources = showsReminders ? store.map { Self.sources($0.calendars(for: .reminder)) } ?? [] : []
+        let calendarSources = showsEvents ? store.map { Self.sources($0.calendars(for: .event)) } ?? [] : []
+        let listSources = showsReminders ? store.map { Self.sources($0.calendars(for: .reminder)) } ?? [] : []
+        if calendarSources != self.calendarSources { self.calendarSources = calendarSources }
+        if listSources != self.listSources { self.listSources = listSources }
         guard let window, let store else { return apply(events: [], reminders: [], window: window) }
 
         let calendar = Calendar.current
         let start = window.today.date(in: calendar), end = window.last.adding(days: 1).date(in: calendar)
-        var events: [ExternalEvent] = []
-        let calendars = store.calendars(for: .event).filter { !hiddenCalendars.contains($0.calendarIdentifier) }
-        if showsEvents, !calendars.isEmpty {
-            let predicate = store.predicateForEvents(withStart: start, end: end, calendars: calendars)
-            events = store.events(matching: predicate).map(Self.event)
-        }
-        let lists = store.calendars(for: .reminder).filter { !hiddenLists.contains($0.calendarIdentifier) }
-        guard showsReminders, !lists.isEmpty else { return apply(events: events, reminders: [], window: window) }
-        let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: end, calendars: lists)
+        let hiddenCalendars = showsEvents ? hiddenCalendars : nil, hiddenLists = showsReminders ? hiddenLists : nil
+        let fetcher = Fetcher(store: store)
         Task {
-            let reminders = await withCheckedContinuation { continuation in
-                store.fetchReminders(matching: predicate) { continuation.resume(returning: ($0 ?? []).map(Self.reminder)) }
-            }
+            async let fetchedEvents = fetcher.events(from: start, to: end, hiding: hiddenCalendars)
+            async let fetchedReminders = fetcher.reminders(dueBefore: end, hiding: hiddenLists)
+            let (found, due) = await (fetchedEvents, fetchedReminders)
             guard fetch == fetches else { return }
-            apply(events: events, reminders: reminders, window: window)
+            apply(events: found, reminders: due, window: window)
         }
     }
 
@@ -228,21 +227,25 @@ final class IntegrationsStore {
             .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
     }
 
-    private nonisolated static func event(_ event: EKEvent) -> ExternalEvent {
+    nonisolated static func event(_ event: EKEvent) -> ExternalEvent {
         ExternalEvent(identifier: event.eventIdentifier ?? event.calendarItemIdentifier, title: event.title ?? "",
                       start: event.startDate, end: event.endDate, isAllDay: event.isAllDay, color: hex(event.calendar?.cgColor))
     }
 
-    private nonisolated static func reminder(_ reminder: EKReminder) -> ExternalReminder {
-        let due = reminder.dueDateComponents.flatMap { components -> LocalDate? in
-            guard components.hour != nil || components.timeZone != nil else {
-                return components.year.flatMap { year in components.month.flatMap { month in
-                    components.day.flatMap { LocalDate(year: year, month: month, day: $0) } } }
-            }
-            return Calendar.current.date(from: components).map { LocalDate($0) }
+    /// A day-only due date is that day wherever the device is; a timed one is the day it falls on here.
+    nonisolated static func reminder(_ reminder: EKReminder) -> ExternalReminder {
+        ExternalReminder(identifier: reminder.calendarItemIdentifier, title: reminder.title ?? "",
+                         due: reminder.dueDateComponents.flatMap(dueDay), color: hex(reminder.calendar?.cgColor))
+    }
+
+    nonisolated static func dueDay(_ components: DateComponents) -> LocalDate? {
+        guard components.hour != nil else {
+            guard let year = components.year, let month = components.month, let day = components.day else { return nil }
+            return LocalDate(year: year, month: month, day: day)
         }
-        return ExternalReminder(identifier: reminder.calendarItemIdentifier, title: reminder.title ?? "", due: due,
-                                color: hex(reminder.calendar?.cgColor))
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = components.timeZone ?? .current
+        return calendar.date(from: components).map { LocalDate($0) }
     }
 
     /// `#RRGGBB` in sRGB; grey when the calendar has no colour.
@@ -252,5 +255,32 @@ final class IntegrationsStore {
               let parts = converted.components, parts.count >= 3 else { return "#8E8E93" }
         func byte(_ value: CGFloat) -> Int { Int((min(max(value, 0), 1) * 255).rounded()) }
         return String(format: "#%02X%02X%02X", byte(parts[0]), byte(parts[1]), byte(parts[2]))
+    }
+}
+
+/// Runs EventKit's fetches off the main actor. `EKEventStore` is safe to fetch from any thread.
+private nonisolated struct Fetcher: @unchecked Sendable {
+    let store: EKEventStore
+
+    /// The events overlapping `start..<end` in the calendars not hidden; none when `hidden` is nil.
+    @concurrent nonisolated func events(from start: Date, to end: Date, hiding hidden: Set<String>?) async -> [ExternalEvent] {
+        guard let hidden else { return [] }
+        let calendars = store.calendars(for: .event).filter { !hidden.contains($0.calendarIdentifier) }
+        guard !calendars.isEmpty else { return [] }
+        return store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: calendars))
+            .map(IntegrationsStore.event)
+    }
+
+    /// The incomplete reminders due before `end`, overdue ones included, in the lists not hidden; none when `hidden` is nil.
+    @concurrent nonisolated func reminders(dueBefore end: Date, hiding hidden: Set<String>?) async -> [ExternalReminder] {
+        guard let hidden else { return [] }
+        let lists = store.calendars(for: .reminder).filter { !hidden.contains($0.calendarIdentifier) }
+        guard !lists.isEmpty else { return [] }
+        let predicate = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: end, calendars: lists)
+        return await withCheckedContinuation { continuation in
+            store.fetchReminders(matching: predicate) { @Sendable found in
+                continuation.resume(returning: (found ?? []).map(IntegrationsStore.reminder))
+            }
+        }
     }
 }

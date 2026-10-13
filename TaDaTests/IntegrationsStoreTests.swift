@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import Testing
 import TaDaCore
 @testable import TaDa
@@ -39,6 +40,17 @@ struct IntegrationsStoreTests {
         #expect(AppModel.endOfNextMonth(after: LocalDate("2026-11-30")!) == LocalDate("2026-12-31"))
         #expect(AppModel.endOfNextMonth(after: LocalDate("2026-12-01")!) == LocalDate("2027-01-31"))
         #expect(AppModel.endOfNextMonth(after: LocalDate("2028-01-31")!) == LocalDate("2028-02-29"))
+    }
+
+    @Test func dayOnlyDueDatesKeepTheirDayInAnyTimeZone() {
+        let utc = TimeZone(identifier: "UTC")!
+        let dayOnly = DateComponents(timeZone: utc, year: 2026, month: 10, day: 14)
+        #expect(IntegrationsStore.dueDay(dayOnly) == LocalDate("2026-10-14"))
+        #expect(IntegrationsStore.dueDay(DateComponents(year: 2026, month: 10)) == nil)
+        // A timed one is the day its moment falls on in the device's time zone.
+        let timed = DateComponents(timeZone: utc, year: 2026, month: 10, day: 14, hour: 23, minute: 30)
+        let moment = Calendar(identifier: .gregorian).date(from: timed)!
+        #expect(IntegrationsStore.dueDay(timed) == LocalDate(moment))
     }
 
     @Test func coloursBecomeSRGBHex() {
