@@ -17,18 +17,6 @@ import Foundation
 
 extension MarkdownStyler {
 
-    enum TableAlignment {
-        case left
-        case center
-        case right
-    }
-
-    struct ParsedTable {
-        let header: [String]
-        let alignments: [TableAlignment]
-        let rows: [[String]]
-    }
-
     /// Rendered-table image cache. A table's pixels depend only on its source,
     /// font, colors, and appearance — so identical keys can reuse the PlatformImage
     /// instead of re-rendering every inactive table on every keystroke.
@@ -108,10 +96,10 @@ extension MarkdownStyler {
     /// every table re-parses+re-hashes every keystroke.
     private static let tableMetaCap = 8192
     private static let tableMetaLock = NSLock()
-    private static var tableMetaCache: [String: (parsed: ParsedTable?, hash: Int)] = [:]
+    private static var tableMetaCache: [String: (parsed: MarkdownTable?, hash: Int)] = [:]
     private static var tableMetaOrder: [String] = []
 
-    static func tableMeta(for source: String) -> (parsed: ParsedTable?, hash: Int) {
+    static func tableMeta(for source: String) -> (parsed: MarkdownTable?, hash: Int) {
         tableMetaLock.lock()
         if let cached = tableMetaCache[source] {
             tableMetaLock.unlock()
@@ -139,7 +127,7 @@ extension MarkdownStyler {
     /// it is part of the cache key because the layout depends on it.
     static func tableImage(
         for source: String,
-        parsed: ParsedTable,
+        parsed: MarkdownTable,
         ctx: StylingContext,
         appearance: PlatformAppearance,
         availableWidth: CGFloat
@@ -298,76 +286,9 @@ extension MarkdownStyler {
 
     // MARK: - Parsing
 
-    static func parseTableSource(_ source: String) -> ParsedTable? {
-        let rawLines = source.components(separatedBy: CharacterSet.newlines)
-        let lines = rawLines.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-        guard lines.count >= 2 else { return nil }
-
-        let header = parseTableRow(lines[0])
-        let alignments = parseTableAlignments(lines[1])
-        guard !header.isEmpty, !alignments.isEmpty else { return nil }
-
-        let columnCount = max(header.count, alignments.count)
-        let bodyLines = Array(lines.dropFirst(2))
-
-        func pad<T>(_ array: [T], to count: Int, with fill: T) -> [T] {
-            if array.count == count { return array }
-            if array.count > count { return Array(array.prefix(count)) }
-            return array + Array(repeating: fill, count: count - array.count)
-        }
-
-        let paddedHeader = pad(header, to: columnCount, with: "")
-        let paddedAlign = pad(alignments, to: columnCount, with: .left)
-        let rows = bodyLines.map { pad(parseTableRow($0), to: columnCount, with: "") }
-
-        return ParsedTable(header: paddedHeader, alignments: paddedAlign, rows: rows)
-    }
-
-    /// Splits on UNESCAPED `|` only. GFM escapes the delimiter as `\\|`, and
-    /// the escape wins over every inline context (a table row is split before
-    /// inline parsing runs) — so a cell holding `` `a \\| b` `` is one cell, not
-    /// two. Splitting on the raw character silently truncated such a row to the
-    /// header's column count.
-    private static func parseTableRow(_ line: String) -> [String] {
-        var s = Substring(line.trimmingCharacters(in: .whitespaces))
-        if s.hasPrefix("|") { s = s.dropFirst() }
-        if s.hasSuffix("|"), !s.dropLast().hasSuffix("\\") { s = s.dropLast() }
-
-        var cells: [String] = []
-        var current = ""
-        var escaped = false
-        for ch in s {
-            if escaped {
-                // Only the delimiter escape is resolved here; every other `\x`
-                // stays intact so inline parsing still owns its own escapes.
-                if ch == "|" { current.append("|") } else { current.append("\\"); current.append(ch) }
-                escaped = false
-            } else if ch == "\\" {
-                escaped = true
-            } else if ch == "|" {
-                cells.append(current.trimmingCharacters(in: .whitespaces))
-                current = ""
-            } else {
-                current.append(ch)
-            }
-        }
-        if escaped { current.append("\\") }
-        cells.append(current.trimmingCharacters(in: .whitespaces))
-        return cells
-    }
-
-    private static func parseTableAlignments(_ line: String) -> [TableAlignment] {
-        let cells = parseTableRow(line)
-        return cells.map { cell in
-            let trimmed = cell.trimmingCharacters(in: .whitespaces)
-            let leading = trimmed.hasPrefix(":")
-            let trailing = trimmed.hasSuffix(":")
-            switch (leading, trailing) {
-            case (true, true): return .center
-            case (false, true): return .right
-            default: return .left
-            }
-        }
+    /// Ta Da fork: parsing lives in `MarkdownTable`.
+    static func parseTableSource(_ source: String) -> MarkdownTable? {
+        MarkdownTable.parse(source)
     }
 
     // MARK: - Inline-formatted cell strings
@@ -512,7 +433,7 @@ extension MarkdownStyler {
     // MARK: - Rendering
 
     private static func renderTable(
-        _ table: ParsedTable,
+        _ table: MarkdownTable,
         baseFont: PlatformFont,
         theme: MarkdownEditorTheme,
         codeBackgroundColor: PlatformColor,
@@ -719,7 +640,7 @@ extension MarkdownStyler {
                 // measured above (long words fall back to character breaks).
                 let paragraph = NSMutableParagraphStyle()
                 switch alignments[col] {
-                case .left:   paragraph.alignment = .left
+                case .left, .none: paragraph.alignment = .left
                 case .center: paragraph.alignment = .center
                 case .right:  paragraph.alignment = .right
                 }
