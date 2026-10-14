@@ -39,6 +39,12 @@ final class TableEdit {
     }
 }
 
+/// A row or a column of a table, as its grip selects it.
+enum TableHandle: Equatable {
+    case row(Int)
+    case column(Int)
+}
+
 final class TableGridView: NSView {
     weak var host: NativeTextView?
     var ordinal: Int
@@ -46,10 +52,24 @@ final class TableGridView: NSView {
     private(set) var layout: MarkdownStyler.TableLayout
     private(set) var editors: [[TableCellEditor]] = []
     private var isUpdating = false
+    /// The row and column under the pointer, which show their grips.
+    var hoverRow: Int?
+    var hoverColumn: Int?
+    /// The row or column a click on its grip selected.
+    var selectedHandle: TableHandle?
+    /// The grip being pressed, where, and the gap a drag would drop it in.
+    var pressedHandle: (handle: TableHandle, start: CGPoint)?
+    var dropGap: Int?
+    /// Where ⌘C and ⌘X put a selected row or column.
+    var pasteboard: NSPasteboard = .general
     /// Where the typing that `coalescingTableEdit` holds last ended, as a location in its cell.
     private var typingEnd: (row: Int, column: Int, location: Int)?
 
     override var isFlipped: Bool { true }
+
+    /// The room left of the table for the row grips, and above it for the column grips.
+    static let gutter: CGFloat = 16
+    static let topMargin: CGFloat = 12
 
     init(host: NativeTextView, ordinal: Int, table: MarkdownTable) {
         self.host = host
@@ -74,6 +94,11 @@ final class TableGridView: NSView {
         isUpdating = true
         defer { isUpdating = false }
         table = newTable
+        switch selectedHandle {
+        case .row(let r)? where r >= newTable.rowCount: selectedHandle = nil
+        case .column(let c)? where c >= newTable.columnCount: selectedHandle = nil
+        default: break
+        }
         resizeEditors(host: host)
         let config = host.configuration
         let estimate = MarkdownStyler.tableLayout(
@@ -98,11 +123,12 @@ final class TableGridView: NSView {
         let (hPad, vPad) = (MarkdownStyler.TableLayout.cellHPadding, MarkdownStyler.TableLayout.cellVPadding)
         for (r, row) in editors.enumerated() {
             for (c, editor) in row.enumerated() {
-                editor.textView.frame = CGRect(x: layout.columnLeft[c], y: layout.rowTop[r],
+                editor.textView.frame = CGRect(x: Self.gutter + layout.columnLeft[c], y: Self.topMargin + layout.rowTop[r],
                                                width: widths[c] + 2 * hPad, height: heights[r] + 2 * vPad)
             }
         }
-        if frame.size != layout.size { setFrameSize(layout.size) }
+        let size = CGSize(width: Self.gutter + layout.size.width, height: Self.topMargin + layout.size.height)
+        if frame.size != size { setFrameSize(size) }
         needsDisplay = true
     }
 
@@ -129,6 +155,10 @@ final class TableGridView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let host, layout.columnWidths.isEmpty == false else { return }
+        NSGraphicsContext.current?.saveGraphicsState()
+        defer { drawHandles(host: host) }
+        NSGraphicsContext.current?.cgContext.translateBy(x: Self.gutter, y: Self.topMargin)
+        defer { NSGraphicsContext.current?.restoreGraphicsState() }
         let border = MarkdownStyler.TableLayout.borderWidth
         let vPad = MarkdownStyler.TableLayout.cellVPadding
         let muted = host.configuration.theme.mutedText.resolved(under: effectiveAppearance)

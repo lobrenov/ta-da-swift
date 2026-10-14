@@ -111,6 +111,15 @@ final class WideTableOverlay: NSScrollView {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) not supported") }
 
+    /// Ta Da fork: a live table grid takes only its cells and grips; the rest of its frame (the margins) is the text's.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        guard let grid = documentView as? TableGridView else { return super.hitTest(point) }
+        let hit = super.hitTest(point)
+        guard hit === self || hit === contentView || hit === grid else { return hit }
+        let local = grid.convert(point, from: superview)
+        return grid.handle(at: local) != nil ? grid : nil
+    }
+
     deinit { NotificationCenter.default.removeObserver(self) }
 
     /// Clamp vertical scroll to 0 on every layout — kills sub-pixel wobble.

@@ -275,4 +275,133 @@ struct TableGridKeyTests {
         #expect(focused(h)! == (2, 0))
     }
 }
+
+@MainActor
+@Suite("Live table grid handles")
+struct TableGridHandleTests {
+    nonisolated static let source = "Before\n\n| h1 | h2 |\n|:---|---:|\n| r1 | a |\n| r2 | b |\n| r3 | c |\n\nAfter\n"
+
+    private func harness(_ source: String = TableGridHandleTests.source) -> (GridHarness, NSPasteboard) {
+        let h = GridHarness(source)
+        let board = NSPasteboard(name: NSPasteboard.Name("TaDaMarkdownTests.\(UUID().uuidString)"))
+        h.grid.pasteboard = board
+        return (h, board)
+    }
+
+    @Test func aGripClickSelectsARowOrColumn() {
+        let (h, _) = harness()
+        let grid = h.grid
+        grid.select(.row(2))
+        #expect(grid.selectedHandle == .row(2))
+        #expect(h.window.firstResponder === grid)
+        grid.select(.column(1))
+        #expect(grid.selectedHandle == .column(1))
+        grid.keyDown(with: key(53))
+        #expect(grid.selectedHandle == nil)
+        grid.select(.row(1))
+        grid.focus(row: 1, column: 0)
+        #expect(grid.selectedHandle == nil)
+    }
+
+    @Test func gripsAreInTheGutterAndAboveTheColumns() {
+        let (h, _) = harness()
+        let grid = h.grid
+        let layout = grid.layout
+        let rowY = TableGridView.topMargin + layout.rowTop[2] + 4
+        #expect(grid.handle(at: CGPoint(x: 4, y: rowY)) == .row(2))
+        let columnX = TableGridView.gutter + layout.columnLeft[1] + 4
+        #expect(grid.handle(at: CGPoint(x: columnX, y: 4)) == .column(1))
+        #expect(grid.handle(at: CGPoint(x: columnX, y: rowY)) == nil)
+        grid.updateHover(atViewPoint: CGPoint(x: columnX, y: rowY))
+        #expect(grid.hoverRow == 2 && grid.hoverColumn == 1)
+        grid.updateHover(atViewPoint: nil)
+        #expect(grid.hoverRow == nil && grid.hoverColumn == nil)
+    }
+
+    @Test func copyPutsAValidTableOnThePasteboard() throws {
+        let (h, board) = harness()
+        h.grid.select(.row(2))
+        h.grid.copy(nil)
+        let rowText = try #require(board.string(forType: .string))
+        let row = try #require(MarkdownTable.parse(rowText))
+        #expect(row.header == ["h1", "h2"])
+        #expect(row.alignments == [.left, .right])
+        #expect(row.rows == [["r2", "b"]])
+        h.grid.select(.column(1))
+        h.grid.copy(nil)
+        let columnText = try #require(board.string(forType: .string))
+        let column = try #require(MarkdownTable.parse(columnText))
+        #expect(column.header == ["h2"])
+        #expect(column.rows == [["a"], ["b"], ["c"]])
+        #expect(h.host.string.contains("r2"))
+    }
+
+    @Test func cutCopiesAndDeletesAsOneUndoStep() throws {
+        let (h, board) = harness()
+        let before = h.host.string
+        h.grid.select(.row(2))
+        h.grid.cut(nil)
+        #expect(board.string(forType: .string)?.contains("r2") == true)
+        #expect(!h.host.string.contains("r2"))
+        #expect(h.grid.table.rows.count == 2)
+        h.host.undoManager?.undo()
+        #expect(h.host.string == before)
+    }
+
+    @Test func deleteRemovesTheSelectionAndTheHeaderPromotesTheNextRow() {
+        let (h, _) = harness()
+        h.grid.select(.column(0))
+        h.grid.keyDown(with: key(51))
+        #expect(h.grid.table.header == ["h2"])
+        h.grid.select(.row(0))
+        h.grid.keyDown(with: key(51))
+        #expect(h.grid.table.header == ["a"])
+        #expect(h.grid.table.rows == [["b"], ["c"]])
+    }
+
+    @Test func deletingTheLastRowOrOnlyColumnDeletesTheTable() {
+        let (h, _) = harness("Before\n\n| a |\n|---|\n\nAfter\n")
+        let before = h.host.string
+        h.grid.select(.row(0))
+        h.grid.deleteSelected()
+        #expect(h.host.string == "Before\n\n\nAfter\n")
+        #expect(h.host.tableGrid(ordinal: 0) == nil)
+        h.host.undoManager?.undo()
+        #expect(h.host.string == before)
+        #expect(h.host.tableGrid(ordinal: 0) != nil)
+        h.grid.select(.column(0))
+        h.grid.deleteSelected()
+        #expect(h.host.tableGrid(ordinal: 0) == nil)
+    }
+
+    @Test func movingARowIsOneUndoStepAndTheHeaderStaysFirst() {
+        let (h, _) = harness()
+        let before = h.host.string
+        h.grid.move(.row(1), toGap: 4)
+        #expect(h.grid.table.rows.map { $0[0] } == ["r2", "r3", "r1"])
+        #expect(h.grid.selectedHandle == .row(3))
+        h.host.undoManager?.undo()
+        #expect(h.host.string == before)
+        h.grid.move(.row(0), toGap: 3)
+        #expect(h.host.string == before)
+        h.grid.move(.row(3), toGap: 0)
+        #expect(h.grid.table.header == ["h1", "h2"])
+        #expect(h.grid.table.rows.map { $0[0] } == ["r3", "r1", "r2"])
+    }
+
+    @Test func movingAColumnKeepsItsAlignmentAndIsOneUndoStep() {
+        let (h, _) = harness()
+        let before = h.host.string
+        h.grid.move(.column(0), toGap: 2)
+        #expect(h.grid.table.header == ["h2", "h1"])
+        #expect(h.grid.table.alignments == [.right, .left])
+        h.host.undoManager?.undo()
+        #expect(h.host.string == before)
+    }
+
+    private func key(_ code: UInt16) -> NSEvent {
+        NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil,
+                         characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: code)!
+    }
+}
 #endif

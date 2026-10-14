@@ -405,6 +405,7 @@ struct LiveEditor: View {
         #if os(macOS)
         config.imageEmbed.cornerRadius = 6
         config.liveTables = true
+        config.tableAccent = theme.accent
         config.imageEmbed.selectionRing = theme.accent
         config.imageEmbed.sourceButton = .init(fill: theme.isDark ? theme.side : theme.bg, hoverFill: theme.surface,
                                                ring: theme.surface, tint: theme.fg, hoverTint: theme.accent)

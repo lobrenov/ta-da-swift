@@ -106,6 +106,8 @@ public struct MarkdownEditorConfiguration: Sendable {
     /// Ta Da fork: on the Mac, a table is a live grid of cell editors over its source (`TableGridView`), and the caret
     /// never enters its source lines. Off keeps the rendered image and the revealed source.
     public var liveTables: Bool = false
+    /// Ta Da fork: the colour of a live table's selected row or column ring and its drop line; `theme.link` when nil.
+    public var tableAccent: PlatformColor? = nil
     /// Ta Da fork: callouts folded or opened on screen, by title line, overriding the file's `+` or `-`.
     var calloutFoldOverrides: [String: Bool] = [:]
 

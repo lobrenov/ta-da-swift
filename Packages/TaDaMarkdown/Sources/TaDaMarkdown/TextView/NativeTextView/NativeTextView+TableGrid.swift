@@ -124,26 +124,29 @@ extension NativeTextView {
             grid.ordinal = ordinal
             grid.update(table: table, availableWidth: containerWidth)
 
-            let isWide = grid.frame.width - containerWidth > 0.5
-            let gridHeight = grid.frame.height
-            let totalHeight = gridHeight + (isWide ? strip : 0)
+            let isWide = grid.layout.size.width - containerWidth > 0.5
+            let gridHeight = grid.layout.size.height
+            let (gutter, topMargin) = (TableGridView.gutter, TableGridView.topMargin)
+            let totalHeight = gridHeight + topMargin + (isWide ? strip : 0)
             let reserved = storage.attribute(.scrollableBlockTotalHeight, at: anchor.location, effectiveRange: nil) as? CGFloat
-            if reserved.map({ abs($0 - totalHeight) > 0.5 }) ?? true {
+            if reserved.map({ abs($0 - (gridHeight + (isWide ? strip : 0))) > 0.5 }) ?? true {
                 tableGridHeights[ordinal] = gridHeight
                 mismatched.append(text.paragraphRange(for: token.range))
             }
 
             let columnLeft = (breakout ? frame.origin.x : 0) + textContainerOrigin.x + anchorRect.minX
             let breakoutTop = frame.origin.y + textContainerOrigin.y + anchorRect.minY
+            // The overlay reaches into the gutter left of the table and the margin above it, where the grips are.
             let overlayFrame: NSRect = breakout
-                ? NSRect(x: 0, y: breakoutTop, width: viewWidth, height: totalHeight)
-                : NSRect(x: columnLeft, y: textContainerOrigin.y + anchorRect.minY, width: containerWidth, height: totalHeight)
+                ? NSRect(x: 0, y: breakoutTop - topMargin, width: viewWidth, height: totalHeight)
+                : NSRect(x: columnLeft - gutter, y: textContainerOrigin.y + anchorRect.minY - topMargin,
+                         width: containerWidth + gutter, height: totalHeight)
             if !overlay.frame.equalTo(overlayFrame) {
                 host.setNeedsDisplay(overlay.frame)
                 overlay.frame = overlayFrame
                 host.setNeedsDisplay(overlayFrame)
             }
-            overlay.leftContentInset = breakout ? max(0, columnLeft) : 0
+            overlay.leftContentInset = breakout ? max(0, columnLeft - gutter) : 0
         }
         for (id, overlay) in wideTableOverlays where !seen.contains(id) {
             host.setNeedsDisplay(overlay.frame)
