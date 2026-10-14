@@ -38,6 +38,7 @@ struct LiveEditor: View {
     @State private var slashMenu = SlashMenuController()
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
+    @State private var rightClickMenu = RightClickMenuController()
     @State private var linkMenu = LinkMenuController()
     @State private var tagMenu = TagMenuController()
     #else
@@ -89,7 +90,8 @@ struct LiveEditor: View {
             onTaskMarkerMenu: showCheckboxMenu,
             onCalloutMenu: showCalloutMenu,
             onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } },
-            onTagClick: onTagClick
+            onTagClick: onTagClick,
+            onRightClickMenu: showRightClickMenu
         )
         .focusedValue(\.editor, slashCommand)
         .onAppear { slashCommand.triggers = triggers }
@@ -100,6 +102,7 @@ struct LiveEditor: View {
             tagMenu.hide()
             checkboxMenu.hide()
             calloutMenu.hide()
+            rightClickMenu.hide()
         }
         #else
         NativeTextViewWrapper(
@@ -263,6 +266,16 @@ struct LiveEditor: View {
         calloutMenu.show(
             type: request.type, fold: request.fold, anchor: request.anchorRect, theme: theme,
             setType: { request.setType($0.rawValue) }, setFold: request.setFold, close: request.close
+        )
+    }
+
+    private func showRightClickMenu(_ request: RightClickMenuRequest) {
+        rightClickMenu.show(
+            request.sections.map { section in
+                section.map { RightClickMenuEntry(title: $0.title, systemImage: $0.symbolName, shortcut: $0.shortcut,
+                                                 isChecked: $0.isChecked, isDestructive: $0.isDestructive, action: $0.action) }
+            },
+            anchor: request.anchorRect, theme: theme, close: request.close
         )
     }
 

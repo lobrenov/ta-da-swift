@@ -404,4 +404,73 @@ struct TableGridHandleTests {
                          characters: "", charactersIgnoringModifiers: "", isARepeat: false, keyCode: code)!
     }
 }
+
+@MainActor
+@Suite("Live table grid menu")
+struct TableGridMenuTests {
+    static let source = "Before\n\n| h1 | h2 |\n|:---|---:|\n| r1 | a |\n| r2 | b |\n\nAfter\n"
+
+    private func request(_ h: GridHarness, _ handle: TableHandle) -> (RightClickMenuRequest, () -> Int) {
+        var requests: [RightClickMenuRequest] = []
+        h.host.onRightClickMenu = { requests.append($0) }
+        h.grid.showMenu(for: handle)
+        return (requests[0], { requests.count })
+    }
+
+    private func item(_ request: RightClickMenuRequest, _ title: String) -> RightClickMenuItem {
+        request.sections.flatMap { $0 }.first { $0.title == title }!
+    }
+
+    @Test func aRowGripOffersInsertAndDelete() {
+        let h = GridHarness(Self.source)
+        let (menu, _) = request(h, .row(1))
+        #expect(menu.sections.map { $0.map(\.title) } == [["Insert Above", "Insert Below", "Delete Row"]])
+        #expect(h.grid.menuHandle == .row(1))
+        item(menu, "Insert Below").action()
+        #expect(h.grid.table.rows == [["r1", "a"], ["", ""], ["r2", "b"]])
+        h.host.undoManager?.undo()
+        #expect(h.grid.table.rows == [["r1", "a"], ["r2", "b"]])
+        menu.close()
+        #expect(h.grid.menuHandle == nil)
+    }
+
+    @Test func theHeaderGripHasTheSameItemsAndDeletingItPromotesTheNextRow() {
+        let h = GridHarness(Self.source)
+        let (menu, _) = request(h, .row(0))
+        #expect(menu.sections.flatMap { $0 }.map(\.title) == ["Insert Above", "Insert Below", "Delete Row"])
+        item(menu, "Delete Row").action()
+        #expect(h.grid.table.header == ["r1", "a"])
+        #expect(h.grid.table.rows == [["r2", "b"]])
+    }
+
+    @Test func deleteRowOnAOneRowTableDeletesTheTable() {
+        let h = GridHarness("Before\n\n| a | b |\n|---|---|\n\nAfter\n")
+        let (menu, _) = request(h, .row(0))
+        item(menu, "Delete Row").action()
+        #expect(h.host.tableGrid(ordinal: 0) == nil)
+        #expect(h.host.string == "Before\n\n\nAfter\n")
+    }
+
+    @Test func aColumnGripOffersInsertDeleteAndAlignmentWithTheCurrentChecked() {
+        let h = GridHarness(Self.source)
+        let (menu, _) = request(h, .column(1))
+        #expect(menu.sections.map { $0.map(\.title) } == [["Insert Left", "Insert Right", "Delete Column"],
+                                                          ["Align Left", "Align Centre", "Align Right"]])
+        #expect(menu.sections[1].map(\.isChecked) == [false, false, true])
+        item(menu, "Align Centre").action()
+        #expect(h.host.string.contains("| :-: |") || h.host.string.contains(":-:"))
+        #expect(h.grid.table.alignments == [.left, .center])
+        item(menu, "Insert Left").action()
+        #expect(h.grid.table.header == ["h1", "", "h2"])
+        item(menu, "Delete Column").action()
+        #expect(h.grid.table.columnCount == 2)
+    }
+
+    @Test func deleteColumnOnAOneColumnTableDeletesTheTable() {
+        let h = GridHarness("Before\n\n| a |\n|---|\n| 1 |\n\nAfter\n")
+        let (menu, _) = request(h, .column(0))
+        item(menu, "Delete Column").action()
+        #expect(h.host.tableGrid(ordinal: 0) == nil)
+    }
+}
 #endif

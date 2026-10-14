@@ -96,6 +96,8 @@ final class NativeTextView: NSTextView {
     var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
     /// Ta Da fork: the title line location of the callout whose menu is open.
     var calloutMenuTarget: Int?
+    /// Ta Da fork: see ``NativeTextViewWrapper/onRightClickMenu``.
+    var onRightClickMenu: ((RightClickMenuRequest) -> Void)?
     /// Ta Da fork: see ``NativeTextViewWrapper/onImageEmbed``.
     var onImageEmbed: ((ImageEmbedRequest) -> Void)?
     /// Ta Da fork: see ``NativeTextViewWrapper/onTagClick``.

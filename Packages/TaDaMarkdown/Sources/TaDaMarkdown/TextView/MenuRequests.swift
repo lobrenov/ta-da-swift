@@ -36,6 +36,40 @@ public struct CalloutMenuRequest {
     public let close: @MainActor () -> Void
 }
 
+/// Ta Da fork: one row of a right-click menu.
+public struct RightClickMenuItem {
+    public let title: String
+    /// An SF Symbol name.
+    public let symbolName: String?
+    /// A key hint shown on the right, such as `⌘⌫`.
+    public let shortcut: String?
+    /// Drawn with a tick: the current choice.
+    public let isChecked: Bool
+    public let isDestructive: Bool
+    public let action: @MainActor () -> Void
+
+    init(_ title: String, symbolName: String? = nil, shortcut: String? = nil, isChecked: Bool = false,
+         isDestructive: Bool = false, action: @escaping @MainActor () -> Void) {
+        self.title = title
+        self.symbolName = symbolName
+        self.shortcut = shortcut
+        self.isChecked = isChecked
+        self.isDestructive = isDestructive
+        self.action = action
+    }
+}
+
+/// Ta Da fork: a right-click on something that offers a menu (a table's row or column grip), delivered through
+/// ``NativeTextViewWrapper/onRightClickMenu``. The engine rings what was clicked until `close`.
+public struct RightClickMenuRequest {
+    /// The menu's items in groups, with a divider between groups.
+    public let sections: [[RightClickMenuItem]]
+    /// What was clicked, in screen coordinates, to anchor the menu.
+    public let anchorRect: CGRect
+    /// Call when the menu closes: the ring goes.
+    public let close: @MainActor () -> Void
+}
+
 /// Ta Da fork: a drawn image's `![[ ]]`, for the embedder's image actions: ``NativeTextViewWrapper/onImageEmbed`` on
 /// macOS, ``NativeTextViewWrapper/imageEmbedMenu`` on iOS.
 public struct ImageEmbedRequest {

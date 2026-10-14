@@ -50,7 +50,8 @@ extension TableGridView {
     func drawHandles(host: NativeTextView) {
         guard layout.columnWidths.isEmpty == false else { return }
         let gridRect = CGRect(x: Self.gutter, y: Self.topMargin, width: layout.size.width, height: layout.size.height)
-        if let selectedHandle, let rect = bandRect(selectedHandle) {
+        for ringed in [selectedHandle, menuHandle].compactMap({ $0 }) {
+            guard let rect = bandRect(ringed) else { continue }
             accent.setStroke()
             let ring = NSBezierPath(roundedRect: rect.insetBy(dx: 1, dy: 1), xRadius: 2, yRadius: 2)
             ring.lineWidth = 2
@@ -59,7 +60,7 @@ extension TableGridView {
         var grips: [TableHandle] = []
         if let hoverRow { grips.append(.row(hoverRow)) }
         if let hoverColumn { grips.append(.column(hoverColumn)) }
-        if let selectedHandle, !grips.contains(selectedHandle) { grips.append(selectedHandle) }
+        for shown in [selectedHandle, menuHandle].compactMap({ $0 }) where !grips.contains(shown) { grips.append(shown) }
         for handle in grips { drawGrip(handle, selected: handle == selectedHandle) }
         if let dropGap, let pressedHandle, isDragging {
             accent.setFill()
@@ -152,6 +153,11 @@ extension TableGridView {
         pressedHandle = handle == .row(0) ? nil : (handle, point)
     }
 
+    override func rightMouseDown(with event: NSEvent) {
+        guard let handle = handle(at: convert(event.locationInWindow, from: nil)) else { return super.rightMouseDown(with: event) }
+        showMenu(for: handle)
+    }
+
     override func mouseDragged(with event: NSEvent) {
         guard let pressedHandle else { return }
         let point = convert(event.locationInWindow, from: nil)
@@ -195,6 +201,59 @@ extension TableGridView {
         case 51, 117: deleteSelected()
         case 53: select(nil)
         default: break
+        }
+    }
+
+    // MARK: - Menu
+
+    /// The grip's right-click menu, sent to the embedder with the grip ringed until it closes.
+    func showMenu(for handle: TableHandle) {
+        guard let host, let onRightClickMenu = host.onRightClickMenu, let rect = gripRect(handle) else { return }
+        menuHandle = handle
+        needsDisplay = true
+        let anchor = window?.convertToScreen(convert(rect, to: nil)) ?? .zero
+        let ordinal = ordinal
+        // The menu's actions find the grid again: it may have been rebuilt while the menu was open.
+        func grid(_ body: @escaping @MainActor (TableGridView) -> Void) -> @MainActor () -> Void {
+            { [weak host] in if let grid = host?.tableGrid(ordinal: ordinal) { body(grid) } }
+        }
+        let sections: [[RightClickMenuItem]]
+        switch handle {
+        case .row(let r):
+            sections = [[
+                RightClickMenuItem("Insert Above", symbolName: "arrow.up.to.line", action: grid { $0.insertRow(at: r) }),
+                RightClickMenuItem("Insert Below", symbolName: "arrow.down.to.line", action: grid { $0.insertRow(at: r + 1) }),
+                RightClickMenuItem("Delete Row", symbolName: "trash", isDestructive: true, action: grid { $0.deleteRow(r) }),
+            ]]
+        case .column(let c):
+            let current = table.alignments[c]
+            func align(_ title: String, _ symbol: String, _ alignment: MarkdownTable.Alignment) -> RightClickMenuItem {
+                RightClickMenuItem(title, symbolName: symbol, isChecked: current == alignment,
+                                   action: grid { $0.setAlignment(alignment, column: c) })
+            }
+            sections = [[
+                RightClickMenuItem("Insert Left", symbolName: "arrow.left.to.line", action: grid { $0.insertColumn(at: c) }),
+                RightClickMenuItem("Insert Right", symbolName: "arrow.right.to.line", action: grid { $0.insertColumn(at: c + 1) }),
+                RightClickMenuItem("Delete Column", symbolName: "trash", isDestructive: true, action: grid { $0.deleteColumn(c) }),
+            ], [
+                align("Align Left", "text.alignleft", .left),
+                align("Align Centre", "text.aligncenter", .center),
+                align("Align Right", "text.alignright", .right),
+            ]]
+        }
+        onRightClickMenu(RightClickMenuRequest(sections: sections, anchorRect: anchor, close: { [weak host] in
+            guard let grid = host?.tableGrid(ordinal: ordinal), grid.menuHandle == handle else { return }
+            grid.menuHandle = nil
+            grid.needsDisplay = true
+        }))
+    }
+
+    /// The grip's strip in this view's coordinates.
+    private func gripRect(_ handle: TableHandle) -> CGRect? {
+        guard let band = bandRect(handle) else { return nil }
+        switch handle {
+        case .row: return CGRect(x: 0, y: band.minY, width: Self.gutter, height: band.height)
+        case .column: return CGRect(x: band.minX, y: 0, width: band.width, height: Self.topMargin)
         }
     }
 

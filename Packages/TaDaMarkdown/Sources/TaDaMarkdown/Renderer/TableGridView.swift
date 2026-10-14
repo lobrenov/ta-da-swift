@@ -60,6 +60,8 @@ final class TableGridView: NSView {
     /// The grip being pressed, where, and the gap a drag would drop it in.
     var pressedHandle: (handle: TableHandle, start: CGPoint)?
     var dropGap: Int?
+    /// The grip whose right-click menu is open: ringed like a selection.
+    var menuHandle: TableHandle?
     /// Where ⌘C and ⌘X put a selected row or column.
     var pasteboard: NSPasteboard = .general
     /// Where the typing that `coalescingTableEdit` holds last ended, as a location in its cell.
