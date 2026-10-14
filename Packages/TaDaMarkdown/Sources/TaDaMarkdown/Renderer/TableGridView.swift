@@ -62,6 +62,12 @@ final class TableGridView: NSView {
     var dropGap: Int?
     /// The grip whose right-click menu is open: ringed like a selection.
     var menuHandle: TableHandle?
+    /// The grip under the pointer, whose ring fades in (`ringHandle` and `ringAlpha` follow it, and fade out after it).
+    var gripHover: TableHandle?
+    var ringHandle: TableHandle?
+    var ringAlpha: CGFloat = 0
+    var fadeTimer: Timer?
+    static let ringFadeDuration: TimeInterval = 0.15
     /// What the cells were last laid out for; `update` does nothing while it still holds.
     private var appliedSignature: LayoutSignature?
     private var appliedConfig: ConfigSignature?
@@ -133,25 +139,26 @@ final class TableGridView: NSView {
         }
         resizeEditors(host: host)
         let hostConfiguration = host.configuration
-        let estimate = MarkdownStyler.tableLayout(
-            newTable, baseFont: host.baseFont, theme: hostConfiguration.theme,
-            codeBackgroundColor: hostConfiguration.services.syntaxHighlighter.backgroundColor(),
-            latex: hostConfiguration.services.latex, availableWidth: availableWidth, extensions: hostConfiguration.extensions
-        ).layout
-        let widths = estimate.columnWidths
-        let baseLineHeight = ceil(host.baseFont.ascender - host.baseFont.descender + host.baseFont.leading)
-        var heights: [CGFloat] = []
         for (r, row) in editors.enumerated() {
-            var height = baseLineHeight
             for (c, editor) in row.enumerated() {
                 if configChanged || editor.appliedHeader != (r == 0) { editor.syncConfiguration(from: host) }
                 let want = newTable.cell(row: r, column: c)
                 if editor.text.trimmingCharacters(in: .whitespaces) != want { editor.setText(want) }
-                height = max(height, editor.contentHeight(width: widths[c]))
             }
-            heights.append(height)
         }
-        layout = MarkdownStyler.TableLayout(columnWidths: widths, rowContentHeights: heights)
+        // The cells' own measures decide the widths: each column as wide as its widest cell, up to the available width.
+        let live = MarkdownStyler.LiveCellMetrics(
+            natural: { [unowned self] r, c in self.editors[r][c].naturalWidth() },
+            height: { [unowned self] r, c, width in self.editors[r][c].contentHeight(width: width) }
+        )
+        layout = MarkdownStyler.tableLayout(
+            newTable, baseFont: host.baseFont, theme: hostConfiguration.theme,
+            codeBackgroundColor: hostConfiguration.services.syntaxHighlighter.backgroundColor(),
+            latex: hostConfiguration.services.latex, availableWidth: availableWidth,
+            extensions: hostConfiguration.extensions, live: live
+        ).layout
+        let (widths, heights) = (layout.columnWidths, layout.rowContentHeights)
+        for row in editors { for editor in row { editor.setContentWidth(widths[editor.column]) } }
         let (hPad, vPad) = (MarkdownStyler.TableLayout.cellHPadding, MarkdownStyler.TableLayout.cellVPadding)
         for (r, row) in editors.enumerated() {
             for (c, editor) in row.enumerated() {

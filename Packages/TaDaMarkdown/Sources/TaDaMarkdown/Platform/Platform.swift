@@ -44,7 +44,9 @@ extension PlatformAppearance {
 extension PlatformFont {
     /// The font with this PostScript name; AppKit resolves the system font's private names itself.
     static func named(_ name: String, size: CGFloat) -> PlatformFont? {
-        PlatformFont(name: name, size: size)
+        if let font = PlatformFont(name: name, size: size) { return font }
+        // Ta Da fork: the bold system font's private name (`.SFNS-Bold`) doesn't resolve by name.
+        return name.hasPrefix(".") && name.contains("Bold") ? PlatformFont.systemFont(ofSize: size, weight: .bold) : nil
     }
 }
 

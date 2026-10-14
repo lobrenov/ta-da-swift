@@ -130,19 +130,23 @@ extension NativeTextView {
             }
             overlay.anchorTextLocation = token.range.location
             grid.ordinal = ordinal
-            grid.update(table: table, availableWidth: containerWidth)
+            let columnLeft = (breakout ? frame.origin.x : 0) + textContainerOrigin.x + anchorRect.minX
+            // The table grows with its content up to the editor's width: the text column's, or all of it in a reading
+            // column, where the table starts at the column's left.
+            let available = breakout ? max(containerWidth, viewWidth - columnLeft) : containerWidth
+            grid.update(table: table, availableWidth: available)
 
-            let isWide = grid.layout.size.width - containerWidth > 0.5
+            let isWide = grid.layout.size.width - available > 0.5
             let gridHeight = grid.layout.size.height
             let (gutter, topMargin) = (TableGridView.gutter, TableGridView.topMargin)
-            let totalHeight = gridHeight + topMargin + (isWide ? strip : 0)
+            let reservedHeight = gridHeight + (isWide ? strip : 0)
+            let totalHeight = reservedHeight + topMargin
             let reserved = storage.attribute(.scrollableBlockTotalHeight, at: anchor.location, effectiveRange: nil) as? CGFloat
-            if reserved.map({ abs($0 - (gridHeight + (isWide ? strip : 0))) > 0.5 }) ?? true {
-                tableGridHeights[ordinal] = gridHeight
+            if reserved.map({ abs($0 - reservedHeight) > 0.5 }) ?? true {
+                tableGridHeights[ordinal] = reservedHeight
                 mismatched.append(text.paragraphRange(for: token.range))
             }
 
-            let columnLeft = (breakout ? frame.origin.x : 0) + textContainerOrigin.x + anchorRect.minX
             let breakoutTop = frame.origin.y + textContainerOrigin.y + anchorRect.minY
             // The overlay reaches into the gutter left of the table and the margin above it, where the grips are.
             let overlayFrame: NSRect = breakout
@@ -162,6 +166,22 @@ extension NativeTextView {
             wideTableOverlays.removeValue(forKey: id)
         }
         return mismatched
+    }
+
+    /// Shows the grips of the row and column under the pointer, from the text view's own mouse-moved events (they
+    /// reach it through the grids' overlays). True, with an open hand set, when the pointer is over a grip.
+    func updateTableGridHover(for event: NSEvent) -> Bool {
+        guard configuration.liveTables, !wideTableOverlays.isEmpty else { return false }
+        var overGrip = false
+        for overlay in wideTableOverlays.values {
+            guard let grid = overlay.documentView as? TableGridView, overlay.superview != nil else { continue }
+            let inside = overlay.bounds.contains(overlay.convert(event.locationInWindow, from: nil))
+            let point = grid.convert(event.locationInWindow, from: nil)
+            grid.updateHover(atViewPoint: inside ? point : nil)
+            if inside, grid.handle(at: point) != nil { overGrip = true }
+        }
+        if overGrip { NSCursor.openHand.set() }
+        return overGrip
     }
 
     /// The caret leaves a table's grid for the line above or below it.

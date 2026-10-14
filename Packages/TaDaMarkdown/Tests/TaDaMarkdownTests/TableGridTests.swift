@@ -398,7 +398,7 @@ struct TableGridHandleTests {
         let before = h.host.string
         h.grid.move(.row(1), toGap: 4)
         #expect(h.grid.table.rows.map { $0[0] } == ["r2", "r3", "r1"])
-        #expect(h.grid.selectedHandle == .row(3))
+        #expect(h.grid.selectedHandle == nil)
         h.host.undoManager?.undo()
         #expect(h.host.string == before)
         h.grid.move(.row(0), toGap: 3)
@@ -550,6 +550,19 @@ struct TableGridDetailTests {
         #expect(h.host.string.hasPrefix("- item\n\n  | a   | b   |"))
     }
 
+    @Test func theHeaderRowIsBoldInTheLaidOutText() {
+        let h = GridHarness("| a |\n|---|\n| 1 |\n")
+        func isBold(_ view: NativeTextView) -> Bool {
+            let font = view.textStorage?.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
+            return font?.fontDescriptor.symbolicTraits.contains(.bold) == true
+        }
+        #expect(isBold(h.cell(0, 0)))
+        #expect(!isBold(h.cell(1, 0)))
+        // Deleting the header promotes the next row, which turns bold.
+        h.grid.deleteRow(0)
+        #expect(isBold(h.cell(0, 0)))
+    }
+
     @Test func settingsFontChangesReachTheCells() {
         let h = GridHarness("| a |\n|---|\n| 1 |\n")
         let before = h.cell(1, 0).font?.pointSize
@@ -621,6 +634,85 @@ struct TableGridTimingTests {
             }
         }
         print("TABLE TIMING open=\(open) perCellKeystroke=\(inCell / 10) perMainKeystroke=\(inMain / 10)")
+    }
+}
+
+@MainActor
+@Suite("Live table grid hover")
+struct TableGridHoverTests {
+    private func moved(_ h: GridHarness, to point: CGPoint) {
+        let event = NSEvent.mouseEvent(with: .mouseMoved, location: h.grid.convert(point, to: nil), modifierFlags: [], timestamp: 0,
+                                       windowNumber: h.window.windowNumber, context: nil, eventNumber: 0, clickCount: 0, pressure: 0)!
+        h.host.mouseMoved(with: event)
+    }
+
+    private func wait(_ seconds: TimeInterval) { RunLoop.current.run(until: Date().addingTimeInterval(seconds)) }
+
+    @Test func hoveringAGripShowsItsGripAndFadesItsRingInAndOut() {
+        let h = GridHarness("| a | b |\n|---|---|\n| 1 | 2 |\n")
+        let grid = h.grid
+        let rowGrip = CGPoint(x: 4, y: TableGridView.topMargin + grid.layout.rowTop[1] + 4)
+        moved(h, to: rowGrip)
+        #expect(grid.hoverRow == 1)
+        #expect(grid.gripHover == .row(1))
+        #expect(NSCursor.current == NSCursor.openHand)
+        wait(0.3)
+        #expect(grid.ringAlpha == 1)
+        // Over the cell rather than the grip: the grips stay, the ring goes.
+        moved(h, to: CGPoint(x: TableGridView.gutter + 20, y: rowGrip.y))
+        #expect(grid.hoverRow == 1 && grid.hoverColumn == 0)
+        #expect(grid.gripHover == nil)
+        wait(0.3)
+        #expect(grid.ringAlpha == 0 && grid.ringHandle == nil)
+        let columnGrip = CGPoint(x: TableGridView.gutter + grid.layout.columnLeft[1] + 4, y: 4)
+        moved(h, to: columnGrip)
+        #expect(grid.hoverColumn == 1 && grid.gripHover == .column(1))
+    }
+
+    @Test func aSelectedHandleKeepsItsRingAtFullStrength() {
+        let h = GridHarness("| a | b |\n|---|---|\n| 1 | 2 |\n")
+        h.grid.select(.row(1))
+        moved(h, to: CGPoint(x: 4, y: TableGridView.topMargin + h.grid.layout.rowTop[1] + 4))
+        moved(h, to: CGPoint(x: TableGridView.gutter + 20, y: 4 + TableGridView.topMargin + h.grid.layout.rowTop[2]))
+        wait(0.3)
+        #expect(h.grid.selectedHandle == .row(1))
+    }
+}
+
+@MainActor
+@Suite("Live table grid widths")
+struct TableGridWidthTests {
+    private func gridWidths(_ h: GridHarness) -> [CGFloat] { h.grid.layout.columnWidths }
+
+    @Test func aBulletListCellDoesNotWrapAfterTheBulletWhenThereIsRoom() {
+        let plain = GridHarness("| a |\n|---|\n|  |\n")
+        plain.type("item", row: 1, column: 0)
+        let list = GridHarness("| a |\n|---|\n|  |\n")
+        list.type("- item", row: 1, column: 0)
+        #expect(list.grid.layout.rowContentHeights[1] == plain.grid.layout.rowContentHeights[1])
+        #expect(gridWidths(list)[0] > gridWidths(plain)[0])
+    }
+
+    @Test func aGrowingCellWidensItsColumnUntilTheCapThenNarrowsTheOthers() {
+        let h = GridHarness("| a | b |\n|---|---|\n| x | b b b b b b b b b b b b b b b b b b b b |\n")
+        let start = gridWidths(h)
+        h.type("yyyyyyyyyyyy", row: 1, column: 0)
+        let widened = gridWidths(h)
+        #expect(widened[0] > start[0])
+        #expect(widened[1] == start[1])
+        #expect(h.grid.layout.size.width <= 600 + 1)
+        h.type(String(repeating: "y ", count: 40), row: 1, column: 0)
+        let capped = gridWidths(h)
+        #expect(capped[0] > widened[0])
+        #expect(capped[1] < widened[1])
+        #expect(h.grid.layout.size.width <= 600 + 1)
+    }
+
+    @Test func columnsThatCannotShrinkEnoughScrollSideways() {
+        let word = String(repeating: "w", count: 40)
+        let header = "| " + (0..<8).map { _ in word }.joined(separator: " | ") + " |"
+        let h = GridHarness(header + "\n|" + String(repeating: "---|", count: 8) + "\n")
+        #expect(h.grid.layout.size.width > 600)
     }
 }
 #endif

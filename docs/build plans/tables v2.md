@@ -23,13 +23,13 @@ Starting point, as checked on 2026-10-14:
   - ↑ on a cell's first line and ↓ on its last move to the cell above or below; from the header row ↑, and from the last row ↓, leave the table to the line above or below.
   - ← at a cell's start and → at its end move to the previous or next cell, and leave the table past the first or last cell.
   - From the line above or below the table, ↓ or ↑ enter its first or last row; a click puts the caret at the click point in that cell.
-- **Handles**: on hover, a row (the header too) shows a grip (`muted`, six dots) in the gutter left of it, and a column a grip centred above its header cell. A click on a grip selects the row or column: a 2pt `accent` ring around it. While one is selected, ⌘C and ⌘X copy it as a markdown table (the header and delimiter rows with it), ⌫ deletes it, and esc or a click elsewhere clears it.
-- **Dragging**: dragging a grip moves the row or column, with a 2pt `accent` line at the drop place. The header row can't be dragged and stays first; body rows can't move above it.
+- **Handles**: on hover, a row (the header too) shows a grip (`muted`, six dots) in the gutter left of it, and a column a grip centred above its header cell. Over a grip the pointer is an open hand (closed while dragging) and the row's or column's ring fades in. A click on a grip selects the row or column: a 2pt `accent` ring around it. While one is selected, ⌘C and ⌘X copy it as a markdown table (the header and delimiter rows with it), ⌫ deletes it, and esc or a click elsewhere clears it.
+- **Dragging**: dragging a grip moves the row or column, with a 2pt `accent` line at the drop place. The header row can't be dragged and stays first; body rows can't move above it. A finished move leaves nothing selected.
 - **rightClickMenu**: a reusable Live editor right-click menu, `RightClickMenu` in `TaDa/Editor/RightClickMenu.swift`, built on `PopupMenu`'s compact style: sections of items (title, optional SF Symbol, optional shortcut hint, action). The engine reports a generic request (anchor, a ring to show while open, `close`); the table supplies its items. Later uses (formatting on selected text) add items, not menus.
   - Row grip: Insert above, Insert below, Delete row. The header row's grip (menu only, no drag) has the same items; deleting the header makes the next row the header.
   - Column grip: Insert left, Insert right, Delete column, then Align left, Align centre, Align right (the delimiter row's `:---`, `:---:`, `---:`; the current one checked).
   - Deleting the table's last row (header included) or its only column deletes the whole table, as does ⌫ on such a selection.
-- **Widths**: unchanged (columns sized to content; wide tables scroll sideways).
+- **Widths**: each column's natural width is its widest cell laid out on one line (lists, boxes and bubbles included). The table is the sum, up to the editor's width (its full width in reading-width mode). Past that, columns share the width in proportion to their natural widths, none narrower than its widest word, so typing in one column widens it and narrows the others; the table scrolls sideways only when those minimums don't fit. Widths follow every edit.
 
 ## Milestones
 The milestones run in order on `feat/tables-v2`. Each ends with its check passing, then commits, is reviewed and fixed per the stage loop.

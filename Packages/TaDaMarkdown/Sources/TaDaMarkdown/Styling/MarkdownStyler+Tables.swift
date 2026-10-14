@@ -308,8 +308,10 @@ extension MarkdownStyler {
             availableWidth: containerWidth, extensions: ctx.configuration.extensions
         ).layout
         let host = ctx.layoutBridge?.firstTextContainer?.textView as? NativeTextView
-        let height = host?.tableGridHeights[ordinal] ?? layout.size.height
-        let isWide = layout.size.width - containerWidth > max(layout.size.width.ulp, containerWidth.ulp) * 8
+        // A measured height is the whole reservation, scroller strip included.
+        let measured = host?.tableGridHeights[ordinal]
+        let height = measured ?? layout.size.height
+        let isWide = measured == nil && layout.size.width - containerWidth > max(layout.size.width.ulp, containerWidth.ulp) * 8
         let bounds = CGRect(x: 0, y: 0, width: layout.size.width, height: height)
         _ = appendRenderedStandaloneBlock(
             for: token,
@@ -516,6 +518,13 @@ extension MarkdownStyler {
         }
     }
 
+    /// Ta Da fork: a live grid's own measures of its cells, which replace the inline estimates: a cell's width on one
+    /// line (list indents, boxes and bubbles included) and its content height at a width, by row (the header is 0).
+    struct LiveCellMetrics {
+        var natural: (_ row: Int, _ column: Int) -> CGFloat
+        var height: (_ row: Int, _ column: Int, _ width: CGFloat) -> CGFloat
+    }
+
     /// The layout of `table` within `availableWidth`, and its formatted cells (header first, then the body rows).
     static func tableLayout(
         _ table: MarkdownTable,
@@ -524,7 +533,8 @@ extension MarkdownStyler {
         codeBackgroundColor: PlatformColor,
         latex: any LatexRenderer,
         availableWidth: CGFloat,
-        extensions: [any MarkdownExtension] = []
+        extensions: [any MarkdownExtension] = [],
+        live: LiveCellMetrics? = nil
     ) -> (layout: TableLayout, header: [NSAttributedString], body: [[NSAttributedString]]) {
         let columnCount = table.alignments.count
         let cellHPadding = TableLayout.cellHPadding
@@ -590,16 +600,24 @@ extension MarkdownStyler {
                 context: nil
             ).width)
         }
-        func considerCell(_ cell: NSAttributedString, col: Int) {
-            maxWidths[col] = max(maxWidths[col], naturalWidth(cell))
-            minWidths[col] = max(minWidths[col], widestUnbreakableSegment(cell))
+        func considerCell(_ cell: NSAttributedString, row: Int, col: Int) {
+            let inline = naturalWidth(cell)
+            guard let live else {
+                maxWidths[col] = max(maxWidths[col], inline)
+                minWidths[col] = max(minWidths[col], widestUnbreakableSegment(cell))
+                return
+            }
+            // The cell's real width on one line; what it adds to the inline text (a list's indent) is in its minimum too.
+            let real = live.natural(row, col)
+            maxWidths[col] = max(maxWidths[col], real)
+            minWidths[col] = max(minWidths[col], min(real, widestUnbreakableSegment(cell) + max(0, real - inline)))
         }
         for (i, cell) in headerCells.enumerated() where i < columnCount {
-            considerCell(cell, col: i)
+            considerCell(cell, row: 0, col: i)
         }
-        for row in bodyCells {
+        for (r, row) in bodyCells.enumerated() {
             for (i, cell) in row.enumerated() where i < columnCount {
-                considerCell(cell, col: i)
+                considerCell(cell, row: r + 1, col: i)
             }
         }
 
@@ -620,6 +638,22 @@ extension MarkdownStyler {
         if contentAvailable > 0, sumMax > contentAvailable {
             if sumMin >= contentAvailable {
                 columnWidths = minWidths
+            } else if live != nil {
+                // Columns share the width in proportion to their natural widths, none below its minimum.
+                var fixed = Set<Int>()
+                var shared = maxWidths
+                while true {
+                    let free = (0..<columnCount).filter { !fixed.contains($0) }
+                    let remaining = contentAvailable - fixed.reduce(0) { $0 + minWidths[$1] }
+                    let scale = remaining / free.reduce(0) { $0 + maxWidths[$1] }
+                    let tooSmall = free.filter { maxWidths[$0] * scale < minWidths[$0] }
+                    if tooSmall.isEmpty {
+                        for i in free { shared[i] = maxWidths[i] * scale }
+                        break
+                    }
+                    tooSmall.forEach { fixed.insert($0); shared[$0] = minWidths[$0] }
+                }
+                columnWidths = shared
             } else {
                 let extra = contentAvailable - sumMin
                 let totalStretch = sumMax - sumMin
@@ -630,7 +664,8 @@ extension MarkdownStyler {
         }
 
         // Per-row heights: each row is as tall as its tallest (wrapped) cell.
-        func cellHeight(_ cell: NSAttributedString, col: Int) -> CGFloat {
+        func cellHeight(_ cell: NSAttributedString, row: Int, col: Int) -> CGFloat {
+            if let live { return live.height(row, col, columnWidths[col]) }
             let bounds = cell.boundingRect(
                 with: CGSize(width: columnWidths[col], height: .greatestFiniteMagnitude),
                 options: [.usesLineFragmentOrigin],
@@ -641,11 +676,11 @@ extension MarkdownStyler {
         let rowCount = 1 + table.rows.count // header + body rows
         var rowContentHeights = [CGFloat](repeating: baseLineHeight, count: rowCount)
         for (i, cell) in headerCells.enumerated() where i < columnCount {
-            rowContentHeights[0] = max(rowContentHeights[0], cellHeight(cell, col: i))
+            rowContentHeights[0] = max(rowContentHeights[0], cellHeight(cell, row: 0, col: i))
         }
         for (rowIdx, row) in bodyCells.enumerated() {
             for (i, cell) in row.enumerated() where i < columnCount {
-                rowContentHeights[rowIdx + 1] = max(rowContentHeights[rowIdx + 1], cellHeight(cell, col: i))
+                rowContentHeights[rowIdx + 1] = max(rowContentHeights[rowIdx + 1], cellHeight(cell, row: rowIdx + 1, col: i))
             }
         }
 

@@ -23,6 +23,7 @@ final class TableCellEditor {
     private var appliedFont: String?
     private(set) var appliedHeader: Bool?
     private var measured: (text: String, width: CGFloat, height: CGFloat)?
+    private var measuredNatural: (text: String, width: CGFloat)?
 
     init(host: NativeTextView, row: Int, column: Int) {
         self.row = row
@@ -96,6 +97,7 @@ final class TableCellEditor {
             appliedFont = fontKey
             appliedHeader = row == 0
             measured = nil
+            measuredNatural = nil
             config.theme.apply(to: textView)
             textView.insertionPointColor = theme.bodyText
             coordinator.cachedParsedDocument = nil
@@ -137,6 +139,33 @@ final class TableCellEditor {
         let length = (textView.string as NSString).length
         guard length > 0 else { return }
         coordinator.restyleParagraphs([NSRange(location: 0, length: length)], in: textView)
+    }
+
+    /// The text's width laid out on one line, lines broken only by the text's own line breaks, without the cell's
+    /// insets: list indents, boxes and bubbles count.
+    func naturalWidth() -> CGFloat {
+        if !textView.hasEditingFocus, let measuredNatural, measuredNatural.text == textView.string { return measuredNatural.width }
+        guard let container = textView.textContainer, let tlm = textView.textLayoutManager else { return 0 }
+        container.size = NSSize(width: 100_000, height: CGFloat.greatestFiniteMagnitude)
+        tlm.invalidateLayout(for: tlm.documentRange)
+        var right: CGFloat = 0
+        tlm.enumerateTextLayoutFragments(from: tlm.documentRange.location, options: [.ensuresLayout]) { fragment in
+            for line in fragment.textLineFragments {
+                right = max(right, fragment.layoutFragmentFrame.minX + line.typographicBounds.maxX)
+            }
+            return true
+        }
+        let width = ceil(right)
+        measuredNatural = (textView.string, width)
+        return width
+    }
+
+    /// Wraps the text at `width`, the cell's content width.
+    func setContentWidth(_ width: CGFloat) {
+        guard let container = textView.textContainer, let tlm = textView.textLayoutManager,
+              abs(container.size.width - width) > 0.01 else { return }
+        container.size = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+        tlm.invalidateLayout(for: tlm.documentRange)
     }
 
     /// The text's height at `width` (the cell's content width), without the cell's insets.

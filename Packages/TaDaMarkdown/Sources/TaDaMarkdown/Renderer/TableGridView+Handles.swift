@@ -50,9 +50,12 @@ extension TableGridView {
     func drawHandles(host: NativeTextView) {
         guard layout.columnWidths.isEmpty == false else { return }
         let gridRect = CGRect(x: Self.gutter, y: Self.topMargin, width: layout.size.width, height: layout.size.height)
-        for ringed in [selectedHandle, menuHandle].compactMap({ $0 }) {
+        // The hovered grip's ring fades; a selected or menu-open handle's is at full strength.
+        var rings: [(TableHandle, CGFloat)] = [selectedHandle, menuHandle].compactMap { $0 }.map { ($0, 1) }
+        if let ringHandle, ringAlpha > 0, !rings.contains(where: { $0.0 == ringHandle }) { rings.append((ringHandle, ringAlpha)) }
+        for (ringed, alpha) in rings {
             guard let rect = bandRect(ringed) else { continue }
-            accent.setStroke()
+            accent.withAlphaComponent(alpha).setStroke()
             let ring = NSBezierPath(roundedRect: rect.insetBy(dx: 1, dy: 1), xRadius: 2, yRadius: 2)
             ring.lineWidth = 2
             ring.stroke()
@@ -141,9 +144,38 @@ extension TableGridView {
             row = rowBand(p.y)
             column = columnBand(p.x)
         }
+        let grip = point.flatMap { bounds.contains($0) ? handle(at: $0) : nil }
+        setGripHover(grip)
         guard row != hoverRow || column != hoverColumn else { return }
         (hoverRow, hoverColumn) = (row, column)
         needsDisplay = true
+    }
+
+    /// The ring of the grip under the pointer fades in over `ringFadeDuration`, and out when the pointer leaves it.
+    private func setGripHover(_ grip: TableHandle?) {
+        guard grip != gripHover else { return }
+        gripHover = grip
+        if let grip, ringHandle != grip {
+            ringHandle = grip
+            ringAlpha = 0
+        }
+        fadeTimer?.invalidate()
+        let started = Date()
+        let from = ringAlpha
+        let target: CGFloat = grip == nil ? 0 : 1
+        fadeTimer = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] timer in
+            MainActor.assumeIsolated {
+                guard let self else { return timer.invalidate() }
+                let progress = min(1, Date().timeIntervalSince(started) / Self.ringFadeDuration)
+                self.ringAlpha = from + (target - from) * CGFloat(progress)
+                self.needsDisplay = true
+                if progress >= 1 {
+                    timer.invalidate()
+                    if target == 0 { self.ringHandle = nil }
+                }
+            }
+        }
+        RunLoop.main.add(fadeTimer!, forMode: .common)
     }
 
     // MARK: - Selecting and dragging
@@ -188,6 +220,7 @@ extension TableGridView {
         guard let pressedHandle else { return }
         let point = convert(event.locationInWindow, from: nil)
         guard hypot(point.x - pressedHandle.start.x, point.y - pressedHandle.start.y) > 4 || dropGap != nil else { return }
+        NSCursor.closedHand.set()
         let p = contentPoint(point)
         switch pressedHandle.handle {
         case .row:
@@ -204,6 +237,7 @@ extension TableGridView {
             pressedHandle = nil
             dropGap = nil
             needsDisplay = true
+            (handle(at: convert(event.locationInWindow, from: nil)) == nil ? NSCursor.arrow : NSCursor.openHand).set()
         }
         guard let pressedHandle, let gap = dropGap else { return }
         move(pressedHandle.handle, toGap: gap)
@@ -366,8 +400,9 @@ extension TableGridView {
             guard destination != c else { return }
             newTable.moveColumn(from: c, to: destination)
         }
+        // A finished move leaves nothing selected.
         structuralCommit(newTable, actionName: handle.isRow ? "Move Row" : "Move Column")
-        selectedHandle = handle.isRow ? .row(destination) : .column(destination)
+        selectedHandle = nil
     }
 
     /// One undo step; the caret stays where it was.
