@@ -58,8 +58,9 @@ extension NSTextView {
     /// The selected ranges: AppKit's `selectedRanges`, UIKit's one range.
     var currentSelectedRanges: [NSRange] { selectedRanges.map(\.rangeValue) }
 
-    /// Ta Da fork: whether the caret and selection reveal markdown syntax: while editable.
-    var revealsSyntax: Bool { isEditable }
+    /// Ta Da fork: whether the caret and selection reveal markdown syntax: while editable (a table cell's editor, only
+    /// while it has the keyboard).
+    var revealsSyntax: Bool { isEditable && ((self as? NativeTextView).map { !$0.hidesSyntaxUnlessFocused || $0.hasEditingFocus } ?? true) }
 
     /// The text container, optional on both platforms (UIKit's isn't).
     var optionalTextContainer: NSTextContainer? { textContainer }

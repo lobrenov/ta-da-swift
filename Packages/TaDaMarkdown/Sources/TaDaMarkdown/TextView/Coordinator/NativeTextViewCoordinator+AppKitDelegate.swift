@@ -23,7 +23,8 @@ extension NativeTextViewCoordinator: NSTextViewDelegate {
     /// Returning the *same* instance for a given document on every call is
     /// required — a fresh manager per call breaks undo.
     public func undoManager(for view: NSTextView) -> UndoManager? {
-        undoManager(forDocument: documentId)
+        if let shared = undoManagerOverride?() { return shared }
+        return undoManager(forDocument: documentId)
     }
 
     /// Ta Da fork: on macOS 27 a TextKit 2 NSTextView doesn't post NSTextDidChangeNotification for

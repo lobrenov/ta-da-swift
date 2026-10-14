@@ -183,8 +183,17 @@ extension MarkdownStyler {
         }
         var skippedCount = 0
         var metaNanos: UInt64 = 0
-        for (idx, token) in tableIndexed {
+        for (ordinal, (idx, token)) in tableIndexed.enumerated() {
             tableCount += 1
+            #if os(macOS)
+            // Ta Da fork: the live grid draws the table over its hidden source; the caret never reveals it.
+            if ctx.configuration.liveTables {
+                if ctx.outsideScope(token.range) { continue }
+                attrs.append((token.range, [.spellingState: 0]))
+                appendTableGrid(ordinal: ordinal, token: token, ctx: ctx, attrs: &attrs)
+                continue
+            }
+            #endif
             if !ctx.activeTokenIndices.contains(idx),
                !neededLengths.contains(token.range.length) {
                 skippedCount += 1
@@ -283,6 +292,43 @@ extension MarkdownStyler {
         }
         return attrs
     }
+
+    #if os(macOS)
+    /// Ta Da fork: reserves the live grid's space on the table's first line, which the grid sits over. The height is the
+    /// grid's last measured one for this table (`NativeTextView.tableGridHeights`), else the layout's estimate.
+    private static func appendTableGrid(
+        ordinal: Int, token: MarkdownToken, ctx: StylingContext, attrs: inout [StyledRange]
+    ) {
+        let source = ctx.nsText.substring(with: token.range)
+        guard let parsed = tableMeta(for: source).parsed else { return }
+        let containerWidth = effectiveContainerWidth(for: ctx)
+        let layout = tableLayout(
+            parsed, baseFont: ctx.baseFont, theme: ctx.configuration.theme,
+            codeBackgroundColor: ctx.codeBackgroundColor, latex: ctx.services.latex,
+            availableWidth: containerWidth, extensions: ctx.configuration.extensions
+        ).layout
+        let host = ctx.layoutBridge?.firstTextContainer?.textView as? NativeTextView
+        let height = host?.tableGridHeights[ordinal] ?? layout.size.height
+        let isWide = layout.size.width - containerWidth > max(layout.size.width.ulp, containerWidth.ulp) * 8
+        let bounds = CGRect(x: 0, y: 0, width: layout.size.width, height: height)
+        _ = appendRenderedStandaloneBlock(
+            for: token,
+            rawContent: source,
+            image: NSImage(size: bounds.size),
+            imageBounds: bounds,
+            paragraphSpacingBefore: ctx.baseDefaultLineHeight * 0.5,
+            paragraphSpacing: ctx.baseDefaultLineHeight * 0.5,
+            alignment: .left,
+            mode: .collapsedSourceScrollable(
+                markerTexts: [], displayWidth: containerWidth, sourceID: ordinal,
+                scrollerStrip: isWide ? MarkdownTextLayoutFragment.scrollableBlockScrollerStrip : 0
+            ),
+            restyleOnWidthChange: true,
+            ctx: ctx,
+            attrs: &attrs
+        )
+    }
+    #endif
 
     // MARK: - Parsing
 
@@ -432,25 +478,57 @@ extension MarkdownStyler {
 
     // MARK: - Rendering
 
-    private static func renderTable(
+    /// Ta Da fork: a table's geometry, shared by the rendered image and the live grid.
+    struct TableLayout {
+        static let cellHPadding: CGFloat = 12
+        static let cellVPadding: CGFloat = 6
+        static let borderWidth: CGFloat = 1
+
+        let columnWidths: [CGFloat]
+        let rowContentHeights: [CGFloat]
+        let columnLeft: [CGFloat]
+        let rowTop: [CGFloat]
+        let size: CGSize
+
+        init(columnWidths: [CGFloat], rowContentHeights: [CGFloat]) {
+            let (hPad, vPad, border) = (Self.cellHPadding, Self.cellVPadding, Self.borderWidth)
+            let columnCount = columnWidths.count
+            let rowCount = rowContentHeights.count
+            self.columnWidths = columnWidths
+            self.rowContentHeights = rowContentHeights
+            size = CGSize(
+                width: columnWidths.reduce(0, +) + CGFloat(columnCount) * 2 * hPad + CGFloat(columnCount + 1) * border,
+                height: rowContentHeights.reduce(0) { $0 + $1 + 2 * vPad } + CGFloat(rowCount + 1) * border
+            )
+            // Top-down coordinates; drawing runs flipped.
+            var columnLeft = [CGFloat](repeating: 0, count: columnCount + 1)
+            columnLeft[0] = border
+            for i in 0..<columnCount {
+                columnLeft[i + 1] = columnLeft[i] + columnWidths[i] + 2 * hPad + border
+            }
+            var rowTop = [CGFloat](repeating: 0, count: rowCount + 1)
+            rowTop[0] = border
+            for i in 0..<rowCount {
+                rowTop[i + 1] = rowTop[i] + rowContentHeights[i] + 2 * vPad + border
+            }
+            self.columnLeft = columnLeft
+            self.rowTop = rowTop
+        }
+    }
+
+    /// The layout of `table` within `availableWidth`, and its formatted cells (header first, then the body rows).
+    static func tableLayout(
         _ table: MarkdownTable,
         baseFont: PlatformFont,
         theme: MarkdownEditorTheme,
         codeBackgroundColor: PlatformColor,
         latex: any LatexRenderer,
-        appearance: PlatformAppearance,
         availableWidth: CGFloat,
         extensions: [any MarkdownExtension] = []
-    ) -> PlatformImage {
+    ) -> (layout: TableLayout, header: [NSAttributedString], body: [[NSAttributedString]]) {
         let columnCount = table.alignments.count
-        let cellHPadding: CGFloat = 12
-        let cellVPadding: CGFloat = 6
-        let borderWidth: CGFloat = 1
-        // Resolve under the real appearance: `.withAlphaComponent()` freezes a dynamic color otherwise.
-        func mutedColor(alpha: CGFloat) -> PlatformColor {
-            theme.mutedText.resolved(under: appearance).withAlphaComponent(alpha)
-        }
-        let borderColor = mutedColor(alpha: 0.5)
+        let cellHPadding = TableLayout.cellHPadding
+        let borderWidth = TableLayout.borderWidth
         let baseLineHeight: CGFloat = ceil(baseFont.ascender - baseFont.descender + baseFont.leading)
         let minColumnContentWidth: CGFloat = 16
 
@@ -571,25 +649,34 @@ extension MarkdownStyler {
             }
         }
 
-        let totalWidth = columnWidths.reduce(0, +)
-            + CGFloat(columnCount) * 2 * cellHPadding
-            + CGFloat(columnCount + 1) * borderWidth
-        let totalHeight = rowContentHeights.reduce(0) { $0 + $1 + 2 * cellVPadding }
-            + CGFloat(rowCount + 1) * borderWidth
+        return (TableLayout(columnWidths: columnWidths, rowContentHeights: rowContentHeights), headerCells, bodyCells)
+    }
 
-        let size = CGSize(width: totalWidth, height: totalHeight)
-
-        // Pre-compute layout offsets (top-down coords; drawing runs flipped).
-        var columnLeft = [CGFloat](repeating: 0, count: columnCount + 1)
-        columnLeft[0] = borderWidth
-        for i in 0..<columnCount {
-            columnLeft[i + 1] = columnLeft[i] + columnWidths[i] + 2 * cellHPadding + borderWidth
+    private static func renderTable(
+        _ table: MarkdownTable,
+        baseFont: PlatformFont,
+        theme: MarkdownEditorTheme,
+        codeBackgroundColor: PlatformColor,
+        latex: any LatexRenderer,
+        appearance: PlatformAppearance,
+        availableWidth: CGFloat,
+        extensions: [any MarkdownExtension] = []
+    ) -> PlatformImage {
+        let columnCount = table.alignments.count
+        let cellHPadding = TableLayout.cellHPadding
+        let cellVPadding = TableLayout.cellVPadding
+        let borderWidth = TableLayout.borderWidth
+        // Resolve under the real appearance: `.withAlphaComponent()` freezes a dynamic color otherwise.
+        func mutedColor(alpha: CGFloat) -> PlatformColor {
+            theme.mutedText.resolved(under: appearance).withAlphaComponent(alpha)
         }
-        var rowTop = [CGFloat](repeating: 0, count: rowCount + 1)
-        rowTop[0] = borderWidth
-        for i in 0..<rowCount {
-            rowTop[i + 1] = rowTop[i] + rowContentHeights[i] + 2 * cellVPadding + borderWidth
-        }
+        let borderColor = mutedColor(alpha: 0.5)
+        let (layout, headerCells, bodyCells) = tableLayout(
+            table, baseFont: baseFont, theme: theme, codeBackgroundColor: codeBackgroundColor,
+            latex: latex, availableWidth: availableWidth, extensions: extensions
+        )
+        let (size, columnLeft, rowTop, rowContentHeights) = (layout.size, layout.columnLeft, layout.rowTop, layout.rowContentHeights)
+        let rowCount = layout.rowContentHeights.count
 
         let alignments = table.alignments
         let headerFill = mutedColor(alpha: 0.08)

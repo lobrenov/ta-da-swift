@@ -355,7 +355,8 @@ extension MarkdownStyler {
         case collapsedSourceScrollable(
             markerTexts: [String],
             displayWidth: CGFloat,
-            sourceID: Int
+            sourceID: Int,
+            scrollerStrip: CGFloat = MarkdownTextLayoutFragment.scrollableBlockScrollerStrip
         )
     }
 
@@ -400,8 +401,7 @@ extension MarkdownStyler {
                 attrs: &attrs
             )
 
-        case .collapsedSourceScrollable(let markerTexts, let displayWidth, let sourceID):
-            let scrollerStrip = MarkdownTextLayoutFragment.scrollableBlockScrollerStrip
+        case .collapsedSourceScrollable(let markerTexts, let displayWidth, let sourceID, let scrollerStrip):
             let totalHeight = imageBounds.height + scrollerStrip
             var anchorAttrs = widthChangeAnchorAttrs
             anchorAttrs[.scrollableBlockNaturalWidth] = imageBounds.width

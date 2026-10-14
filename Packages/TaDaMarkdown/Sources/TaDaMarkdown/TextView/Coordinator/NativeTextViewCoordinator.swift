@@ -89,6 +89,9 @@ public final class NativeTextViewCoordinator: NSObject {
     var onLinkClick: ((String) -> Void)?
     var onCaretRectChange: ((CGRect) -> Void)?
     var onTextMutation: ((MarkdownTextMutation) -> Void)?
+    /// Ta Da fork: a table cell's editor reports its text after every change, and shares the grid's document undo.
+    var onDisplayTextChange: ((String) -> Void)?
+    var undoManagerOverride: (() -> UndoManager?)?
     #if os(macOS)
     /// Embedder hook to build the right-click menu (the engine ships none). Gets the
     /// default menu + current selection range, returns the menu to show.

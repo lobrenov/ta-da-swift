@@ -321,7 +321,8 @@ struct LiveEditor: View {
 
     private func showSlashMenu(_ state: SlashCommandState) {
         slashMenu.show(
-            query: state.query, atLineStart: state.isAtLineStart, anchor: state.anchorRect, theme: theme,
+            query: state.query, atLineStart: state.isAtLineStart, inTableCell: state.inTableCell,
+            anchor: state.anchorRect, theme: theme,
             pick: { [slashCommand] command in
                 let insertion = command.insertion(followsBlankLine: state.followsBlankLine)
                 slashCommand.insert(insertion.text, selecting: insertion.selection)
@@ -403,6 +404,7 @@ struct LiveEditor: View {
         config.imageEmbed.missingText = theme.muted.withAlphaComponent(0.6)
         #if os(macOS)
         config.imageEmbed.cornerRadius = 6
+        config.liveTables = true
         config.imageEmbed.selectionRing = theme.accent
         config.imageEmbed.sourceButton = .init(fill: theme.isDark ? theme.side : theme.bg, hoverFill: theme.surface,
                                                ring: theme.surface, tint: theme.fg, hoverTint: theme.accent)

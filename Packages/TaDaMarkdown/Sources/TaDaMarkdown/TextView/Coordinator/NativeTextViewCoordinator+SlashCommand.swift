@@ -60,6 +60,8 @@ public struct SlashCommandState: Equatable, Sendable {
     public let followsBlankLine: Bool
     /// The trigger's first character in screen coordinates, to anchor the menu.
     public let anchorRect: CGRect
+    /// The query is in a table cell, where tables and images can't go.
+    public var inTableCell = false
 }
 
 /// Ta Da fork: acts on the open slash command. Pass one to
@@ -83,12 +85,12 @@ public final class SlashCommandProxy {
     /// Replaces the query, from its trigger to the caret, with `text` (one undo step) and selects `selection`, which
     /// is relative to `text`. A link or embed query also replaces the `]]` straight after the caret.
     public func insert(_ text: String, selecting selection: NSRange) {
-        coordinator?.insertSlashCommand(text, selecting: selection)
+        coordinator?.inputTarget.insertSlashCommand(text, selecting: selection)
     }
 
     /// Indents the selected list lines (and their children), as Tab does.
     public func indent() {
-        guard let textView = coordinator?.textView else { return }
+        guard let textView = coordinator?.inputTarget.textView else { return }
         let maximumLevel = (textView as? NativeTextView)?.configuration.lists.maximumNestingLevel
             ?? MarkdownEditorConfiguration.default.lists.maximumNestingLevel
         _ = MarkdownLists.indentListLines(textView, selection: textView.currentSelectedRange, maximumLevel: maximumLevel)
@@ -96,7 +98,7 @@ public final class SlashCommandProxy {
 
     /// Outdents the selected list lines (and their children), as Shift-Tab does.
     public func outdent() {
-        guard let coordinator, let textView = coordinator.textView else { return }
+        guard let coordinator = coordinator?.inputTarget, let textView = coordinator.textView else { return }
         _ = coordinator.handleBacktab(textView)
     }
 
@@ -117,12 +119,12 @@ public final class SlashCommandProxy {
 
     /// Closes the menu until the next `/` is typed.
     public func dismiss() {
-        coordinator?.dismissSlashCommand()
+        coordinator?.inputTarget.dismissSlashCommand()
     }
 
     /// Ta Da fork: formats the selection as the editor's formatting commands do, for iOS's formatting bar.
     public func apply(_ format: MarkdownFormat) {
-        guard let coordinator, coordinator.textView != nil else { return }
+        guard let coordinator = coordinator?.inputTarget, coordinator.textView != nil else { return }
         switch format {
         case .bold: coordinator.didMarkdownBold(nil)
         case .italic: coordinator.didMarkdownItalic(nil)
@@ -137,6 +139,15 @@ public enum MarkdownFormat: Sendable {
 }
 
 extension NativeTextViewCoordinator {
+
+    /// Ta Da fork: the coordinator the embedder's commands act on: the table cell that has the keyboard, else this one.
+    var inputTarget: NativeTextViewCoordinator {
+        #if os(macOS)
+        (textView as? NativeTextView)?.focusedTableCell?.coordinator ?? self
+        #else
+        self
+        #endif
+    }
 
     private static let slashQueryStops = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "/"))
 
@@ -293,6 +304,9 @@ extension NativeTextViewCoordinator {
                 state = SlashCommandState(trigger: command.trigger, range: command.range, query: command.query,
                                           isAtLineStart: command.isAtLineStart,
                                           followsBlankLine: command.followsBlankLine, anchorRect: anchor)
+                #if os(macOS)
+                state?.inTableCell = (tv as? NativeTextView)?.hidesSyntaxUnlessFocused == true
+                #endif
             }
             guard state != reportedSlashCommand else { return }
             reportedSlashCommand = state

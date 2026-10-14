@@ -49,19 +49,37 @@ final class WideTableOverlay: NSScrollView {
         }
     }
 
-    private let tableImageView: WideTableImageView
+    private let tableImageView: WideTableImageView?
 
     init(sourceID: Int, image: NSImage, ownerTextView: NativeTextView, anchorLocation: Int) {
         self.sourceID = sourceID
         self.anchorTextLocation = anchorLocation
         self.ownerTextView = ownerTextView
         self.tableImageView = WideTableImageView(frame: CGRect(origin: .zero, size: image.size))
-        tableImageView.image = image
-        tableImageView.imageScaling = .scaleNone
-        tableImageView.imageAlignment = .alignTopLeft
+        tableImageView?.image = image
+        tableImageView?.imageScaling = .scaleNone
+        tableImageView?.imageAlignment = .alignTopLeft
 
         super.init(frame: .zero)
+        configureScrolling()
+        documentView = tableImageView
+        tableImageView?.ownerOverlay = self
+        observeScrolling()
+    }
 
+    /// Ta Da fork: hosts a live table grid in the same scroll view.
+    init(sourceID: Int, grid: NSView, ownerTextView: NativeTextView) {
+        self.sourceID = sourceID
+        self.anchorTextLocation = 0
+        self.ownerTextView = ownerTextView
+        self.tableImageView = nil
+        super.init(frame: .zero)
+        configureScrolling()
+        documentView = grid
+        observeScrolling()
+    }
+
+    private func configureScrolling() {
         hasHorizontalScroller = true
         hasVerticalScroller = false
         // Auto-hide: only show the scroller when the table actually overflows.
@@ -78,10 +96,9 @@ final class WideTableOverlay: NSScrollView {
         usesPredominantAxisScrolling = true
         horizontalScroller?.controlSize = .small
         automaticallyAdjustsContentInsets = false
+    }
 
-        documentView = tableImageView
-        tableImageView.ownerOverlay = self
-
+    private func observeScrolling() {
         NotificationCenter.default.addObserver(
             self, selector: #selector(scrollOffsetDidChange),
             name: NSScrollView.didLiveScrollNotification, object: self
@@ -121,10 +138,9 @@ final class WideTableOverlay: NSScrollView {
 
     /// Swap the rendered image after a restyle regenerated it.
     func updateImage(_ image: NSImage) {
-        if tableImageView.image !== image {
-            tableImageView.image = image
-            tableImageView.frame = CGRect(origin: .zero, size: image.size)
-        }
+        guard let tableImageView, tableImageView.image !== image else { return }
+        tableImageView.image = image
+        tableImageView.frame = CGRect(origin: .zero, size: image.size)
     }
 
     var horizontalOffset: CGFloat {
@@ -177,6 +193,11 @@ extension NativeTextView {
         layoutAlreadySettled: Bool = false,
         knownWideTableAnchorRanges: [NSRange]? = nil
     ) {
+        // Ta Da fork: live tables reconcile at once, so a cell's edit and its relayout are one step.
+        if configuration.liveTables {
+            performTableGridUpdate()
+            return
+        }
         if immediately || wideTableOverlays.isEmpty {
             pendingWideTableOverlayUpdate = false
             performWideTableOverlayUpdate(
@@ -356,6 +377,9 @@ extension NativeTextView {
     func removeAllWideTableOverlays() {
         for (_, overlay) in wideTableOverlays { overlay.removeFromSuperview() }
         wideTableOverlays.removeAll()
+        tableGridHeights.removeAll()
+        focusedTableCell = nil
+        coalescingTableEdit = nil
     }
 }
 #endif

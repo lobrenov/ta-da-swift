@@ -109,6 +109,18 @@ final class NativeTextView: NSTextView {
     var wideTableOverlays: [Int: WideTableOverlay] = [:]
     /// Persisted horizontal scroll offset per wide table; survives restyles.
     var tableHorizontalScrollOffsets: [Int: CGFloat] = [:]
+    /// Ta Da fork: each live grid's measured height by table ordinal, which the styler reserves (`+TableGrid`).
+    var tableGridHeights: [Int: CGFloat] = [:]
+    var isUpdatingTableGrids = false
+    /// Ta Da fork: a table cell's editor hides syntax like a read-only view until it has the keyboard.
+    var hidesSyntaxUnlessFocused = false
+    var hasEditingFocus = false
+    /// Ta Da fork: the table cell editor that has the keyboard (`+TableGrid`).
+    weak var focusedTableCell: TableCellEditor?
+    /// Ta Da fork: for a table cell's editor, the cell it is.
+    weak var tableCell: TableCellEditor?
+    /// Ta Da fork: the table edit whose typing the next typed edit in the same cell continues (`+TableGrid`).
+    var coalescingTableEdit: TableEdit?
 
     /// Ta Da fork: a right-click on a task box offers its markers; on a drawn image, goes to `onImageEmbed`. Checked before super,
     /// which moves the caret to the click — onto the box's line, revealing the raw `[ ]`.
