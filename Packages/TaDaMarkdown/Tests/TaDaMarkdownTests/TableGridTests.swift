@@ -162,4 +162,117 @@ struct TableGridTests {
         #expect(h.host.string.contains("- [x] x"))
     }
 }
+
+@MainActor
+@Suite("Live table grid keys")
+struct TableGridKeyTests {
+    static let source = "Before\n\n| a | b |\n|---|---|\n| 1 | 2 |\n| 3 | 4 |\n\nAfter\n"
+
+    private func focused(_ h: GridHarness) -> (row: Int, column: Int)? {
+        h.grid.focusedCell.map { ($0.row, $0.column) }
+    }
+
+    @Test func tabMovesToTheNextCellAndShiftTabBack() {
+        let h = GridHarness(Self.source)
+        h.grid.focus(row: 0, column: 0)
+        h.cell(0, 0).doCommand(by: #selector(NSResponder.insertTab(_:)))
+        #expect(focused(h)! == (0, 1))
+        h.cell(0, 1).doCommand(by: #selector(NSResponder.insertTab(_:)))
+        #expect(focused(h)! == (1, 0))
+        h.cell(1, 0).doCommand(by: #selector(NSResponder.insertBacktab(_:)))
+        #expect(focused(h)! == (0, 1))
+        h.grid.focus(row: 0, column: 0)
+        h.cell(0, 0).doCommand(by: #selector(NSResponder.insertBacktab(_:)))
+        #expect(focused(h)! == (0, 0))
+        #expect(h.host.string == Self.source)
+    }
+
+    @Test func tabOnTheLastCellAddsARowAsOneUndoStep() {
+        let h = GridHarness(Self.source)
+        h.grid.focus(row: 2, column: 1)
+        h.cell(2, 1).doCommand(by: #selector(NSResponder.insertTab(_:)))
+        #expect(h.grid.table.rowCount == 4)
+        #expect(focused(h)! == (3, 0))
+        #expect(h.host.string.contains("|     |     |"))
+        h.host.undoManager?.undo()
+        #expect(h.grid.table.rowCount == 3)
+        #expect(h.host.string.contains("| 3 | 4 |"))
+        #expect(h.host.string == Self.source)
+    }
+
+    @Test func tabOnAListLineIndentsInsteadOfMoving() {
+        let h = GridHarness("| a |\n|---|\n|  |\n")
+        h.type("- a", row: 1, column: 0)
+        h.cell(1, 0).insertNewline(nil)
+        h.type("b", row: 1, column: 0)
+        h.cell(1, 0).doCommand(by: #selector(NSResponder.insertTab(_:)))
+        #expect(focused(h)! == (1, 0))
+        #expect(h.cell(1, 0).string != "- a\n- b")
+        #expect(h.cell(1, 0).string.contains("\n  - b") || h.cell(1, 0).string.contains("\n\t- b"))
+    }
+
+    @Test func arrowsMoveBetweenCellsVertically() {
+        let h = GridHarness(Self.source)
+        h.grid.focus(row: 1, column: 1)
+        h.cell(1, 1).doCommand(by: #selector(NSResponder.moveUp(_:)))
+        #expect(focused(h)! == (0, 1))
+        h.cell(0, 1).doCommand(by: #selector(NSResponder.moveDown(_:)))
+        #expect(focused(h)! == (1, 1))
+        h.cell(1, 1).doCommand(by: #selector(NSResponder.moveDown(_:)))
+        #expect(focused(h)! == (2, 1))
+    }
+
+    @Test func upFromTheHeaderAndDownFromTheLastRowLeaveTheTable() {
+        let h = GridHarness(Self.source)
+        let ns = Self.source as NSString
+        let start = ns.range(of: "| a").location
+        let end = ns.range(of: "| 3 | 4 |").upperBound
+        h.grid.focus(row: 0, column: 0)
+        h.cell(0, 0).doCommand(by: #selector(NSResponder.moveUp(_:)))
+        #expect(h.window.firstResponder === h.host)
+        #expect(h.host.selectedRange() == NSRange(location: start - 1, length: 0))
+        h.grid.focus(row: 2, column: 0)
+        h.cell(2, 0).doCommand(by: #selector(NSResponder.moveDown(_:)))
+        #expect(h.window.firstResponder === h.host)
+        #expect(h.host.selectedRange() == NSRange(location: end + 1, length: 0))
+    }
+
+    @Test func leftAtACellsStartAndRightAtItsEndStepBetweenCells() {
+        let h = GridHarness(Self.source)
+        h.grid.focus(row: 1, column: 0, selection: NSRange(location: 0, length: 0))
+        h.cell(1, 0).doCommand(by: #selector(NSResponder.moveLeft(_:)))
+        #expect(focused(h)! == (0, 1))
+        h.cell(0, 1).doCommand(by: #selector(NSResponder.moveRight(_:)))
+        #expect(focused(h)! == (1, 0))
+        #expect(h.cell(1, 0).selectedRange() == NSRange(location: 0, length: 0))
+    }
+
+    @Test func leftPastTheFirstCellAndRightPastTheLastLeaveTheTable() {
+        let h = GridHarness(Self.source)
+        let ns = Self.source as NSString
+        let start = ns.range(of: "| a").location
+        h.grid.focus(row: 0, column: 0, selection: NSRange(location: 0, length: 0))
+        h.cell(0, 0).doCommand(by: #selector(NSResponder.moveLeft(_:)))
+        #expect(h.window.firstResponder === h.host)
+        #expect(h.host.selectedRange().location == start - 1)
+        h.grid.focus(row: 2, column: 1)
+        h.cell(2, 1).doCommand(by: #selector(NSResponder.moveRight(_:)))
+        #expect(h.window.firstResponder === h.host)
+    }
+
+    @Test func downFromTheLineAboveAndUpFromTheLineBelowEnterTheTable() {
+        let h = GridHarness(Self.source)
+        let ns = Self.source as NSString
+        let start = ns.range(of: "| a").location
+        let end = ns.range(of: "| 3 | 4 |").upperBound
+        h.window.makeFirstResponder(h.host)
+        h.host.setSelectedRange(NSRange(location: start - 1, length: 0))
+        h.host.doCommand(by: #selector(NSResponder.moveDown(_:)))
+        #expect(focused(h)! == (0, 0))
+        h.window.makeFirstResponder(h.host)
+        h.host.setSelectedRange(NSRange(location: end + 1, length: 0))
+        h.host.doCommand(by: #selector(NSResponder.moveUp(_:)))
+        #expect(focused(h)! == (2, 0))
+    }
+}
 #endif

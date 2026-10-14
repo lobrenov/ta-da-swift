@@ -80,6 +80,9 @@ extension NativeTextViewCoordinator: NSTextViewDelegate {
         if configuration.rawSourceMode { return false }
         // Ta Da fork: ↑/↓/↵/⇥/esc drive an open slash menu.
         if handleSlashCommandKey(commandSelector) { return true }
+        // Ta Da fork: a table cell's keys.
+        if let native = textView as? NativeTextView, let cell = native.tableCell, let grid = cell.grid,
+           grid.handleCommand(commandSelector, from: cell) { return true }
         if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
             return handleBacktab(textView)
         }
@@ -96,6 +99,9 @@ extension NativeTextViewCoordinator: NSTextViewDelegate {
             }
             if let key, handler(key) { return true }
         }
+        // Ta Da fork: ↓ or ↑ from the line beside a table enters it.
+        if configuration.liveTables, let native = textView as? NativeTextView, native.tableCell == nil,
+           native.enterTable(from: commandSelector) { return true }
         return false
     }
 

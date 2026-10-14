@@ -186,6 +186,107 @@ final class TableGridView: NSView {
         host?.coalescingTableEdit = nil
     }
 
+    // MARK: - Keys
+
+    private static let listLine = try! NSRegularExpression(pattern: #"^[ \t]*(?:>[ \t]*)*(?:(?:\d+[.)])|[-•*+])[ \t]+"#)
+
+    /// Tab, Shift-Tab and the arrows in a cell, per the table's keys. False leaves the key to the editor.
+    func handleCommand(_ selector: Selector, from editor: TableCellEditor) -> Bool {
+        let textView = editor.textView
+        let selection = textView.selectedRange()
+        let length = (textView.string as NSString).length
+        switch selector {
+        case #selector(NSResponder.insertTab(_:)), #selector(NSResponder.insertBacktab(_:)):
+            if isOnListLine(textView) { return false }
+            if selector == #selector(NSResponder.insertTab(_:)) { tabForward(from: editor) } else { tabBackward(from: editor) }
+            return true
+        case #selector(NSResponder.moveUp(_:)):
+            guard selection.length == 0, isOnEdgeLine(textView, first: true) else { return false }
+            moveVertically(from: editor, up: true)
+            return true
+        case #selector(NSResponder.moveDown(_:)):
+            guard selection.length == 0, isOnEdgeLine(textView, first: false) else { return false }
+            moveVertically(from: editor, up: false)
+            return true
+        case #selector(NSResponder.moveLeft(_:)):
+            guard selection == NSRange(location: 0, length: 0) else { return false }
+            if let previous = neighbour(of: editor, by: -1) {
+                focus(row: previous.row, column: previous.column)
+            } else {
+                host?.leaveTable(ordinal: ordinal, above: true)
+            }
+            return true
+        case #selector(NSResponder.moveRight(_:)):
+            guard selection == NSRange(location: length, length: 0) else { return false }
+            if let next = neighbour(of: editor, by: 1) {
+                focus(row: next.row, column: next.column, selection: NSRange(location: 0, length: 0))
+            } else {
+                host?.leaveTable(ordinal: ordinal, above: false)
+            }
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func isOnListLine(_ textView: NativeTextView) -> Bool {
+        let text = textView.string as NSString
+        let line = text.substring(with: text.lineRange(for: NSRange(location: min(textView.selectedRange().location, text.length), length: 0)))
+        return Self.listLine.firstMatch(in: line, range: NSRange(location: 0, length: (line as NSString).length)) != nil
+    }
+
+    /// Whether the caret is on the cell's first (or last) line as laid out, so wrapped lines count.
+    private func isOnEdgeLine(_ textView: NativeTextView, first: Bool) -> Bool {
+        let length = (textView.string as NSString).length
+        let edge = NSRange(location: first ? 0 : length, length: 0)
+        let caret = textView.firstRect(forCharacterRange: textView.selectedRange(), actualRange: nil)
+        let reference = textView.firstRect(forCharacterRange: edge, actualRange: nil)
+        return abs(caret.midY - reference.midY) < 2
+    }
+
+    private func neighbour(of editor: TableCellEditor, by step: Int) -> (row: Int, column: Int)? {
+        let index = editor.row * table.columnCount + editor.column + step
+        guard index >= 0, index < table.rowCount * table.columnCount else { return nil }
+        return (index / table.columnCount, index % table.columnCount)
+    }
+
+    /// Tab: the next cell; on the last, a new row with the caret in its first cell.
+    func tabForward(from editor: TableCellEditor) {
+        if let next = neighbour(of: editor, by: 1) {
+            focus(row: next.row, column: next.column)
+        } else {
+            var newTable = table
+            newTable.insertRow(at: newTable.rowCount)
+            host?.coalescingTableEdit = nil
+            commit(newTable, actionName: "Add Row", beforeFocus: focusedCell,
+                   afterFocus: CellFocus(row: newTable.rowCount - 1, column: 0, selection: NSRange(location: 0, length: 0)))
+            focus(row: newTable.rowCount - 1, column: 0)
+        }
+    }
+
+    /// Shift-Tab: the previous cell; nothing on the first.
+    func tabBackward(from editor: TableCellEditor) {
+        if let previous = neighbour(of: editor, by: -1) { focus(row: previous.row, column: previous.column) }
+    }
+
+    /// ↑ on a cell's first line, ↓ on its last: the cell above or below, with the caret at the same x; past the header
+    /// or the last row, out of the table.
+    private func moveVertically(from editor: TableCellEditor, up: Bool) {
+        let row = editor.row + (up ? -1 : 1)
+        guard let target = self.editor(row: row, column: editor.column) else {
+            host?.leaveTable(ordinal: ordinal, above: up)
+            return
+        }
+        let caret = editor.textView.firstRect(forCharacterRange: editor.textView.selectedRange(), actualRange: nil)
+        let inWindow = window?.convertFromScreen(caret) ?? caret
+        let x = target.textView.convert(inWindow.origin, from: nil).x
+        let vPad = MarkdownStyler.TableLayout.cellVPadding
+        let y = up ? target.textView.bounds.height - vPad - 2 : vPad + 2
+        window?.makeFirstResponder(target.textView)
+        let location = target.textView.characterIndexForInsertion(at: CGPoint(x: x, y: y))
+        target.textView.setSelectedRange(NSRange(location: location, length: 0))
+    }
+
     // MARK: - Writing
 
     /// A cell's text changed by typing or a command inside the cell.

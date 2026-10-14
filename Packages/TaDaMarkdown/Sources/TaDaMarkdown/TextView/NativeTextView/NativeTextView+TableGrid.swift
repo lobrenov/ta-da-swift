@@ -153,6 +153,39 @@ extension NativeTextView {
         return mismatched
     }
 
+    /// The caret leaves a table's grid for the line above or below it.
+    func leaveTable(ordinal: Int, above: Bool) {
+        guard let range = tableRange(ordinal: ordinal) else { return }
+        let target = above ? range.location - 1 : NSMaxRange(range) + 1
+        guard target >= 0, target <= (string as NSString).length else { return }
+        window?.makeFirstResponder(self)
+        setSelectedRange(NSRange(location: target, length: 0))
+    }
+
+    /// ↓ (`above`) on the line straight above a table, or ↑ on the one below it, enters its first or last row.
+    /// False when the caret isn't there.
+    func enterTable(from selector: Selector) -> Bool {
+        let down = selector == #selector(NSResponder.moveDown(_:))
+        guard down || selector == #selector(NSResponder.moveUp(_:)), selectedRange().length == 0,
+              let grid = firstTableGrid(adjacentToCaretMovingDown: down) else { return false }
+        grid.focus(row: down ? 0 : grid.table.rowCount - 1, column: 0, selection: NSRange(location: 0, length: 0))
+        return true
+    }
+
+    private func firstTableGrid(adjacentToCaretMovingDown down: Bool) -> TableGridView? {
+        guard let coordinator else { return nil }
+        let text = string as NSString
+        let caret = min(selectedRange().location, text.length)
+        let line = text.lineRange(for: NSRange(location: caret, length: 0))
+        for (ordinal, token) in coordinator.parsedDocument(for: string).tableTokens.enumerated() {
+            let touches = down ? NSMaxRange(line) == token.range.location : line.location == NSMaxRange(token.range) + 1
+            if touches { return tableGrid(ordinal: ordinal) }
+        }
+        return nil
+    }
+
+    private var coordinator: NativeTextViewCoordinator? { delegate as? NativeTextViewCoordinator }
+
     // MARK: - Focus
 
     override func becomeFirstResponder() -> Bool {
