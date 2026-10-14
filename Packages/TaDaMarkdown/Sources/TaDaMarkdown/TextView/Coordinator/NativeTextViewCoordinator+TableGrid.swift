@@ -14,20 +14,28 @@ import UIKit
 
 extension NativeTextViewCoordinator {
 
-    /// From every selection change: a caret in a table's lines, or at the end of its last line, moves past it.
+    /// From every selection change: the caret steps over a table as it passes (right or left across its edge). A
+    /// selection that lands in a table's lines any other way (Find, the slash menu's Table, a click that reached the
+    /// text) gives the keyboard to the cell it falls in. At a document edge, stepping over adds a line to land on.
     func snapCaretOutOfTable(in textView: PlatformTextView) {
         #if os(macOS)
         let selection = textView.currentSelectedRange
-        guard configuration.liveTables, selection.length == 0,
-              !((textView as? NativeTextView)?.hidesSyntaxUnlessFocused ?? false) else { return }
-        let text = textView.string as NSString
-        guard let table = parsedDocument(for: textView.string).tableTokens.first(where: {
-            selection.location >= $0.range.location && selection.location <= NSMaxRange($0.range)
+        guard configuration.liveTables, let native = textView as? NativeTextView, !native.hidesSyntaxUnlessFocused else { return }
+        let tokens = parsedDocument(for: textView.string).tableTokens
+        guard let ordinal = tokens.firstIndex(where: {
+            selection.location >= $0.range.location && NSMaxRange(selection) <= NSMaxRange($0.range)
         }) else { return }
-        let cameFromBefore = (previousCaretLocation ?? 0) < table.range.location
-        let target = cameFromBefore ? min(NSMaxRange(table.range) + 1, text.length) : max(table.range.location - 1, 0)
-        guard target < table.range.location || target > NSMaxRange(table.range) else { return }
-        textView.setSelectedRange(NSRange(location: target, length: 0))
+        let range = tokens[ordinal].range
+        if selection.length == 0 {
+            let previous = previousCaretLocation
+            if selection.location == range.location, previous == range.location - 1 {
+                return native.leaveTable(ordinal: ordinal, above: false)
+            }
+            if selection.location == NSMaxRange(range), previous == NSMaxRange(range) + 1 {
+                return native.leaveTable(ordinal: ordinal, above: true)
+            }
+        }
+        native.focusTableCell(ordinal: ordinal, selection: selection)
         #endif
     }
 }

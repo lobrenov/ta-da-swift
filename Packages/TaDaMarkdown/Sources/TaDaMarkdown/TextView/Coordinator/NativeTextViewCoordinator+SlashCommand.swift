@@ -79,8 +79,8 @@ public final class SlashCommandProxy {
         didSet { coordinator?.slashTriggers = triggers }
     }
 
-    /// Ta Da fork: the editor's text view, for edits the embedder makes itself.
-    public var textView: PlatformTextView? { coordinator?.textView }
+    /// Ta Da fork: the editor's text view, or the table cell's that has the keyboard, for edits the embedder makes itself.
+    public var textView: PlatformTextView? { coordinator?.inputTarget.textView }
 
     /// Replaces the query, from its trigger to the caret, with `text` (one undo step) and selects `selection`, which
     /// is relative to `text`. A link or embed query also replaces the `]]` straight after the caret.

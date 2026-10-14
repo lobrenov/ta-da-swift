@@ -114,6 +114,8 @@ final class NativeTextView: NSTextView {
     /// Ta Da fork: each live grid's measured height by table ordinal, which the styler reserves (`+TableGrid`).
     var tableGridHeights: [Int: CGFloat] = [:]
     var isUpdatingTableGrids = false
+    /// Ta Da fork: a table edit is in progress, so its grid updates at once instead of on the next run-loop turn.
+    var isEditingTableText = false
     /// Ta Da fork: a table cell's editor hides syntax like a read-only view until it has the keyboard.
     var hidesSyntaxUnlessFocused = false
     var hasEditingFocus = false

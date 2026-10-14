@@ -370,6 +370,8 @@ extension NativeTextViewCoordinator {
     }
 
     func selectionDidChange(in tv: PlatformTextView) {
+        // Ta Da fork: a table cell's layout may follow its caret (a span's syntax shows or hides), once the restyle ran.
+        if let onSelectionChange { DispatchQueue.main.async(execute: onSelectionChange) }
         // Ta Da fork: forget auto-closed pairs the caret has left.
         if let native = tv as? NativeTextView, !native.autoPairs.isEmpty {
             native.autoPairs = MarkdownAutoPairs.keeping(native.autoPairs, selection: tv.currentSelectedRange)

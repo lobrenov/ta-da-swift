@@ -62,6 +62,24 @@ final class TableGridView: NSView {
     var dropGap: Int?
     /// The grip whose right-click menu is open: ringed like a selection.
     var menuHandle: TableHandle?
+    /// What the cells were last laid out for; `update` does nothing while it still holds.
+    private var appliedSignature: LayoutSignature?
+    private var appliedConfig: ConfigSignature?
+    /// A change the signature doesn't see (a cell's own edit or focus) moved the cells' heights.
+    var needsRelayout = true
+
+    private struct ConfigSignature: Equatable {
+        let theme: MarkdownEditorTheme
+        let font: String
+        let extensions: String
+        let wiki: AnyHashable
+    }
+
+    private struct LayoutSignature: Equatable {
+        let table: MarkdownTable
+        let width: CGFloat
+        let config: ConfigSignature
+    }
     /// Where ⌘C and ⌘X put a selected row or column.
     var pasteboard: NSPasteboard = .general
     /// Where the typing that `coalescingTableEdit` holds last ended, as a location in its cell.
@@ -93,6 +111,18 @@ final class TableGridView: NSView {
     /// tallest cell. The cell being edited keeps its text and caret.
     func update(table newTable: MarkdownTable, availableWidth: CGFloat) {
         guard let host else { return }
+        let config = ConfigSignature(
+            theme: host.configuration.theme, font: "\(host.baseFont.fontName)|\(host.baseFont.pointSize)",
+            extensions: "\(host.configuration.extensionRegistry.fingerprint)",
+            wiki: host.configuration.services.wikiLinks.fingerprint()
+        )
+        let configChanged = config != appliedConfig
+        appliedConfig = config
+        let signature = LayoutSignature(table: newTable, width: availableWidth, config: config)
+        for row in editors { row.forEach { $0.syncCallbacks(from: host) } }
+        if !needsRelayout, signature == appliedSignature { return }
+        needsRelayout = false
+        appliedSignature = signature
         isUpdating = true
         defer { isUpdating = false }
         table = newTable
@@ -102,11 +132,11 @@ final class TableGridView: NSView {
         default: break
         }
         resizeEditors(host: host)
-        let config = host.configuration
+        let hostConfiguration = host.configuration
         let estimate = MarkdownStyler.tableLayout(
-            newTable, baseFont: host.baseFont, theme: config.theme,
-            codeBackgroundColor: config.services.syntaxHighlighter.backgroundColor(),
-            latex: config.services.latex, availableWidth: availableWidth, extensions: config.extensions
+            newTable, baseFont: host.baseFont, theme: hostConfiguration.theme,
+            codeBackgroundColor: hostConfiguration.services.syntaxHighlighter.backgroundColor(),
+            latex: hostConfiguration.services.latex, availableWidth: availableWidth, extensions: hostConfiguration.extensions
         ).layout
         let widths = estimate.columnWidths
         let baseLineHeight = ceil(host.baseFont.ascender - host.baseFont.descender + host.baseFont.leading)
@@ -114,7 +144,7 @@ final class TableGridView: NSView {
         for (r, row) in editors.enumerated() {
             var height = baseLineHeight
             for (c, editor) in row.enumerated() {
-                editor.syncConfiguration(from: host)
+                if configChanged || editor.appliedHeader != (r == 0) { editor.syncConfiguration(from: host) }
                 let want = newTable.cell(row: r, column: c)
                 if editor.text.trimmingCharacters(in: .whitespaces) != want { editor.setText(want) }
                 height = max(height, editor.contentHeight(width: widths[c]))
@@ -147,6 +177,10 @@ final class TableGridView: NSView {
                 editor.coordinator.onDisplayTextChange = { [weak self, weak editor] text in
                     guard let self, let editor else { return }
                     self.cellDidChange(editor, text: text)
+                }
+                editor.coordinator.onSelectionChange = { [weak self, weak editor] in
+                    guard let self, let editor, editor.grid === self, self.host?.isEditingTableText != true else { return }
+                    self.cellLayoutMayHaveChanged(editor)
                 }
                 addSubview(editor.textView)
                 editors[r].append(editor)
@@ -211,11 +245,23 @@ final class TableGridView: NSView {
     func cellDidBecomeFocused(_ editor: TableCellEditor) {
         host?.focusedTableCell = editor
         host?.coalescingTableEdit = nil
+        cellLayoutMayHaveChanged(editor)
     }
 
     func cellDidResignFocus(_ editor: TableCellEditor) {
         if host?.focusedTableCell === editor { host?.focusedTableCell = nil }
         host?.coalescingTableEdit = nil
+        cellLayoutMayHaveChanged(editor)
+    }
+
+    /// Showing or hiding a cell's syntax (focus, the caret crossing a span) can change its height: lay the table out
+    /// again when it did.
+    func cellLayoutMayHaveChanged(_ editor: TableCellEditor) {
+        guard !isUpdating, editor.row < layout.rowContentHeights.count, editor.column < layout.columnWidths.count else { return }
+        let needed = editors[editor.row].map { $0.contentHeight(width: layout.columnWidths[$0.column]) }.max() ?? 0
+        guard abs(needed - layout.rowContentHeights[editor.row]) > 0.5 else { return }
+        needsRelayout = true
+        host?.updateWideTableOverlays(immediately: true)
     }
 
     // MARK: - Keys
@@ -324,6 +370,7 @@ final class TableGridView: NSView {
     /// A cell's text changed by typing or a command inside the cell.
     private func cellDidChange(_ editor: TableCellEditor, text: String) {
         guard !isUpdating, let host else { return }
+        needsRelayout = true
         let old = table.cell(row: editor.row, column: editor.column)
         var newTable = table
         newTable.setCell(row: editor.row, column: editor.column, to: text)
@@ -356,8 +403,9 @@ final class TableGridView: NSView {
         let old = (host.string as NSString).substring(with: range)
         let markdown = newTable.markdown
         table = newTable
+        needsRelayout = true
         guard markdown != old else {
-            host.updateWideTableOverlays()
+            host.updateWideTableOverlays(immediately: true)
             return
         }
         host.replaceTableText(range, with: markdown)

@@ -21,7 +21,12 @@ extension NativeTextView {
     func tableRange(ordinal: Int) -> NSRange? {
         guard let coordinator = delegate as? NativeTextViewCoordinator else { return nil }
         let tokens = coordinator.parsedDocument(for: string).tableTokens
-        return tokens.indices.contains(ordinal) ? tokens[ordinal].range : nil
+        guard tokens.indices.contains(ordinal) else { return nil }
+        // An indented table's lines start at the line start, so its indentation is rewritten with it.
+        var range = tokens[ordinal].range
+        let lineStart = (string as NSString).lineRange(for: NSRange(location: range.location, length: 0)).location
+        if lineStart < range.location { range = NSRange(location: lineStart, length: NSMaxRange(range) - lineStart) }
+        return range
     }
 
     /// Replaces table lines as an edit the editor's input handling leaves alone and the undo manager doesn't record
@@ -32,7 +37,9 @@ extension NativeTextView {
         let manager = undoManager
         manager?.disableUndoRegistration()
         coordinator.isProgrammaticEdit = true
+        isEditingTableText = true
         defer {
+            isEditingTableText = false
             coordinator.isProgrammaticEdit = false
             manager?.enableUndoRegistration()
         }
@@ -76,7 +83,7 @@ extension NativeTextView {
     /// One pass; the paragraphs to restyle, or nil when there is nothing to reconcile.
     private func reconcileTableGrids() -> [NSRange]? {
         guard let storage = textStorage, let bridge = layoutBridge, let container = bridge.firstTextContainer,
-              let tlm = textLayoutManager, let coordinator = delegate as? NativeTextViewCoordinator else {
+              let coordinator = delegate as? NativeTextViewCoordinator else {
             removeAllWideTableOverlays()
             return nil
         }
@@ -92,7 +99,6 @@ extension NativeTextView {
         let viewWidth = host.bounds.width
         let text = string as NSString
         let strip = MarkdownTextLayoutFragment.scrollableBlockScrollerStrip
-        tlm.ensureLayout(for: tlm.documentRange)
 
         var seen: Set<Int> = []
         var mismatched: [NSRange] = []
@@ -104,6 +110,8 @@ extension NativeTextView {
                 if value is Int { anchor = range; stop.pointee = true }
             }
             guard let anchor else { continue }
+            // Only the text up to the table's first line needs laying out to place it.
+            bridge.ensureLayout(forCharacterRange: anchor)
             let anchorRect = bridge.boundingRect(forCharacterRange: anchor, in: container)
             guard !anchorRect.isEmpty else { continue }
             seen.insert(ordinal)
@@ -159,10 +167,42 @@ extension NativeTextView {
     /// The caret leaves a table's grid for the line above or below it.
     func leaveTable(ordinal: Int, above: Bool) {
         guard let range = tableRange(ordinal: ordinal) else { return }
-        let target = above ? range.location - 1 : NSMaxRange(range) + 1
-        guard target >= 0, target <= (string as NSString).length else { return }
         window?.makeFirstResponder(self)
-        setSelectedRange(NSRange(location: target, length: 0))
+        // Past a document edge there is no line to go to: a line break there makes one, as one undo step.
+        if above, range.location == 0 {
+            MarkdownLists.performEdit(self, replace: NSRange(location: 0, length: 0), with: "\n")
+            undoManager?.setActionName("Insert Line")
+            setSelectedRange(NSRange(location: 0, length: 0))
+            return
+        }
+        let length = (string as NSString).length
+        if !above, NSMaxRange(range) >= length {
+            MarkdownLists.performEdit(self, replace: NSRange(location: length, length: 0), with: "\n")
+            undoManager?.setActionName("Insert Line")
+            setSelectedRange(NSRange(location: (string as NSString).length, length: 0))
+            return
+        }
+        setSelectedRange(NSRange(location: above ? range.location - 1 : NSMaxRange(range) + 1, length: 0))
+    }
+
+    /// A selection that lands in a table's source (Find, the slash menu's Table, a click that reaches the text) gives
+    /// the keyboard to the cell it falls in, and the text view's own caret moves off the source.
+    func focusTableCell(ordinal: Int, selection: NSRange) {
+        performTableGridUpdate()
+        guard let range = tableRange(ordinal: ordinal), let grid = tableGrid(ordinal: ordinal) else { return }
+        let source = (string as NSString).substring(with: range)
+        guard let cell = MarkdownTable.cellLocation(in: source, offset: selection.location - range.location) else { return }
+        let row = min(cell.row, grid.table.rowCount - 1)
+        let column = min(cell.column, grid.table.columnCount - 1)
+        let length = (grid.table.cell(row: row, column: column) as NSString).length
+        var mapped = NSRange(location: min(cell.offset, length), length: 0)
+        if selection.length > 0, let end = MarkdownTable.cellLocation(in: source, offset: NSMaxRange(selection) - range.location),
+           end.row == cell.row, end.column == cell.column {
+            mapped.length = min(end.offset, length) - mapped.location
+        }
+        let outside = NSMaxRange(range) + 1 <= (string as NSString).length ? NSMaxRange(range) + 1 : range.location - 1
+        if outside >= 0 { setSelectedRange(NSRange(location: outside, length: 0)) }
+        grid.focus(row: row, column: column, selection: mapped)
     }
 
     /// ↓ (`above`) on the line straight above a table, or ↑ on the one below it, enters its first or last row.
@@ -195,8 +235,8 @@ extension NativeTextView {
         let accepted = super.becomeFirstResponder()
         if accepted, hidesSyntaxUnlessFocused {
             hasEditingFocus = true
-            tableCell?.grid?.cellDidBecomeFocused(tableCell!)
             (delegate as? NativeTextViewCoordinator)?.editingFocusDidChange(in: self)
+            if let cell = tableCell { cell.grid?.cellDidBecomeFocused(cell) }
         }
         return accepted
     }
@@ -205,8 +245,8 @@ extension NativeTextView {
         let accepted = super.resignFirstResponder()
         if accepted, hidesSyntaxUnlessFocused {
             hasEditingFocus = false
-            if let cell = tableCell { cell.grid?.cellDidResignFocus(cell) }
             (delegate as? NativeTextViewCoordinator)?.editingFocusDidChange(in: self)
+            if let cell = tableCell { cell.grid?.cellDidResignFocus(cell) }
         }
         return accepted
     }

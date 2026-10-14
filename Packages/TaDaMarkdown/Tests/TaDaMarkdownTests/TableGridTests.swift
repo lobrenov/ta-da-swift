@@ -130,12 +130,12 @@ struct TableGridTests {
         #expect(h.host.undoManager?.canUndo == true)
     }
 
-    @Test func theCaretNeverRestsInTheSource() {
+    @Test func theCaretStepsOverTheSourceAsItPasses() {
         let h = GridHarness(Self.source)
         let ns = Self.source as NSString
         let start = ns.range(of: "| a").location
         h.coordinator.previousCaretLocation = start - 1
-        h.host.setSelectedRange(NSRange(location: start + 3, length: 0))
+        h.host.setSelectedRange(NSRange(location: start, length: 0))
         let end = ns.range(of: "| 1 | 2 |").upperBound
         #expect(h.host.selectedRange().location == end + 1)
         h.coordinator.previousCaretLocation = end + 1
@@ -143,11 +143,30 @@ struct TableGridTests {
         #expect(h.host.selectedRange().location == start - 1)
     }
 
+    @Test func aCaretLandingInTheSourceFocusesTheCellItIsIn() {
+        let h = GridHarness(Self.source)
+        let ns = Self.source as NSString
+        h.coordinator.previousCaretLocation = 0
+        h.host.setSelectedRange(NSRange(location: ns.range(of: "| 1 | 2 |").location + 6, length: 0))
+        #expect(h.grid.focusedCell?.row == 1 && h.grid.focusedCell?.column == 1)
+        let outside = h.host.selectedRange().location
+        #expect(outside < ns.range(of: "| a").location || outside > ns.range(of: "| 1 | 2 |").upperBound)
+    }
+
+    @Test func aTableInsertedBySlashStartsWithItsFirstHeaderCellSelected() {
+        let h = GridHarness("Before\n\n")
+        h.host.setSelectedRange(NSRange(location: 8, length: 0))
+        let template = "| Column | Column |\n| --- | --- |\n|  |  |"
+        MarkdownLists.performEdit(h.host, replace: NSRange(location: 8, length: 0), with: template)
+        h.host.setSelectedRange(NSRange(location: 10, length: 6))
+        #expect(h.grid.focusedCell == CellFocus(row: 0, column: 0, selection: NSRange(location: 0, length: 6)))
+    }
+
     @Test func aCheckboxInACellTogglesAndOpensItsMenu() {
         let h = GridHarness("| a |\n|---|\n| - [ ] x |\n")
         var requests: [TaskMarkerMenuRequest] = []
         h.host.onTaskMarkerMenu = { requests.append($0) }
-        h.host.updateWideTableOverlays()
+        h.host.updateWideTableOverlays(immediately: true)
         let cell = h.cell(1, 0)
         var hit: (range: NSRange, marker: Character, rect: CGRect)?
         for x in stride(from: 0, to: cell.bounds.width, by: 2) where hit == nil {
@@ -424,9 +443,9 @@ struct TableGridMenuTests {
     @Test func aRowGripOffersInsertAndDelete() {
         let h = GridHarness(Self.source)
         let (menu, _) = request(h, .row(1))
-        #expect(menu.sections.map { $0.map(\.title) } == [["Insert Above", "Insert Below", "Delete Row"]])
+        #expect(menu.sections.map { $0.map(\.title) } == [["Insert above", "Insert below", "Delete row"]])
         #expect(h.grid.menuHandle == .row(1))
-        item(menu, "Insert Below").action()
+        item(menu, "Insert below").action()
         #expect(h.grid.table.rows == [["r1", "a"], ["", ""], ["r2", "b"]])
         h.host.undoManager?.undo()
         #expect(h.grid.table.rows == [["r1", "a"], ["r2", "b"]])
@@ -437,8 +456,8 @@ struct TableGridMenuTests {
     @Test func theHeaderGripHasTheSameItemsAndDeletingItPromotesTheNextRow() {
         let h = GridHarness(Self.source)
         let (menu, _) = request(h, .row(0))
-        #expect(menu.sections.flatMap { $0 }.map(\.title) == ["Insert Above", "Insert Below", "Delete Row"])
-        item(menu, "Delete Row").action()
+        #expect(menu.sections.flatMap { $0 }.map(\.title) == ["Insert above", "Insert below", "Delete row"])
+        item(menu, "Delete row").action()
         #expect(h.grid.table.header == ["r1", "a"])
         #expect(h.grid.table.rows == [["r2", "b"]])
     }
@@ -446,7 +465,7 @@ struct TableGridMenuTests {
     @Test func deleteRowOnAOneRowTableDeletesTheTable() {
         let h = GridHarness("Before\n\n| a | b |\n|---|---|\n\nAfter\n")
         let (menu, _) = request(h, .row(0))
-        item(menu, "Delete Row").action()
+        item(menu, "Delete row").action()
         #expect(h.host.tableGrid(ordinal: 0) == nil)
         #expect(h.host.string == "Before\n\n\nAfter\n")
     }
@@ -454,23 +473,154 @@ struct TableGridMenuTests {
     @Test func aColumnGripOffersInsertDeleteAndAlignmentWithTheCurrentChecked() {
         let h = GridHarness(Self.source)
         let (menu, _) = request(h, .column(1))
-        #expect(menu.sections.map { $0.map(\.title) } == [["Insert Left", "Insert Right", "Delete Column"],
-                                                          ["Align Left", "Align Centre", "Align Right"]])
+        #expect(menu.sections.map { $0.map(\.title) } == [["Insert left", "Insert right", "Delete column"],
+                                                          ["Align left", "Align centre", "Align right"]])
         #expect(menu.sections[1].map(\.isChecked) == [false, false, true])
-        item(menu, "Align Centre").action()
+        item(menu, "Align centre").action()
         #expect(h.host.string.contains("| :-: |") || h.host.string.contains(":-:"))
         #expect(h.grid.table.alignments == [.left, .center])
-        item(menu, "Insert Left").action()
+        item(menu, "Insert left").action()
         #expect(h.grid.table.header == ["h1", "", "h2"])
-        item(menu, "Delete Column").action()
+        item(menu, "Delete column").action()
         #expect(h.grid.table.columnCount == 2)
     }
 
     @Test func deleteColumnOnAOneColumnTableDeletesTheTable() {
         let h = GridHarness("Before\n\n| a |\n|---|\n| 1 |\n\nAfter\n")
         let (menu, _) = request(h, .column(0))
-        item(menu, "Delete Column").action()
+        item(menu, "Delete column").action()
         #expect(h.host.tableGrid(ordinal: 0) == nil)
+    }
+}
+
+@MainActor
+@Suite("Live table grid at the document's edges")
+struct TableGridEdgeTests {
+    @Test func downFromTheLastRowOfATableEndingTheDocumentAddsALineToWriteOn() {
+        let source = "x\n\n| a |\n|---|\n| 1 |"
+        let h = GridHarness(source)
+        h.grid.focus(row: 1, column: 0)
+        h.cell(1, 0).doCommand(by: #selector(NSResponder.moveDown(_:)))
+        #expect(h.host.string == source + "\n")
+        #expect(h.window.firstResponder === h.host)
+        #expect(h.host.selectedRange() == NSRange(location: (source + "\n").count, length: 0))
+        h.host.undoManager?.undo()
+        #expect(h.host.string == source)
+    }
+
+    @Test func upFromATableStartingTheDocumentAddsALineAbove() {
+        let source = "| a |\n|---|\n| 1 |\n\nx"
+        let h = GridHarness(source)
+        h.grid.focus(row: 0, column: 0)
+        h.cell(0, 0).doCommand(by: #selector(NSResponder.moveUp(_:)))
+        #expect(h.host.string == "\n" + source)
+        #expect(h.host.selectedRange() == NSRange(location: 0, length: 0))
+        h.cell(0, 0).doCommand(by: #selector(NSResponder.moveLeft(_:)))
+        #expect(h.host.string == "\n" + source)
+    }
+
+    @Test func aCaretLandingAtADocumentEdgeFocusesACell() {
+        let source = "| a |\n|---|\n| 1 |"
+        let h = GridHarness(source)
+        h.host.setSelectedRange(NSRange(location: 0, length: 0))
+        #expect(h.grid.focusedCell?.row == 0)
+        h.window.makeFirstResponder(h.host)
+        h.host.setSelectedRange(NSRange(location: (source as NSString).length, length: 0))
+        #expect(h.grid.focusedCell?.row == 1)
+    }
+
+    @Test func rightPastTheLastCellOfATableEndingTheDocumentAddsALine() {
+        let source = "| a |\n|---|\n| 1 |"
+        let h = GridHarness(source)
+        h.grid.focus(row: 1, column: 0)
+        h.cell(1, 0).doCommand(by: #selector(NSResponder.moveRight(_:)))
+        #expect(h.host.string == source + "\n")
+    }
+}
+
+@MainActor
+@Suite("Live table grid details")
+struct TableGridDetailTests {
+    @Test func anIndentedTableKeepsItsIndentationThroughEdits() {
+        let source = "- item\n\n  | a | b |\n  |---|---|\n  | 1 | 2 |\n"
+        let h = GridHarness(source)
+        h.type("x", row: 1, column: 0)
+        #expect(h.host.string == "- item\n\n  | a   | b   |\n  | --- | --- |\n  | 1x  | 2   |\n")
+        h.grid.deleteRow(1)
+        #expect(h.host.string.hasPrefix("- item\n\n  | a   | b   |"))
+    }
+
+    @Test func settingsFontChangesReachTheCells() {
+        let h = GridHarness("| a |\n|---|\n| 1 |\n")
+        let before = h.cell(1, 0).font?.pointSize
+        h.host.baseFont = NSFont.systemFont(ofSize: 20)
+        h.host.updateWideTableOverlays(immediately: true)
+        #expect(h.cell(1, 0).font?.pointSize == 20)
+        #expect(before != 20)
+    }
+
+    @Test func aClickOnABorderFocusesTheNearestCellAndClearsTheSelection() {
+        let h = GridHarness("| a | b |\n|---|---|\n| 1 | 2 |\n")
+        let grid = h.grid
+        grid.select(.row(1))
+        let border = CGPoint(x: TableGridView.gutter + grid.layout.columnLeft[1] - 0.5,
+                             y: TableGridView.topMargin + grid.layout.rowTop[1] + 4)
+        #expect(grid.claims(border))
+        let event = NSEvent.mouseEvent(with: .leftMouseDown, location: grid.convert(border, to: nil), modifierFlags: [], timestamp: 0,
+                                       windowNumber: h.window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+        grid.mouseDown(with: event)
+        #expect(grid.selectedHandle == nil)
+        #expect(grid.focusedCell != nil)
+    }
+
+    @Test func theProxyReachesTheFocusedCell() {
+        let h = GridHarness("| a |\n|---|\n| 1 |\n")
+        let proxy = SlashCommandProxy()
+        proxy.coordinator = h.coordinator
+        #expect(proxy.textView === h.host)
+        h.grid.focus(row: 1, column: 0)
+        #expect(proxy.textView === h.cell(1, 0))
+    }
+
+    @Test func typingElsewhereDoesNotRelayoutAnUnchangedGrid() {
+        let h = GridHarness("| a |\n|---|\n| 1 |\n\ntext\n")
+        let grid = h.grid
+        let frame = h.cell(1, 0).frame
+        h.cell(1, 0).frame = frame.offsetBy(dx: 3, dy: 0)
+        h.host.updateWideTableOverlays(immediately: true)
+        #expect(h.cell(1, 0).frame == frame.offsetBy(dx: 3, dy: 0))
+        grid.needsRelayout = true
+        h.host.updateWideTableOverlays(immediately: true)
+        #expect(h.cell(1, 0).frame == frame)
+    }
+}
+
+/// Timings for a large table (prints; the grid's cost is per cell). Not asserted tightly: machines differ.
+@MainActor
+@Suite("Live table grid timing")
+struct TableGridTimingTests {
+    @Test func aHundredByFiveTableOpensAndTypesQuickly() {
+        var lines = ["Intro text", "", "| " + (0..<6).map { "H\($0)" }.joined(separator: " | ") + " |",
+                     "|" + String(repeating: "---|", count: 6)]
+        for r in 0..<100 { lines.append("| " + (0..<6).map { "r\(r)c\($0) **b**" }.joined(separator: " | ") + " |") }
+        lines += ["", "Outro text", ""]
+        let source = lines.joined(separator: "\n")
+        let clock = ContinuousClock()
+        var h: GridHarness!
+        let open = clock.measure { h = GridHarness(source) }
+        let inCell = clock.measure {
+            h.grid.focus(row: 50, column: 2)
+            for _ in 0..<10 { h.cell(50, 2).insertText("x", replacementRange: NSRange(location: NSNotFound, length: 0)) }
+        }
+        h.window.makeFirstResponder(h.host)
+        let end = (source as NSString).length
+        let inMain = clock.measure {
+            for _ in 0..<10 {
+                h.host.setSelectedRange(NSRange(location: end - 1, length: 0))
+                h.host.insertText("y", replacementRange: NSRange(location: NSNotFound, length: 0))
+            }
+        }
+        print("TABLE TIMING open=\(open) perCellKeystroke=\(inCell / 10) perMainKeystroke=\(inMain / 10)")
     }
 }
 #endif

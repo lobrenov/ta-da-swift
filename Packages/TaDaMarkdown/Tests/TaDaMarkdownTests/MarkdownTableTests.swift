@@ -181,4 +181,28 @@ struct MarkdownTableTests {
         t.setAlignment(.none, column: 1)
         #expect(t.markdown == sample)
     }
+
+    // MARK: - Round trips of awkward cells
+
+    @Test(arguments: ["a\\|b", "a\\", "\\\\", "`x|y`", "a|b", "\\\\|", "x\\\ny", "|", "\\"])
+    func anyCellTextRoundTrips(cell: String) throws {
+        let t = MarkdownTable(header: ["h", "i"], alignments: [.none, .none], rows: [[cell, "z"], ["q", cell]])
+        let parsed = try #require(MarkdownTable.parse(t.markdown))
+        #expect(parsed.rows == t.rows)
+        #expect(parsed.columnCount == 2)
+    }
+
+    @Test func existingEscapedPipesStillRead() throws {
+        let t = try table("| a \\| b | c |\n|---|---|\n| x | y |")
+        #expect(t.header == ["a | b", "c"])
+    }
+
+    @Test func indentationIsKeptOnEveryLine() throws {
+        var t = try table("  | a | b |\n  |---|---|\n  | 1 | 2 |")
+        #expect(t.indent == "  ")
+        #expect(t.markdown == "  | a   | b   |\n  | --- | --- |\n  | 1   | 2   |")
+        t.insertRow(at: 2)
+        t.insertColumn(at: 1)
+        #expect(t.markdown.split(separator: "\n").allSatisfy { $0.hasPrefix("  | ") || $0.hasPrefix("  |") })
+    }
 }

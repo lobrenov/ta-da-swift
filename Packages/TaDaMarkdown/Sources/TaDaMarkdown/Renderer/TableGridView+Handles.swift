@@ -114,6 +114,13 @@ extension TableGridView {
         }
     }
 
+    /// Whether a click at `point` is the grid's: on its grips or anywhere in the table, borders and padding included;
+    /// the margins around the grips belong to the text.
+    func claims(_ point: CGPoint) -> Bool {
+        handle(at: point) != nil
+            || CGRect(x: Self.gutter, y: Self.topMargin, width: layout.size.width, height: layout.size.height).contains(point)
+    }
+
     // MARK: - Hover
 
     override func updateTrackingAreas() {
@@ -147,7 +154,7 @@ extension TableGridView {
 
     override func mouseDown(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
-        guard let handle = handle(at: point) else { return }
+        guard let handle = handle(at: point) else { return focusNearestCell(to: point) }
         select(handle)
         // The header row can't be dragged.
         pressedHandle = handle == .row(0) ? nil : (handle, point)
@@ -156,6 +163,25 @@ extension TableGridView {
     override func rightMouseDown(with event: NSEvent) {
         guard let handle = handle(at: convert(event.locationInWindow, from: nil)) else { return super.rightMouseDown(with: event) }
         showMenu(for: handle)
+    }
+
+    /// A click that isn't on a grip or a cell's text view (a border, the padding) focuses the nearest cell, with the
+    /// caret at the nearest character, and clears the row or column selection.
+    private func focusNearestCell(to point: CGPoint) {
+        let cells = editors.flatMap { $0 }
+        let nearest = cells.min { distance(from: point, to: $0.textView.frame) < distance(from: point, to: $1.textView.frame) }
+        guard let editor = nearest else { return }
+        selectedHandle = nil
+        needsDisplay = true
+        window?.makeFirstResponder(editor.textView)
+        let local = editor.textView.convert(point, from: self)
+        let clamped = CGPoint(x: min(max(local.x, 0), editor.textView.bounds.width - 1),
+                              y: min(max(local.y, 0), editor.textView.bounds.height - 1))
+        editor.textView.setSelectedRange(NSRange(location: editor.textView.characterIndexForInsertion(at: clamped), length: 0))
+    }
+
+    private func distance(from point: CGPoint, to rect: CGRect) -> CGFloat {
+        hypot(max(rect.minX - point.x, 0, point.x - rect.maxX), max(rect.minY - point.y, 0, point.y - rect.maxY))
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -221,9 +247,9 @@ extension TableGridView {
         switch handle {
         case .row(let r):
             sections = [[
-                RightClickMenuItem("Insert Above", symbolName: "arrow.up.to.line", action: grid { $0.insertRow(at: r) }),
-                RightClickMenuItem("Insert Below", symbolName: "arrow.down.to.line", action: grid { $0.insertRow(at: r + 1) }),
-                RightClickMenuItem("Delete Row", symbolName: "trash", isDestructive: true, action: grid { $0.deleteRow(r) }),
+                RightClickMenuItem("Insert above", symbolName: "arrow.up.to.line", action: grid { $0.insertRow(at: r) }),
+                RightClickMenuItem("Insert below", symbolName: "arrow.down.to.line", action: grid { $0.insertRow(at: r + 1) }),
+                RightClickMenuItem("Delete row", symbolName: "trash", isDestructive: true, action: grid { $0.deleteRow(r) }),
             ]]
         case .column(let c):
             let current = table.alignments[c]
@@ -232,13 +258,13 @@ extension TableGridView {
                                    action: grid { $0.setAlignment(alignment, column: c) })
             }
             sections = [[
-                RightClickMenuItem("Insert Left", symbolName: "arrow.left.to.line", action: grid { $0.insertColumn(at: c) }),
-                RightClickMenuItem("Insert Right", symbolName: "arrow.right.to.line", action: grid { $0.insertColumn(at: c + 1) }),
-                RightClickMenuItem("Delete Column", symbolName: "trash", isDestructive: true, action: grid { $0.deleteColumn(c) }),
+                RightClickMenuItem("Insert left", symbolName: "arrow.left.to.line", action: grid { $0.insertColumn(at: c) }),
+                RightClickMenuItem("Insert right", symbolName: "arrow.right.to.line", action: grid { $0.insertColumn(at: c + 1) }),
+                RightClickMenuItem("Delete column", symbolName: "trash", isDestructive: true, action: grid { $0.deleteColumn(c) }),
             ], [
-                align("Align Left", "text.alignleft", .left),
-                align("Align Centre", "text.aligncenter", .center),
-                align("Align Right", "text.alignright", .right),
+                align("Align left", "text.alignleft", .left),
+                align("Align centre", "text.aligncenter", .center),
+                align("Align right", "text.alignright", .right),
             ]]
         }
         onRightClickMenu(RightClickMenuRequest(sections: sections, anchorRect: anchor, close: { [weak host] in

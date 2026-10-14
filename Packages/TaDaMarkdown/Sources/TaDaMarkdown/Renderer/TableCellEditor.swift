@@ -20,6 +20,9 @@ final class TableCellEditor {
     private let layoutDelegate = MarkdownLayoutManagerDelegate()
     private var appliedTheme: MarkdownEditorTheme?
     private var appliedWikiFingerprint: AnyHashable?
+    private var appliedFont: String?
+    private(set) var appliedHeader: Bool?
+    private var measured: (text: String, width: CGFloat, height: CGFloat)?
 
     init(host: NativeTextView, row: Int, column: Int) {
         self.row = row
@@ -77,10 +80,12 @@ final class TableCellEditor {
         config.services.images = NoOpEmbeddedImageProvider()
         config.textInsets = TextInsets(horizontal: MarkdownStyler.TableLayout.cellHPadding,
                                        vertical: MarkdownStyler.TableLayout.cellVPadding)
-        let changed = appliedTheme != theme || appliedWikiFingerprint != wiki
+        let font = cellFont(host.baseFont)
+        let fontKey = "\(font.fontName)|\(font.pointSize)"
+        let changed = appliedTheme != theme || appliedWikiFingerprint != wiki || appliedFont != fontKey
+            || appliedHeader != (row == 0)
         coordinator.configuration = config
         textView.configuration = config
-        let font = cellFont(host.baseFont)
         coordinator.fontName = font.fontName
         coordinator.fontSize = font.pointSize
         textView.font = font
@@ -88,11 +93,19 @@ final class TableCellEditor {
         if changed {
             appliedTheme = theme
             appliedWikiFingerprint = wiki
+            appliedFont = fontKey
+            appliedHeader = row == 0
+            measured = nil
             config.theme.apply(to: textView)
             textView.insertionPointColor = theme.bodyText
             coordinator.cachedParsedDocument = nil
             if textView.string.isEmpty == false { restyleAll() }
         }
+        syncCallbacks(from: host)
+    }
+
+    /// The embedder's closures, which it replaces on every update.
+    func syncCallbacks(from host: NativeTextView) {
         textView.onTaskMarkerMenu = host.onTaskMarkerMenu
         textView.onCalloutMenu = host.onCalloutMenu
         textView.onTagClick = host.onTagClick
@@ -128,6 +141,16 @@ final class TableCellEditor {
 
     /// The text's height at `width` (the cell's content width), without the cell's insets.
     func contentHeight(width: CGFloat) -> CGFloat {
+        // An unchanged cell keeps its height; the cell with the keyboard is measured each time (its caret shows syntax).
+        if !textView.hasEditingFocus, let measured, measured.width == width, measured.text == textView.string {
+            return measured.height
+        }
+        let height = measureContentHeight(width: width)
+        measured = (textView.string, width, height)
+        return height
+    }
+
+    private func measureContentHeight(width: CGFloat) -> CGFloat {
         guard let container = textView.textContainer, let tlm = textView.textLayoutManager else { return 0 }
         if abs(container.size.width - width) > 0.01 {
             container.size = NSSize(width: width, height: CGFloat.greatestFiniteMagnitude)

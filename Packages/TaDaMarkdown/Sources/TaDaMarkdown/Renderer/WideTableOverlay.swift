@@ -116,8 +116,7 @@ final class WideTableOverlay: NSScrollView {
         guard let grid = documentView as? TableGridView else { return super.hitTest(point) }
         let hit = super.hitTest(point)
         guard hit === self || hit === contentView || hit === grid else { return hit }
-        let local = grid.convert(point, from: superview)
-        return grid.handle(at: local) != nil ? grid : nil
+        return grid.claims(grid.convert(point, from: superview)) ? grid : nil
     }
 
     deinit { NotificationCenter.default.removeObserver(self) }
@@ -204,7 +203,19 @@ extension NativeTextView {
     ) {
         // Ta Da fork: live tables reconcile at once, so a cell's edit and its relayout are one step.
         if configuration.liveTables {
-            performTableGridUpdate()
+            // A table edit and the first grids reconcile at once; other restyles (typing elsewhere) once per turn.
+            if immediately || isEditingTableText || wideTableOverlays.isEmpty {
+                pendingWideTableOverlayUpdate = false
+                performTableGridUpdate()
+                return
+            }
+            if pendingWideTableOverlayUpdate { return }
+            pendingWideTableOverlayUpdate = true
+            RunLoop.main.perform(inModes: [.default, .eventTracking]) { [weak self] in
+                guard let self, self.pendingWideTableOverlayUpdate else { return }
+                self.pendingWideTableOverlayUpdate = false
+                self.performTableGridUpdate()
+            }
             return
         }
         if immediately || wideTableOverlays.isEmpty {
