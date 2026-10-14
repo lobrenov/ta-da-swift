@@ -125,6 +125,16 @@ extension AppModel.Domain {
     }
 }
 
+extension View {
+    /// Makes a project's or area's group heading a button that shows its page.
+    func opensPage(of parent: Item, _ model: AppModel) -> some View {
+        Button { model.show(parent.properties.kind == .area ? .area(parent.path) : .project(parent.path)) } label: {
+            contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 /// A project's heading inside a list: its ring and title over a rule.
 struct ProjectGroupHeader: View {
     let project: Item

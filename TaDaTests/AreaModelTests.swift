@@ -56,6 +56,18 @@ struct AreaModelTests {
         #expect(model.index.area(of: try #require(model.index[project]))?.title == "Home")
     }
 
+    @Test func newTaskInTodayJoinsTheSelectedTasksGroup() async throws {
+        let model = await folder.model()
+        model.show(.today)
+        model.selection = "tasks/Weed.md"
+        await model.newTask()
+        let path = try #require(model.selection)
+        let task = try #require(model.index[path])
+        #expect(model.domain == .today)
+        #expect(task.properties.project?.title == "Garden")
+        #expect(task.properties.dueDate == model.today)
+    }
+
     @Test func newAreaOpensItsPage() async throws {
         let model = await folder.model()
         await model.newArea()

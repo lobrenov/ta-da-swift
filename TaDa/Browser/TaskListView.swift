@@ -1,5 +1,6 @@
 // Today and Loose tasks: a header, tasks without a parent first, then loose projects' groups, then each area's own
-// tasks under its heading followed by its projects' groups. Today starts with the day's events, then its reminders.
+// tasks under its heading followed by its projects' groups; a heading opens its page. Today starts with the day's
+// events, then its reminders.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -90,15 +91,16 @@ struct TaskListView: View {
         return sections
     }
 
+    /// A project's or area's heading, which opens its page.
     @ViewBuilder private func header(_ group: TaskGroup) -> some View {
         if let parent = group.parent {
             switch parent.properties.kind {
             case .area:
-                AreaGroupHeader(area: parent)
+                AreaGroupHeader(area: parent).opensPage(of: parent, model)
             case .project where model.index.area(of: parent) != nil:
-                ProjectSubheader(project: parent, progress: model.index.progress(of: parent))
+                ProjectSubheader(project: parent, progress: model.index.progress(of: parent)).opensPage(of: parent, model)
             case .project:
-                ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent))
+                ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent)).opensPage(of: parent, model)
             case .task, .note:
                 EmptyView()
             }

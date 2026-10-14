@@ -1,6 +1,6 @@
 // A tag's page beside the document pane, or Untagged's: its header with a count line and child tags, then its tagged
-// areas and projects, its open tasks in Today's groups with Loose last, their Completed group, then its notes, each
-// foldable.
+// areas and projects, its open tasks in Today's groups (a project's or area's heading opens its page) with Loose
+// last, their Completed group, then its notes, each foldable.
 // Completed starts folded. A tag includes its children's files.
 #if os(macOS)
 import SwiftUI
@@ -175,11 +175,12 @@ struct TagBrowserView: View {
     @ViewBuilder private func groupHeader(_ group: TaskGroup) -> some View {
         switch group.parent {
         case let parent? where parent.properties.kind == .area:
-            AreaGroupHeader(area: parent).padding(.top, 8)
+            AreaGroupHeader(area: parent).opensPage(of: parent, model).padding(.top, 8)
         case let parent? where model.index.area(of: parent) != nil:
-            ProjectSubheader(project: parent, progress: model.index.progress(of: parent))
+            ProjectSubheader(project: parent, progress: model.index.progress(of: parent)).opensPage(of: parent, model)
         case let parent?:
-            ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent)).padding(.top, 8)
+            ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent)).opensPage(of: parent, model)
+                .padding(.top, 8)
         case nil:
             VStack(alignment: .leading, spacing: 7) {
                 HStack(spacing: 8) {

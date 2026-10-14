@@ -1582,18 +1582,29 @@ import TaDaCore
     }
 
     /// Creates an untitled task and selects it with its title ready to type. On a project's or area's page it's filed
-    /// there; in Today it's due today; on a tag's page it carries the tag, and on Untagged it stays there; anywhere else
-    /// it opens in Loose tasks.
+    /// there; in Today, Loose tasks and a tag's page it's filed with the selected task's project or area; in Today it's
+    /// due today; on a tag's page it carries the tag, and on Untagged it stays there; anywhere else it opens in Loose
+    /// tasks.
     func newTask() async {
-        let parent = domainParent
+        let parent = domainParent ?? selectedGroup
         var tags: [Tag] = []
         if case .tag(_?) = domain, let shownTag { tags = [shownTag] }
         var text = Self.newTask(in: parent, tags: tags, today: today)
-        if parent == nil, domain == .today { text = FrontmatterEditor.set("dueDate", to: .date(today), in: text) }
+        if domain == .today { text = FrontmatterEditor.set("dueDate", to: .date(today), in: text) }
         guard let path = await create(text, in: Vault.taskFolder) else { return }
         titleFocus = path
         if case .tag = domain {} else if parent == nil, domain != .today { domain = .loose }
         selection = path
+    }
+
+    /// In Today, Loose tasks and a tag's page, the project or area of the selected task, whose group it shows in.
+    private var selectedGroup: Item? {
+        switch domain {
+        case .today, .loose, .tag: break
+        default: return nil
+        }
+        guard let task = selection.flatMap({ index[$0] }), task.properties.kind == .task else { return nil }
+        return index.parent(of: task)
     }
 
     /// Creates a task filed under `parent` (a project or an area) without opening it, its title ready to type in the
