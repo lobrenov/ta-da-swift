@@ -521,15 +521,29 @@ struct MenuKeyHint: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Text(key)
-                .font(.system(size: 10.5, design: .monospaced))
-                .foregroundStyle(theme.color(\.fg))
-                .padding(.horizontal, 5)
-                .background(theme.color(\.surface), in: .rect(cornerRadius: 4))
+            KeyCap(key: key, theme: theme)
             Text(label)
         }
         .lineLimit(1)
         .fixedSize()
+    }
+}
+
+/// A key or chord (esc, ⌘P, ⇧⌘S) on a cap, in the system font, whose ⌘ ⇧ ⌥ ⌃ ⌫ ↵ ⇥ match its letters.
+struct KeyCap: View {
+    let key: String
+    var size: CGFloat = 10.5
+    let theme: Theme
+
+    var body: some View {
+        Text(key)
+            .font(.system(size: size, weight: .medium))
+            .foregroundStyle(theme.color(\.fg))
+            .padding(.horizontal, size * 0.5)
+            .frame(minWidth: size * 1.9, minHeight: size * 1.6)
+            .background(theme.color(\.surface), in: .rect(cornerRadius: 4))
+            .lineLimit(1)
+            .fixedSize()
     }
 }
 

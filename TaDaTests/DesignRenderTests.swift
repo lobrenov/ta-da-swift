@@ -149,7 +149,7 @@ struct DesignRenderTests {
         let hotkeys = AppModel(defaults: TestSettings())
         hotkeys.appearance = .dark
         hotkeys.quickEntryHotkeyTaken = true
-        try await render(HotkeysSettingsView(model: hotkeys).themed(by: hotkeys).frame(height: 594, alignment: .top), width: 700,
+        try await render(HotkeysSettingsView(model: hotkeys).themed(by: hotkeys).frame(height: 1180, alignment: .top), width: 700,
                          to: output.appending(path: "settings-hotkeys.png"))
 
         // Quick Entry on the design's data, in the default dark scheme: empty, typed, an area, and a taken name.

@@ -31,24 +31,22 @@ struct HotkeysSettingsView: View {
         }
     }
 
-    static let fileKeys = [("New task or note", "⌘N"), ("New project", "⇧⌘N"), ("New area", "⌥⌘N"), ("Search files", "⌥⌘F"),
-                           ("Today, Upcoming, Loose tasks, Trash, Logbook", "⌘1–⌘5"), ("Live or Source", "⌘E"),
-                           ("Toggle sidebar", "⌃⌘S"), ("Settings", "⌘,")]
-        .map { (what: $0.0, key: $0.1) }
+    typealias KeyRow = (what: String, keys: [String])
 
-    static let taskKeys = [("Move to a project or area", "⌘P"), ("Schedule", "⌘S"), ("Set deadline", "⌘D"), ("Tags", "⌘T"),
-                           ("Move to the trash", "⌫ or ⌘⌫")]
-        .map { (what: $0.0, key: $0.1) }
+    static let fileKeys: [KeyRow] = [("New task or note", ["⌘N"]), ("New project", ["⇧⌘N"]), ("New area", ["⌥⌘N"]),
+                                     ("Search files", ["⌥⌘F"]), ("Today, Upcoming, Loose tasks, Trash, Logbook", ["⌘1–⌘5"]),
+                                     ("Live or Source", ["⌘E"]), ("Toggle sidebar", ["⌃⌘S"]), ("Settings", ["⌘,"])]
 
-    static let editorKeys = [("Bold", "⌘B"), ("Italic", "⌘I"), ("Highlight", "⇧⌘H"), ("Strikethrough", "⇧⌘S"),
-                             ("Add or complete a subtask", "⌘L"), ("Indent", "⇥"), ("Outdent", "⇧⇥")]
-        .map { (what: $0.0, key: $0.1) }
+    static let taskKeys: [KeyRow] = [("Move to a project or area", ["⌘P"]), ("Schedule", ["⌘S"]), ("Set deadline", ["⌘D"]),
+                                     ("Tags", ["⌘T"]), ("Move to the trash", ["⌫", "⌘⌫"])]
 
-    static let quickEntryKeys = [("Create the file", "↵"), ("Create and open the file", "⌘↵"), ("Move", "⌘P"), ("Due date", "⌘S"),
-                                 ("Deadline", "⌘D"), ("Close", "esc")]
-        .map { (what: $0.0, key: $0.1) }
+    static let editorKeys: [KeyRow] = [("Bold", ["⌘B"]), ("Italic", ["⌘I"]), ("Highlight", ["⇧⌘H"]), ("Strikethrough", ["⇧⌘S"]),
+                                       ("Add or complete a subtask", ["⌘L"]), ("Indent", ["⇥"]), ("Outdent", ["⇧⇥"])]
 
-    private func keyList(_ title: String, _ rows: [(what: String, key: String)]) -> some View {
+    static let quickEntryKeys: [KeyRow] = [("Create the file", ["↵"]), ("Create and open the file", ["⌘↵"]), ("Move", ["⌘P"]),
+                                           ("Due date", ["⌘S"]), ("Deadline", ["⌘D"]), ("Close", ["esc"])]
+
+    private func keyList(_ title: String, _ rows: [KeyRow]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionLabel(title: title)
             VStack(spacing: 0) {
@@ -57,12 +55,10 @@ struct HotkeysSettingsView: View {
                     HStack(spacing: 12) {
                         Text(row.what)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                        Text(row.key)
-                            .font(.system(size: 11.5).monospaced())
-                            .foregroundStyle(theme.color(\.accent))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 1)
-                            .background(theme.color(\.code), in: .rect(cornerRadius: 5))
+                        ForEach(Array(row.keys.enumerated()), id: \.offset) { index, key in
+                            if index > 0 { Text("or").foregroundStyle(theme.color(\.muted)) }
+                            KeyCap(key: key, size: 11.5, theme: theme)
+                        }
                     }
                     .padding(.horizontal, 16)
                     .frame(height: 36)

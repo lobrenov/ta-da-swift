@@ -181,7 +181,7 @@ struct QuickEntryView: View {
         HStack(spacing: 7) {
             Text(title)
             Text(key)
-                .font(.system(size: 10.5, design: .monospaced))
+                .font(.system(size: 11, weight: .medium))
                 .opacity(0.7)
         }
     }
