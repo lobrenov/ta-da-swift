@@ -15,7 +15,7 @@ Starting point, as checked on 2026-10-16:
 - **Open**: Open, then Completed. **Project**: Today's area ▸ project groups as before.
 - **Folding**: Status, Date and Open groups fold, remembered per list (Today, Loose tasks, each project). Done, Cancelled and Date's Completed start folded; Open's Completed doesn't, as before.
 - **Filter pill**: + Tag's dashed chip with a funnel. Shown on Today, Loose tasks, projectBrowser, areaBrowser and Notes folders when a file in the view carries a tag. Its menu lists the tags of the files in the view with counts; picks toggle and the menu stays open. A file shows when it carries any picked tag or a child of one. Picked tags follow as filled chips with ×, then "n of m shown" and Clear. Picks are kept per page for the session, not saved.
-- While filtering, Today hides its events and reminders, and rows outside Project grouping show their project or area.
+- While filtering, Today hides its events and reminders. Today's rows under Status and Open show their project or area.
 - **Open project file** becomes an icon-only button with a tooltip on the Mac; on iPhone, a file button in the top bar replaces the Project file row.
 - **iPhone**: Group is a menu capsule on the title line; the pill opens a sheet (search, tags with counts and ticks, Clear, Done). No Notes folders on iPhone.
 

@@ -13,3 +13,4 @@ Finished build plans, kept for their decisions and milestones. A finished plan m
 | `integrations v1.md` | Calendar events and reminders, read only, in Today and Upcoming, and Settings ▸ Integrations, on Mac and iPhone. | 2026-10-13 |
 | `date phrases v1.md` | Typed dates in the Mac's date menu: `DatePhrase` in TaDaCore and the calendar's field. | 2026-10-13 |
 | `tables v2.md` | The Mac's live table grid: cells edited in place with markdown, Tab and arrow keys, grab handles to move rows and columns, and rightClickMenu. | 2026-10-15 |
+| `group and filter v1.md` | Group (Project, Status, Date, Open) on Today, Loose tasks and projects, and the tag filter on those, areas and Notes folders, on Mac and iPhone. | 2026-10-16 |
