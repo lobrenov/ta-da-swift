@@ -7,6 +7,7 @@ import TaDaCore
 struct WorkspaceView: View {
     let model: AppModel
     @Environment(\.theme) private var theme
+    @State private var splitWidth: CGFloat = 0
 
     var body: some View {
         Group {
@@ -105,27 +106,47 @@ struct WorkspaceView: View {
     /// The browser column, the rule and the document pane at their narrowest.
     nonisolated static let minWidth: CGFloat = 320 + 1 + 360
 
-    /// A browser column and the document pane, with a rule between them.
+    /// A browser column and the document pane, with a rule between them that drags to resize the column.
     private func split(@ViewBuilder browser: () -> some View) -> some View {
-        SplitLayout {
+        SplitLayout(browserWidth: model.browserWidth.map { CGFloat($0) }) {
             browser()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             Hairline(axis: .vertical)
+                .overlay {
+                    Color.clear
+                        .frame(width: 9)
+                        .contentShape(Rectangle())
+                        .pointerStyle(.columnResize)
+                        .gesture(DragGesture(minimumDistance: 1, coordinateSpace: .named(SplitLayout.space))
+                            .onChanged { model.browserWidth = Double(SplitLayout.clamp(round($0.location.x), in: splitWidth)) })
+                }
+                .zIndex(1)
             DocumentPane(model: model)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .coordinateSpace(.named(SplitLayout.space))
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { splitWidth = $0 }
     }
 }
 
-/// The browser column, a rule and the document pane: the browser takes half the width, from 320 to 460, leaving the
-/// document pane at least 360.
+/// The browser column, a rule and the document pane. The browser is `browserWidth` wide, at least 260, or else half
+/// the width from 320 to 460; the document pane keeps at least 360.
 private struct SplitLayout: Layout {
+    var browserWidth: CGFloat?
+
+    static let space = "split"
+    static let minBrowser: CGFloat = 260
+
+    /// A dragged width, at least `minBrowser` and leaving the document pane 360 of the split's width.
+    static func clamp(_ width: CGFloat, in total: CGFloat) -> CGFloat { max(minBrowser, min(width, total - 1 - 360)) }
+
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         CGSize(width: max(proposal.width ?? 1040, WorkspaceView.minWidth), height: proposal.height ?? 600)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let browser = max(320, min((bounds.width - 1) / 2, 460, bounds.width - 1 - 360))
+        let preferred = browserWidth ?? max(320, min((bounds.width - 1) / 2, 460))
+        let browser = max(Self.minBrowser, min(preferred, bounds.width - 1 - 360))
         var x = bounds.minX
         for (subview, width) in zip(subviews, [browser, 1, max(0, bounds.width - browser - 1)]) {
             subview.place(at: CGPoint(x: x, y: bounds.minY), proposal: ProposedViewSize(width: width, height: bounds.height))

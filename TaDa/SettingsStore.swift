@@ -4,6 +4,7 @@ import Foundation
 protocol SettingsStore: AnyObject {
     func string(forKey key: String) -> String?
     func bool(forKey key: String) -> Bool
+    func double(forKey key: String) -> Double
     func data(forKey key: String) -> Data?
     func dictionary(forKey key: String) -> [String: Any]?
     func stringArray(forKey key: String) -> [String]?

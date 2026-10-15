@@ -256,6 +256,10 @@ import TaDaCore
     var quickEntryHotkey: Hotkey? {
         didSet { defaults.set(quickEntryHotkey?.dictionary ?? [:], forKey: Keys.quickEntryHotkey) }
     }
+    /// The browser column's width on the Mac, set by dragging the rule beside it; nil until dragged.
+    var browserWidth: Double? {
+        didSet { defaults.set(browserWidth, forKey: Keys.browserWidth) }
+    }
     /// Another app or a macOS shortcut has `quickEntryHotkey`'s keys.
     var quickEntryHotkeyTaken = false
     /// Settings ▸ Hotkeys is recording a new hotkey, so the current one is let go.
@@ -340,6 +344,7 @@ import TaDaCore
         static let foldedFolders = "foldedFolders"
         static let lastLogged = "lastLogged"
         static let quickEntryHotkey = "quickEntryHotkey"
+        static let browserWidth = "browserWidth"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -358,6 +363,8 @@ import TaDaCore
         sidebarMode = defaults.string(forKey: Keys.sidebarMode).flatMap(SidebarMode.init) ?? .projects
         foldedTags = Set(defaults.stringArray(forKey: Keys.foldedTags) ?? [])
         foldedFolders = Set(defaults.stringArray(forKey: Keys.foldedFolders) ?? [])
+        let width = defaults.double(forKey: Keys.browserWidth)
+        browserWidth = width > 0 ? width : nil
         // Missing: the default. Stored `[:]`: cleared.
         if let stored = defaults.dictionary(forKey: Keys.quickEntryHotkey) {
             quickEntryHotkey = Hotkey(stored)
