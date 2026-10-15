@@ -10,6 +10,12 @@ Work not yet built.
 - Per-file iCloud sync state.
 - JetBrains Mono as the mono font.
 - A better design for a project's linked-tasks table (its columns have fixed widths).
+- Tables on iPhone: the live grid (iPhone keeps the rendered image and revealed source).
+- Moving a table's header row.
+- Embeds and tables in table cells.
+- rightClickMenu formatting items (on selected text).
+- Formatting shortcuts (⌘B etc.) in table cells.
+- Lazy cell editors for large tables: a 100×6 table opens in about 0.4 s and a keystroke in a cell takes about 76 ms (debug build).
 - iPad: the canvas's iPad POC page, on the iPhone app's code, with events and reminders.
 - iPhone: Remove Callout in the callout menu (TaDaMarkdown's `CalloutMenuRequest` has no remove), Create a New Folder in onboarding, and the domain's icon in list titles.
 - iOS UI tests.

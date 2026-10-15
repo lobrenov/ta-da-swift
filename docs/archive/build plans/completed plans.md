@@ -12,3 +12,4 @@ Finished build plans, kept for their decisions and milestones. A finished plan m
 | `notes v1.md` | Notes: untyped markdown files browsed by folder in a third sidebar domain, folder operations and converting a note, on the Mac. | 2026-10-12 |
 | `integrations v1.md` | Calendar events and reminders, read only, in Today and Upcoming, and Settings ▸ Integrations, on Mac and iPhone. | 2026-10-13 |
 | `date phrases v1.md` | Typed dates in the Mac's date menu: `DatePhrase` in TaDaCore and the calendar's field. | 2026-10-13 |
+| `tables v2.md` | The Mac's live table grid: cells edited in place with markdown, Tab and arrow keys, grab handles to move rows and columns, and rightClickMenu. | 2026-10-15 |
