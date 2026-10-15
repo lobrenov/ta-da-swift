@@ -19,6 +19,10 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     var subtitle = ""
     /// Before the large title, as an area's cube.
     var icon: AnyView? = nil
+    /// At the large title's end, as the Group menu.
+    var titleAccessory: AnyView? = nil
+    /// A top-bar button before More that opens the page's own file, with its label.
+    var fileButton: (label: String, open: () -> Void)? = nil
     var pickable: [String] = []
     var add: (() async -> Void)? = nil
     /// A row to scroll to the top, as Upcoming's week strip asks.
@@ -80,6 +84,11 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                         .opacity(isTitleScrolledAway && !search.isOpen ? 1 : 0)
                         .animation(.easeOut(duration: 0.15), value: isTitleScrolledAway)
                 }
+                if !search.isOpen, let fileButton {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(fileButton.label, systemImage: "doc.text", action: fileButton.open)
+                    }
+                }
                 if !search.isOpen {
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
@@ -105,26 +114,33 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .onChange(of: pickable) { if isOnScreen { nav.setPickable(pickable) } }
     }
 
-    /// The large title and subtitle, at the top of the list.
+    /// The large title and subtitle, at the top of the list, and the title's accessory.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 10) {
-                if let icon { icon }
-                Text(title)
-                    .scaledFont(size: 34, weight: .bold)
-                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-                    .foregroundStyle(theme.color(\.strong))
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 10) {
+                    if let icon { icon }
+                    Text(title)
+                        .scaledFont(size: 34, weight: .bold)
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                        .foregroundStyle(theme.color(\.strong))
+                        .lineLimit(titleAccessory == nil ? nil : 1)
+                }
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .scaledFont(size: 13)
+                        .foregroundStyle(theme.color(\.muted))
+                }
             }
-            if !subtitle.isEmpty {
-                Text(subtitle)
-                    .scaledFont(size: 13)
-                    .foregroundStyle(theme.color(\.muted))
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            if let titleAccessory {
+                Spacer(minLength: 0)
+                titleAccessory.padding(.top, 6)
             }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
     }
 }
 
