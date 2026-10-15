@@ -334,6 +334,18 @@ import TaDaCore
         tagFilters[domain] = filter.isActive ? filter : nil
     }
 
+    /// The files a page's filter narrows, before filtering: what its menu lists the tags of.
+    func filterItems(on domain: Domain) -> [Item] {
+        switch domain {
+        case .today: todayTasks
+        case .loose: looseTasks
+        case .project(let path): index[path].map { index.tasks(in: $0) } ?? []
+        case .area(let path): index[path].map { index.projects(in: $0) + index.tasks(in: $0) } ?? []
+        case .folder(let path): index.notes(in: path)
+        case .upcoming, .logbook, .trash, .tag: []
+        }
+    }
+
     func clearTagFilter(on domain: Domain) {
         tagFilters[domain] = nil
     }
@@ -1910,6 +1922,10 @@ import TaDaCore
         if isFolder {
             knownFolders = Set(knownFolders.map(moved))
             foldedFolders = Set(foldedFolders.map(moved))
+            for case let (.folder(old), filter) in tagFilters where isInside(old) {
+                tagFilters[.folder(old)] = nil
+                tagFilters[.folder(moved(old))] = filter
+            }
             updateNotes()
             if let shown, isInside(shown) { domain = .folder(moved(shown)) }
         }

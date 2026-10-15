@@ -16,13 +16,15 @@ final class BrowserMenus {
     }
 
     private(set) var open: Open?
+    /// The window of the open menu's control.
+    private(set) var openWindow: ObjectIdentifier?
 
     @ObservationIgnored private let groupMenu = PopupMenu(style: .groupMenu, takesKeys: true, row: GroupChoiceRow.init)
     @ObservationIgnored private let filterMenu = PopupMenu(style: .full(confirm: "Toggle", maxListHeight: 312), takesKeys: true,
                                                            emptyText: "No tags match", searchPrompt: "Filter tags",
                                                            row: FilterTagChoiceRow.init)
     /// What the filter menu needs to refresh as its search changes and after each pick.
-    @ObservationIgnored private var filterContext: (model: AppModel, domain: AppModel.Domain, items: [Item], window: NSWindow)?
+    @ObservationIgnored private var filterContext: (model: AppModel, domain: AppModel.Domain, window: NSWindow)?
     /// The open menu's control, in screen coordinates.
     @ObservationIgnored private var anchorRect = CGRect.zero
     /// The control whose menu a mouse-down on it closed, and when, so the click's own action doesn't reopen it.
@@ -34,10 +36,18 @@ final class BrowserMenus {
         filterMenu.onSearch = { [weak self] _ in self?.showFilter() }
     }
 
-    func isOpen(_ menu: Open) -> Bool { open == menu }
+    /// Whether `menu` is open from the control `anchor` reads, in its window.
+    func isOpen(_ menu: Open, at anchor: ScreenAnchor) -> Bool {
+        open == menu && openWindow == anchor.window.map(ObjectIdentifier.init)
+    }
+
+    /// Closes `menu` when it's open from the control `anchor` reads, as that control goes.
+    func close(_ menu: Open, at anchor: ScreenAnchor) {
+        if isOpen(menu, at: anchor) { close() }
+    }
 
     func pickGrouping(of list: GroupedList, model: AppModel, anchor: ScreenAnchor) {
-        guard let window = anchor.window, toggle(.group(list)) else { return }
+        guard let window = anchor.window, toggle(.group(list), in: window) else { return }
         let current = model.grouping(of: list)
         let items = list.groupings.map { GroupChoice(grouping: $0, isCurrent: $0 == current, isDefault: $0 == list.defaultGrouping) }
         anchorRect = anchor.rect
@@ -48,11 +58,11 @@ final class BrowserMenus {
         }
     }
 
-    /// `items` are the page's files before filtering: the menu lists their tags.
-    func pickFilterTags(on domain: AppModel.Domain, items: [Item], model: AppModel, anchor: ScreenAnchor) {
-        guard let window = anchor.window, toggle(.filter(domain)) else { return }
+    /// The menu lists the tags of the page's files before filtering, read again on each search and pick.
+    func pickFilterTags(on domain: AppModel.Domain, model: AppModel, anchor: ScreenAnchor) {
+        guard let window = anchor.window, toggle(.filter(domain), in: window) else { return }
         anchorRect = anchor.rect
-        filterContext = (model, domain, items, window)
+        filterContext = (model, domain, window)
         filterMenu.query = ""
         showFilter()
     }
@@ -62,17 +72,19 @@ final class BrowserMenus {
         filterMenu.hide()
         filterContext = nil
         open = nil
+        openWindow = nil
     }
 
-    private func toggle(_ menu: Open) -> Bool {
+    private func toggle(_ menu: Open, in window: NSWindow) -> Bool {
         let closedByThisClick = closedByClick.map { closed in
             closed.open == menu && (NSApp.currentEvent?.timestamp ?? .infinity) - closed.time < NSEvent.doubleClickInterval
         } ?? false
         closedByClick = nil
-        let wasOpen = open == menu
+        let wasOpen = open == menu && openWindow == ObjectIdentifier(window)
         close()
         guard !wasOpen, !closedByThisClick else { return false }
         open = menu
+        openWindow = ObjectIdentifier(window)
         return true
     }
 
@@ -88,7 +100,7 @@ final class BrowserMenus {
     private func showFilter(keeping: String? = nil) {
         guard let context = filterContext else { return }
         let picked = context.model.tagFilter(on: context.domain).picked
-        let menu = FilterTagChoice.menu(items: context.items, picked: picked, query: filterMenu.query, keeping: keeping)
+        let menu = FilterTagChoice.menu(items: context.model.filterItems(on: context.domain), picked: picked, query: filterMenu.query, keeping: keeping)
         filterMenu.show(menu.sections, highlight: menu.highlight, theme: context.model.theme, below: anchorRect,
                         inset: 0, gap: 6, in: context.window) { [weak self] choice in
             context.model.toggleFilterTag(choice.tag.path, on: context.domain)
@@ -139,32 +151,6 @@ struct GroupChoiceRow: View {
     }
 }
 
-/// A row of the filter menu: a tag in the page, how many of its files carry it, ticked when picked.
-struct FilterTagChoice: PopupMenuItem {
-    let tag: Tag
-    let count: Int
-    let isPicked: Bool
-
-    var title: String { tag.name }
-    var accessibilityValue: String { [isPicked ? "Picked" : "", count == 1 ? "1 file" : "\(count) files"].filter { !$0.isEmpty }.joined(separator: ", ") }
-
-    /// The page's tags by path, picked ones kept when no file carries them any more, narrowed to those with a segment
-    /// starting with what's typed. The row of the tag at `keeping` is highlighted (the one just toggled), else the first.
-    static func menu(items: [Item], picked: Set<String>, query: String, keeping: String?)
-        -> (sections: [PopupMenuSection<FilterTagChoice>], highlight: Int?) {
-        var tags = TagFilter.tags(of: items)
-        for path in picked where !tags.contains(where: { $0.tag.path == path }) {
-            if let tag = Tag(path) { tags.append((tag, 0)) }
-        }
-        let typed = query.trimmingCharacters(in: .whitespaces).lowercased()
-        let rows = tags.sorted { $0.tag.path < $1.tag.path }
-            .filter { typed.isEmpty || $0.tag.path.split(separator: "/").contains { $0.hasPrefix(typed) } || $0.tag.path.hasPrefix(typed) }
-            .map { FilterTagChoice(tag: $0.tag, count: $0.count, isPicked: picked.contains($0.tag.path)) }
-        let kept = keeping.flatMap { path in rows.firstIndex { $0.tag.path == path } }
-        return ([PopupMenuSection(label: "Tags in this view", items: rows)], kept ?? (rows.isEmpty ? nil : 0))
-    }
-}
-
 struct FilterTagChoiceRow: View {
     let choice: FilterTagChoice
     let isHighlighted: Bool
@@ -194,25 +180,6 @@ struct FilterTagChoiceRow: View {
     }
 }
 
-extension Grouping {
-    var systemImage: String {
-        switch self {
-        case .project: "circle.dotted"
-        case .status: "checkmark.square"
-        case .date: "calendar"
-        case .open: "list.bullet"
-        }
-    }
-
-    var tint: KeyPath<Theme, PlatformColor> {
-        switch self {
-        case .project: \.accent
-        case .date: \.due
-        case .status, .open: \.muted
-        }
-    }
-}
-
 /// "Group" and the list's choice in a chip on the title line; a click opens the Group menu.
 struct GroupButton: View {
     let model: AppModel
@@ -223,7 +190,7 @@ struct GroupButton: View {
 
     var body: some View {
         let grouping = model.grouping(of: list)
-        let lit = hovering || BrowserMenus.shared.isOpen(.group(list))
+        let lit = hovering || BrowserMenus.shared.isOpen(.group(list), at: anchor)
         Button { BrowserMenus.shared.pickGrouping(of: list, model: model, anchor: anchor) } label: {
             HStack(spacing: 6) {
                 Image(systemName: "list.bullet.indent")
@@ -249,7 +216,7 @@ struct GroupButton: View {
         .background(ScreenAnchorReader(anchor: anchor))
         .accessibilityLabel("Group by \(grouping.rawValue)")
         .accessibilityHint("Picks how the list is grouped")
-        .onDisappear { if BrowserMenus.shared.isOpen(.group(list)) { BrowserMenus.shared.close() } }
+        .onDisappear { BrowserMenus.shared.close(.group(list), at: anchor) }
     }
 }
 
@@ -332,7 +299,7 @@ struct TagFilterRow: View {
         if filter.isActive || items.contains(where: { !$0.tags.isEmpty }) {
             let tags = TagFilter.tags(of: items)
             WrappingHStack(spacing: 6) {
-                Button { BrowserMenus.shared.pickFilterTags(on: domain, items: items, model: model, anchor: anchor) } label: {
+                Button { BrowserMenus.shared.pickFilterTags(on: domain, model: model, anchor: anchor) } label: {
                     HStack(spacing: 5) {
                         Image(systemName: "line.3.horizontal.decrease")
                             .font(.system(size: 9, weight: .bold))
@@ -348,9 +315,10 @@ struct TagFilterRow: View {
                         }
                     }
                 }
-                .buttonStyle(FilterPillStyle(isOpen: BrowserMenus.shared.isOpen(.filter(domain)), isActive: filter.isActive))
+                .buttonStyle(FilterPillStyle(isOpen: BrowserMenus.shared.isOpen(.filter(domain), at: anchor), isActive: filter.isActive))
                 .background(ScreenAnchorReader(anchor: anchor))
                 .accessibilityLabel(filter.isActive ? "Filter, \(filter.picked.count) tags picked" : "Filter by tag")
+                .accessibilityHint("Picks tags to show")
                 ForEach(filter.picked.sorted(), id: \.self) { path in
                     if let tag = tags.first(where: { $0.tag.path == path })?.tag ?? Tag(path) {
                         PickedTagChip(tag: tag) { model.toggleFilterTag(path, on: domain) }
@@ -372,7 +340,7 @@ struct TagFilterRow: View {
             .font(.system(size: 12.5))
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Tag filter")
-            .onDisappear { if BrowserMenus.shared.isOpen(.filter(domain)) { BrowserMenus.shared.close() } }
+            .onDisappear { BrowserMenus.shared.close(.filter(domain), at: anchor) }
         }
     }
 }
@@ -444,7 +412,9 @@ private struct PickedTagChip: View {
         .frame(height: 26)
         .background(theme.tagFill(), in: .capsule)
         .overlay(Capsule().strokeBorder(theme.tagRing))
-        .accessibilityElement(children: .contain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Filtering by tag \(tag.name)")
+        .accessibilityActions { Button("Stop filtering", action: remove) }
     }
 }
 #endif

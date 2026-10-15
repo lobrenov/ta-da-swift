@@ -18,7 +18,8 @@ struct AreaBrowserView: View {
         let done = tasks.filter { $0.properties.status.isClosed }
         let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
 
-        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18) {
+        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18,
+                      empty: filter.isActive && projects.isEmpty && tasks.isEmpty ? .noTagMatch : nil) {
             header(projects: allProjects.count, tasks: allTasks.count { !$0.properties.status.isClosed },
                    files: allProjects + allTasks, shown: projects.count + tasks.count)
         } content: {
