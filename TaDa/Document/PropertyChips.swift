@@ -238,7 +238,7 @@ private struct DatePropertyChip: View {
                     Image(systemName: kind.systemImage)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(theme.color(isDone ? \.muted : kind.tint))
-                    Text("\(kind.label) \(date.relativeLabel(today: model.today))")
+                    Text(date.relativeLabel(today: model.today).capitalizedFirst)
                 }
             } else {
                 MissingKeyLabel(name: kind.name)
