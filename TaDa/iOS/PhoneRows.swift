@@ -9,7 +9,7 @@ enum PhoneRowMeta {
     /// Subtasks, repeat and dates, as the Mac's rows show them.
     case chips(TaskRow.Dates)
     /// Where the task lives, then its chips, where the list's groups don't show its project or area.
-    case placedChips(String, TaskRow.Dates)
+    case placedChips(String?, TaskRow.Dates)
     /// An Upcoming entry: its kind, where the task lives, and its other date.
     case agenda(AgendaEntry, place: String, also: String?, dated: Bool)
     /// A search match: where the task lives and when it's due; the title and summary highlight the words.
@@ -114,7 +114,7 @@ struct PhoneTaskRow: View {
         case let .placedChips(place, dates):
             let chips = chips(dates: dates)
             HStack(spacing: 12) {
-                Text(place)
+                if let place { Text(place).lineLimit(1) }
                 ForEach(chips.indices, id: \.self) { chips[$0] }
             }
         case let .agenda(entry, place, also, dated):

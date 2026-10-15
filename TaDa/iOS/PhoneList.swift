@@ -116,7 +116,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
 
     /// The large title and subtitle, at the top of the list, and the title's accessory.
     private var header: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 10) {
                     if let icon { icon }
@@ -124,7 +124,6 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                         .scaledFont(size: 34, weight: .bold)
                         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                         .foregroundStyle(theme.color(\.strong))
-                        .lineLimit(titleAccessory == nil ? nil : 1)
                 }
                 if !subtitle.isEmpty {
                     Text(subtitle)
@@ -136,7 +135,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             .accessibilityAddTraits(.isHeader)
             if let titleAccessory {
                 Spacer(minLength: 0)
-                titleAccessory.padding(.top, 6)
+                titleAccessory.dynamicTypeSize(...DynamicTypeSize.xxxLarge)
             }
         }
         .padding(.horizontal, 16)

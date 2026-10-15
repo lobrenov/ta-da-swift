@@ -25,8 +25,7 @@ struct PhoneTaskListScreen: View {
         let dates: TaskRow.Dates = kind == .today ? .overdueDueAndDeadline : .labelled
 
         PhoneList(model: model, title: kind == .today ? "Today" : "Loose tasks",
-                  subtitle: filter.isActive ? "\(shownTasks.count) of \(all.count) shown"
-                      : kind == .today
+                  subtitle: kind == .today
                       ? "\(model.today.date().formatted(.dateTime.weekday(.wide).day().month(.wide))) · \(tasks(open))"
                       : "No project or area · \(tasks(open))",
                   titleAccessory: AnyView(PhoneGroupMenu(model: model, list: list)),
@@ -35,7 +34,7 @@ struct PhoneTaskListScreen: View {
         } content: {
             let showsCalendar = kind == .today && !filter.isActive
             let events = showsCalendar ? model.todayEvents : [], reminders = showsCalendar ? model.todayReminders : []
-            PhoneTagFilterBar(model: model, domain: domain, items: all)
+            PhoneTagFilterBar(model: model, domain: domain, items: all, shown: shownTasks.count)
             if all.isEmpty, events.isEmpty, reminders.isEmpty {
                 empty.padding(.top, 60)
             } else if shownTasks.isEmpty, filter.isActive {
@@ -66,7 +65,7 @@ struct PhoneTaskListScreen: View {
                 }
             } else {
                 PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: dates,
-                                  place: kind == .today ? { model.index.parent(of: $0)?.title ?? "Loose task" } : nil)
+                                  place: kind == .today ? { model.index.parent(of: $0)?.title } : nil)
             }
         }
     }
@@ -369,7 +368,7 @@ struct PhoneProjectScreen: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
-                PhoneTagFilterBar(model: model, domain: .project(path), items: all)
+                PhoneTagFilterBar(model: model, domain: .project(path), items: all, shown: tasks.count)
                 PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: path, dates: .iconsOnly)
                 if all.isEmpty {
                     Text("No tasks link to this project yet.")
@@ -413,8 +412,7 @@ struct PhoneAreaScreen: View {
             let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
 
             PhoneList(model: model, title: area.title,
-                      subtitle: filter.isActive ? "\(projects.count + filed.count) of \(allProjects.count + allFiled.count) shown"
-                          : "\(projects.count == 1 ? "1 project" : "\(projects.count) projects") · \(tasks(open.count))",
+                      subtitle: "\(projects.count == 1 ? "1 project" : "\(projects.count) projects") · \(tasks(open.count))",
                       icon: AnyView(AreaIcon(size: 30)),
                       pickable: shown.map(\.path), add: { await newTask(in: area) }) {
                 Button("New Task", systemImage: "plus") { Task { await newTask(in: area) } }
@@ -433,26 +431,32 @@ struct PhoneAreaScreen: View {
                     Task { await model.moveToTrash([path]) }
                 }
             } content: {
-                PhoneTagFilterBar(model: model, domain: .area(path), items: allProjects + allFiled)
-                if !projects.isEmpty {
-                    fold("Projects", count: projects.count)
-                    if !isFolded("Projects") {
-                        ForEach(projects) { PhoneProjectRow(model: model, progress: $0, showsDates: true) }
+                PhoneTagFilterBar(model: model, domain: .area(path), items: allProjects + allFiled,
+                                  shown: projects.count + filed.count)
+                if filter.isActive, projects.isEmpty, filed.isEmpty {
+                    ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
+                                           description: Text("Nothing here carries the picked tags.")).padding(.top, 40)
+                } else {
+                    if !projects.isEmpty {
+                        fold("Projects", count: projects.count)
+                        if !isFolded("Projects") {
+                            ForEach(projects) { PhoneProjectRow(model: model, progress: $0, showsDates: true) }
+                        }
                     }
-                }
-                fold("Tasks", count: open.count)
-                if !isFolded("Tasks") {
-                    if open.isEmpty, !filter.isActive {
-                        Text("No tasks filed straight to \(area.title). Tasks in its projects stay on their project.")
-                            .scaledFont(size: 15)
-                            .foregroundStyle(theme.color(\.muted))
-                            .padding(16)
+                    fold("Tasks", count: open.count)
+                    if !isFolded("Tasks") {
+                        if open.isEmpty, !filter.isActive {
+                            Text("No tasks filed straight to \(area.title). Tasks in its projects stay on their project.")
+                                .scaledFont(size: 15)
+                                .foregroundStyle(theme.color(\.muted))
+                                .padding(16)
+                        }
+                        ForEach(open) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
                     }
-                    ForEach(open) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
-                }
-                fold("Completed", count: done.count)
-                if !isFolded("Completed") {
-                    ForEach(done) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
+                    fold("Completed", count: done.count)
+                    if !isFolded("Completed") {
+                        ForEach(done) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
+                    }
                 }
             }
             .alert("Rename Area", isPresented: $isRenaming) {
