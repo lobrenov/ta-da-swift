@@ -22,8 +22,8 @@ TaDa/
 ├── SettingsStore.swift        where AppModel keeps its settings: UserDefaults, or a test's in-memory store
 ├── Commands.swift             menu commands and shortcuts
 ├── UITestingLaunch.swift      the `-uiTesting` launch: throwaway settings and folder
-├── Theme/                     Theme (15 colour tokens + isDark, as `PlatformColor`: NSColor or UIColor), ThemeSet, Appearance, the 15 bundled
-│                              schemes and 8 sets; themed(by:) sets \.theme and the colour scheme and follows the system appearance
+├── Theme/                     Theme (15 colour tokens + isDark, as `PlatformColor`: NSColor or UIColor), ThemeSet, Appearance, the 17 bundled
+│                              schemes and 9 sets; themed(by:) sets \.theme and the colour scheme and follows the system appearance
 ├── Onboarding/                FolderPickerView
 ├── Settings/                  SettingsView (nav and shared parts), VaultSettingsView, ThemeSettingsView, EditorSettingsView, IntegrationsSettingsView,
 │                              NotificationsSettingsView, HotkeysSettingsView (with HotkeyRecorder)

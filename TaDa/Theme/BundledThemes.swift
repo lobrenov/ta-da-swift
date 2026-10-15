@@ -1,4 +1,4 @@
-// The fifteen bundled schemes and the eight theme sets that pair them, from the Theme tokens artboard.
+// The seventeen bundled schemes and the nine theme sets that pair them, from the Theme tokens artboard.
 import SwiftUI
 
 nonisolated extension Theme {
@@ -63,6 +63,14 @@ nonisolated extension Theme {
               bg: 0x1e1e2e, side: 0x191926, surface: 0x3a3b4e, border: 0x303042, code: 0x272738,
               fg: 0xcdd6f4, strong: 0xe4e8f9, muted: 0x8489a1, accent: 0x89b4fa, due: 0xf9e2af,
               deadline: 0xf38ba8, done: 0xa6e3a1, doing: 0x94e2d5, blocked: 0xf6b6ac, link: 0xf5c2e7),
+        Theme(name: "Things Light", isDark: false,
+              bg: 0xffffff, side: 0xf5f6f8, surface: 0xededed, border: 0xebebec, code: 0xf5f5f5,
+              fg: 0x373a3e, strong: 0x000000, muted: 0x727679, accent: 0x0062c1, due: 0xfdd31b,
+              deadline: 0xf83366, done: 0x08b94e, doing: 0x54ada4, blocked: 0xec7500, link: 0x1f67cf),
+        Theme(name: "Things Dark", isDark: true,
+              bg: 0x262626, side: 0x1a1a1a, surface: 0x323232, border: 0x383838, code: 0x2f2f2f,
+              fg: 0xdadada, strong: 0xffffff, muted: 0x8a919b, accent: 0x4d94f7, due: 0xfdd31b,
+              deadline: 0xf83366, done: 0x44cf6e, doing: 0x54ada4, blocked: 0xe9973f, link: 0x72a8ff),
     ]
 }
 
@@ -76,6 +84,7 @@ nonisolated extension ThemeSet {
         ThemeSet(name: "Gruvbox", light: "Gruvbox Light", dark: "Gruvbox Dark"),
         ThemeSet(name: "TokyoNight", light: "TokyoNight Day", dark: "TokyoNight"),
         ThemeSet(name: "Catppuccin", light: "Catppuccin Latte", dark: "Catppuccin Mocha"),
+        ThemeSet(name: "Things", light: "Things Light", dark: "Things Dark"),
     ]
     /// The set a new install starts with.
     static let standard = all[1]
