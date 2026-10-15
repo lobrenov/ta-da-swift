@@ -16,6 +16,8 @@ struct TaskRow: View {
     let selected: Bool
     let today: LocalDate
     var dates = Dates.labelled
+    /// The task's project or area, first on the meta line, where the list's groups don't show it.
+    var place: String? = nil
     let onToggle: () -> Void
     let onSelect: () -> Void
 
@@ -28,6 +30,7 @@ struct TaskRow: View {
 
     @ViewBuilder private var chips: some View {
         let subtasks = item.subtasks
+        if let place { Text(place).lineLimit(1) }
         if subtasks.total > 0 {
             Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
                  spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")

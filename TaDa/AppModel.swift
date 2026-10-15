@@ -256,6 +256,12 @@ import TaDaCore
     var quickEntryHotkey: Hotkey? {
         didSet { defaults.set(quickEntryHotkey?.dictionary ?? [:], forKey: Keys.quickEntryHotkey) }
     }
+    /// Each grouped list's Group choice, by `GroupedList` raw value; a missing one is the list's default.
+    private(set) var groupings: [String: String] {
+        didSet { defaults.set(groupings, forKey: Keys.groupings) }
+    }
+    /// Each page's picked tags, by domain, for the session.
+    private(set) var tagFilters: [Domain: TagFilter] = [:]
     /// The browser column's width on the Mac, set by dragging the rule beside it; nil until dragged.
     var browserWidth: Double? {
         didSet { defaults.set(browserWidth, forKey: Keys.browserWidth) }
@@ -294,6 +300,54 @@ import TaDaCore
         var groups = foldedGroups[project] ?? []
         if let i = groups.firstIndex(of: group) { groups.remove(at: i) } else { groups.append(group) }
         foldedGroups[project] = groups.isEmpty ? nil : groups
+    }
+
+    func grouping(of list: GroupedList) -> Grouping {
+        guard let stored = groupings[list.rawValue].flatMap(Grouping.init), list.groupings.contains(stored) else {
+            return list.defaultGrouping
+        }
+        return stored
+    }
+
+    func setGrouping(_ grouping: Grouping, of list: GroupedList) {
+        groupings[list.rawValue] = grouping == list.defaultGrouping ? nil : grouping.rawValue
+    }
+
+    /// Whether a section of a Status, Date or Open list is folded. Done, Cancelled and Date's Completed start
+    /// folded, so a stored entry for them means opened. `list` is the project's path, or Today's or Loose's key.
+    func isFolded(_ section: ListSection, by grouping: Grouping, in list: String) -> Bool {
+        isFolded(section.foldName(grouping), in: list) != section.startsFolded(grouping)
+    }
+
+    func toggleFolded(_ section: ListSection, by grouping: Grouping, in list: String) {
+        toggleFolded(section.foldName(grouping), in: list)
+    }
+
+    func tagFilter(on domain: Domain) -> TagFilter {
+        tagFilters[domain] ?? TagFilter()
+    }
+
+    /// Picks the tag in `domain`'s filter, or unpicks it.
+    func toggleFilterTag(_ path: String, on domain: Domain) {
+        var filter = tagFilter(on: domain)
+        if filter.picked.remove(path) == nil { filter.picked.insert(path) }
+        tagFilters[domain] = filter.isActive ? filter : nil
+    }
+
+    /// The files a page's filter narrows, before filtering: what its menu lists the tags of.
+    func filterItems(on domain: Domain) -> [Item] {
+        switch domain {
+        case .today: todayTasks
+        case .loose: looseTasks
+        case .project(let path): index[path].map { index.tasks(in: $0) } ?? []
+        case .area(let path): index[path].map { index.projects(in: $0) + index.tasks(in: $0) } ?? []
+        case .folder(let path): index.notes(in: path)
+        case .upcoming, .logbook, .trash, .tag: []
+        }
+    }
+
+    func clearTagFilter(on domain: Domain) {
+        tagFilters[domain] = nil
     }
 
     func isTagFolded(_ path: String) -> Bool {
@@ -345,6 +399,7 @@ import TaDaCore
         static let lastLogged = "lastLogged"
         static let quickEntryHotkey = "quickEntryHotkey"
         static let browserWidth = "browserWidth"
+        static let groupings = "groupings"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -363,6 +418,7 @@ import TaDaCore
         sidebarMode = defaults.string(forKey: Keys.sidebarMode).flatMap(SidebarMode.init) ?? .projects
         foldedTags = Set(defaults.stringArray(forKey: Keys.foldedTags) ?? [])
         foldedFolders = Set(defaults.stringArray(forKey: Keys.foldedFolders) ?? [])
+        groupings = defaults.dictionary(forKey: Keys.groupings) as? [String: String] ?? [:]
         let width = defaults.double(forKey: Keys.browserWidth)
         browserWidth = width > 0 ? width : nil
         // Missing: the default. Stored `[:]`: cleared.
@@ -1051,6 +1107,9 @@ import TaDaCore
         if domain == .area(path) { domain = .area(newPath) }
         if selection == path || selection == nil && (domain == .project(newPath) || domain == .area(newPath)) { selection = newPath }
         if let folded = foldedGroups.removeValue(forKey: path) { foldedGroups[newPath] = folded }
+        for (old, new) in [(Domain.project(path), Domain.project(newPath)), (.area(path), .area(newPath))] {
+            if let filter = tagFilters.removeValue(forKey: old) { tagFilters[new] = filter }
+        }
         if recentFiles.contains(path) { recentFiles = recentFiles.map { $0 == path ? newPath : $0 } }
     }
 
@@ -1863,6 +1922,10 @@ import TaDaCore
         if isFolder {
             knownFolders = Set(knownFolders.map(moved))
             foldedFolders = Set(foldedFolders.map(moved))
+            for case let (.folder(old), filter) in tagFilters where isInside(old) {
+                tagFilters[.folder(old)] = nil
+                tagFilters[.folder(moved(old))] = filter
+            }
             updateNotes()
             if let shown, isInside(shown) { domain = .folder(moved(shown)) }
         }

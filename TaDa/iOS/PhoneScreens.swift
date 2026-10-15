@@ -14,44 +14,64 @@ struct PhoneTaskListScreen: View {
 
     var body: some View {
         let all = kind == .today ? model.todayTasks : model.looseTasks
-        let groups = model.index.grouped(all)
+        let filter = model.tagFilter(on: domain)
+        let shownTasks = filter.apply(all)
+        let grouping = model.grouping(of: list)
+        let groups = grouping == .project ? model.index.grouped(shownTasks) : []
+        let sections = grouping == .project ? [] : ListSection.sections(shownTasks, by: grouping, today: model.today)
         let open = all.count { !$0.properties.status.isClosed }
+        let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
+            : sections.filter { !model.isFolded($0, by: grouping, in: list.foldKey) }.flatMap(\.tasks).map(\.path)
+        let dates: TaskRow.Dates = kind == .today ? .overdueDueAndDeadline : .labelled
 
         PhoneList(model: model, title: kind == .today ? "Today" : "Loose tasks",
                   subtitle: kind == .today
                       ? "\(model.today.date().formatted(.dateTime.weekday(.wide).day().month(.wide))) · \(tasks(open))"
                       : "No project or area · \(tasks(open))",
-                  pickable: groups.flatMap(\.tasks).map(\.path), add: newTask) {
+                  titleAccessory: AnyView(PhoneGroupMenu(model: model, list: list)),
+                  pickable: pickable, add: newTask) {
             EmptyView()
         } content: {
-            let events = kind == .today ? model.todayEvents : [], reminders = kind == .today ? model.todayReminders : []
+            let showsCalendar = kind == .today && !filter.isActive
+            let events = showsCalendar ? model.todayEvents : [], reminders = showsCalendar ? model.todayReminders : []
+            PhoneTagFilterBar(model: model, domain: domain, items: all, shown: shownTasks.count)
             if all.isEmpty, events.isEmpty, reminders.isEmpty {
                 empty.padding(.top, 60)
+            } else if shownTasks.isEmpty, filter.isActive {
+                ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
+                                       description: Text("No task here carries the picked tags.")).padding(.top, 40)
             }
             if !events.isEmpty || !reminders.isEmpty {
                 Color.clear.frame(height: 12)
             }
             ForEach(events) { EventRow(event: $0, day: model.today, context: .today) }
             ForEach(reminders) { ReminderRow(reminder: $0, context: .today, today: model.today) }
-            // Tasks without a parent have no header to set them apart.
-            if !events.isEmpty || !reminders.isEmpty, groups.first?.parent == nil, !groups.isEmpty {
-                Color.clear.frame(height: 20)
-            }
-            ForEach(groups) { group in
-                if let parent = group.parent {
-                    if parent.properties.kind == .area {
-                        PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id && events.isEmpty && reminders.isEmpty)
-                    } else {
-                        PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
+            if grouping == .project {
+                // Tasks without a parent have no header to set them apart.
+                if !events.isEmpty || !reminders.isEmpty, groups.first?.parent == nil, !groups.isEmpty {
+                    Color.clear.frame(height: 20)
+                }
+                ForEach(groups) { group in
+                    if let parent = group.parent {
+                        if parent.properties.kind == .area {
+                            PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id && events.isEmpty && reminders.isEmpty)
+                        } else {
+                            PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
+                        }
+                    }
+                    ForEach(group.tasks) { task in
+                        PhoneTaskRow(model: model, item: task, meta: .chips(dates))
                     }
                 }
-                ForEach(group.tasks) { task in
-                    PhoneTaskRow(model: model, item: task,
-                                 meta: .chips(kind == .today ? .overdueDueAndDeadline : .labelled))
-                }
+            } else {
+                PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: dates,
+                                  place: kind == .today ? { model.index.parent(of: $0)?.title } : nil)
             }
         }
     }
+
+    private var list: GroupedList { kind == .today ? .today : .loose }
+    private var domain: AppModel.Domain { kind == .today ? .today : .loose }
 
     private var empty: some View {
         switch kind {
@@ -314,14 +334,18 @@ struct PhoneProjectScreen: View {
 
     var body: some View {
         if let project = model.index[path] {
-            let tasks = model.index.tasks(in: project)
-            let open = tasks.filter { !$0.properties.status.isClosed }
-            let done = tasks.filter { $0.properties.status.isClosed }
-            let shown = (model.isFolded("Open", in: path) ? [] : open) + (model.isFolded("Completed", in: path) ? [] : done)
+            let all = model.index.tasks(in: project)
+            let filter = model.tagFilter(on: .project(path))
+            let tasks = filter.apply(all)
+            let grouping = model.grouping(of: .project)
+            let sections = ListSection.sections(tasks, by: grouping, today: model.today)
+            let shown = sections.filter { !model.isFolded($0, by: grouping, in: path) }.flatMap(\.tasks)
             let progress = model.index.progress(of: project)
             let subtasks = project.subtasks
 
             PhoneList(model: model, title: project.title,
+                      titleAccessory: AnyView(PhoneGroupMenu(model: model, list: .project)),
+                      fileButton: ("Project File", { nav.push(.file(path)) }),
                       pickable: shown.map(\.path), add: { await newTask(in: project) }) {
                 Button("Open Project File", systemImage: "doc") { nav.push(.file(path)) }
                 Button("Move to Trash", systemImage: "trash", role: .destructive) {
@@ -341,29 +365,17 @@ struct PhoneProjectScreen: View {
                             .scaledFont(size: 13)
                             .foregroundStyle(theme.color(\.muted))
                     }
-                    Button { nav.push(.file(path)) } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "doc.text").foregroundStyle(theme.color(\.muted))
-                            Text("Project file").foregroundStyle(theme.color(\.fg))
-                            Spacer()
-                            Image(systemName: "chevron.right").scaledFont(size: 14, weight: .semibold)
-                                .foregroundStyle(theme.color(\.muted))
-                        }
-                        .scaledFont(size: 17)
-                        .padding(.horizontal, 16)
-                        .scaledMinHeight(48)
-                        .background(theme.color(\.code), in: .rect(cornerRadius: 12))
-                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(theme.color(\.border)))
-                        .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
-                group("Open", open)
-                group("Completed", done)
-                if tasks.isEmpty {
+                PhoneTagFilterBar(model: model, domain: .project(path), items: all, shown: tasks.count)
+                PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: path, dates: .iconsOnly)
+                if all.isEmpty {
                     Text("No tasks link to this project yet.")
+                        .foregroundStyle(theme.color(\.muted))
+                        .padding(16)
+                } else if tasks.isEmpty {
+                    Text("No task here carries the picked tags.")
                         .foregroundStyle(theme.color(\.muted))
                         .padding(16)
                 }
@@ -371,15 +383,6 @@ struct PhoneProjectScreen: View {
         } else {
             ContentUnavailableView("Project not found", systemImage: "questionmark.folder",
                                    description: Text("This project’s file is no longer in the folder."))
-        }
-    }
-
-    @ViewBuilder private func group(_ title: String, _ tasks: [Item]) -> some View {
-        if !tasks.isEmpty {
-            PhoneFoldHeader(model: model, title: title, count: tasks.count, group: title, in: path)
-            if !model.isFolded(title, in: path) {
-                ForEach(tasks) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
-            }
         }
     }
 
@@ -400,8 +403,10 @@ struct PhoneAreaScreen: View {
 
     var body: some View {
         if let area = model.index[path] {
-            let projects = model.index.projects(in: area).map { model.index.progress(of: $0) }
-            let filed = model.index.tasks(in: area)
+            let allProjects = model.index.projects(in: area), allFiled = model.index.tasks(in: area)
+            let filter = model.tagFilter(on: .area(path))
+            let projects = filter.apply(allProjects).map { model.index.progress(of: $0) }
+            let filed = filter.apply(allFiled)
             let open = filed.filter { !$0.properties.status.isClosed }
             let done = filed.filter { $0.properties.status.isClosed }
             let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
@@ -426,25 +431,32 @@ struct PhoneAreaScreen: View {
                     Task { await model.moveToTrash([path]) }
                 }
             } content: {
-                if !projects.isEmpty {
-                    fold("Projects", count: projects.count)
-                    if !isFolded("Projects") {
-                        ForEach(projects) { PhoneProjectRow(model: model, progress: $0, showsDates: true) }
+                PhoneTagFilterBar(model: model, domain: .area(path), items: allProjects + allFiled,
+                                  shown: projects.count + filed.count)
+                if filter.isActive, projects.isEmpty, filed.isEmpty {
+                    ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
+                                           description: Text("Nothing here carries the picked tags.")).padding(.top, 40)
+                } else {
+                    if !projects.isEmpty {
+                        fold("Projects", count: projects.count)
+                        if !isFolded("Projects") {
+                            ForEach(projects) { PhoneProjectRow(model: model, progress: $0, showsDates: true) }
+                        }
                     }
-                }
-                fold("Tasks", count: open.count)
-                if !isFolded("Tasks") {
-                    if open.isEmpty {
-                        Text("No tasks filed straight to \(area.title). Tasks in its projects stay on their project.")
-                            .scaledFont(size: 15)
-                            .foregroundStyle(theme.color(\.muted))
-                            .padding(16)
+                    fold("Tasks", count: open.count)
+                    if !isFolded("Tasks") {
+                        if open.isEmpty, !filter.isActive {
+                            Text("No tasks filed straight to \(area.title). Tasks in its projects stay on their project.")
+                                .scaledFont(size: 15)
+                                .foregroundStyle(theme.color(\.muted))
+                                .padding(16)
+                        }
+                        ForEach(open) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
                     }
-                    ForEach(open) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
-                }
-                fold("Completed", count: done.count)
-                if !isFolded("Completed") {
-                    ForEach(done) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
+                    fold("Completed", count: done.count)
+                    if !isFolded("Completed") {
+                        ForEach(done) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
+                    }
                 }
             }
             .alert("Rename Area", isPresented: $isRenaming) {

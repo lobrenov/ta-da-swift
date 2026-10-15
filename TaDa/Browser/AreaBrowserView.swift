@@ -1,4 +1,4 @@
-// An area beside the document pane: its header, its projects, the tasks filed straight to it and their completed
+// An area beside the document pane: its header with the tag filter, its projects, the tasks filed straight to it and their completed
 // group, each foldable. Completed starts folded.
 #if os(macOS)
 import SwiftUI
@@ -10,14 +10,18 @@ struct AreaBrowserView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let projects = model.index.projects(in: area).map { model.index.progress(of: $0) }
-        let tasks = model.index.tasks(in: area)
+        let allProjects = model.index.projects(in: area), allTasks = model.index.tasks(in: area)
+        let filter = model.tagFilter(on: .area(area.path))
+        let projects = filter.apply(allProjects).map { model.index.progress(of: $0) }
+        let tasks = filter.apply(allTasks)
         let open = tasks.filter { !$0.properties.status.isClosed }
         let done = tasks.filter { $0.properties.status.isClosed }
         let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
 
-        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18) {
-            header(projects: projects.count, tasks: open.count)
+        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18,
+                      empty: filter.isActive && projects.isEmpty && tasks.isEmpty ? .noTagMatch : nil) {
+            header(projects: allProjects.count, tasks: allTasks.count { !$0.properties.status.isClosed },
+                   files: allProjects + allTasks, shown: projects.count + tasks.count)
         } content: {
             if !projects.isEmpty {
                 VStack(alignment: .leading, spacing: 1) {
@@ -28,7 +32,7 @@ struct AreaBrowserView: View {
             VStack(alignment: .leading, spacing: 1) {
                 foldHeader("Tasks", count: open.count)
                 if !isFolded("Tasks") {
-                    if open.isEmpty {
+                    if open.isEmpty, !filter.isActive {
                         Text("No tasks filed straight to \(area.title). Tasks in its projects stay on their project.")
                             .font(.system(size: 12.5))
                             .foregroundStyle(theme.color(\.muted))
@@ -46,7 +50,7 @@ struct AreaBrowserView: View {
         }
     }
 
-    private func header(projects: Int, tasks: Int) -> some View {
+    private func header(projects: Int, tasks: Int, files: [Item], shown: Int) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 AreaIcon(size: 24)
@@ -67,6 +71,7 @@ struct AreaBrowserView: View {
                 .font(.system(size: 11.5))
                 .foregroundStyle(theme.color(\.muted))
             TagChipRow(model: model, item: area)
+            TagFilterRow(model: model, domain: .area(area.path), items: files, shown: (shown, files.count))
         }
     }
 

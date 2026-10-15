@@ -1,5 +1,5 @@
 // A notes folder's page beside the document pane, or Loose's: its icon and name (the parent path muted, the name
-// renamed in place), a count line, its subfolders as chips, its own notes by title, then "New note in <folder>".
+// renamed in place), a count line, its subfolders as chips, the tag filter, its own notes by title, then "New note in <folder>".
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -11,17 +11,25 @@ struct FolderBrowserView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let notes = model.index.notes(in: folder)
+        let all = model.index.notes(in: folder)
+        let filter = model.tagFilter(on: .folder(folder))
+        let notes = filter.apply(all)
         let children = folder.isEmpty ? [] : Self.node(folder, in: model.folderTree)?.children ?? []
         BrowserColumn(model: model, paths: notes.map(\.path), spacing: 1) {
-            header(notes: notes.count, children: children)
+            header(notes: all, shown: notes.count, children: children)
         } content: {
             ForEach(notes) { note in
                 NoteRow(item: note, selected: model.isSelected(note.path)) { model.click(note.path) }
                     .fileMenu(model, path: note.path)
                     .draggable(containerItemID: note.path)
             }
-            if notes.isEmpty {
+            if notes.isEmpty, filter.isActive {
+                Text("No note here carries the picked tags.")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(theme.color(\.muted))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+            } else if notes.isEmpty {
                 Text(folder.isEmpty ? "No notes at the top level." : "No notes in \(name) itself.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(theme.color(\.muted))
@@ -43,9 +51,9 @@ struct FolderBrowserView: View {
 
     private var name: String { folder.isEmpty ? "Loose" : String(folder.split(separator: "/").last ?? "") }
 
-    private func header(notes: Int, children: [FolderNode]) -> some View {
+    private func header(notes: [Item], shown: Int, children: [FolderNode]) -> some View {
         let parent = Vault.folder(of: folder)
-        var counts = [notes == 1 ? "1 note" : "\(notes) notes"]
+        var counts = [notes.count == 1 ? "1 note" : "\(notes.count) notes"]
         if !children.isEmpty { counts.append(children.count == 1 ? "1 folder" : "\(children.count) folders") }
         if folder.isEmpty { counts.insert("Notes at the top of \(model.folderDisplayName)", at: 0) }
         return VStack(alignment: .leading, spacing: 8) {
@@ -106,6 +114,7 @@ struct FolderBrowserView: View {
                     }
                 }
             }
+            TagFilterRow(model: model, domain: .folder(folder), items: notes, shown: (shown, notes.count))
         }
     }
 
