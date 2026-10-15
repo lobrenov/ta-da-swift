@@ -60,5 +60,24 @@ private func titles(_ sections: [ListSection]) -> [String] {
 
 @Test func tagFilterListsTheTagsOfTheFilesWithCounts() {
     let tags = TagFilter.tags(of: tasks).map { "\($0.tag.name) \($0.count)" }
-    #expect(tags == ["bug 2", "dev 1", "home 1", "Home/Garden 1"])
+    #expect(tags == ["bug 2", "dev 1", "Home 2", "Home/Garden 1"], "a parent counts its children’s files, spelt as first met")
+    let picked = TagFilter(picked: ["home"]).apply(tasks).count
+    #expect(picked == 2)
+}
+
+@Test func tagFilterListsAParentOnlyItsChildrenCarry() {
+    let files = [makeItem("tasks/A.md", "type: task\ntags: [people/max, people/sam]")]
+    #expect(TagFilter.tags(of: files).map { "\($0.tag.name) \($0.count)" } == ["people 1", "people/max 1", "people/sam 1"])
+}
+
+@Test func dateGroupTakesTheNearerOfEitherDate() {
+    let item = makeItem("tasks/A.md", "type: task\ndueDate: 2026-10-17\ndeadline: 2026-10-15")
+    #expect(ListSection.dateGroup(of: item, today: today) == .today)
+    let closed = makeItem("tasks/B.md", "type: task\nstatus: Done\ndueDate: 2026-10-01")
+    #expect(titles(ListSection.sections([closed], by: .date, today: today)) == ["Completed: B"])
+}
+
+@Test func ongoingFollowsDoing() {
+    let items = [makeItem("projects/P.md", "type: project\nstatus: Ongoing"), makeItem("tasks/D.md", "type: task\nstatus: Doing")]
+    #expect(ListSection.sections(items, by: .status, today: today).map(\.title) == ["Doing", "Ongoing"])
 }

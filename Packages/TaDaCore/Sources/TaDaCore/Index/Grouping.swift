@@ -48,7 +48,7 @@ public struct ListSection: Hashable, Sendable, Identifiable {
     public static let statusOrder: [Status] = [.doing, .ongoing, .blocked, .notStarted, .done, .cancelled]
 
     /// `tasks` split by `grouping`, keeping their order within each section and leaving empty sections out.
-    /// `.project` isn't a section grouping and gives one Open section.
+    /// `.project` groups by area ▸ project (`VaultIndex.grouped`); here it gives Open and Completed.
     public static func sections(_ tasks: [Item], by grouping: Grouping, today: LocalDate) -> [ListSection] {
         let open = tasks.filter { !$0.properties.status.isClosed }
         let closed = tasks.filter { $0.properties.status.isClosed }
@@ -97,12 +97,20 @@ public struct TagFilter: Hashable, Sendable {
         isActive ? items.filter(matches) : items
     }
 
-    /// The tags `items` carry, each with how many of them carry it, by path. Each tag keeps its first spelling.
+    /// The tags `items` carry and their parents, each with how many of the items carry it or a child of it, so a
+    /// tag's count is what picking it shows. By path, as the tag tree sorts. Each tag keeps its first spelling.
     public static func tags(of items: [Item]) -> [(tag: Tag, count: Int)] {
         var found: [String: (tag: Tag, count: Int)] = [:]
-        for use in items.flatMap(\.tags) {
-            found[use.tag.path] = (found[use.tag.path]?.tag ?? use.tag, (found[use.tag.path]?.count ?? 0) + 1)
+        for item in items {
+            var seen: Set<String> = []
+            for use in item.tags {
+                var node: Tag? = use.tag
+                while let tag = node, seen.insert(tag.path).inserted {
+                    found[tag.path] = (found[tag.path]?.tag ?? tag, (found[tag.path]?.count ?? 0) + 1)
+                    node = tag.parent
+                }
+            }
         }
-        return found.values.sorted { $0.tag.path < $1.tag.path }
+        return found.values.sorted { $0.tag.path.localizedStandardCompare($1.tag.path) == .orderedAscending }
     }
 }
