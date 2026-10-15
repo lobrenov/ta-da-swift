@@ -71,7 +71,7 @@ TaDa/
 │   ├── RightClickMenu.swift   the Live editor's right-click menu (the table grips' menus)
 │   ├── CalloutIcon.swift      callout icons and tints
 │   ├── AddSubtask.swift
-│   └── InlineFormat.swift     the Format menu's formats and the Live editor's `formatting` focused value
+│   └── InlineFormat.swift     the Format menu's formats (InlineFormatting, the Live editor's side)
 ├── iOS/                       the iPhone app (see iPhone below)
 └── Shared/                    LocalDate display formats and month grids; PopupMenu (the panel and list the slash, checkbox, callout, file and property menus share, and `PopupField`, the menus' search field and the calendar's date field); FileMenu (right-click on an area, project, task or note, and `actionMenu` for a notes folder); AreaIcon (the cube); NoteIcon (the page); ConvertSheet (converting a note); TrashConfirmationText (the delete question for an area, and the words of the attachments dialog); DeleteFilesDialog (deleting files that embed images: each image to tick); CompletionDialog (completing a project with open tasks); LogbookGroup (the Logbook's groups); TaskDrag (task and note rows dragged as files onto the sidebar or into other apps, and ⌘P's, ⌘S's, ⌘D's and ⌘T's menus under a row); Buttons (the text button style and segmented control); InlineTitleField (a title renamed in place); EventRow (with CalendarApp) and ReminderRow (Calendar events and reminders in Today and Upcoming)
 
@@ -191,7 +191,7 @@ On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a check
 | ⌘T | Open tagMenu for the open file (under its + Tag chip). Off in Source mode and with no open file |
 | ⌘S / ⌘D | Set the due date / deadline of the open file (calendar under its chip) or the picked tasks (under the first). Off in Source mode |
 | ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step. Off unless the Live or Source editor has the keyboard (its `editor` focused value) |
-| ⌘B / ⌘I / ⇧⌘H / ⇧⌘S | Format ▸ Bold / Italic / Highlight / Strikethrough: wrap the selection, or the word at the caret (not for highlight), or insert the pair of markers around the caret; inside the format, remove it. Off unless the Live editor has the keyboard (its `formatting` focused value, `InlineFormatting`); a table cell that has the keyboard gets it |
+| ⌘B / ⌘I / ⇧⌘H / ⇧⌘S | Format ▸ Bold / Italic / Highlight / Strikethrough: wrap the selection, or the word at the caret (not for highlight), or insert the pair of markers around the caret; inside the format, remove it. Off unless the Live editor has the keyboard (its `editor` focused value, when it's `InlineFormatting`) in the key window; a table cell that has the keyboard gets it |
 | ↑ / ↓, Escape | Move through the list, clear the selection, while the list has the keyboard |
 | ⌫ or ⌘⌫ | Move the selected file, or the picked tasks, to the trash, while the list has the keyboard |
 | ⌘⌫ / ⌥⌘⌫ in Trash | Restore / delete forever the picked files |

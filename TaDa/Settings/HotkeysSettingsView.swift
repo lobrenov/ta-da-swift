@@ -37,7 +37,7 @@ struct HotkeysSettingsView: View {
         .map { (what: $0.0, key: $0.1) }
 
     static let taskKeys = [("Move to a project or area", "⌘P"), ("Schedule", "⌘S"), ("Set deadline", "⌘D"), ("Tags", "⌘T"),
-                           ("Move to the trash", "⌫")]
+                           ("Move to the trash", "⌫ or ⌘⌫")]
         .map { (what: $0.0, key: $0.1) }
 
     static let editorKeys = [("Bold", "⌘B"), ("Italic", "⌘I"), ("Highlight", "⇧⌘H"), ("Strikethrough", "⇧⌘S"),

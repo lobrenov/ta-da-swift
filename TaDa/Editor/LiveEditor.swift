@@ -94,7 +94,6 @@ struct LiveEditor: View {
             onRightClickMenu: showRightClickMenu
         )
         .focusedValue(\.editor, slashCommand)
-        .focusedValue(\.formatting, slashCommand)
         .onAppear { slashCommand.triggers = triggers }
         .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .onDisappear {
@@ -449,7 +448,9 @@ struct LiveEditor: View {
 extension SlashCommandProxy: TextViewHolder {}
 
 extension SlashCommandProxy: InlineFormatting {
+    /// Formats only while the editor (or its table cell) has the keyboard in the key window, not behind Quick Entry or a menu.
     func apply(_ format: InlineFormat) {
+        guard let textView, let window = textView.window, window.isKeyWindow, window.firstResponder === textView else { return }
         switch format {
         case .bold: apply(MarkdownFormat.bold)
         case .italic: apply(MarkdownFormat.italic)
