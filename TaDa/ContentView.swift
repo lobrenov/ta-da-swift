@@ -35,6 +35,8 @@ struct ContentView: View {
         // No toolbar fill: each column's own colour runs up under the toolbar (proven in the M1 spike).
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
         .toolbar(removing: .title)
+        // In full screen the toolbar shows only under the pointer, so the columns reach the top of the screen.
+        .windowToolbarFullScreenVisibility(.onHover)
         .containerBackground(model.theme.color(\.bg), for: .window)
         .frame(minWidth: WorkspaceView.minWidth, minHeight: 480)
         .alert("Ta Da", isPresented: Binding { model.errorMessage != nil } set: { if !$0 { model.errorMessage = nil } }) {
