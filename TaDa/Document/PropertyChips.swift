@@ -93,7 +93,7 @@ private struct StatusPropertyChip: View {
 }
 
 /// A task's project with its ring, or its area with its cube, in `link`; struck through in `muted` when no file has
-/// that title. Clicking or ⇧⌘M opens the move menu; ⌘-click opens the project or area.
+/// that title. Clicking or ⌘P opens the move menu; ⌘-click opens the project or area.
 private struct ParentPropertyChip: View {
     let model: AppModel
     let task: Item

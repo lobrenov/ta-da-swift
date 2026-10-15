@@ -122,12 +122,14 @@ public final class SlashCommandProxy {
         coordinator?.inputTarget.dismissSlashCommand()
     }
 
-    /// Ta Da fork: formats the selection as the editor's formatting commands do, for iOS's formatting bar.
+    /// Ta Da fork: formats the selection as the editor's formatting commands do, for iOS's formatting bar and the Mac's Format menu.
     public func apply(_ format: MarkdownFormat) {
         guard let coordinator = coordinator?.inputTarget, coordinator.textView != nil else { return }
         switch format {
         case .bold: coordinator.didMarkdownBold(nil)
         case .italic: coordinator.didMarkdownItalic(nil)
+        case .highlight: coordinator.didMarkdownHighlight(nil)
+        case .strikethrough: coordinator.didMarkdownStrikethrough(nil)
         case .inlineCode: coordinator.didMarkdownInlineCode(nil)
         }
     }
@@ -135,7 +137,7 @@ public final class SlashCommandProxy {
 
 /// Ta Da fork: a format ``SlashCommandProxy/apply(_:)`` toggles.
 public enum MarkdownFormat: Sendable {
-    case bold, italic, inlineCode
+    case bold, italic, highlight, strikethrough, inlineCode
 }
 
 extension NativeTextViewCoordinator {

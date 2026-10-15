@@ -129,7 +129,7 @@ import TaDaCore
     var trashNote: String?
     /// The file whose file menu is open; its row is ringed.
     var menuTarget: String?
-    /// ⇧⌘M's request for the project or area menu, ⌘S's and ⌘D's for a date's calendar, or ⌘T's for tagMenu. The view
+    /// ⌘P's request for the project or area menu, ⌘S's and ⌘D's for a date's calendar, or ⌘T's for tagMenu. The view
     /// it names opens the menu and sets this back to nil.
     var propertyMenuRequest: PropertyMenuRequest?
     struct PropertyMenuRequest: Equatable {
@@ -1512,7 +1512,7 @@ import TaDaCore
         dateTargets(for: path).filter { index[$0]?.properties.kind == .project }
     }
 
-    /// ⇧⌘M: asks for the project menu for the move targets, under the open task's project chip or the first
+    /// ⌘P: asks for the project menu for the move targets, under the open task's project chip or the first
     /// picked row; with no tasks to move, the area menu for the area targets.
     func showMoveMenu() {
         let tasks = moveTargets()

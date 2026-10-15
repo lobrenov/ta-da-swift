@@ -144,14 +144,14 @@ final class TaDaUITests: XCTestCase {
         waitForTitle("Alpha")
         waitForValue(project, "value == 'Website'")
 
-        app.typeKey("m", modifierFlags: [.command, .shift])
-        XCTAssertTrue(app.buttons["Loose tasks"].waitForExistence(timeout: 5), "⇧⌘M opens the move menu")
+        app.typeKey("p", modifierFlags: .command)
+        XCTAssertTrue(app.buttons["Loose tasks"].waitForExistence(timeout: 5), "⌘P opens the move menu")
         app.buttons["Loose tasks"].click()
         waitForValue(project, "value == 'None'")
 
         XCUIElement.perform(withKeyModifiers: .shift) { app.buttons["Beta"].click() }
         XCTAssertTrue(app.staticTexts["2 tasks selected"].waitForExistence(timeout: 5))
-        app.typeKey("m", modifierFlags: [.command, .shift])
+        app.typeKey("p", modifierFlags: .command)
         app.typeText("Web")
         app.typeKey(.return, modifierFlags: [])
         for name in ["Beta", "Alpha"] {
@@ -236,9 +236,11 @@ final class TaDaUITests: XCTestCase {
     func testCompleteSelectedTask() throws {
         app.buttons["Alpha"].click()
         waitForTitle("Alpha")
-        app.typeKey("k", modifierFlags: .command)
+        app.menuBarItems["Task"].click()
+        app.menuBarItems["Task"].menuItems.firstMatch.click()
         XCTAssertTrue(app.buttons["Mark not done: Alpha"].waitForExistence(timeout: 5))
-        app.typeKey("k", modifierFlags: .command)
+        app.menuBarItems["Task"].click()
+        app.menuBarItems["Task"].menuItems.firstMatch.click()
         XCTAssertTrue(app.buttons["Complete: Alpha"].waitForExistence(timeout: 5))
     }
 

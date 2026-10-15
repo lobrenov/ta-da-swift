@@ -94,6 +94,7 @@ struct LiveEditor: View {
             onRightClickMenu: showRightClickMenu
         )
         .focusedValue(\.editor, slashCommand)
+        .focusedValue(\.formatting, slashCommand)
         .onAppear { slashCommand.triggers = triggers }
         .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .onDisappear {
@@ -396,7 +397,8 @@ struct LiveEditor: View {
             ring: theme.accent.withAlphaComponent(theme.isDark ? 0.32 : 0.28),
             text: theme.accent, horizontalPadding: 6, margin: 1))
         config.extensions = [HighlightBubble(bubble: InlineBubble(fill: highlightFill, text: theme.strong,
-                                                                  horizontalPadding: 4, margin: -1))]
+                                                                  horizontalPadding: 4, margin: -1)),
+                             StrikethroughExtension()]
         let theme = self.theme
         config.callouts = CalloutStyle(
             tint: { theme.calloutTint(CalloutType(named: $0) ?? .note) },
@@ -445,6 +447,17 @@ struct LiveEditor: View {
 
 #if os(macOS)
 extension SlashCommandProxy: TextViewHolder {}
+
+extension SlashCommandProxy: InlineFormatting {
+    func apply(_ format: InlineFormat) {
+        switch format {
+        case .bold: apply(MarkdownFormat.bold)
+        case .italic: apply(MarkdownFormat.italic)
+        case .highlight: apply(MarkdownFormat.highlight)
+        case .strikethrough: apply(MarkdownFormat.strikethrough)
+        }
+    }
+}
 #endif
 
 /// `==highlight==` as a bubble. It keeps the engine's highlight id, so the editor's Highlight command toggles it.

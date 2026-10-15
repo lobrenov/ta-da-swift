@@ -1,13 +1,13 @@
 // Dragging task and note files: task rows drag as their files, onto the sidebar's projects, areas, Loose tasks and Today,
 // note rows onto its notes folders and Loose, or either into other apps as a drag from Finder would, and the project menu
-// or a calendar opens under a row for ⇧⌘M, ⌘S or ⌘D. A drag on a picked row takes every picked task, or every picked
+// or a calendar opens under a row for ⌘P, ⌘S or ⌘D. A drag on a picked row takes every picked task, or every picked
 // note. Other apps get copies: Finder never moves a file out of the folder.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
 
 extension View {
-    /// Makes a task's row draggable, and opens ⇧⌘M's project menu, or ⌘S's or ⌘D's calendar, under it when it's
+    /// Makes a task's row draggable, and opens ⌘P's project menu, or ⌘S's or ⌘D's calendar, under it when it's
     /// the first picked row.
     func taskDrag(_ model: AppModel, path: String) -> some View {
         modifier(TaskDragSource(model: model, path: path))

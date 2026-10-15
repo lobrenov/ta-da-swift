@@ -186,7 +186,7 @@ struct QuickEntryPanelTests {
         #expect(await within { PropertyPicker.shared.isOpen(AppModel.quickEntryDraftPath, "dueDate") })
         PropertyPicker.shared.close()
         try await Task.sleep(for: .milliseconds(200))
-        #expect(try press("m", [.command, .shift], code: 46))
+        #expect(try press("p", .command, code: 35))
         #expect(await within { PropertyPicker.shared.isOpen(AppModel.quickEntryDraftPath, "project") })
         #expect(quickEntry.isOpen)
         quickEntry.close()

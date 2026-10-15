@@ -1,7 +1,8 @@
 // Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; File ▸ Convert to for the open or
 // picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
-// Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
-// the caret is on, ⇧⌘M move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu.
+// Task ▸ complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
+// the caret is on, ⌘P move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu;
+// Format ▸ ⌘B/⌘I/⇧⌘H/⇧⌘S bold, italic, highlight, strikethrough in the Live editor.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -9,6 +10,7 @@ import TaDaCore
 struct AppCommands: Commands {
     @Bindable var model: AppModel
     @FocusedValue(\.editor) private var editor
+    @FocusedValue(\.formatting) private var formatting
 
     /// The open or picked file, when it's one note.
     private var pickedNote: String? {
@@ -75,7 +77,6 @@ struct AppCommands: Commands {
             Button(selected.map { StatusCheckbox.action(for: $0.properties.status).capitalized } ?? "Complete") {
                 if let selected { Task { await model.toggleCompletion(selected) } }
             }
-            .keyboardShortcut("k")
             .disabled(selected == nil)
             Button("Add Subtask") {
                 if let textView = editor?.textView { AddSubtask.perform(in: textView) }
@@ -83,7 +84,7 @@ struct AppCommands: Commands {
             .keyboardShortcut("l")
             .disabled(editor == nil)
             Button("Move…") { model.showMoveMenu() }
-                .keyboardShortcut("m", modifiers: [.command, .shift])
+                .keyboardShortcut("p")
                 .disabled(model.isSourceMode || model.moveTargets().isEmpty && model.areaTargets().isEmpty)
             Button("Schedule…") { model.showDateMenu(.due) }
                 .keyboardShortcut("s")
@@ -95,6 +96,18 @@ struct AppCommands: Commands {
                 .keyboardShortcut("t")
                 .disabled(model.isSourceMode || model.selection.flatMap { model.index[$0] } == nil)
         }
+        CommandMenu("Format") {
+            format("Bold", .bold, key: "b")
+            format("Italic", .italic, key: "i")
+            format("Highlight", .highlight, key: "h", modifiers: [.command, .shift])
+            format("Strikethrough", .strikethrough, key: "s", modifiers: [.command, .shift])
+        }
+    }
+
+    private func format(_ title: String, _ format: InlineFormat, key: KeyEquivalent, modifiers: EventModifiers = .command) -> some View {
+        Button(title) { formatting?.apply(format) }
+            .keyboardShortcut(key, modifiers: modifiers)
+            .disabled(formatting == nil)
     }
 
     /// Shows a domain, under its name in title case as macOS menu commands are.

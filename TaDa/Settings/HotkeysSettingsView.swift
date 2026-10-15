@@ -1,4 +1,4 @@
-// Settings ▸ Hotkeys: the global hotkey that opens Quick Entry, and the keys Quick Entry takes.
+// Settings ▸ Hotkeys: the global hotkey that opens Quick Entry, which can be recorded, then the app's other keys, which can't.
 #if os(macOS)
 import SwiftUI
 
@@ -9,7 +9,7 @@ struct HotkeysSettingsView: View {
     private var isRecording: Bool { model.isRecordingHotkey }
 
     var body: some View {
-        SettingsPage(title: "Hotkeys", summary: "Shortcuts that work in any app while Ta Da is open.", spacing: 18) {
+        SettingsPage(title: "Hotkeys", summary: "Ta Da’s keyboard shortcuts. Quick Entry’s works in any app while Ta Da is open.", spacing: 18) {
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(title: "Global")
                 VStack(spacing: 0) {
@@ -24,32 +24,53 @@ struct HotkeysSettingsView: View {
                 }
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
             }
-            VStack(alignment: .leading, spacing: 8) {
-                SectionLabel(title: "In Quick Entry")
-                VStack(spacing: 0) {
-                    ForEach(Array(Self.quickEntryKeys.enumerated()), id: \.offset) { index, row in
-                        if index > 0 { Hairline() }
-                        HStack(spacing: 12) {
-                            Text(row.what)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Text(row.key)
-                                .font(.system(size: 11.5).monospaced())
-                                .foregroundStyle(theme.color(\.accent))
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 1)
-                                .background(theme.color(\.code), in: .rect(cornerRadius: 5))
-                        }
-                        .padding(.horizontal, 16)
-                        .frame(height: 36)
-                    }
-                }
-                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
-            }
+            keyList("Files and views", Self.fileKeys)
+            keyList("Tasks", Self.taskKeys)
+            keyList("Editor", Self.editorKeys)
+            keyList("In Quick Entry", Self.quickEntryKeys)
         }
     }
 
-    static let quickEntryKeys = [("Create the file", "↵"), ("Create and open the file", "⌘↵"), ("Close", "esc")]
+    static let fileKeys = [("New task or note", "⌘N"), ("New project", "⇧⌘N"), ("New area", "⌥⌘N"), ("Search files", "⌥⌘F"),
+                           ("Today, Upcoming, Loose tasks, Trash, Logbook", "⌘1–⌘5"), ("Live or Source", "⌘E"),
+                           ("Toggle sidebar", "⌃⌘S"), ("Settings", "⌘,")]
         .map { (what: $0.0, key: $0.1) }
+
+    static let taskKeys = [("Move to a project or area", "⌘P"), ("Schedule", "⌘S"), ("Set deadline", "⌘D"), ("Tags", "⌘T"),
+                           ("Move to the trash", "⌫")]
+        .map { (what: $0.0, key: $0.1) }
+
+    static let editorKeys = [("Bold", "⌘B"), ("Italic", "⌘I"), ("Highlight", "⇧⌘H"), ("Strikethrough", "⇧⌘S"),
+                             ("Add or complete a subtask", "⌘L"), ("Indent", "⇥"), ("Outdent", "⇧⇥")]
+        .map { (what: $0.0, key: $0.1) }
+
+    static let quickEntryKeys = [("Create the file", "↵"), ("Create and open the file", "⌘↵"), ("Move", "⌘P"), ("Due date", "⌘S"),
+                                 ("Deadline", "⌘D"), ("Close", "esc")]
+        .map { (what: $0.0, key: $0.1) }
+
+    private func keyList(_ title: String, _ rows: [(what: String, key: String)]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SectionLabel(title: title)
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+                    if index > 0 { Hairline() }
+                    HStack(spacing: 12) {
+                        Text(row.what)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(row.key)
+                            .font(.system(size: 11.5).monospaced())
+                            .foregroundStyle(theme.color(\.accent))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 1)
+                            .background(theme.color(\.code), in: .rect(cornerRadius: 5))
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(height: 36)
+                }
+            }
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
+        }
+    }
 
     private var quickEntryRow: some View {
         HStack(spacing: 12) {

@@ -49,7 +49,7 @@ struct FileMenuAction: PopupMenuItem {
             let moved = isProject ? model.areaTargets(for: path) : model.moveTargets(for: path)
             let noun = isProject ? "Projects" : "Tasks"
             let move = FileMenuAction(title: moved.count == 1 ? "Move" : "Move \(moved.count) \(noun)",
-                                      systemImage: "folder", shortcut: "⇧⌘M") {
+                                      systemImage: "folder", shortcut: "⌘P") {
                 let items = moved.compactMap { model.index[$0] }
                 if let point, let window {
                     let rect = CGRect(origin: point, size: .zero)
