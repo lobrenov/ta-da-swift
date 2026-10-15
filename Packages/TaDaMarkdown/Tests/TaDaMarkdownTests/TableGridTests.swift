@@ -904,7 +904,35 @@ struct TableGridAlignmentTests {
         #expect(slack(h, row: 1, column: 0).right < 1)
         h.grid.move(.column(0), toGap: 2)
         #expect(slack(h, row: 1, column: 1).right < 1)
-        #expect(slack(h, row: 1, column: 0).right > 1)
+        let style = h.cell(1, 0).textStorage?.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+        #expect(style?.alignment == .left)
+    }
+}
+
+@MainActor
+@Suite("Live table grid alignment and widths")
+struct TableGridAlignmentWidthTests {
+    private func widths(_ marker: String, header: String, cell: String) -> [CGFloat] {
+        GridHarness("| first | \(header) |\n|---|\(marker)|\n| x | \(cell) |\n").grid.layout.columnWidths
+    }
+
+    @Test(arguments: [":---:", "---:"])
+    func anEmptyColumnMeasuresTheSameWhateverItsAlignment(marker: String) {
+        let left = widths(":---", header: "", cell: "")
+        let aligned = widths(marker, header: "", cell: "")
+        #expect(aligned == left)
+        #expect(aligned.reduce(0, +) < 300)
+    }
+
+    @Test(arguments: [":---:", "---:"])
+    func aColumnWithAShortWordMeasuresTheSameWhateverItsAlignment(marker: String) {
+        #expect(widths(marker, header: "Word", cell: "short") == widths(":---", header: "Word", cell: "short"))
+    }
+
+    @Test func alignmentIsKeptAfterMeasuring() {
+        let h = GridHarness("| first | h |\n|---|---:|\n| x |  |\n")
+        let style = h.cell(0, 1).textStorage?.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+        #expect(style?.alignment == .right)
     }
 }
 #endif

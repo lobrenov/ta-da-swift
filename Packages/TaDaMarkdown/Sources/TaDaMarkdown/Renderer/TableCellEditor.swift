@@ -160,6 +160,22 @@ final class TableCellEditor {
     func naturalWidth() -> CGFloat {
         if !textView.hasEditingFocus, let measuredNatural, measuredNatural.text == textView.string { return measuredNatural.width }
         guard let container = textView.textContainer, let tlm = textView.textLayoutManager else { return 0 }
+        // An empty cell has no width, and no line's width depends on where its alignment would put it: measure left-aligned.
+        guard !textView.string.isEmpty else {
+            measuredNatural = (textView.string, 0)
+            return 0
+        }
+        let alignment = coordinator.paragraphAlignment
+        if alignment != nil, alignment != .left {
+            coordinator.paragraphAlignment = .left
+            coordinator.applyParagraphAlignment(to: textView)
+        }
+        defer {
+            if alignment != nil, alignment != .left {
+                coordinator.paragraphAlignment = alignment
+                coordinator.applyParagraphAlignment(to: textView)
+            }
+        }
         container.size = NSSize(width: 100_000, height: CGFloat.greatestFiniteMagnitude)
         tlm.invalidateLayout(for: tlm.documentRange)
         var right: CGFloat = 0
