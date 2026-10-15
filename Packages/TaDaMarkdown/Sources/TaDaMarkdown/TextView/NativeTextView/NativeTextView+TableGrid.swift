@@ -184,25 +184,68 @@ extension NativeTextView {
         return overGrip
     }
 
+    func tableStartLocation(_ range: NSRange) -> Int { tableStart(range).location }
+
+    /// The start of a table's first line, after its indentation.
+    private func tableStart(_ range: NSRange) -> (location: Int, indent: String) {
+        let text = string as NSString
+        var end = range.location
+        while end < NSMaxRange(range), [0x20, 0x09].contains(text.character(at: end)) { end += 1 }
+        return (end, text.substring(with: NSRange(location: range.location, length: end - range.location)))
+    }
+
+    /// With live tables, a user edit never lands in a table's hidden source. Typing at a table's start goes above it
+    /// (a newline there just adds a blank line); any other edit that is inside the lines or touches them without
+    /// containing the whole table is refused, and the cell at that spot takes the keyboard. False refuses the edit.
+    func allowsEdit(of range: NSRange, replacement: String) -> Bool {
+        guard configuration.liveTables, !hidesSyntaxUnlessFocused, !isEditingTableText, !wideTableOverlays.isEmpty,
+              let coordinator = delegate as? NativeTextViewCoordinator, !coordinator.isProgrammaticEdit,
+              undoManager?.isUndoing != true, undoManager?.isRedoing != true else { return true }
+        let isLineBreak = replacement.first.map { $0 == "\n" || $0 == "\r" } ?? false
+        for ordinal in coordinator.parsedDocument(for: string).tableTokens.indices {
+            guard let zone = tableRange(ordinal: ordinal), NSMaxRange(range) >= zone.location, range.location <= NSMaxRange(zone)
+            else { continue }
+            // A range around the whole table is an ordinary edit.
+            if range.location <= zone.location, NSMaxRange(range) >= NSMaxRange(zone), range.length > 0 { continue }
+            let start = tableStart(zone)
+            if range.length == 0, range.location == zone.location || range.location == start.location {
+                if isLineBreak { return true }
+                guard !replacement.isEmpty else { return true }
+                // Typed or pasted at the table's start: it goes on a new line above, indented as the table is.
+                MarkdownLists.performEdit(self, replace: NSRange(location: start.location, length: 0),
+                                          with: replacement + "\n" + start.indent)
+                undoManager?.setActionName("Typing")
+                setSelectedRange(NSRange(location: start.location + (replacement as NSString).length, length: 0))
+                return false
+            }
+            if range.length == 0, range.location == NSMaxRange(zone), isLineBreak { return true }
+            focusTableCell(ordinal: ordinal, selection: NSRange(location: min(max(range.location, zone.location), NSMaxRange(zone)), length: 0))
+            return false
+        }
+        return true
+    }
+
     /// The caret leaves a table's grid for the line above or below it.
     func leaveTable(ordinal: Int, above: Bool) {
         guard let range = tableRange(ordinal: ordinal) else { return }
-        window?.makeFirstResponder(self)
+        let length = (string as NSString).length
+        let target: Int
         // Past a document edge there is no line to go to: a line break there makes one, as one undo step.
         if above, range.location == 0 {
             MarkdownLists.performEdit(self, replace: NSRange(location: 0, length: 0), with: "\n")
             undoManager?.setActionName("Insert Line")
-            setSelectedRange(NSRange(location: 0, length: 0))
-            return
-        }
-        let length = (string as NSString).length
-        if !above, NSMaxRange(range) >= length {
+            target = 0
+        } else if !above, NSMaxRange(range) >= length {
             MarkdownLists.performEdit(self, replace: NSRange(location: length, length: 0), with: "\n")
             undoManager?.setActionName("Insert Line")
-            setSelectedRange(NSRange(location: (string as NSString).length, length: 0))
-            return
+            target = (string as NSString).length
+        } else {
+            target = above ? range.location - 1 : NSMaxRange(range) + 1
         }
-        setSelectedRange(NSRange(location: above ? range.location - 1 : NSMaxRange(range) + 1, length: 0))
+        // The caret moves off the source before the text view takes the keyboard, which would send it to a cell.
+        setSelectedRange(NSRange(location: target, length: 0))
+        window?.makeFirstResponder(self)
+        setSelectedRange(NSRange(location: target, length: 0))
     }
 
     /// A selection that lands in a table's source (Find, the slash menu's Table, a click that reaches the text) gives
@@ -257,6 +300,18 @@ extension NativeTextView {
             hasEditingFocus = true
             (delegate as? NativeTextViewCoordinator)?.editingFocusDidChange(in: self)
             if let cell = tableCell { cell.grid?.cellDidBecomeFocused(cell) }
+        } else if accepted, configuration.liveTables, !wideTableOverlays.isEmpty,
+                  let coordinator = delegate as? NativeTextViewCoordinator {
+            // The caret was left in a table's source: the cell it falls in takes the keyboard. A caret at the table's
+            // start is the spot above it, which typing handles.
+            let selection = selectedRange()
+            for ordinal in coordinator.parsedDocument(for: string).tableTokens.indices {
+                guard let zone = tableRange(ordinal: ordinal), selection.location >= zone.location,
+                      NSMaxRange(selection) <= NSMaxRange(zone) else { continue }
+                if selection.length == 0, selection.location == zone.location || selection.location == tableStart(zone).location { break }
+                focusTableCell(ordinal: ordinal, selection: selection)
+                break
+            }
         }
         return accepted
     }

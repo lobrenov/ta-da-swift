@@ -53,6 +53,9 @@ final class NativeTextView: NSTextView {
     var autoPairs: [AutoPair] = []
 
     override func shouldChangeText(inRanges affectedRanges: [NSValue], replacementStrings: [String]?) -> Bool {
+        // Ta Da fork: a live table's hidden source is edited through its cells (`+TableGrid`).
+        if affectedRanges.count == 1, let replacementStrings, replacementStrings.count == 1,
+           !allowsEdit(of: affectedRanges[0].rangeValue, replacement: replacementStrings[0]) { return false }
         let allowed = super.shouldChangeText(inRanges: affectedRanges, replacementStrings: replacementStrings)
         guard allowed, !autoPairs.isEmpty, let replacementStrings else { return allowed }
         if undoManager?.isUndoing == true || undoManager?.isRedoing == true {

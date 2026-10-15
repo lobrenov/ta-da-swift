@@ -35,6 +35,8 @@ extension NativeTextViewCoordinator {
                 return native.leaveTable(ordinal: ordinal, above: true)
             }
         }
+        // The start of the table's first line is the spot above it: typing there goes above the table.
+        if selection.length == 0, selection.location == range.location || selection.location == native.tableStartLocation(range) { return }
         native.focusTableCell(ordinal: ordinal, selection: selection)
         #endif
     }

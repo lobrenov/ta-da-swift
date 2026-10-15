@@ -519,14 +519,18 @@ struct TableGridEdgeTests {
         #expect(h.host.string == "\n" + source)
     }
 
-    @Test func aCaretLandingAtADocumentEdgeFocusesACell() {
+    @Test func aCaretLandingAtTheEndOfADocumentTableFocusesACell() {
         let source = "| a |\n|---|\n| 1 |"
         let h = GridHarness(source)
-        h.host.setSelectedRange(NSRange(location: 0, length: 0))
-        #expect(h.grid.focusedCell?.row == 0)
-        h.window.makeFirstResponder(h.host)
         h.host.setSelectedRange(NSRange(location: (source as NSString).length, length: 0))
         #expect(h.grid.focusedCell?.row == 1)
+    }
+
+    @Test func aCaretAtTheStartOfADocumentTableStaysAboveIt() {
+        let h = GridHarness("| a |\n|---|\n| 1 |")
+        h.host.setSelectedRange(NSRange(location: 0, length: 0))
+        #expect(h.grid.focusedCell == nil)
+        #expect(h.host.selectedRange() == NSRange(location: 0, length: 0))
     }
 
     @Test func rightPastTheLastCellOfATableEndingTheDocumentAddsALine() {
@@ -713,6 +717,81 @@ struct TableGridWidthTests {
         let header = "| " + (0..<8).map { _ in word }.joined(separator: " | ") + " |"
         let h = GridHarness(header + "\n|" + String(repeating: "---|", count: 8) + "\n")
         #expect(h.grid.layout.size.width > 600)
+    }
+}
+
+@MainActor
+@Suite("Live table grid edit guard")
+struct TableGridEditGuardTests {
+    static let table = "| a | b |\n|---|---|\n| 1 | 2 |\n"
+
+    private func type(_ h: GridHarness, _ text: String, at range: NSRange = NSRange(location: NSNotFound, length: 0)) {
+        h.host.insertText(text, replacementRange: range)
+    }
+
+    @Test func typingAtTheStartOfALeadingTableGoesAboveIt() {
+        let h = GridHarness(Self.table + "after\n")
+        h.host.setSelectedRange(NSRange(location: 0, length: 0))
+        type(h, "abc")
+        #expect(h.host.string == "abc\n" + Self.table + "after\n")
+        #expect(h.host.selectedRange() == NSRange(location: 3, length: 0))
+        h.host.undoManager?.undo()
+        #expect(h.host.string == Self.table + "after\n")
+    }
+
+    @Test func returnAtTheStartAddsABlankLineAbove() {
+        let h = GridHarness(Self.table)
+        h.host.setSelectedRange(NSRange(location: 0, length: 0))
+        h.host.insertNewline(nil)
+        #expect(h.host.string == "\n" + Self.table)
+    }
+
+    @Test func forwardDeleteAtTheStartFocusesTheFirstCellAndChangesNothing() {
+        let h = GridHarness(Self.table)
+        h.host.setSelectedRange(NSRange(location: 0, length: 0))
+        h.host.deleteForward(nil)
+        #expect(h.host.string == Self.table)
+        #expect(h.grid.focusedCell?.row == 0 && h.grid.focusedCell?.column == 0)
+    }
+
+    @Test func anEditInsideTheSourceIsRefusedAndTheCellTakesTheKeyboard() {
+        let h = GridHarness("above\n\n" + Self.table)
+        let ns = h.host.string as NSString
+        let inside = ns.range(of: "| 1 | 2 |").location + 6
+        #expect(!h.host.shouldChangeText(in: NSRange(location: inside, length: 0), replacementString: "z"))
+        #expect(h.host.string == "above\n\n" + Self.table)
+        #expect(h.grid.focusedCell?.row == 1 && h.grid.focusedCell?.column == 1)
+    }
+
+    @Test func anEditOverlappingPartOfTheTableIsRefused() {
+        let h = GridHarness("above\n\n" + Self.table)
+        let start = (h.host.string as NSString).range(of: "| a").location
+        #expect(!h.host.shouldChangeText(in: NSRange(location: start - 3, length: 6), replacementString: ""))
+    }
+
+    @Test func deletingTheLineAboveAndTheWholeTableRemovesBoth() {
+        let source = "above\n" + Self.table + "after\n"
+        let h = GridHarness(source)
+        let end = (source as NSString).range(of: "| 1 | 2 |").upperBound
+        h.host.insertText("", replacementRange: NSRange(location: 0, length: end))
+        #expect(h.host.string == "\nafter\n")
+    }
+
+    @Test func anIndentedTableKeepsItsIndentationWhenTypedAtItsStart() {
+        let h = GridHarness("  | a |\n  |---|\n  | 1 |\n")
+        h.host.setSelectedRange(NSRange(location: 0, length: 0))
+        type(h, "x")
+        #expect(h.host.string == "  x\n  | a |\n  |---|\n  | 1 |\n")
+    }
+
+    @Test func takingTheKeyboardWithTheCaretInTheSourceFocusesItsCell() {
+        let h = GridHarness("above\n\n" + Self.table)
+        let inside = (h.host.string as NSString).range(of: "| 1 | 2 |").location + 2
+        h.coordinator.isRebuildingDocument = true   // the selection change doesn't run, as when a document opens
+        h.host.setSelectedRange(NSRange(location: inside, length: 0))
+        h.coordinator.isRebuildingDocument = false
+        #expect(h.window.makeFirstResponder(h.host))
+        #expect(h.grid.focusedCell?.row == 1 && h.grid.focusedCell?.column == 0)
     }
 }
 #endif
