@@ -91,6 +91,12 @@ final class LayoutBridge {
         return NSNotFound
     }
 
+    /// Lays out the document up to the end of `range`.
+    func ensureLayout(forCharacterRange range: NSRange) {
+        guard let textRange = textRange(for: range) else { return }
+        textLayoutManager.ensureLayout(for: textRange)
+    }
+
     func invalidateDisplay(forCharacterRange range: NSRange) {
         // In TextKit 2, invalidating layout also triggers redisplay.
         guard textRange(for: range) != nil else { return }

@@ -365,10 +365,13 @@ extension NativeTextViewCoordinator {
         if let completedTextMutation {
             onTextMutation?(completedTextMutation)
         }
+        onDisplayTextChange?(docString)
         PerfTrace.end()
     }
 
     func selectionDidChange(in tv: PlatformTextView) {
+        // Ta Da fork: a table cell's layout may follow its caret (a span's syntax shows or hides), once the restyle ran.
+        if let onSelectionChange { DispatchQueue.main.async(execute: onSelectionChange) }
         // Ta Da fork: forget auto-closed pairs the caret has left.
         if let native = tv as? NativeTextView, !native.autoPairs.isEmpty {
             native.autoPairs = MarkdownAutoPairs.keeping(native.autoPairs, selection: tv.currentSelectedRange)
@@ -389,6 +392,7 @@ extension NativeTextViewCoordinator {
         if isRebuildingDocument { return }
         // Ta Da fork: keep the slash menu's query in step with the caret, and the caret out of a drawn image.
         snapCaretOutOfImageEmbed(in: tv)
+        snapCaretOutOfTable(in: tv)
         updateSelectedImageEmbed(in: tv)
         #if os(macOS)
         (tv as? NativeTextView)?.hideImageSourceButton()

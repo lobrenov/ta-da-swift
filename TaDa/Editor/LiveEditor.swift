@@ -38,6 +38,7 @@ struct LiveEditor: View {
     @State private var slashMenu = SlashMenuController()
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
+    @State private var rightClickMenu = RightClickMenuController()
     @State private var linkMenu = LinkMenuController()
     @State private var tagMenu = TagMenuController()
     #else
@@ -89,7 +90,8 @@ struct LiveEditor: View {
             onTaskMarkerMenu: showCheckboxMenu,
             onCalloutMenu: showCalloutMenu,
             onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } },
-            onTagClick: onTagClick
+            onTagClick: onTagClick,
+            onRightClickMenu: showRightClickMenu
         )
         .focusedValue(\.editor, slashCommand)
         .onAppear { slashCommand.triggers = triggers }
@@ -100,6 +102,7 @@ struct LiveEditor: View {
             tagMenu.hide()
             checkboxMenu.hide()
             calloutMenu.hide()
+            rightClickMenu.hide()
         }
         #else
         NativeTextViewWrapper(
@@ -266,6 +269,16 @@ struct LiveEditor: View {
         )
     }
 
+    private func showRightClickMenu(_ request: RightClickMenuRequest) {
+        rightClickMenu.show(
+            request.sections.map { section in
+                section.map { RightClickMenuEntry(title: $0.title, systemImage: $0.symbolName, shortcut: $0.shortcut,
+                                                 isChecked: $0.isChecked, isDestructive: $0.isDestructive, action: $0.action) }
+            },
+            anchor: request.anchorRect, theme: theme, close: request.close
+        )
+    }
+
     /// A right-click on an image opens the embed menu; ⌘C, ⌘X and ⌘⌫ on a selected one copy, cut or delete it.
     private func handleImage(_ request: ImageEmbedRequest, model: AppModel) {
         guard let path = model.attachmentPath(forEmbed: request.name) else { return request.close() }
@@ -321,7 +334,8 @@ struct LiveEditor: View {
 
     private func showSlashMenu(_ state: SlashCommandState) {
         slashMenu.show(
-            query: state.query, atLineStart: state.isAtLineStart, anchor: state.anchorRect, theme: theme,
+            query: state.query, atLineStart: state.isAtLineStart, inTableCell: state.inTableCell,
+            anchor: state.anchorRect, theme: theme,
             pick: { [slashCommand] command in
                 let insertion = command.insertion(followsBlankLine: state.followsBlankLine)
                 slashCommand.insert(insertion.text, selecting: insertion.selection)
@@ -403,6 +417,8 @@ struct LiveEditor: View {
         config.imageEmbed.missingText = theme.muted.withAlphaComponent(0.6)
         #if os(macOS)
         config.imageEmbed.cornerRadius = 6
+        config.liveTables = true
+        config.tableAccent = theme.accent
         config.imageEmbed.selectionRing = theme.accent
         config.imageEmbed.sourceButton = .init(fill: theme.isDark ? theme.side : theme.bg, hoverFill: theme.surface,
                                                ring: theme.surface, tint: theme.fg, hoverTint: theme.accent)

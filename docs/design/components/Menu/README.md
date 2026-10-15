@@ -1,6 +1,6 @@
 # Menu
 
-A themed list of actions in a floating panel. Two densities share one look: the full menu for the slash, link, checkbox and callout menus in the editor, and the compact file menu for a right-clicked project or task.
+A themed list of actions in a floating panel. Two densities share one look: the full menu for the slash, link, checkbox and callout menus in the editor, and the compact file menu for a right-clicked project or task and the compact rightClickMenu.
 
 ## Anatomy
 
@@ -43,6 +43,13 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 
 - **Delete image** (the embed menu's Delete): a 500px sheet with a 64px thumbnail, “Delete “name”?”, what happens to the embeds, and the path and size in mono `muted`. Under an EMBEDDED IN label, each file that embeds it: its icon, title, project or area, a This file badge for the open file and the embed count when it's more than one. Then “Restore in Trash brings it back to every embed.”, Cancel and Delete (`danger`). On iPhone, a sheet ending in Move to Trash.
 - **Delete with attachments** (deleting files that embed images): a 540px sheet listing each file's images, under a header per file when there are several. Each row is a tick (a 16px rounded square; a 24px circle on iPhone), a thumbnail (34px; 44px on iPhone), the name and a note of the other files that embed it. An image another file still embeds starts unticked. A summary counts the files and ticked images; Cancel and Delete (`danger`), or Move to Trash in `deadline` on iPhone. Files without images ask with an alert, or not at all.
+
+## rightClickMenu
+
+- A compact menu in sections with a divider between, opened under what was right-clicked: on a table's row or column grip, which gets the 2px `accent` ring while it's open. Items have a title, an optional glyph, an optional shortcut hint on the right and a tick for the current choice. Later uses add items, not menus.
+- Row grip (the header's too): Insert above, Insert below, Delete row. Deleting the header makes the next row the header.
+- Column grip: Insert left, Insert right, Delete column, then Align left, Align centre, Align right (the current one ticked).
+- Deleting a table's last row or only column deletes the table.
 
 ## Callout menu
 

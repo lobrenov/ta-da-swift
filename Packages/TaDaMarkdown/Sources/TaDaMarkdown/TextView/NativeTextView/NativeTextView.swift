@@ -53,6 +53,9 @@ final class NativeTextView: NSTextView {
     var autoPairs: [AutoPair] = []
 
     override func shouldChangeText(inRanges affectedRanges: [NSValue], replacementStrings: [String]?) -> Bool {
+        // Ta Da fork: a live table's hidden source is edited through its cells (`+TableGrid`).
+        if affectedRanges.count == 1, let replacementStrings, replacementStrings.count == 1,
+           !allowsEdit(of: affectedRanges[0].rangeValue, replacement: replacementStrings[0]) { return false }
         let allowed = super.shouldChangeText(inRanges: affectedRanges, replacementStrings: replacementStrings)
         guard allowed, !autoPairs.isEmpty, let replacementStrings else { return allowed }
         if undoManager?.isUndoing == true || undoManager?.isRedoing == true {
@@ -96,6 +99,8 @@ final class NativeTextView: NSTextView {
     var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
     /// Ta Da fork: the title line location of the callout whose menu is open.
     var calloutMenuTarget: Int?
+    /// Ta Da fork: see ``NativeTextViewWrapper/onRightClickMenu``.
+    var onRightClickMenu: ((RightClickMenuRequest) -> Void)?
     /// Ta Da fork: see ``NativeTextViewWrapper/onImageEmbed``.
     var onImageEmbed: ((ImageEmbedRequest) -> Void)?
     /// Ta Da fork: see ``NativeTextViewWrapper/onTagClick``.
@@ -109,6 +114,20 @@ final class NativeTextView: NSTextView {
     var wideTableOverlays: [Int: WideTableOverlay] = [:]
     /// Persisted horizontal scroll offset per wide table; survives restyles.
     var tableHorizontalScrollOffsets: [Int: CGFloat] = [:]
+    /// Ta Da fork: each live grid's measured height by table ordinal, which the styler reserves (`+TableGrid`).
+    var tableGridHeights: [Int: CGFloat] = [:]
+    var isUpdatingTableGrids = false
+    /// Ta Da fork: a table edit is in progress, so its grid updates at once instead of on the next run-loop turn.
+    var isEditingTableText = false
+    /// Ta Da fork: a table cell's editor hides syntax like a read-only view until it has the keyboard.
+    var hidesSyntaxUnlessFocused = false
+    var hasEditingFocus = false
+    /// Ta Da fork: the table cell editor that has the keyboard (`+TableGrid`).
+    weak var focusedTableCell: TableCellEditor?
+    /// Ta Da fork: for a table cell's editor, the cell it is.
+    weak var tableCell: TableCellEditor?
+    /// Ta Da fork: the table edit whose typing the next typed edit in the same cell continues (`+TableGrid`).
+    var coalescingTableEdit: TableEdit?
 
     /// Ta Da fork: a right-click on a task box offers its markers; on a drawn image, goes to `onImageEmbed`. Checked before super,
     /// which moves the caret to the click — onto the box's line, revealing the raw `[ ]`.

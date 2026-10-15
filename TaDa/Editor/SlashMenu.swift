@@ -15,10 +15,11 @@ final class SlashMenuController {
     private var query = ""
 
     /// Shows the menu under `anchor` (the `/`, in screen coordinates), or refreshes it.
-    func show(query: String, atLineStart: Bool, anchor: CGRect, theme: Theme,
+    func show(query: String, atLineStart: Bool, inTableCell: Bool = false, anchor: CGRect, theme: Theme,
               pick: @escaping (SlashCommand) -> Void, dismiss: @escaping () -> Void) {
         guard anchor != .zero, let parent = NSApp.keyWindow else { return }
-        let commands = SlashCommand.matching(query, atLineStart: atLineStart)
+        // A table cell takes neither a table nor an image.
+        let commands = SlashCommand.matching(query, atLineStart: atLineStart).filter { !inTableCell || ($0 != .table && $0 != .image) }
         let highlight = commands != self.commands || query != self.query ? 0 : menu.highlight
         self.commands = commands
         self.query = query

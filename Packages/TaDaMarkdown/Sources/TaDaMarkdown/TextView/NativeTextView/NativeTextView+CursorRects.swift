@@ -15,6 +15,8 @@ extension NativeTextView {
     override func mouseMoved(with event: NSEvent) {
         // Ta Da fork: the `</>` button over a hovered image.
         if isEditable { updateImageSourceButton(for: event) }
+        // Ta Da fork: a live table's grips show on hover, with an open hand over the grip.
+        if updateTableGridHover(for: event) { return }
         if isInCursorExclusionZone(event) {
             // Editable+excluded = a panel over the editor (#81): own the arrow.
             // Read-only+excluded = a full-window overlay (search/transfer) owns

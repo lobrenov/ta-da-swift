@@ -103,6 +103,11 @@ public struct MarkdownEditorConfiguration: Sendable {
     public var callouts: CalloutStyle? = nil
     /// Ta Da fork: reads `#tags` and draws them as bubbles. nil keeps them plain text.
     public var tags: TagStyle? = nil
+    /// Ta Da fork: on the Mac, a table is a live grid of cell editors over its source (`TableGridView`), and the caret
+    /// never enters its source lines. Off keeps the rendered image and the revealed source.
+    public var liveTables: Bool = false
+    /// Ta Da fork: the colour of a live table's selected row or column ring and its drop line; `theme.link` when nil.
+    public var tableAccent: PlatformColor? = nil
     /// Ta Da fork: callouts folded or opened on screen, by title line, overriding the file's `+` or `-`.
     var calloutFoldOverrides: [String: Bool] = [:]
 

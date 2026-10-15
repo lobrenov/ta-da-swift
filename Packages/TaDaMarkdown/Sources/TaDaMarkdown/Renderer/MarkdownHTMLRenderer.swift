@@ -221,11 +221,16 @@ public enum MarkdownHTMLRenderer {
         guard let parsed = MarkdownStyler.parseTableSource(raw) else {
             return "<pre>\(escape(raw.trimmingCharacters(in: .newlines)))</pre>"
         }
-        let head = parsed.header.map { "<th>\(escape($0))</th>" }.joined()
+        let head = parsed.header.map { "<th>\(cellHTML($0))</th>" }.joined()
         let body = parsed.rows.map { row in
-            "<tr>" + row.map { "<td>\(escape($0))</td>" }.joined() + "</tr>"
+            "<tr>" + row.map { "<td>\(cellHTML($0))</td>" }.joined() + "</tr>"
         }.joined()
         return "<table><thead><tr>\(head)</tr></thead><tbody>\(body)</tbody></table>"
+    }
+
+    /// Ta Da fork: a cell's line breaks (`<br>` in the file) stay line breaks.
+    private static func cellHTML(_ cell: String) -> String {
+        escape(cell).replacingOccurrences(of: "\n", with: "<br>")
     }
 
     // MARK: - Inlines

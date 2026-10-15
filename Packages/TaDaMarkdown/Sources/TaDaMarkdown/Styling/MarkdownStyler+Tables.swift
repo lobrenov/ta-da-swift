@@ -17,18 +17,6 @@ import Foundation
 
 extension MarkdownStyler {
 
-    enum TableAlignment {
-        case left
-        case center
-        case right
-    }
-
-    struct ParsedTable {
-        let header: [String]
-        let alignments: [TableAlignment]
-        let rows: [[String]]
-    }
-
     /// Rendered-table image cache. A table's pixels depend only on its source,
     /// font, colors, and appearance — so identical keys can reuse the PlatformImage
     /// instead of re-rendering every inactive table on every keystroke.
@@ -108,10 +96,10 @@ extension MarkdownStyler {
     /// every table re-parses+re-hashes every keystroke.
     private static let tableMetaCap = 8192
     private static let tableMetaLock = NSLock()
-    private static var tableMetaCache: [String: (parsed: ParsedTable?, hash: Int)] = [:]
+    private static var tableMetaCache: [String: (parsed: MarkdownTable?, hash: Int)] = [:]
     private static var tableMetaOrder: [String] = []
 
-    static func tableMeta(for source: String) -> (parsed: ParsedTable?, hash: Int) {
+    static func tableMeta(for source: String) -> (parsed: MarkdownTable?, hash: Int) {
         tableMetaLock.lock()
         if let cached = tableMetaCache[source] {
             tableMetaLock.unlock()
@@ -139,7 +127,7 @@ extension MarkdownStyler {
     /// it is part of the cache key because the layout depends on it.
     static func tableImage(
         for source: String,
-        parsed: ParsedTable,
+        parsed: MarkdownTable,
         ctx: StylingContext,
         appearance: PlatformAppearance,
         availableWidth: CGFloat
@@ -195,8 +183,17 @@ extension MarkdownStyler {
         }
         var skippedCount = 0
         var metaNanos: UInt64 = 0
-        for (idx, token) in tableIndexed {
+        for (ordinal, (idx, token)) in tableIndexed.enumerated() {
             tableCount += 1
+            #if os(macOS)
+            // Ta Da fork: the live grid draws the table over its hidden source; the caret never reveals it.
+            if ctx.configuration.liveTables {
+                if ctx.outsideScope(token.range) { continue }
+                attrs.append((token.range, [.spellingState: 0]))
+                appendTableGrid(ordinal: ordinal, token: token, ctx: ctx, attrs: &attrs)
+                continue
+            }
+            #endif
             if !ctx.activeTokenIndices.contains(idx),
                !neededLengths.contains(token.range.length) {
                 skippedCount += 1
@@ -296,78 +293,50 @@ extension MarkdownStyler {
         return attrs
     }
 
+    #if os(macOS)
+    /// Ta Da fork: reserves the live grid's space on the table's first line, which the grid sits over. The height is the
+    /// grid's last measured one for this table (`NativeTextView.tableGridHeights`), else the layout's estimate.
+    private static func appendTableGrid(
+        ordinal: Int, token: MarkdownToken, ctx: StylingContext, attrs: inout [StyledRange]
+    ) {
+        let source = ctx.nsText.substring(with: token.range)
+        guard let parsed = tableMeta(for: source).parsed else { return }
+        let containerWidth = effectiveContainerWidth(for: ctx)
+        let layout = tableLayout(
+            parsed, baseFont: ctx.baseFont, theme: ctx.configuration.theme,
+            codeBackgroundColor: ctx.codeBackgroundColor, latex: ctx.services.latex,
+            availableWidth: containerWidth, extensions: ctx.configuration.extensions
+        ).layout
+        let host = ctx.layoutBridge?.firstTextContainer?.textView as? NativeTextView
+        // A measured height is the whole reservation, scroller strip included.
+        let measured = host?.tableGridHeights[ordinal]
+        let height = measured ?? layout.size.height
+        let isWide = measured == nil && layout.size.width - containerWidth > max(layout.size.width.ulp, containerWidth.ulp) * 8
+        let bounds = CGRect(x: 0, y: 0, width: layout.size.width, height: height)
+        _ = appendRenderedStandaloneBlock(
+            for: token,
+            rawContent: source,
+            image: NSImage(size: bounds.size),
+            imageBounds: bounds,
+            paragraphSpacingBefore: ctx.baseDefaultLineHeight * 0.5,
+            paragraphSpacing: ctx.baseDefaultLineHeight * 0.5,
+            alignment: .left,
+            mode: .collapsedSourceScrollable(
+                markerTexts: [], displayWidth: containerWidth, sourceID: ordinal,
+                scrollerStrip: isWide ? MarkdownTextLayoutFragment.scrollableBlockScrollerStrip : 0
+            ),
+            restyleOnWidthChange: true,
+            ctx: ctx,
+            attrs: &attrs
+        )
+    }
+    #endif
+
     // MARK: - Parsing
 
-    static func parseTableSource(_ source: String) -> ParsedTable? {
-        let rawLines = source.components(separatedBy: CharacterSet.newlines)
-        let lines = rawLines.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-        guard lines.count >= 2 else { return nil }
-
-        let header = parseTableRow(lines[0])
-        let alignments = parseTableAlignments(lines[1])
-        guard !header.isEmpty, !alignments.isEmpty else { return nil }
-
-        let columnCount = max(header.count, alignments.count)
-        let bodyLines = Array(lines.dropFirst(2))
-
-        func pad<T>(_ array: [T], to count: Int, with fill: T) -> [T] {
-            if array.count == count { return array }
-            if array.count > count { return Array(array.prefix(count)) }
-            return array + Array(repeating: fill, count: count - array.count)
-        }
-
-        let paddedHeader = pad(header, to: columnCount, with: "")
-        let paddedAlign = pad(alignments, to: columnCount, with: .left)
-        let rows = bodyLines.map { pad(parseTableRow($0), to: columnCount, with: "") }
-
-        return ParsedTable(header: paddedHeader, alignments: paddedAlign, rows: rows)
-    }
-
-    /// Splits on UNESCAPED `|` only. GFM escapes the delimiter as `\\|`, and
-    /// the escape wins over every inline context (a table row is split before
-    /// inline parsing runs) — so a cell holding `` `a \\| b` `` is one cell, not
-    /// two. Splitting on the raw character silently truncated such a row to the
-    /// header's column count.
-    private static func parseTableRow(_ line: String) -> [String] {
-        var s = Substring(line.trimmingCharacters(in: .whitespaces))
-        if s.hasPrefix("|") { s = s.dropFirst() }
-        if s.hasSuffix("|"), !s.dropLast().hasSuffix("\\") { s = s.dropLast() }
-
-        var cells: [String] = []
-        var current = ""
-        var escaped = false
-        for ch in s {
-            if escaped {
-                // Only the delimiter escape is resolved here; every other `\x`
-                // stays intact so inline parsing still owns its own escapes.
-                if ch == "|" { current.append("|") } else { current.append("\\"); current.append(ch) }
-                escaped = false
-            } else if ch == "\\" {
-                escaped = true
-            } else if ch == "|" {
-                cells.append(current.trimmingCharacters(in: .whitespaces))
-                current = ""
-            } else {
-                current.append(ch)
-            }
-        }
-        if escaped { current.append("\\") }
-        cells.append(current.trimmingCharacters(in: .whitespaces))
-        return cells
-    }
-
-    private static func parseTableAlignments(_ line: String) -> [TableAlignment] {
-        let cells = parseTableRow(line)
-        return cells.map { cell in
-            let trimmed = cell.trimmingCharacters(in: .whitespaces)
-            let leading = trimmed.hasPrefix(":")
-            let trailing = trimmed.hasSuffix(":")
-            switch (leading, trailing) {
-            case (true, true): return .center
-            case (false, true): return .right
-            default: return .left
-            }
-        }
+    /// Ta Da fork: parsing lives in `MarkdownTable`.
+    static func parseTableSource(_ source: String) -> MarkdownTable? {
+        MarkdownTable.parse(source)
     }
 
     // MARK: - Inline-formatted cell strings
@@ -511,25 +480,65 @@ extension MarkdownStyler {
 
     // MARK: - Rendering
 
-    private static func renderTable(
-        _ table: ParsedTable,
+    /// Ta Da fork: a table's geometry, shared by the rendered image and the live grid.
+    struct TableLayout {
+        static let cellHPadding: CGFloat = 12
+        static let cellVPadding: CGFloat = 6
+        static let borderWidth: CGFloat = 1
+
+        let columnWidths: [CGFloat]
+        let rowContentHeights: [CGFloat]
+        let columnLeft: [CGFloat]
+        let rowTop: [CGFloat]
+        let size: CGSize
+
+        init(columnWidths: [CGFloat], rowContentHeights: [CGFloat]) {
+            let (hPad, vPad, border) = (Self.cellHPadding, Self.cellVPadding, Self.borderWidth)
+            let columnCount = columnWidths.count
+            let rowCount = rowContentHeights.count
+            self.columnWidths = columnWidths
+            self.rowContentHeights = rowContentHeights
+            size = CGSize(
+                width: columnWidths.reduce(0, +) + CGFloat(columnCount) * 2 * hPad + CGFloat(columnCount + 1) * border,
+                height: rowContentHeights.reduce(0) { $0 + $1 + 2 * vPad } + CGFloat(rowCount + 1) * border
+            )
+            // Top-down coordinates; drawing runs flipped.
+            var columnLeft = [CGFloat](repeating: 0, count: columnCount + 1)
+            columnLeft[0] = border
+            for i in 0..<columnCount {
+                columnLeft[i + 1] = columnLeft[i] + columnWidths[i] + 2 * hPad + border
+            }
+            var rowTop = [CGFloat](repeating: 0, count: rowCount + 1)
+            rowTop[0] = border
+            for i in 0..<rowCount {
+                rowTop[i + 1] = rowTop[i] + rowContentHeights[i] + 2 * vPad + border
+            }
+            self.columnLeft = columnLeft
+            self.rowTop = rowTop
+        }
+    }
+
+    /// Ta Da fork: a live grid's own measures of its cells, which replace the inline estimates: a cell's width on one
+    /// line (list indents, boxes and bubbles included) and its content height at a width, by row (the header is 0).
+    struct LiveCellMetrics {
+        var natural: (_ row: Int, _ column: Int) -> CGFloat
+        var height: (_ row: Int, _ column: Int, _ width: CGFloat) -> CGFloat
+    }
+
+    /// The layout of `table` within `availableWidth`, and its formatted cells (header first, then the body rows).
+    static func tableLayout(
+        _ table: MarkdownTable,
         baseFont: PlatformFont,
         theme: MarkdownEditorTheme,
         codeBackgroundColor: PlatformColor,
         latex: any LatexRenderer,
-        appearance: PlatformAppearance,
         availableWidth: CGFloat,
-        extensions: [any MarkdownExtension] = []
-    ) -> PlatformImage {
+        extensions: [any MarkdownExtension] = [],
+        live: LiveCellMetrics? = nil
+    ) -> (layout: TableLayout, header: [NSAttributedString], body: [[NSAttributedString]]) {
         let columnCount = table.alignments.count
-        let cellHPadding: CGFloat = 12
-        let cellVPadding: CGFloat = 6
-        let borderWidth: CGFloat = 1
-        // Resolve under the real appearance: `.withAlphaComponent()` freezes a dynamic color otherwise.
-        func mutedColor(alpha: CGFloat) -> PlatformColor {
-            theme.mutedText.resolved(under: appearance).withAlphaComponent(alpha)
-        }
-        let borderColor = mutedColor(alpha: 0.5)
+        let cellHPadding = TableLayout.cellHPadding
+        let borderWidth = TableLayout.borderWidth
         let baseLineHeight: CGFloat = ceil(baseFont.ascender - baseFont.descender + baseFont.leading)
         let minColumnContentWidth: CGFloat = 16
 
@@ -591,16 +600,24 @@ extension MarkdownStyler {
                 context: nil
             ).width)
         }
-        func considerCell(_ cell: NSAttributedString, col: Int) {
-            maxWidths[col] = max(maxWidths[col], naturalWidth(cell))
-            minWidths[col] = max(minWidths[col], widestUnbreakableSegment(cell))
+        func considerCell(_ cell: NSAttributedString, row: Int, col: Int) {
+            let inline = naturalWidth(cell)
+            guard let live else {
+                maxWidths[col] = max(maxWidths[col], inline)
+                minWidths[col] = max(minWidths[col], widestUnbreakableSegment(cell))
+                return
+            }
+            // The cell's real width on one line; what it adds to the inline text (a list's indent) is in its minimum too.
+            let real = live.natural(row, col)
+            maxWidths[col] = max(maxWidths[col], real)
+            minWidths[col] = max(minWidths[col], min(real, widestUnbreakableSegment(cell) + max(0, real - inline)))
         }
         for (i, cell) in headerCells.enumerated() where i < columnCount {
-            considerCell(cell, col: i)
+            considerCell(cell, row: 0, col: i)
         }
-        for row in bodyCells {
+        for (r, row) in bodyCells.enumerated() {
             for (i, cell) in row.enumerated() where i < columnCount {
-                considerCell(cell, col: i)
+                considerCell(cell, row: r + 1, col: i)
             }
         }
 
@@ -621,6 +638,22 @@ extension MarkdownStyler {
         if contentAvailable > 0, sumMax > contentAvailable {
             if sumMin >= contentAvailable {
                 columnWidths = minWidths
+            } else if live != nil {
+                // Columns share the width in proportion to their natural widths, none below its minimum.
+                var fixed = Set<Int>()
+                var shared = maxWidths
+                while true {
+                    let free = (0..<columnCount).filter { !fixed.contains($0) }
+                    let remaining = contentAvailable - fixed.reduce(0) { $0 + minWidths[$1] }
+                    let scale = remaining / free.reduce(0) { $0 + maxWidths[$1] }
+                    let tooSmall = free.filter { maxWidths[$0] * scale < minWidths[$0] }
+                    if tooSmall.isEmpty {
+                        for i in free { shared[i] = maxWidths[i] * scale }
+                        break
+                    }
+                    tooSmall.forEach { fixed.insert($0); shared[$0] = minWidths[$0] }
+                }
+                columnWidths = shared
             } else {
                 let extra = contentAvailable - sumMin
                 let totalStretch = sumMax - sumMin
@@ -631,7 +664,8 @@ extension MarkdownStyler {
         }
 
         // Per-row heights: each row is as tall as its tallest (wrapped) cell.
-        func cellHeight(_ cell: NSAttributedString, col: Int) -> CGFloat {
+        func cellHeight(_ cell: NSAttributedString, row: Int, col: Int) -> CGFloat {
+            if let live { return live.height(row, col, columnWidths[col]) }
             let bounds = cell.boundingRect(
                 with: CGSize(width: columnWidths[col], height: .greatestFiniteMagnitude),
                 options: [.usesLineFragmentOrigin],
@@ -642,33 +676,42 @@ extension MarkdownStyler {
         let rowCount = 1 + table.rows.count // header + body rows
         var rowContentHeights = [CGFloat](repeating: baseLineHeight, count: rowCount)
         for (i, cell) in headerCells.enumerated() where i < columnCount {
-            rowContentHeights[0] = max(rowContentHeights[0], cellHeight(cell, col: i))
+            rowContentHeights[0] = max(rowContentHeights[0], cellHeight(cell, row: 0, col: i))
         }
         for (rowIdx, row) in bodyCells.enumerated() {
             for (i, cell) in row.enumerated() where i < columnCount {
-                rowContentHeights[rowIdx + 1] = max(rowContentHeights[rowIdx + 1], cellHeight(cell, col: i))
+                rowContentHeights[rowIdx + 1] = max(rowContentHeights[rowIdx + 1], cellHeight(cell, row: rowIdx + 1, col: i))
             }
         }
 
-        let totalWidth = columnWidths.reduce(0, +)
-            + CGFloat(columnCount) * 2 * cellHPadding
-            + CGFloat(columnCount + 1) * borderWidth
-        let totalHeight = rowContentHeights.reduce(0) { $0 + $1 + 2 * cellVPadding }
-            + CGFloat(rowCount + 1) * borderWidth
+        return (TableLayout(columnWidths: columnWidths, rowContentHeights: rowContentHeights), headerCells, bodyCells)
+    }
 
-        let size = CGSize(width: totalWidth, height: totalHeight)
-
-        // Pre-compute layout offsets (top-down coords; drawing runs flipped).
-        var columnLeft = [CGFloat](repeating: 0, count: columnCount + 1)
-        columnLeft[0] = borderWidth
-        for i in 0..<columnCount {
-            columnLeft[i + 1] = columnLeft[i] + columnWidths[i] + 2 * cellHPadding + borderWidth
+    private static func renderTable(
+        _ table: MarkdownTable,
+        baseFont: PlatformFont,
+        theme: MarkdownEditorTheme,
+        codeBackgroundColor: PlatformColor,
+        latex: any LatexRenderer,
+        appearance: PlatformAppearance,
+        availableWidth: CGFloat,
+        extensions: [any MarkdownExtension] = []
+    ) -> PlatformImage {
+        let columnCount = table.alignments.count
+        let cellHPadding = TableLayout.cellHPadding
+        let cellVPadding = TableLayout.cellVPadding
+        let borderWidth = TableLayout.borderWidth
+        // Resolve under the real appearance: `.withAlphaComponent()` freezes a dynamic color otherwise.
+        func mutedColor(alpha: CGFloat) -> PlatformColor {
+            theme.mutedText.resolved(under: appearance).withAlphaComponent(alpha)
         }
-        var rowTop = [CGFloat](repeating: 0, count: rowCount + 1)
-        rowTop[0] = borderWidth
-        for i in 0..<rowCount {
-            rowTop[i + 1] = rowTop[i] + rowContentHeights[i] + 2 * cellVPadding + borderWidth
-        }
+        let borderColor = mutedColor(alpha: 0.5)
+        let (layout, headerCells, bodyCells) = tableLayout(
+            table, baseFont: baseFont, theme: theme, codeBackgroundColor: codeBackgroundColor,
+            latex: latex, availableWidth: availableWidth, extensions: extensions
+        )
+        let (size, columnLeft, rowTop, rowContentHeights) = (layout.size, layout.columnLeft, layout.rowTop, layout.rowContentHeights)
+        let rowCount = layout.rowContentHeights.count
 
         let alignments = table.alignments
         let headerFill = mutedColor(alpha: 0.08)
@@ -719,7 +762,7 @@ extension MarkdownStyler {
                 // measured above (long words fall back to character breaks).
                 let paragraph = NSMutableParagraphStyle()
                 switch alignments[col] {
-                case .left:   paragraph.alignment = .left
+                case .left, .none: paragraph.alignment = .left
                 case .center: paragraph.alignment = .center
                 case .right:  paragraph.alignment = .right
                 }

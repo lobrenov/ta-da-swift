@@ -71,6 +71,7 @@ Bring the project instruction files in line with how I actually work now.
   The other reference markers (`[?] [!] [*] ["] [l] [b] [i] [S] [I] [p] [c] [f] [k] [w] [u] [d]`) are icons only. They render as checkboxes but aren't subtasks.
 - **Links**: `[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]` and `[[folder/Title]]` resolve to the file with that title, case-insensitively: a task, project or area first, then a note, then a logged file. Body links are links only; they never set a parent.
 - **Embeds**: the same with a leading `!`, e.g. `![[front.jpg]]` or `![[front.jpg|300]]`. Embeds aren't links, so they aren't backlinks. An embed whose target ends in an image extension (`avif bmp gif heic jpeg jpg png svg tif tiff webp`, any case) shows that attachment.
+- **Tables**: GFM pipe tables. When Ta Da edits one it rewrites the table's lines only, with the columns padded to line up (`| a   | b |`), each column's alignment marker (`:---`, `:---:`, `---:`) kept and an indented table's indentation kept. A line break in a cell is `<br>`, and a `|` in a cell is `\|` (backslashes before a pipe are doubled).
 
 ## Tags
 

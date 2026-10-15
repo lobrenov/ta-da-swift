@@ -23,7 +23,8 @@ extension NativeTextViewCoordinator: NSTextViewDelegate {
     /// Returning the *same* instance for a given document on every call is
     /// required — a fresh manager per call breaks undo.
     public func undoManager(for view: NSTextView) -> UndoManager? {
-        undoManager(forDocument: documentId)
+        if let shared = undoManagerOverride?() { return shared }
+        return undoManager(forDocument: documentId)
     }
 
     /// Ta Da fork: on macOS 27 a TextKit 2 NSTextView doesn't post NSTextDidChangeNotification for
@@ -54,7 +55,12 @@ extension NativeTextViewCoordinator: NSTextViewDelegate {
             configuration: configuration
         )
         var result = newTypingAttributes
-        result[.paragraphStyle] = baseParagraphStyle
+        if let alignment = paragraphAlignment, let aligned = baseParagraphStyle.mutableCopy() as? NSMutableParagraphStyle {
+            aligned.alignment = alignment
+            result[.paragraphStyle] = aligned
+        } else {
+            result[.paragraphStyle] = baseParagraphStyle
+        }
         result[.font] = baseFont
         result[.foregroundColor] = configuration.theme.bodyText
         return result
@@ -79,6 +85,9 @@ extension NativeTextViewCoordinator: NSTextViewDelegate {
         if configuration.rawSourceMode { return false }
         // Ta Da fork: ↑/↓/↵/⇥/esc drive an open slash menu.
         if handleSlashCommandKey(commandSelector) { return true }
+        // Ta Da fork: a table cell's keys.
+        if let native = textView as? NativeTextView, let cell = native.tableCell, let grid = cell.grid,
+           grid.handleCommand(commandSelector, from: cell) { return true }
         if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
             return handleBacktab(textView)
         }
@@ -95,6 +104,9 @@ extension NativeTextViewCoordinator: NSTextViewDelegate {
             }
             if let key, handler(key) { return true }
         }
+        // Ta Da fork: ↓ or ↑ from the line beside a table enters it.
+        if configuration.liveTables, let native = textView as? NativeTextView, native.tableCell == nil,
+           native.enterTable(from: commandSelector) { return true }
         return false
     }
 

@@ -155,6 +155,7 @@ extension NativeTextViewCoordinator {
         textView.optionalTextStorage?.beginEditing()
         textView.optionalTextStorage?.setAttributedString(built)
         textView.optionalTextStorage?.endEditing()
+        applyParagraphAlignment(to: textView)
 
 
         textView.typingAttributes = TextStylingService.makeBaseTypingAttributes(
@@ -200,6 +201,19 @@ extension NativeTextViewCoordinator {
             nativeTextView.updateWideTableOverlays()
         }
         #endif
+    }
+
+    /// Ta Da fork: sets a table cell's column alignment on every paragraph (the styler's paragraph styles are left-aligned).
+    func applyParagraphAlignment(to textView: PlatformTextView) {
+        guard let alignment = paragraphAlignment, let storage = textView.optionalTextStorage, storage.length > 0 else { return }
+        storage.beginEditing()
+        storage.enumerateAttribute(.paragraphStyle, in: NSRange(location: 0, length: storage.length)) { value, range, _ in
+            let style = (value as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+            guard style.alignment != alignment else { return }
+            style.alignment = alignment
+            storage.addAttribute(.paragraphStyle, value: style, range: range)
+        }
+        storage.endEditing()
     }
 
     @discardableResult
@@ -251,6 +265,7 @@ extension NativeTextViewCoordinator {
             content: content,
             configuration: configuration
         )
+        applyParagraphAlignment(to: textView)
         // Width-specific callers already have the exact new wide-table anchor
         // set and reconcile it after the one full height layout. Ordinary
         // styling still uses the coalesced storage-discovery path.

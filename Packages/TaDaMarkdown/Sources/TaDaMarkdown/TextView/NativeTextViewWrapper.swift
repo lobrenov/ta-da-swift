@@ -149,6 +149,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
     public var onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)?
     /// Ta Da fork: a right-click on a callout's title line. Without it, the line gets the standard menu.
     public var onCalloutMenu: ((CalloutMenuRequest) -> Void)?
+    /// Ta Da fork: a right-click on a live table's row or column grip, with the menu's items. The embedder draws the menu.
+    public var onRightClickMenu: ((RightClickMenuRequest) -> Void)?
     /// Ta Da fork: with `imageEmbed.selectionRing` set, a right-click on a drawn image (`.menu`), or ⌘C, ⌘X or ⌘⌫
     /// while one is selected. The embedder copies the image, shows its menu, and so on; a cut calls `remove`.
     public var onImageEmbed: ((ImageEmbedRequest) -> Void)?
@@ -192,7 +194,8 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         onTaskMarkerMenu: ((TaskMarkerMenuRequest) -> Void)? = nil,
         onCalloutMenu: ((CalloutMenuRequest) -> Void)? = nil,
         onImageEmbed: ((ImageEmbedRequest) -> Void)? = nil,
-        onTagClick: ((String) -> Void)? = nil
+        onTagClick: ((String) -> Void)? = nil,
+        onRightClickMenu: ((RightClickMenuRequest) -> Void)? = nil
     ) {
         self._text = text
         self._isWikiLinkActive = isWikiLinkActive
@@ -226,6 +229,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         self.onCalloutMenu = onCalloutMenu
         self.onImageEmbed = onImageEmbed
         self.onTagClick = onTagClick
+        self.onRightClickMenu = onRightClickMenu
     }
 
     public func sizeThatFits(
@@ -444,6 +448,7 @@ public struct NativeTextViewWrapper: NSViewRepresentable {
         textView.onCalloutMenu = onCalloutMenu
         textView.onImageEmbed = onImageEmbed
         textView.onTagClick = onTagClick
+        textView.onRightClickMenu = onRightClickMenu
         reconcileHeader(textView: textView, context: context)
 
         let isNodeSwitch = context.coordinator.documentId != documentId
