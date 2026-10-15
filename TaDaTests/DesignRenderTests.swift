@@ -88,6 +88,16 @@ struct DesignRenderTests {
         try await render(tags, to: output.appending(path: "tag-task.png"))
         tags.domain = .area("areas/Home.md")
         try await render(tags, to: output.appending(path: "tag-area.png"))
+        // Group and Filter: Loose tasks by Status, filtered to one tag.
+        tags.domain = .loose
+        tags.setGrouping(.status, of: .loose)
+        tags.toggleFilterTag("errands", on: .loose)
+        try await render(tags, to: output.appending(path: "group-loose-filtered.png"))
+        tags.clearTagFilter(on: .loose)
+        tags.domain = .area("areas/Home.md")
+        tags.toggleFilterTag("home/garden", on: .area("areas/Home.md"))
+        try await render(tags, to: output.appending(path: "group-area-filtered.png"))
+        tags.clearTagFilter(on: .area("areas/Home.md"))
         tags.domain = .tag("errands")
         tags.selection = "tasks/Message Max.md"
         try await render(tags, to: output.appending(path: "tag-browser.png"))

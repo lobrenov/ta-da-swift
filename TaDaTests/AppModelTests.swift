@@ -249,6 +249,42 @@ struct AppModelTests {
         #expect(!model.isFolded("Completed", in: "projects/Ta Da 1.0.md"))
     }
 
+    @Test func groupingsAreKeptPerListAndSurviveARelaunch() async {
+        let model = await folder.model()
+        #expect(model.grouping(of: .today) == .project && model.grouping(of: .loose) == .status && model.grouping(of: .project) == .open)
+        model.setGrouping(.date, of: .project)
+        model.setGrouping(.open, of: .today)
+        let relaunched = AppModel(defaults: folder.defaults)
+        #expect(relaunched.grouping(of: .project) == .date && relaunched.grouping(of: .today) == .open)
+        #expect(relaunched.grouping(of: .loose) == .status)
+        model.setGrouping(.date, of: .today)
+        #expect(model.grouping(of: .today) == .project, "a choice the list doesn't offer falls back to its default")
+    }
+
+    @Test func doneAndDatesCompletedStartFolded() async {
+        let model = await folder.model()
+        let done = ListSection(kind: .status(.done), tasks: []), completed = ListSection(kind: .completed, tasks: [])
+        #expect(model.isFolded(done, by: .status, in: GroupedList.loose.foldKey))
+        #expect(model.isFolded(completed, by: .date, in: "projects/Ta Da MVP.md"))
+        #expect(!model.isFolded(completed, by: .open, in: "projects/Ta Da MVP.md"))
+        model.toggleFolded(done, by: .status, in: GroupedList.loose.foldKey)
+        #expect(!model.isFolded(done, by: .status, in: GroupedList.loose.foldKey))
+    }
+
+    @Test func tagFiltersArePerPageAndFollowARename() async {
+        let model = await folder.model()
+        model.toggleFilterTag("bug", on: .project("projects/Ta Da MVP.md"))
+        model.toggleFilterTag("dev", on: .project("projects/Ta Da MVP.md"))
+        #expect(model.tagFilter(on: .project("projects/Ta Da MVP.md")).picked == ["bug", "dev"])
+        #expect(!model.tagFilter(on: .today).isActive)
+        await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
+        #expect(model.tagFilter(on: .project("projects/Ta Da 1.0.md")).picked == ["bug", "dev"])
+        model.toggleFilterTag("bug", on: .project("projects/Ta Da 1.0.md"))
+        #expect(model.tagFilter(on: .project("projects/Ta Da 1.0.md")).picked == ["dev"])
+        model.clearTagFilter(on: .project("projects/Ta Da 1.0.md"))
+        #expect(!model.tagFilter(on: .project("projects/Ta Da 1.0.md")).isActive)
+    }
+
     @Test func deletingTheSelectedTaskSelectsTheNextOne() async {
         let model = await folder.model()
         model.show(.loose)

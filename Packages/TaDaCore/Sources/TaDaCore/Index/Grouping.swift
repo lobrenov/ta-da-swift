@@ -33,6 +33,11 @@ public struct ListSection: Hashable, Sendable, Identifiable {
     public var kind: Kind
     public var tasks: [Item]
 
+    public init(kind: Kind, tasks: [Item]) {
+        self.kind = kind
+        self.tasks = tasks
+    }
+
     public var title: String {
         switch kind {
         case .status(let status): status.rawValue
