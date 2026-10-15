@@ -93,6 +93,8 @@ public final class NativeTextViewCoordinator: NSObject {
     var onDisplayTextChange: ((String) -> Void)?
     var undoManagerOverride: (() -> UndoManager?)?
     var onSelectionChange: (() -> Void)?
+    /// Ta Da fork: a table cell's column alignment, applied to every paragraph after each styling.
+    var paragraphAlignment: NSTextAlignment?
     #if os(macOS)
     /// Embedder hook to build the right-click menu (the engine ships none). Gets the
     /// default menu + current selection range, returns the menu to show.

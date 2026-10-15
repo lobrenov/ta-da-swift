@@ -55,7 +55,12 @@ extension NativeTextViewCoordinator: NSTextViewDelegate {
             configuration: configuration
         )
         var result = newTypingAttributes
-        result[.paragraphStyle] = baseParagraphStyle
+        if let alignment = paragraphAlignment, let aligned = baseParagraphStyle.mutableCopy() as? NSMutableParagraphStyle {
+            aligned.alignment = alignment
+            result[.paragraphStyle] = aligned
+        } else {
+            result[.paragraphStyle] = baseParagraphStyle
+        }
         result[.font] = baseFont
         result[.foregroundColor] = configuration.theme.bodyText
         return result

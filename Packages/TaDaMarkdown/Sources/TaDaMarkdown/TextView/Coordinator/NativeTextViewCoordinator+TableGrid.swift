@@ -20,7 +20,8 @@ extension NativeTextViewCoordinator {
     func snapCaretOutOfTable(in textView: PlatformTextView) {
         #if os(macOS)
         let selection = textView.currentSelectedRange
-        guard configuration.liveTables, let native = textView as? NativeTextView, !native.hidesSyntaxUnlessFocused else { return }
+        guard configuration.liveTables, let native = textView as? NativeTextView, !native.hidesSyntaxUnlessFocused,
+              !native.isEditingTableText, native.focusedTableCell == nil else { return }
         let tokens = parsedDocument(for: textView.string).tableTokens
         guard let ordinal = tokens.firstIndex(where: {
             selection.location >= $0.range.location && NSMaxRange(selection) <= NSMaxRange($0.range)

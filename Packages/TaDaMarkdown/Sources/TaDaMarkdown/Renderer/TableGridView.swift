@@ -142,6 +142,7 @@ final class TableGridView: NSView {
         for (r, row) in editors.enumerated() {
             for (c, editor) in row.enumerated() {
                 if configChanged || editor.appliedHeader != (r == 0) { editor.syncConfiguration(from: host) }
+                editor.setAlignment(newTable.alignments[c])
                 let want = newTable.cell(row: r, column: c)
                 if editor.text.trimmingCharacters(in: .whitespaces) != want { editor.setText(want) }
             }

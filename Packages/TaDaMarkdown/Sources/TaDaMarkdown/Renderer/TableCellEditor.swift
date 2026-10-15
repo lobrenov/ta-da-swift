@@ -123,6 +123,20 @@ final class TableCellEditor {
         }
     }
 
+    /// The column's alignment (`.none` reads as left) on the cell's paragraphs, now and after every styling.
+    func setAlignment(_ alignment: MarkdownTable.Alignment) {
+        let wanted: NSTextAlignment = alignment == .center ? .center : alignment == .right ? .right : .left
+        guard coordinator.paragraphAlignment != wanted else { return }
+        coordinator.paragraphAlignment = wanted
+        coordinator.applyParagraphAlignment(to: textView)
+        if var typing = textView.typingAttributes as [NSAttributedString.Key: Any]?,
+           let style = (typing[.paragraphStyle] as? NSParagraphStyle)?.mutableCopy() as? NSMutableParagraphStyle {
+            style.alignment = wanted
+            typing[.paragraphStyle] = style
+            textView.typingAttributes = typing
+        }
+    }
+
     /// The header row's text is bold.
     private func cellFont(_ base: NSFont) -> NSFont {
         row == 0 ? NSFontManager.shared.convert(base, toHaveTrait: .boldFontMask) : base
@@ -151,7 +165,14 @@ final class TableCellEditor {
         var right: CGFloat = 0
         tlm.enumerateTextLayoutFragments(from: tlm.documentRange.location, options: [.ensuresLayout]) { fragment in
             for line in fragment.textLineFragments {
-                right = max(right, fragment.layoutFragmentFrame.minX + line.typographicBounds.maxX)
+                // The line's width and its indent, not where it sits: a centred or right-aligned line is placed in the
+                // very wide container.
+                let start = (tlm.textContentManager as? NSTextContentStorage).map {
+                    $0.offset(from: $0.documentRange.location, to: fragment.rangeInElement.location)
+                } ?? 0
+                let style = textView.textStorage.flatMap { start >= 0 && start < $0.length
+                    ? $0.attribute(.paragraphStyle, at: start, effectiveRange: nil) as? NSParagraphStyle : nil }
+                right = max(right, fragment.layoutFragmentFrame.minX + (style?.firstLineHeadIndent ?? 0) + line.typographicBounds.width)
             }
             return true
         }

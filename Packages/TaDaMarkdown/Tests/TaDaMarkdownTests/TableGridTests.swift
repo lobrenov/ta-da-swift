@@ -794,4 +794,117 @@ struct TableGridEditGuardTests {
         #expect(h.grid.focusedCell?.row == 1 && h.grid.focusedCell?.column == 0)
     }
 }
+
+@MainActor
+@Suite("Live table grid typing stays in its cell")
+struct TableGridTypingTests {
+    static let table = "| T | Column |\n|---|---|\n| 1 | 2 |"
+    static let sources: [(name: String, text: String)] = [
+        ("start", table + "\n\nafter\n"),
+        ("middle", "before\n\n" + table + "\n\nafter\n"),
+        ("end", "before\n\n" + table),
+    ]
+
+    /// Where the text view's caret sits before the typing, chosen without running the selection change.
+    private func place(_ h: GridHarness, _ spot: String) {
+        let ns = h.host.string as NSString
+        let start = ns.range(of: "| T").location
+        let end = ns.range(of: "| 1 | 2 |").upperBound
+        let location: Int
+        switch spot {
+        case "zero": location = 0
+        case "before": location = max(start - 1, 0)
+        case "after": location = min(end + 1, ns.length)
+        default: location = start + 8
+        }
+        h.coordinator.isRebuildingDocument = true
+        h.host.setSelectedRange(NSRange(location: location, length: 0))
+        h.coordinator.isRebuildingDocument = false
+    }
+
+    @Test(arguments: ["start", "middle", "end"], ["zero", "before", "after", "inside"])
+    func aWordTypedIntoEachCellLandsIntactAndKeepsTheKeyboard(source: String, spot: String) {
+        let text = Self.sources.first { $0.name == source }!.text
+        for (row, column) in [(0, 0), (0, 1), (1, 1)] {
+            let h = GridHarness(text)
+            place(h, spot)
+            let original = h.cell(row, column).string
+            h.grid.focus(row: row, column: column)
+            for character in "Testing" {
+                h.cell(row, column).insertText(String(character), replacementRange: NSRange(location: NSNotFound, length: 0))
+                #expect(h.grid.focusedCell?.row == row && h.grid.focusedCell?.column == column)
+            }
+            #expect(h.cell(row, column).string == original + "Testing")
+            #expect(h.grid.table.cell(row: row, column: column) == original + "Testing")
+        }
+    }
+
+    @Test func aCellGrowingPastItsColumnRewritesEveryLineMidWordWithoutLosingFocus() {
+        let h = GridHarness("| a | b |\n|---|---|\n| c | d |\n")
+        h.grid.focus(row: 0, column: 0)
+        for character in "abcdefghijklmnopqrstuvwxyz" {
+            h.cell(0, 0).insertText(String(character), replacementRange: NSRange(location: NSNotFound, length: 0))
+        }
+        #expect(h.cell(0, 0).string == "aabcdefghijklmnopqrstuvwxyz")
+        #expect(h.grid.focusedCell?.row == 0 && h.grid.focusedCell?.column == 0)
+    }
+
+    @Test func undoAndRedoKeepTheHostCaretOffTheSource() {
+        let h = GridHarness("| T | Column |\n|---|---|\n| 1 | 2 |")
+        h.grid.focus(row: 0, column: 0)
+        h.cell(0, 0).insertText("x", replacementRange: NSRange(location: NSNotFound, length: 0))
+        h.host.undoManager?.undo()
+        h.host.undoManager?.redo()
+        #expect(h.grid.focusedCell?.row == 0 && h.grid.focusedCell?.column == 0)
+        h.cell(0, 0).insertText("y", replacementRange: NSRange(location: NSNotFound, length: 0))
+        #expect(h.cell(0, 0).string == "Txy")
+    }
+}
+
+@MainActor
+@Suite("Live table grid alignment")
+struct TableGridAlignmentTests {
+    private func lineBounds(_ view: NativeTextView) -> (x: CGFloat, width: CGFloat) {
+        var result: (CGFloat, CGFloat) = (0, 0)
+        view.textLayoutManager!.enumerateTextLayoutFragments(from: view.textLayoutManager!.documentRange.location, options: [.ensuresLayout]) { f in
+            let line = f.textLineFragments[0]
+            result = (f.layoutFragmentFrame.minX + line.typographicBounds.minX, line.typographicBounds.width)
+            return false
+        }
+        return result
+    }
+
+    private func slack(_ h: GridHarness, row: Int, column: Int) -> (left: CGFloat, right: CGFloat) {
+        let view = h.cell(row, column)
+        let (x, width) = lineBounds(view)
+        let content = view.textContainer!.size.width
+        return (x, content - x - width)
+    }
+
+    @Test func centredAndRightAlignedColumnsLayOutTheirText() {
+        let h = GridHarness("| left | centre | right |\n|:---|:---:|---:|\n| a | b | c |\n| wider text | wider text | wider text |\n")
+        #expect(h.cell(1, 0).textStorage?.attribute(.paragraphStyle, at: 0, effectiveRange: nil)
+                    .flatMap { ($0 as? NSParagraphStyle)?.alignment } == .left)
+        let centred = slack(h, row: 1, column: 1)
+        #expect(abs(centred.left - centred.right) < 1 && centred.left > 1)
+        let right = slack(h, row: 1, column: 2)
+        #expect(right.right < 1 && right.left > 1)
+        let left = slack(h, row: 1, column: 0)
+        #expect(left.left < 1 && left.right > 1)
+    }
+
+    @Test func alignmentSurvivesEditsAndAlignActions() {
+        let h = GridHarness("| a | b |\n|---|---|\n| c | d wider |\n")
+        h.grid.setAlignment(.center, column: 0)
+        #expect(h.host.string.contains(":-:"))
+        h.type("xy", row: 1, column: 0)
+        let centred = slack(h, row: 1, column: 0)
+        #expect(abs(centred.left - centred.right) < 1)
+        h.grid.setAlignment(.right, column: 0)
+        #expect(slack(h, row: 1, column: 0).right < 1)
+        h.grid.move(.column(0), toGap: 2)
+        #expect(slack(h, row: 1, column: 1).right < 1)
+        #expect(slack(h, row: 1, column: 0).right > 1)
+    }
+}
 #endif

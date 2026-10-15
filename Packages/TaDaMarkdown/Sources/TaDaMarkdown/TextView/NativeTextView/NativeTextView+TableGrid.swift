@@ -35,6 +35,7 @@ extension NativeTextView {
         guard let coordinator = delegate as? NativeTextViewCoordinator, NSMaxRange(range) <= (string as NSString).length
         else { return }
         let manager = undoManager
+        let previous = selectedRange()
         manager?.disableUndoRegistration()
         coordinator.isProgrammaticEdit = true
         isEditingTableText = true
@@ -46,6 +47,21 @@ extension NativeTextView {
         guard shouldChangeText(in: range, replacementString: text) else { return }
         textStorage?.replaceCharacters(in: range, with: text)
         didChangeText()
+        // The edit moves the text view's own selection (it was at, in or after the table): leave it where it was, or
+        // off the source, so no selection change reads it as a caret landing in a cell.
+        let replaced = NSRange(location: range.location, length: (text as NSString).length)
+        let length = (string as NSString).length
+        let parked: Int
+        if NSMaxRange(previous) <= range.location {
+            parked = previous.location
+        } else if previous.location > NSMaxRange(range) {
+            parked = previous.location + replaced.length - range.length
+        } else if NSMaxRange(replaced) + 1 <= length {
+            parked = NSMaxRange(replaced) + 1
+        } else {
+            parked = max(range.location - 1, 0)
+        }
+        setSelectedRange(NSRange(location: min(parked, length), length: 0))
     }
 
     func registerTableEdit(_ edit: TableEdit) {
@@ -305,6 +321,7 @@ extension NativeTextView {
             // The caret was left in a table's source: the cell it falls in takes the keyboard. A caret at the table's
             // start is the spot above it, which typing handles.
             let selection = selectedRange()
+            guard !isEditingTableText else { return accepted }
             for ordinal in coordinator.parsedDocument(for: string).tableTokens.indices {
                 guard let zone = tableRange(ordinal: ordinal), selection.location >= zone.location,
                       NSMaxRange(selection) <= NSMaxRange(zone) else { continue }
