@@ -1,6 +1,7 @@
-// Dragging task files: task rows drag as their files, onto the sidebar's projects, areas, Loose tasks and Today or into
-// other apps as a drag from Finder would, and the project menu or a calendar opens under a row for ⇧⌘M, ⌘S or ⌘D. A drag on a picked row
-// takes every picked task. Other apps get copies: Finder never moves a file out of the folder.
+// Dragging task and note files: task rows drag as their files, onto the sidebar's projects, areas, Loose tasks and Today,
+// note rows onto its notes folders and Loose, or either into other apps as a drag from Finder would, and the project menu
+// or a calendar opens under a row for ⇧⌘M, ⌘S or ⌘D. A drag on a picked row takes every picked task, or every picked
+// note. Other apps get copies: Finder never moves a file out of the folder.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -12,20 +13,22 @@ extension View {
         modifier(TaskDragSource(model: model, path: path))
     }
 
-    /// Holds the rows `.taskDrag` (or `.draggable(containerItemID:)`, as the sidebar's projects) makes draggable: drags
-    /// the picked tasks when a picked row is dragged, else the dragged row's, as copies of their files.
+    /// Holds the rows `.taskDrag` (or `.draggable(containerItemID:)`, as the sidebar's projects and the notes) makes
+    /// draggable: drags the picked tasks and notes when a picked row is dragged, else the dragged row's, as copies of
+    /// their files.
     func taskDragContainer(_ model: AppModel) -> some View {
         dragContainer(for: TaskFile.self, itemID: \.path) { paths in
             paths.compactMap { path in model.vault.map { TaskFile(path: path, url: $0.url(for: path)) } }
         }
-        .dragContainerSelection(model.moveTargets())
+        .dragContainerSelection(model.moveTargets() + model.noteTargets())
         .dragConfiguration(DragConfiguration(operationsWithinApp: .init(allowCopy: true),
                                              operationsOutsideApp: .init(allowCopy: true)))
         .dragPreviewsFormation(.stack)
     }
 
     /// Takes dropped task rows: a project or area files them under it, Loose tasks empties their parent and Today
-    /// makes them due today. An area also takes dropped projects. Rings the row while a drag is over it.
+    /// makes them due today. An area also takes dropped projects, and a notes folder (`""` for Loose) dropped notes,
+    /// moving them into it. Rings the row while a drag is over it.
     func taskDrop(_ model: AppModel, onto target: TaskDropTarget, cornerRadius: CGFloat = 7) -> some View {
         modifier(TaskDropZone(model: model, target: target, cornerRadius: cornerRadius))
     }
@@ -46,6 +49,7 @@ enum TaskDropTarget {
     case area(Item)
     case loose
     case today
+    case folder(String)
 }
 
 private struct TaskDragSource: ViewModifier {
@@ -91,6 +95,10 @@ private struct TaskDropZone: ViewModifier {
                         await model.setParent(area, of: paths.filter { [.task, .project].contains(model.index[$0]?.properties.kind) })
                     case .loose: await model.setParent(nil, of: tasks)
                     case .today: await model.makeDueToday(tasks)
+                    case .folder(let folder):
+                        for path in paths where model.index[path]?.properties.kind == .note && Vault.folder(of: path) != folder {
+                            await model.moveNote(path, to: folder)
+                        }
                     }
                 }
             }

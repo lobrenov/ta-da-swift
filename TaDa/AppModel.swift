@@ -1501,6 +1501,12 @@ import TaDaCore
         dateTargets(for: path).filter { index[$0]?.properties.kind == .task }
     }
 
+    /// The notes a folder move acts on: the picked notes, or the selected one.
+    func noteTargets() -> [String] {
+        let paths = multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
+        return paths.filter { index[$0]?.properties.kind == .note }.sorted()
+    }
+
     /// The projects an area move acts on: `dateTargets(for:)` without tasks.
     func areaTargets(for path: String? = nil) -> [String] {
         dateTargets(for: path).filter { index[$0]?.properties.kind == .project }

@@ -2,7 +2,7 @@
 // Loose tasks, active projects without an area, then each area with its active projects under it; Tags lists Untagged
 // and the tag tree; Notes lists Loose (the top level) and the folder tree. Then the folder line, Settings and the New
 // buttons. Task rows drop onto Today, Loose tasks, the
-// projects and the areas; project rows drop onto the areas.
+// projects and the areas; project rows drop onto the areas; note rows drop onto Loose and the notes folders.
 import SwiftUI
 import TaDaCore
 
@@ -132,6 +132,7 @@ struct SidebarView: View {
     /// chevron.
     @ViewBuilder private var notes: some View {
         row(.folder(""), count: model.looseNoteCount, title: "Loose")
+            .taskDrop(model, onto: .folder(""))
         Spacer().frame(height: 10)
         if model.folderTree.isEmpty {
             Text("No folders yet")
@@ -190,6 +191,7 @@ struct SidebarView: View {
                 }
                 .accessibilityLabel("Folder \(path)")
                 .actionMenu(model, target: "folder:" + path) { folderActions(path) }
+                .taskDrop(model, onto: .folder(path))
             }
         }
         .overlay(alignment: .leading) {
