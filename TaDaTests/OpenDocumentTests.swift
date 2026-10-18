@@ -41,6 +41,28 @@ struct OpenDocumentTests {
         #expect(try folder.read("tasks/Task.md") == Self.task.replacingOccurrences(of: "- [ ] One", with: "- [x] One"))
     }
 
+    @Test func tickingASubtaskStartsANotStartedTask() async throws {
+        try folder.write(Self.task.replacingOccurrences(of: "Doing # keep", with: "Not Started"), "tasks/Task.md")
+        let model = await folder.model(selecting: "tasks/Task.md")
+        let document = try #require(model.document)
+        document.body = document.body.replacingOccurrences(of: "- [ ] One", with: "- [x] One")
+        #expect(model.index["tasks/Task.md"]?.properties.status == .doing)
+        #expect(document.text.contains("status: Doing\n"))
+        #expect(document.body.contains("- [x] One"))
+        document.body = document.body.replacingOccurrences(of: "- [x]", with: "- [ ]")
+        #expect(model.index["tasks/Task.md"]?.properties.status == .doing, "unticking leaves it")
+    }
+
+    @Test func aSubtaskTickedInAnotherAppLeavesTheStatus() async throws {
+        let notStarted = Self.task.replacingOccurrences(of: "Doing # keep", with: "Not Started")
+        try folder.write(notStarted, "tasks/Task.md")
+        let model = await folder.model(selecting: "tasks/Task.md")
+        try folder.write(notStarted.replacingOccurrences(of: "- [ ] One", with: "- [x] One"), "tasks/Task.md")
+        await model.refresh()
+        #expect(model.document?.body.contains("- [x] One") == true)
+        #expect(model.index["tasks/Task.md"]?.properties.status == .notStarted)
+    }
+
     @Test func editsSaveAfterAPause() async throws {
         let model = await folder.model(selecting: "tasks/Task.md")
         model.saveDelay = .milliseconds(50)

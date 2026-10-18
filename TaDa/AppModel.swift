@@ -909,6 +909,11 @@ import TaDaCore
     private func documentChanged(_ document: OpenDocument) {
         boxLineCache[document.path] = nil
         if let item = document.item {
+            // Ticking a subtask in Ta Da starts a Not Started task; a reload from disk has no unsaved edits.
+            if document.isDirty, let previous = index[item.path], Completion.startsTask(item, previous: previous) {
+                document.text = Completion.setStatus(.doing, in: document.text, today: today)
+                return
+            }
             if index[item.path] != item { updateIndex(replacing: item) }
         } else if index[document.path] != nil {
             updateIndex { $0.remove(document.path) }

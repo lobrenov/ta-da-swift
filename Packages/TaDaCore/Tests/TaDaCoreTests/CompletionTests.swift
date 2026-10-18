@@ -3,6 +3,19 @@ import Testing
 
 private let today = LocalDate("2026-10-02")!
 
+@Test func tickingASubtaskStartsANotStartedTask() throws {
+    func item(_ status: String, _ boxes: String, type: String = "task") throws -> Item {
+        try #require(Item(parsing: "---\ntype: \(type)\nstatus: \(status)\n---\n\(boxes)", path: "tasks/T.md"))
+    }
+    let before = try item("Not Started", "- [x] One\n- [ ] Two\n")
+    #expect(Completion.startsTask(try item("Not Started", "- [x] One\n- [x] Two\n"), previous: before))
+    #expect(!Completion.startsTask(try item("Not Started", "- [x] One\n- [/] Two\n"), previous: before), "Doing isn't done")
+    #expect(!Completion.startsTask(try item("Not Started", "- [ ] One\n- [ ] Two\n"), previous: before), "unticking")
+    #expect(!Completion.startsTask(try item("Blocked", "- [x] One\n- [x] Two\n"), previous: before), "only Not Started")
+    #expect(!Completion.startsTask(try item("Not Started", "- [x] One\n- [x] Two\n", type: "project"), previous: before),
+            "only tasks")
+}
+
 @Test func completingFillsAnEmptyCompletedDate() {
     let text = "---\ntype: task\nstatus: Doing\ncompletedDate:\ndueDate: 2026-10-02\n---\nBody\n"
     let after = Completion.setStatus(.done, in: text, today: today)
