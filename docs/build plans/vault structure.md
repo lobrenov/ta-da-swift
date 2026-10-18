@@ -18,7 +18,7 @@ Starting point, as checked on 2026-10-19:
 - **Scanning** is unchanged: the whole folder. Files outside `Ta Da/` are read and edited in place; only creating, converting, restoring, logging and un-logging put files in `Ta Da/`.
 - **Notes**: the top-level `Ta Da/` is reserved like the old folders: untyped files in it aren't notes, and the Notes tree leaves it out. The old top-level folders stay reserved.
 - **Old layout**: logged files in `.logbook/` stay logged, and embeds still resolve to `attachments/<filename>` after `Ta Da/attachments/<filename>`, so a vault that isn't moved keeps working.
-- **Moving an existing vault**: when a folder with the old layout opens, Ta Da asks once whether to move its files into `Ta Da/`. Not Now is kept for that folder on that device; new files still go to `Ta Da/`, and Settings offers the move again.
+- **Moving an existing vault**: when a folder with the old layout opens, Ta Da asks once whether to move its files into `Ta Da/`. Either answer is kept for that folder on that device; after Not Now new files still go to `Ta Da/`, and Settings ▸ Vault offers the move again.
 - **Tags**: unchanged.
 
 ## Stages
@@ -43,11 +43,11 @@ The stages run in order on `main`. Each stage: build → commit → swift-expert
 - Check: `MoveIntoHomeTests`: a full move; a move into a partly filled `Ta Da/` with numbering; path links and embeds rewritten; title links follow a numbered file; a second run finds nothing; a missing file is skipped.
 
 ### S3 — Asking once (Mac and iPhone)
-- `AppModel.hasLegacyLayout`, worked out when the folder opens and after each refresh.
-- `AppModel.offersMove`: true when `hasLegacyLayout` and Not Now wasn't chosen for this folder on this device (`Keys.moveDeclined`, by folder path like `lastLogged`).
-- Mac: an alert from `ContentView`, "Move Ta Da's files into “Ta Da”?", with the folders it found, Move and Not Now. iPhone: a confirmation dialog from `PhoneRootView`.
+- `AppModel.oldLayoutFolders`, worked out when the folder opens and after each refresh.
+- `AppModel.offersMove`: true when the old layout holds files and the question wasn't answered for this folder on this device (`Keys.moveDeclined`, by folder path like `lastLogged`), and not while logging, moving or showing an error.
+- An alert on the Mac's and iPhone's `ContentView` (`moveIntoHomeAlert`), "Move Ta Da's files into “Ta Da”?", with the folders it found, Move and Not Now.
 - `moveIntoHome()` saves the open file, runs the core move, follows moved paths (the open file stays open), refreshes, and shows a failure as an error.
-- Settings ▸ General (Mac and iPhone): "Move into Ta Da folder" while `hasLegacyLayout`.
+- Settings ▸ Vault (Mac and iPhone): Move into “Ta Da” while `oldLayoutFolders` isn't empty.
 - UI-test and render folders don't prompt: `UITestingLaunch` writes the new layout; `DesignRenderTests` marks the fixture as declined.
 - Check: `AppModelTests` for offering, Not Now, moving with an open file, and no offer after the move. App builds for macOS and iOS.
 
