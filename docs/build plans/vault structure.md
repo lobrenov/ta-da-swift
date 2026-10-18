@@ -34,7 +34,7 @@ The stages run in order on `main`. Each stage: build → commit → swift-expert
 - Check: core tests updated for the new paths; new tests read a vault mixing both layouts (logged files in both Logbooks, an embed found in each attachments folder, untyped files in `Ta Da/` aren't notes). App tests pass; the DesignVault fixture is untouched.
 
 ### S2 — Moving an existing vault (core)
-- `Vault.legacyFolders()`: the top-level `tasks/`, `projects/`, `areas/`, `attachments/` (any case) and `.logbook/` that hold a file, iCloud Drive placeholders included.
+- `Vault.oldLayoutFolders()`: the top-level `tasks/`, `projects/`, `areas/`, `attachments/` (any case) and `.logbook/` that hold a file (iCloud Drive placeholders included), each with its folder in `Ta Da/`.
 - `Vault.moveIntoHome(index:)` moves each into its `Ta Da/` folder: the whole folder when the destination doesn't exist, else file by file, numbering names that are taken. Then:
   - body links written with an old path (`[[tasks/X]]`, `[[.logbook/2026-10/X]]`) and embeds written with one (`![[attachments/front.jpg]]`) point at the new path;
   - a numbered file's links by title follow its new title where the old title found it, and a numbered image's embeds by filename follow its new filename;

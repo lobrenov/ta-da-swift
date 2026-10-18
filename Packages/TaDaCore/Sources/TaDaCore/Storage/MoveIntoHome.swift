@@ -33,8 +33,8 @@ extension Vault {
 
     /// Moves each of `oldLayoutFolders()` into `Ta Da/` (named as on disk when it exists in another case): the whole
     /// folder when its destination doesn't exist, else file by file, numbering names taken there. A file that's gone
-    /// (another device moved it) is skipped; one that can't be moved, or is a placeholder, is listed as not moved. Old
-    /// folders left with no files are removed. Then body links and embeds written with an old path point at the new one,
+    /// (another device moved it) is skipped; moving file by file, one that can't be moved, or is a placeholder, is listed
+    /// as not moved. Old folders left with no files are removed. Then body links and embeds written with an old path point at the new one,
     /// links by title follow a numbered file whose old title found it, embeds by filename follow a numbered image, and a
     /// numbered project's or area's files point their `project` or `area` link at its new title.
     public func moveIntoHome(index: VaultIndex) -> MovedIntoHome {
