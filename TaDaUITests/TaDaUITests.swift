@@ -42,10 +42,10 @@ final class TaDaUITests: XCTestCase {
         app.buttons["Restore"].click()
         XCTAssertTrue(alpha.waitForNonExistence(timeout: 5), "Restore takes Alpha out of the trash")
         app.typeKey("1", modifierFlags: .command)
-        XCTAssertTrue(app.buttons["Alpha"].waitForExistence(timeout: 5), "and back into Today")
+        XCTAssertTrue(app.buttons["Alpha"].waitForExistence(timeout: 5), "and back into the Agenda")
     }
 
-    func testArrowKeysMoveThroughTodayButNotWhileEditing() throws {
+    func testArrowKeysMoveThroughTheAgendaButNotWhileEditing() throws {
         app.typeKey(.downArrow, modifierFlags: [])
         waitForTitle("Alpha")
         app.typeKey(.downArrow, modifierFlags: [])

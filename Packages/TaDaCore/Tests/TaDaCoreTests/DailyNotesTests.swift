@@ -104,5 +104,7 @@ private func daily(_ path: String, body: String = "") -> Item {
 @Test func marksOnTheDesignVault() async {
     let index = await Vault(root: sampleVault).loadIndex()
     let marks = index.dayMarks(from: date, through: date.adding(days: 6))
-    #expect(marks[date]?.hasOpenTasks == true && marks.values.allSatisfy { !$0.hasOpenBoxes })
+    #expect(marks[date]?.hasOpenTasks == true)
+    #expect(marks[date]?.hasOpenBoxes == true, "2026-10-02's note has a box to do")
+    #expect(marks.filter { $0.value.hasOpenBoxes }.keys.sorted() == [date])
 }

@@ -1899,6 +1899,22 @@ import TaDaCore
         }
     }
 
+    /// The note of a day or week, if there is one. A week's shows only while week notes are on.
+    func note(for period: AgendaSelection) -> Item? {
+        switch period {
+        case let .day(day): index.dailyNote(for: day, names: dailyNoteNames)
+        case let .week(week): weekNotes ? index.weekNote(for: week, names: dailyNoteNames) : nil
+        }
+    }
+
+    /// Where the note of a day or week is, or would be made.
+    func notePath(for period: AgendaSelection) -> String {
+        switch period {
+        case let .day(day): dailyNoteNames.path(for: day)
+        case let .week(week): dailyNoteNames.path(for: week)
+        }
+    }
+
     /// `folder` as it's spelled on disk or in the notes' paths when a folder of that name exists in another case, else as given.
     private func existingCasing(ofFolder folder: String) -> String {
         var known = knownFolders.union(index.notes.map { Vault.folder(of: $0.path) })

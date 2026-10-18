@@ -34,8 +34,8 @@ struct DesignRenderTests {
         let project = "projects/Ta Da MVP.md"
         // Artboard name → domain and selection.
         let screens: [(String, AppModel.Domain, String?)] = [
-            ("today", .agenda, "tasks/Update my claude.md files.md"),
-            ("upcoming", .agenda, nil),
+            ("agenda-day", .agenda, nil),
+            ("agenda-week", .agenda, nil),
             ("upcoming-task", .agenda, "tasks/Live preview editor on swift-markdown-engine.md"),
             ("project", .project(project), project),
             ("project-task", .project(project), "tasks/Live preview editor on swift-markdown-engine.md"),
@@ -47,8 +47,10 @@ struct DesignRenderTests {
         for theme in Theme.all {
             model.appearance = theme.isDark ? .dark : .light
             if theme.isDark { model.darkScheme = theme } else { model.lightScheme = theme }
-            for (name, domain, selection) in screens where name == "today" || theme == ThemeSet.standard.dark {
+            for (name, domain, selection) in screens where name == "agenda-day" || theme == ThemeSet.standard.dark {
                 model.domain = domain
+                model.agendaSelection = name == "agenda-week" ? .week(ISOWeek(year: 2026, week: 40)!) : .day(model.today)
+                model.agendaMonthOpen = name == "agenda-week"
                 model.selection = selection
                 model.isSourceMode = name == "source"
                 model.searchText = name == "search" ? "update" : ""

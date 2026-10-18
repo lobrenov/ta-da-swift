@@ -1,5 +1,5 @@
 // Selection in the browser lists. A click opens a file; in lists that allow it, shift-click picks a range and
-// ⌘-click adds or removes a task. Keys: ↑/↓ move the selection, Escape clears it, ⌫ or ⌘⌫ moves the selected file to
+// ⌘-click adds or removes a task. Keys: ↑/↓ move the selection, ←/→ step the Agenda, Escape clears it, ⌫ or ⌘⌫ moves the selected file to
 // the trash (in Trash, ⌘⌫ restores and ⌥⌘⌫ deletes forever). A key view behind each list takes the keyboard when the
 // list appears, when nothing has it and when a row is picked. Keys reach it through the responder chain, so a text
 // view (an editor, the title or the search field) with the keyboard keeps its own keys.
@@ -73,7 +73,7 @@ private struct ListKeys: NSViewRepresentable {
     func updateNSView(_ view: ListKeyView, context: Context) {}
 }
 
-/// The list's responder: ↑/↓ and Escape arrive as move and cancel commands, ⌫ and ⌦ as key presses.
+/// The list's responder: ↑/↓, ←/→ and Escape arrive as move and cancel commands, ⌫ and ⌦ as key presses.
 final class ListKeyView: NSView {
     let model: AppModel
     private var responders: NSKeyValueObservation?
@@ -119,6 +119,15 @@ final class ListKeyView: NSView {
 
     override func moveDown(_ sender: Any?) {
         model.moveSelection(by: 1)
+    }
+
+    /// In the Agenda, ← and → step the day, or the week.
+    override func moveLeft(_ sender: Any?) {
+        if model.domain == .agenda, !model.isSearching { model.stepAgenda(by: -1) } else { super.moveLeft(sender) }
+    }
+
+    override func moveRight(_ sender: Any?) {
+        if model.domain == .agenda, !model.isSearching { model.stepAgenda(by: 1) } else { super.moveRight(sender) }
     }
 
     override func cancelOperation(_ sender: Any?) {

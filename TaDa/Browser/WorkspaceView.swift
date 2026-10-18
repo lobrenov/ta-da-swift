@@ -1,5 +1,4 @@
-// The area right of the sidebar: a domain's list beside the selected document, Upcoming's month view
-// when nothing is selected, or a project's or area's own page.
+// The area right of the sidebar: a domain's list beside the selected document, or a project's or area's own page.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -41,9 +40,14 @@ struct WorkspaceView: View {
     @ViewBuilder private var domainLayout: some View {
         switch model.domain {
         case .agenda:
-            split { TaskListView(model: model, kind: .today).id(AppModel.Domain.agenda) }
+            split {
+                switch model.agendaSelection {
+                case let .day(day): AgendaDayList(model: model, day: day)
+                case let .week(week): AgendaWeekList(model: model, week: week)
+                }
+            }
         case .loose:
-            split { TaskListView(model: model, kind: .loose).id(AppModel.Domain.loose) }
+            split { TaskListView(model: model).id(AppModel.Domain.loose) }
         case .trash:
             TrashView(model: model)
         case .logbook:

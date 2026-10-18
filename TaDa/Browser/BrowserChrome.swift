@@ -242,6 +242,8 @@ struct EmptyState: View {
     let systemImage: String
     let title: String
     var message: LocalizedStringKey?
+    /// A button under the message.
+    var button: (title: String, action: () -> Void)? = nil
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -258,6 +260,11 @@ struct EmptyState: View {
                     .multilineTextAlignment(.center)
                     .foregroundStyle(theme.color(\.muted))
                     .frame(maxWidth: 360)
+            }
+            if let button {
+                Button(button.title, action: button.action)
+                    .buttonStyle(ActionButtonStyle(kind: .primary, height: 28))
+                    .padding(.top, 8)
             }
         }
         .padding(40)
