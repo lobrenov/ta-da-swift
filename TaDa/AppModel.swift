@@ -1457,13 +1457,15 @@ import TaDaCore
     // MARK: Logbook
 
     /// Logs the files completed before today, once a day: when the folder opens or the day changes. Logged files reopened
-    /// in another app go back.
+    /// in another app go back. The index is refreshed first, as an app back from suspension can hold files another
+    /// device has since logged.
     /// Each folder's day is kept once its logging succeeds; after a failure the next open or day change tries again.
     func logIfDue() async {
         guard state == .ready, !isLogging, let folder = vault?.root,
               Self.lastLogged(folder, in: defaults) != today else { return }
         isLogging = true
         defer { isLogging = false }
+        await refresh()
         let day = today
         var succeeded = await log(index.filesToLog(completedBefore: day).map(\.path))
         let reopened = index.reopenedLogged.map(\.path)

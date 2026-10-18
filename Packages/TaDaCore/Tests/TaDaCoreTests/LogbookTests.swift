@@ -130,6 +130,20 @@ private func project(_ status: String, completed: String? = nil) -> String {
     }
 }
 
+@Test func loggingSkipsFilesAlreadyMovedByAnotherDevice() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(task("Done", completed: "2026-10-01"), "tasks/Clean the house.md", in: folder)
+        let index = await vault.loadIndex()
+        try FileManager.default.createDirectory(at: folder.appending(path: ".logbook/2026-10"), withIntermediateDirectories: true)
+        try FileManager.default.moveItem(at: folder.appending(path: "tasks/Clean the house.md"),
+                                         to: folder.appending(path: ".logbook/2026-10/Clean the house.md"))
+        let moved = try vault.log(["tasks/Clean the house.md"], index: index, today: today)
+        #expect(moved.isEmpty)
+        #expect(try vault.read(".logbook/2026-10/Clean the house.md").contains("status: Done"))
+    }
+}
+
 @Test func renamingAProjectOrAreaRelinksItsLoggedFiles() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
