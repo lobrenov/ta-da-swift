@@ -12,7 +12,7 @@ struct PhoneRootView: View {
     var body: some View {
         TabView(selection: $nav.tab) {
             Tab("Agenda", systemImage: "calendar", value: PhoneTab.agenda) {
-                stack(.agenda) { PhoneTaskListScreen(model: model, kind: .today) }
+                stack(.agenda) { PhoneAgendaScreen(model: model) }
             }
             Tab("Tasks", systemImage: "checkmark.square", value: PhoneTab.tasks) {
                 stack(.tasks) { PhoneTasksScreen(model: model) }
@@ -96,7 +96,7 @@ struct PhoneRootView: View {
                 root().navigationDestination(for: PhoneRoute.self) { route in
                     switch route {
                     case let .file(path): PhoneFileScreen(model: model, path: path)
-                    case .loose: PhoneTaskListScreen(model: model, kind: .loose)
+                    case .loose: PhoneTaskListScreen(model: model)
                     case let .project(path): PhoneProjectScreen(model: model, path: path)
                     case let .area(path): PhoneAreaScreen(model: model, path: path)
                     case let .settings(section): PhoneSettingsScreen(model: model, section: section)

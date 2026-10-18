@@ -4,14 +4,6 @@
 import SwiftUI
 import TaDaCore
 
-/// A request to scroll to a row id; each request differs from the last, so repeating an id scrolls again.
-struct ScrollRequest: Equatable {
-    let id: String
-    private let serial = UUID()
-
-    init(_ id: String) { self.id = id }
-}
-
 /// A tab's list. `pickable` are its rows top to bottom, for picking; `add` is the floating +.
 struct PhoneList<Content: View, MenuItems: View>: View {
     let model: AppModel
@@ -26,8 +18,6 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     var pickable: [String] = []
     var add: (() async -> Void)? = nil
     var addLabel = "New Task"
-    /// A row to scroll to the top, as Upcoming's week strip asks.
-    var scrollTarget: ScrollRequest? = nil
     @ViewBuilder var menu: MenuItems
     @ViewBuilder var content: Content
     @State private var search = ListSearch()
@@ -39,34 +29,29 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    if !search.isOpen {
-                        header.transition(.asymmetric(
-                            insertion: .move(edge: .top).combined(with: .opacity.animation(.easeIn(duration: 0.2).delay(0.12))),
-                            removal: .opacity.animation(.linear(duration: 0.05))))
-                    }
-                    if search.isSearching {
-                        PhoneSearchResults(model: model, query: search.query)
-                    } else {
-                        LazyVStack(alignment: .leading, spacing: 0) {
-                            content
-                            PickingBarClearance()
-                        }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if !search.isOpen {
+                    header.transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity.animation(.easeIn(duration: 0.2).delay(0.12))),
+                        removal: .opacity.animation(.linear(duration: 0.05))))
+                }
+                if search.isSearching {
+                    PhoneSearchResults(model: model, query: search.query)
+                } else {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        content
+                        PickingBarClearance()
                     }
                 }
             }
-            .onChange(of: scrollTarget) {
-                if let scrollTarget { withAnimation { proxy.scrollTo(scrollTarget.id, anchor: .top) } }
-            }
-            .onScrollGeometryChange(for: Bool.self) { geometry in
-                geometry.contentOffset.y + geometry.contentInsets.top > 44
-            } action: { _, isScrolledAway in
-                isTitleScrolledAway = isScrolledAway
-            }
-            .pullToSearch(search)
         }
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentOffset.y + geometry.contentInsets.top > 44
+        } action: { _, isScrolledAway in
+            isTitleScrolledAway = isScrolledAway
+        }
+        .pullToSearch(search)
         .scrollDismissesKeyboard(.interactively)
         .background { theme.color(\.bg).ignoresSafeArea() }
         .navigationTitle(title)

@@ -95,8 +95,6 @@ struct IntegrationsStoreTests {
         #expect(model.upcomingReminders[today.adding(days: 3)]?.map(\.title) == ["Soon"])
         #expect(model.hasEvents(on: today) && model.hasEvents(on: today.adding(days: 2)))
         #expect(!model.hasEvents(on: today.adding(days: 1)) && !model.hasEvents(on: today.adding(days: 4)))
-        let later = today.adding(days: 20)
-        #expect(model.remindersByMonth(after: today.adding(days: 7))[later.startOfMonth]?.map(\.title) == ["Later"])
     }
 
     @Test func pastDaysKeepTheirEventsAndOverdueReminders() {

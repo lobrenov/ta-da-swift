@@ -1899,6 +1899,13 @@ import TaDaCore
         }
     }
 
+    /// The first `limit` checkbox lines of a note, read from its file.
+    func boxLines(of note: Item, limit: Int) async -> [NoteBoxLine] {
+        guard let vault else { return [] }
+        let boxes = note.checkboxes, path = note.path
+        return await Self.run { (try? vault.read(path)).map { NoteBoxLine.lines(in: $0, boxes: boxes, limit: limit) } ?? [] }
+    }
+
     /// The note of a day or week, if there is one. A week's shows only while week notes are on.
     func note(for period: AgendaSelection) -> Item? {
         switch period {
@@ -2119,10 +2126,6 @@ import TaDaCore
     func reminders(on day: LocalDate) -> [ExternalReminder] {
         day == today ? todayReminders : upcomingReminders[day] ?? integrations.pastReminders[day] ?? []
     }
-    /// Reminders due after `day`, by month, for Upcoming's later months.
-    func remindersByMonth(after day: LocalDate) -> [LocalDate: [ExternalReminder]] {
-        Dictionary(grouping: upcomingReminders.filter { $0.key > day }.sorted { $0.key < $1.key }.flatMap(\.value)) { $0.due!.startOfMonth }
-    }
 
     /// Whether any event covers `day`, for the month calendar's and week strip's dots.
     func hasEvents(on day: LocalDate) -> Bool {
@@ -2213,12 +2216,12 @@ import TaDaCore
 
     /// The days the Agenda shows: the selected week, or when the month is open, every week of its month.
     var agendaRange: ClosedRange<LocalDate> {
-        let week: ISOWeek, anchor: LocalDate
+        let week: ISOWeek
         switch agendaSelection {
-        case let .day(day): (week, anchor) = (day.isoWeek, day)
-        case let .week(selected): (week, anchor) = (selected, selected.firstDay.adding(days: 3))
+        case let .day(day): week = day.isoWeek
+        case let .week(selected): week = selected
         }
-        let weeks = anchor.isoWeeksOfMonth
+        let weeks = agendaAnchor.isoWeeksOfMonth
         guard agendaMonthOpen, let first = weeks.first, let last = weeks.last else {
             return week.firstDay...week.firstDay.adding(days: 6)
         }

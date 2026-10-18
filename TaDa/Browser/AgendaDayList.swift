@@ -10,15 +10,6 @@ struct AgendaDayList: View {
     let day: LocalDate
     @Environment(\.theme) private var theme
 
-    private var relative: String? {
-        switch model.today.days(to: day) {
-        case 0: "Today"
-        case 1: "Tomorrow"
-        case -1: "Yesterday"
-        default: nil
-        }
-    }
-
     var body: some View {
         let list = GroupedList.today
         let all = model.agendaTasks
@@ -39,7 +30,7 @@ struct AgendaDayList: View {
                     Text(day.formatted(.fullDate)).font(.system(size: 18, weight: .bold)).foregroundStyle(theme.color(\.strong))
                         .accessibilityAddTraits(.isHeader)
                     Spacer(minLength: 0)
-                    if let relative { Text(relative).fontWeight(.semibold).foregroundStyle(theme.color(\.accent)) }
+                    if let relative = model.relativeDayName(day) { Text(relative).fontWeight(.semibold).foregroundStyle(theme.color(\.accent)) }
                 }
                 .padding(.horizontal, 10)
                 AgendaNoteRow(model: model, period: .day(day))
@@ -165,11 +156,6 @@ struct AgendaNoteRow: View {
         .accessibilityLabel("\(isDay ? "Daily note" : "Week note"), \(file)")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
-}
-
-extension Theme {
-    /// A badge's fill for `due`: 18% in dark schemes and 16% in light ones.
-    var dueFill: Color { color(\.due).opacity(isDark ? 0.18 : 0.16) }
 }
 
 extension View {

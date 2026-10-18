@@ -11,14 +11,6 @@ struct AgendaStrip: View {
 
     private static let weekColumn: CGFloat = 40
 
-    /// The day the strip's month is the month of.
-    private var anchor: LocalDate {
-        switch model.agendaSelection {
-        case let .day(day): day
-        case let .week(week): week.firstDay.adding(days: 3)
-        }
-    }
-
     private var weeks: [ISOWeek] {
         let range = model.agendaRange
         return (0..<(range.lowerBound.days(to: range.upperBound) + 1) / 7).map { range.lowerBound.adding(days: $0 * 7).isoWeek }
@@ -37,7 +29,7 @@ struct AgendaStrip: View {
                 }
             }
             if model.agendaMonthOpen {
-                Text(anchor.formatted(.monthYear)).font(.system(size: 13, weight: .bold)).foregroundStyle(theme.color(\.strong))
+                Text(model.agendaAnchor.formatted(.monthYear)).font(.system(size: 13, weight: .bold)).foregroundStyle(theme.color(\.strong))
             }
             VStack(spacing: 2) {
                 initials
@@ -125,7 +117,7 @@ struct AgendaStrip: View {
     private func dayCell(_ day: LocalDate, in week: ISOWeek) -> some View {
         let selected = model.agendaSelection == .day(day)
         let isToday = day == model.today
-        let faded = day.month != anchor.month || day < model.today
+        let faded = day.month != model.agendaAnchor.month || day < model.today
         return Button { model.agendaSelection = .day(day) } label: {
             VStack(spacing: 3) {
                 Text("\(day.day)")
@@ -143,36 +135,6 @@ struct AgendaStrip: View {
         .buttonStyle(.plain)
         .accessibilityLabel((isToday ? "Today, " : "") + day.formatted(.weekdayDayMonth) + AgendaDots.spoken(model, day))
         .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
-/// A day's dots, in order: the ring, then `due`, then `muted`.
-struct AgendaDots: View {
-    let model: AppModel
-    let day: LocalDate
-    let size: CGFloat
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        let marks = model.agendaMarks[day]
-        HStack(spacing: 2) {
-            if marks?.hasOpenBoxes == true { Circle().strokeBorder(theme.color(\.due)).frame(width: size, height: size) }
-            if marks?.hasOpenTasks == true { Circle().fill(theme.color(\.due)).frame(width: size, height: size) }
-            if Self.hasEvents(model, day) { Circle().fill(theme.color(\.muted)).frame(width: size, height: size) }
-        }
-        .frame(height: size)
-        .accessibilityHidden(true)
-    }
-
-    private static func hasEvents(_ model: AppModel, _ day: LocalDate) -> Bool {
-        model.hasEvents(on: day) || !model.reminders(on: day).isEmpty
-    }
-
-    /// What the dots mean, for VoiceOver: ", open items in the note, tasks due, events".
-    static func spoken(_ model: AppModel, _ day: LocalDate) -> String {
-        let marks = model.agendaMarks[day]
-        return (marks?.hasOpenBoxes == true ? ", open items in the note" : "") + (marks?.hasOpenTasks == true ? ", tasks due" : "")
-            + (hasEvents(model, day) ? ", events" : "")
     }
 }
 #endif

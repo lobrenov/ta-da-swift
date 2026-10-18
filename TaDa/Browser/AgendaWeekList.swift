@@ -63,10 +63,7 @@ struct AgendaWeekList: View {
     /// A day: its label, its note's first paragraph, what it holds, and its dots. Clicking picks the day.
     private func dayRow(_ day: LocalDate, entries: [AgendaEntry]) -> some View {
         let note = model.index.dailyNote(for: day, names: model.dailyNoteNames)
-        let external = model.events(on: day).count + model.reminders(on: day).count
-        let due = Set(entries.filter { $0.date == day && !$0.item.properties.status.isClosed }.map(\.item.path)).count
-        let counts = [external > 0 ? "\(external) \(external == 1 ? "event" : "events")" : nil, due > 0 ? "\(due) due" : nil]
-            .compactMap { $0 }.joined(separator: " · ")
+        let counts = model.agendaDaySummary(day, entries: entries)
         let isToday = day == model.today
         return Button { model.agendaSelection = .day(day) } label: {
             HStack(spacing: 10) {

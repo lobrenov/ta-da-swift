@@ -1,61 +1,45 @@
-// The lists the tabs open on: Today and Loose (grouped by area and project; Today starts with the day's events and
-// reminders), Tasks (the Loose row, then the projects with the areas), Upcoming (a week strip over the days ahead, each with its events
-// and reminders before its tasks), a project's tasks, and an area's projects and tasks.
+// The lists the tabs open on: Loose (grouped by area and project), Tasks (the Loose row, then the projects with the
+// areas), a project's tasks, and an area's projects and tasks.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
 
 struct PhoneTaskListScreen: View {
-    enum Kind { case today, loose }
-
     let model: AppModel
-    let kind: Kind
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let all = kind == .today ? model.agendaTasks : model.looseTasks
-        let filter = model.tagFilter(on: domain)
+        let all = model.looseTasks
+        let filter = model.tagFilter(on: .loose)
         let shownTasks = filter.apply(all)
-        let grouping = model.grouping(of: list)
+        let grouping = model.grouping(of: .loose)
         let groups = grouping == .project ? model.index.grouped(shownTasks) : []
         let sections = grouping == .project ? [] : ListSection.sections(shownTasks, by: grouping, today: model.today)
         let open = all.count { !$0.properties.status.isClosed }
         let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
-            : sections.filter { !model.isFolded($0, by: grouping, in: list.foldKey) }.flatMap(\.tasks).map(\.path)
-        let dates: TaskRow.Dates = kind == .today ? .overdueDueAndDeadline : .labelled
+            : sections.filter { !model.isFolded($0, by: grouping, in: GroupedList.loose.foldKey) }.flatMap(\.tasks).map(\.path)
+        let dates = TaskRow.Dates.labelled
 
-        PhoneList(model: model, title: kind == .today ? "Today" : "Loose tasks",
-                  subtitle: kind == .today
-                      ? "\(model.today.date().formatted(.dateTime.weekday(.wide).day().month(.wide))) · \(tasks(open))"
-                      : "No project or area · \(tasks(open))",
-                  titleAccessory: AnyView(PhoneGroupMenu(model: model, list: list)),
+        PhoneList(model: model, title: "Loose tasks", subtitle: "No project or area · \(tasks(open))",
+                  titleAccessory: AnyView(PhoneGroupMenu(model: model, list: .loose)),
                   pickable: pickable, add: newTask) {
             EmptyView()
         } content: {
-            let showsCalendar = kind == .today && !filter.isActive
-            let events = showsCalendar ? model.todayEvents : [], reminders = showsCalendar ? model.todayReminders : []
-            PhoneTagFilterBar(model: model, domain: domain, items: all, shown: shownTasks.count)
-            if all.isEmpty, events.isEmpty, reminders.isEmpty {
-                empty.padding(.top, 60)
+            PhoneTagFilterBar(model: model, domain: .loose, items: all, shown: shownTasks.count)
+            if all.isEmpty {
+                ContentUnavailableView("No loose tasks", systemImage: "tray",
+                                       description: Text("Open tasks that don’t belong to a project or an area show here."))
+                    .padding(.top, 60)
             } else if shownTasks.isEmpty, filter.isActive {
                 ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
                                        description: Text("No task here carries the picked tags.")).padding(.top, 40)
             }
-            if !events.isEmpty || !reminders.isEmpty {
-                Color.clear.frame(height: 12)
-            }
-            ForEach(events) { EventRow(event: $0, day: model.today, context: .today) }
-            ForEach(reminders) { ReminderRow(reminder: $0, context: .today, today: model.today) }
             if grouping == .project {
-                // Tasks without a parent have no header to set them apart.
-                if !events.isEmpty || !reminders.isEmpty, groups.first?.parent == nil, !groups.isEmpty {
-                    Color.clear.frame(height: 20)
-                }
                 ForEach(groups) { group in
                     if let parent = group.parent {
                         if parent.properties.kind == .area {
-                            PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id && events.isEmpty && reminders.isEmpty)
+                            PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id)
                         } else {
                             PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
                         }
@@ -65,29 +49,14 @@ struct PhoneTaskListScreen: View {
                     }
                 }
             } else {
-                PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: dates,
-                                  place: kind == .today ? { model.index.parent(of: $0)?.title } : nil)
+                PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: GroupedList.loose.foldKey, dates: dates)
             }
         }
     }
 
-    private var list: GroupedList { kind == .today ? .today : .loose }
-    private var domain: AppModel.Domain { kind == .today ? .agenda : .loose }
-
-    private var empty: some View {
-        switch kind {
-        case .today:
-            ContentUnavailableView("Nothing due today", systemImage: "star",
-                                   description: Text("Tasks due or at their deadline today, or overdue, show here."))
-        case .loose:
-            ContentUnavailableView("No loose tasks", systemImage: "tray",
-                                   description: Text("Open tasks that don’t belong to a project or an area show here."))
-        }
-    }
-
-    /// A new task opens with its title ready to type: due today in Today, a loose task in Loose.
+    /// A new loose task opens with its title ready to type.
     private func newTask() async {
-        model.domain = domain
+        model.domain = .loose
         await model.newTask()
         if let path = model.selection { nav.push(.file(path)) }
     }
@@ -158,143 +127,6 @@ struct PhoneTasksScreen: View {
 
 func tasks(_ count: Int) -> String {
     count == 1 ? "1 task" : "\(count) tasks"
-}
-
-// MARK: Upcoming
-
-struct PhoneUpcomingScreen: View {
-    let model: AppModel
-    @State private var target: ScrollRequest?
-    @Environment(PhoneNavigation.self) private var nav
-    @Environment(\.theme) private var theme
-
-    static let days = 7
-
-    var body: some View {
-        let today = model.today
-        let entries = model.upcoming
-        let lastDay = today.adding(days: Self.days)
-        let later = Dictionary(grouping: entries.filter { $0.date > lastDay }) { $0.date.startOfMonth }
-        var seen = Set<String>()
-        let paths = entries.map(\.item.path).filter { seen.insert($0).inserted }
-
-        PhoneList(model: model, title: "Upcoming", pickable: paths,
-                  add: newTask, scrollTarget: target) {
-            EmptyView()
-        } content: {
-            WeekStrip(model: model) { offset in
-                target = ScrollRequest(offset == 0 ? "top" : "day-\(offset)")
-            }
-            .id("top")
-            ForEach(1...Self.days, id: \.self) { offset in
-                let day = today.adding(days: offset)
-                let items = entries.filter { $0.date == day }
-                let events = model.upcomingEvents[day] ?? [], reminders = model.upcomingReminders[day] ?? []
-                DayHeader(number: "\(day.day)", label: offset == 1 ? "Tomorrow" : day.formatted(.weekday),
-                          empty: items.isEmpty && events.isEmpty && reminders.isEmpty)
-                    .id("day-\(offset)")
-                ForEach(events) { EventRow(event: $0, day: day, context: .upcoming) }
-                ForEach(reminders) { ReminderRow(reminder: $0, context: .upcoming) }
-                ForEach(items) { row($0, dated: false) }
-            }
-            let laterReminders = model.remindersByMonth(after: lastDay)
-            ForEach(Set(later.keys).union(laterReminders.keys).sorted(), id: \.self) { month in
-                DayHeader(number: nil, label: month.agendaMonthTitle(today: today), empty: false)
-                ForEach(laterReminders[month] ?? []) { ReminderRow(reminder: $0, context: .upcoming, dated: true) }
-                ForEach(later[month] ?? []) { row($0, dated: true) }
-            }
-        }
-    }
-
-    private func row(_ entry: AgendaEntry, dated: Bool) -> some View {
-        let p = entry.item.properties
-        let (kind, date): (AgendaEntry.Kind, LocalDate?) = entry.kind == .due ? (.deadline, p.deadline) : (.due, p.dueDate)
-        let also = date.map { "\(kind.label) \($0.relativeLabel(today: model.today))" }
-        return PhoneTaskRow(model: model, item: entry.item,
-                            meta: .agenda(entry, place: model.index.parent(of: entry.item)?.title ?? "Loose task",
-                                          also: also, dated: dated))
-    }
-
-    private func newTask() async {
-        model.domain = .agenda
-        await model.newTask()
-        if let path = model.selection { nav.push(.file(path)) }
-    }
-}
-
-/// Today and the six days after it: the weekday, the date, and dots for due dates, deadlines and events. Tapping a day
-/// scrolls to it.
-private struct WeekStrip: View {
-    let model: AppModel
-    let show: (Int) -> Void
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        let open = model.index.tasks.filter { !$0.properties.status.isClosed }
-        HStack(spacing: 0) {
-            ForEach(0..<PhoneUpcomingScreen.days, id: \.self) { offset in
-                let day = model.today.adding(days: offset)
-                let due = open.contains { $0.properties.dueDate == day }
-                let deadline = open.contains { $0.properties.deadline == day }
-                let event = model.hasEvents(on: day)
-                Button { show(offset) } label: {
-                    VStack(spacing: 3) {
-                        Text(day.date().formatted(.dateTime.weekday(.narrow)))
-                            .scaledFont(size: 12, weight: .semibold)
-                            .foregroundStyle(theme.color(\.muted))
-                        Text("\(day.day)")
-                            .scaledFont(size: 20, weight: offset == 0 ? .bold : .regular)
-                            .foregroundStyle(theme.color(\.strong))
-                        HStack(spacing: 3) {
-                            if due { Circle().fill(theme.color(\.due)).frame(width: 5, height: 5) }
-                            if deadline { Circle().fill(theme.color(\.deadline)).frame(width: 5, height: 5) }
-                            if event { Circle().fill(theme.color(\.muted)).frame(width: 5, height: 5) }
-                        }
-                        .frame(height: 5)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(offset == 0 ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 12))
-                    .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(day.formatted(.weekdayDayMonth) + (due ? ", due dates" : "") + (deadline ? ", deadlines" : "") + (event ? ", events" : ""))
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
-        // Seven columns: past this, the numbers wouldn't fit.
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-    }
-}
-
-/// A day's number and name over a rule, muted when nothing is on it; or a later month's name.
-private struct DayHeader: View {
-    let number: String?
-    let label: String
-    let empty: Bool
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Hairline()
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                if let number {
-                    Text(number)
-                        .scaledFont(size: 22, weight: .bold)
-                        .foregroundStyle(theme.color(empty ? \.muted : \.strong))
-                }
-                Text(label)
-                    .scaledFont(size: 15, weight: .semibold)
-                    .foregroundStyle(theme.color(empty ? \.muted : number == nil ? \.strong : \.fg))
-            }
-            .padding(.top, 12)
-            .padding(.bottom, 6)
-        }
-        .padding(.horizontal, 16)
-        .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(.isHeader)
-    }
 }
 
 // MARK: Projects
