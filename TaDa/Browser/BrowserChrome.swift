@@ -85,8 +85,7 @@ extension AppModel.Domain {
     /// The sidebar's name for the domain, or the project's, area's or folder's title.
     var title: String {
         switch self {
-        case .today: "Today"
-        case .upcoming: "Upcoming"
+        case .agenda: "Agenda"
         case .loose: "Loose tasks"
         case .logbook: "Logbook"
         case .trash: "Trash"
@@ -99,8 +98,7 @@ extension AppModel.Domain {
     /// A project's symbol stands in for its progress ring where the ring doesn't fit, as in the file inspector.
     var systemImage: String {
         switch self {
-        case .today: "star.fill"
-        case .upcoming: "calendar"
+        case .agenda: "calendar"
         case .loose: "tray"
         case .logbook: "book.closed"
         case .trash: "trash"
@@ -113,8 +111,7 @@ extension AppModel.Domain {
 
     var tint: KeyPath<Theme, PlatformColor> {
         switch self {
-        case .today: \.due
-        case .upcoming: \.deadline
+        case .agenda: \.due
         case .loose, .project: \.accent
         case .logbook: \.done
         case .trash: \.muted

@@ -34,14 +34,14 @@ struct DesignRenderTests {
         let project = "projects/Ta Da MVP.md"
         // Artboard name → domain and selection.
         let screens: [(String, AppModel.Domain, String?)] = [
-            ("today", .today, "tasks/Update my claude.md files.md"),
-            ("upcoming", .upcoming, nil),
-            ("upcoming-task", .upcoming, "tasks/Live preview editor on swift-markdown-engine.md"),
+            ("today", .agenda, "tasks/Update my claude.md files.md"),
+            ("upcoming", .agenda, nil),
+            ("upcoming-task", .agenda, "tasks/Live preview editor on swift-markdown-engine.md"),
             ("project", .project(project), project),
             ("project-task", .project(project), "tasks/Live preview editor on swift-markdown-engine.md"),
             ("loose", .loose, nil),
-            ("source", .today, "tasks/Update my claude.md files.md"),
-            ("search", .today, "tasks/Update my claude.md files.md"),
+            ("source", .agenda, "tasks/Update my claude.md files.md"),
+            ("search", .agenda, "tasks/Update my claude.md files.md"),
         ]
         model.usesSchemePerAppearance = true
         for theme in Theme.all {
@@ -67,7 +67,7 @@ struct DesignRenderTests {
         let areaScreens: [(String, AppModel.Domain, String?)] = [
             ("area", .area("areas/Personal.md"), "tasks/Pay rent.md"),
             ("area-file", .area("areas/Personal.md"), "areas/Personal.md"),
-            ("area-today", .today, "tasks/Build the sidebar.md"),
+            ("area-today", .agenda, "tasks/Build the sidebar.md"),
             ("area-project", .project("projects/Ta Da.md"), "projects/Ta Da.md"),
         ]
         for (name, domain, selection) in areaScreens {

@@ -50,11 +50,10 @@ struct AppCommands: Commands {
                 .disabled(model.state != .ready)
         }
         CommandGroup(before: .toolbar) {
-            show(.today, key: "1")
-            show(.upcoming, key: "2")
-            show(.loose, key: "3")
-            show(.trash, key: "4")
-            show(.logbook, key: "5")
+            show(.agenda, key: "1")
+            show(.loose, key: "2")
+            show(.trash, key: "3")
+            show(.logbook, key: "4")
             Divider()
             Button(model.isSourceMode ? "Show Live Preview" : "Show Source") { model.isSourceMode.toggle() }
                 .keyboardShortcut("e")

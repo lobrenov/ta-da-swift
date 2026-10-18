@@ -41,9 +41,8 @@ struct SidebarView: View {
                 .padding(.bottom, 4)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
-                    row(.today, count: model.todayCount)
-                        .taskDrop(model, onto: .today)
-                    row(.upcoming, count: nil)
+                    row(.agenda, count: model.todayCount)
+                        .taskDrop(model, onto: .agenda)
                     row(.logbook, count: nil)
                         .padding(.top, 8)
                     row(.trash, count: model.trashCount)

@@ -135,9 +135,9 @@ struct AppModelTests {
     @Test func pickingADomainClearsTheSelectionAndProjectsOpenAsPages() async {
         let model = await folder.model()
         model.selection = "tasks/Loose.md"
-        model.domain = .today
+        model.domain = .agenda
         #expect(model.selection == "tasks/Loose.md", "same domain keeps the selection")
-        model.domain = .upcoming
+        model.domain = .loose
         #expect(model.selection == nil)
 
         model.open("projects/Ta Da MVP.md")
@@ -276,7 +276,7 @@ struct AppModelTests {
         model.toggleFilterTag("bug", on: .project("projects/Ta Da MVP.md"))
         model.toggleFilterTag("dev", on: .project("projects/Ta Da MVP.md"))
         #expect(model.tagFilter(on: .project("projects/Ta Da MVP.md")).picked == ["bug", "dev"])
-        #expect(!model.tagFilter(on: .today).isActive)
+        #expect(!model.tagFilter(on: .agenda).isActive)
         await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
         #expect(model.tagFilter(on: .project("projects/Ta Da 1.0.md")).picked == ["bug", "dev"])
         model.toggleFilterTag("bug", on: .project("projects/Ta Da 1.0.md"))
@@ -315,7 +315,7 @@ struct AppModelTests {
         let model = await folder.model()
         model.show(.project("projects/Ta Da MVP.md"))
         await model.moveToTrash(["projects/Ta Da MVP.md"])
-        #expect(model.domain == .today)
+        #expect(model.domain == .agenda)
         #expect(model.index.items.keys.sorted() == ["notes/Note.md", "projects/Shipped.md", "tasks/Loose.md"])
         #expect(Set(model.trash.map(\.id)) == [".trash/Ta Da MVP.md", ".trash/Due today.md", ".trash/Done.md"])
 
@@ -494,7 +494,7 @@ struct AppModelTests {
         #expect(try folder.read(tasks[0]) == before.replacingOccurrences(of: "project: \"[[Ta Da MVP]]\"", with: "project:"))
         #expect(model.looseTasks.map(\.path).sorted() == tasks.sorted())
 
-        await model.makeDueToday(tasks)
+        await model.makeDueOnAgendaDay(tasks)
         #expect(try folder.read(tasks[1]) == "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\nproject:\ndueDate: 2026-10-03\n---\n")
         #expect(model.index[tasks[0]]?.properties.dueDate == LocalDate("2026-10-03"))
     }

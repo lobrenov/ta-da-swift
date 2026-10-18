@@ -175,6 +175,6 @@ struct NoteModelTests {
     @Test func aNewFolderCanGoInAFolderWhosePageIsntShowing() async {
         let model = await folder.model()
         await model.newFolder(in: "Meetings/2026")
-        #expect(model.domain == .today && model.folderNameFocus == "Meetings/2026/Untitled folder")
+        #expect(model.domain == .agenda && model.folderNameFocus == "Meetings/2026/Untitled folder")
     }
 }

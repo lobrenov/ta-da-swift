@@ -40,27 +40,14 @@ struct WorkspaceView: View {
 
     @ViewBuilder private var domainLayout: some View {
         switch model.domain {
-        case .today:
-            split { TaskListView(model: model, kind: .today).id(AppModel.Domain.today) }
+        case .agenda:
+            split { TaskListView(model: model, kind: .today).id(AppModel.Domain.agenda) }
         case .loose:
             split { TaskListView(model: model, kind: .loose).id(AppModel.Domain.loose) }
         case .trash:
             TrashView(model: model)
         case .logbook:
             split { LogbookView(model: model) }
-        case .upcoming:
-            if model.selection == nil, model.multiSelection.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    upcomingHeader.padding(.horizontal, 40)
-                    HStack(alignment: .top, spacing: 40) {
-                        AgendaView(model: model, style: .wide)
-                        ScrollView { MonthCalendarView(model: model) }.scrollIndicators(.never).frame(width: 300)
-                    }
-                    .padding(.horizontal, 40)
-                }
-            } else {
-                split { AgendaView(model: model, style: .column) }
-            }
         case let .project(path):
             if let project = model.index[path] {
                 if model.selection == path {
@@ -88,19 +75,6 @@ struct WorkspaceView: View {
         case let .folder(path):
             split { FolderBrowserView(model: model, folder: path).id(model.domain) }
         }
-    }
-
-    /// Upcoming's header over the agenda and month calendar, with the dates' legend.
-    private var upcomingHeader: some View {
-        DomainHeader(.upcoming) {
-            HStack(spacing: 16) {
-                ForEach([AgendaEntry.Kind.due, .deadline], id: \.self) { kind in
-                    Chip(systemImage: kind.systemImage, tint: kind.tint, text: kind.key)
-                }
-            }
-        }
-        .padding(.top, 12)
-        .padding(.bottom, 10)
     }
 
     /// The browser column, the rule and the document pane at their narrowest.

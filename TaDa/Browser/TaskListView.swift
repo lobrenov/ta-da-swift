@@ -13,10 +13,10 @@ struct TaskListView: View {
     let kind: Kind
 
     private var list: GroupedList { kind == .today ? .today : .loose }
-    private var domain: AppModel.Domain { kind == .today ? .today : .loose }
+    private var domain: AppModel.Domain { kind == .today ? .agenda : .loose }
 
     var body: some View {
-        let all = kind == .today ? model.todayTasks : model.looseTasks
+        let all = kind == .today ? model.agendaTasks : model.looseTasks
         let filter = model.tagFilter(on: domain)
         let tasks = filter.apply(all)
         let grouping = model.grouping(of: list)
@@ -63,7 +63,7 @@ struct TaskListView: View {
     @ViewBuilder private var header: some View {
         switch kind {
         case .today:
-            DomainHeader(.today) {
+            DomainHeader(.agenda) {
                 HStack(spacing: 10) {
                     Text(model.today.formatted(.weekdayDayMonth)).font(.system(size: 13)).fixedSize()
                     GroupButton(model: model, list: list)

@@ -4,7 +4,7 @@ import TaDaCore
 
 @Observable final class AppModel {
     enum Domain: Hashable {
-        case today, upcoming, loose, logbook, trash
+        case agenda, loose, logbook, trash
         /// A project, by vault-relative path.
         case project(String)
         /// An area, by vault-relative path.
@@ -13,6 +13,12 @@ import TaDaCore
         case tag(String?)
         /// A notes folder's page, by vault-relative path; `""` for Loose, the top level.
         case folder(String)
+    }
+
+    /// The period the Agenda shows: a day, or an ISO week.
+    enum AgendaSelection: Hashable {
+        case day(LocalDate)
+        case week(ISOWeek)
     }
 
     /// What the sidebar lists under Trash: the area and project hierarchy (Tasks), the tag tree, or the notes folders.
@@ -32,7 +38,7 @@ import TaDaCore
     private(set) var state = VaultState.noFolder
     private(set) var vault: Vault?
     private(set) var index = VaultIndex()
-    var domain = Domain.today {
+    var domain = Domain.agenda {
         didSet {
             guard domain != oldValue else { return }
             selection = nil
@@ -198,6 +204,7 @@ import TaDaCore
     var today = LocalDate(Date()) {
         didSet {
             guard today != oldValue else { return }
+            if agendaSelection == .day(oldValue) { agendaSelection = .day(today) }
             updateLists()
             Task { await logIfDue() }
         }
@@ -232,6 +239,37 @@ import TaDaCore
     var haptics: Bool {
         didSet { defaults.set(!haptics, forKey: Keys.hapticsOff) }
     }
+    /// The Agenda's day or week, and whether its month is open. It opens on today.
+    var agendaSelection = AgendaSelection.day(LocalDate(Date())) {
+        didSet { if agendaSelection != oldValue { updateAgenda() } }
+    }
+    var agendaMonthOpen = false {
+        didSet { if agendaMonthOpen != oldValue { updateAgenda() } }
+    }
+    /// Settings ▸ Daily notes: the folders daily and week notes live in, whether week notes show, and the notes whose
+    /// text new daily and week notes start from, by path.
+    var dailyFolder: String {
+        didSet {
+            defaults.set(dailyFolder, forKey: Keys.dailyFolder)
+            updateAgenda()
+        }
+    }
+    var weekFolder: String {
+        didSet {
+            defaults.set(weekFolder, forKey: Keys.weekFolder)
+            updateAgenda()
+        }
+    }
+    var weekNotes: Bool {
+        didSet { defaults.set(!weekNotes, forKey: Keys.weekNotesOff) }
+    }
+    var dailyTemplate: String? {
+        didSet { defaults.set(dailyTemplate, forKey: Keys.dailyTemplate) }
+    }
+    var weekTemplate: String? {
+        didSet { defaults.set(weekTemplate, forKey: Keys.weekTemplate) }
+    }
+    var dailyNoteNames: DailyNoteNames { DailyNoteNames(dailyFolder: dailyFolder, weekFolder: weekFolder) }
     /// The task groups folded in each project's or area's browser ("Open", "Completed"), by its path.
     private(set) var foldedGroups: [String: [String]] {
         didSet { defaults.set(foldedGroups, forKey: Keys.foldedGroups) }
@@ -337,12 +375,12 @@ import TaDaCore
     /// The files a page's filter narrows, before filtering: what its menu lists the tags of.
     func filterItems(on domain: Domain) -> [Item] {
         switch domain {
-        case .today: todayTasks
+        case .agenda: agendaTasks
         case .loose: looseTasks
         case .project(let path): index[path].map { index.tasks(in: $0) } ?? []
         case .area(let path): index[path].map { index.projects(in: $0) + index.tasks(in: $0) } ?? []
         case .folder(let path): index.notes(in: path)
-        case .upcoming, .logbook, .trash, .tag: []
+        case .logbook, .trash, .tag: []
         }
     }
 
@@ -400,6 +438,11 @@ import TaDaCore
         static let quickEntryHotkey = "quickEntryHotkey"
         static let browserWidth = "browserWidth"
         static let groupings = "groupings"
+        static let dailyFolder = "dailyFolder"
+        static let weekFolder = "weekFolder"
+        static let weekNotesOff = "weekNotesOff"
+        static let dailyTemplate = "dailyTemplate"
+        static let weekTemplate = "weekTemplate"
     }
 
     init(defaults: any SettingsStore = UserDefaults.standard) {
@@ -419,6 +462,12 @@ import TaDaCore
         foldedTags = Set(defaults.stringArray(forKey: Keys.foldedTags) ?? [])
         foldedFolders = Set(defaults.stringArray(forKey: Keys.foldedFolders) ?? [])
         groupings = defaults.dictionary(forKey: Keys.groupings) as? [String: String] ?? [:]
+        let names = DailyNoteNames()
+        dailyFolder = defaults.string(forKey: Keys.dailyFolder) ?? names.dailyFolder
+        weekFolder = defaults.string(forKey: Keys.weekFolder) ?? names.weekFolder
+        weekNotes = !defaults.bool(forKey: Keys.weekNotesOff)
+        dailyTemplate = defaults.string(forKey: Keys.dailyTemplate)
+        weekTemplate = defaults.string(forKey: Keys.weekTemplate)
         let width = defaults.double(forKey: Keys.browserWidth)
         browserWidth = width > 0 ? width : nil
         // Missing: the default. Stored `[:]`: cleared.
@@ -463,7 +512,7 @@ import TaDaCore
             state = .failed(Self.couldNot("keep access to “\(folder.lastPathComponent)”", error))
             return
         }
-        domain = .today
+        domain = .agenda
         await openSavedFolder()
     }
 
@@ -1246,7 +1295,7 @@ import TaDaCore
             updateIndex { for path in moved { $0.remove(path) } }
             multiSelection.subtract(moved)
             if let path = domainPath, moved.contains(path) {
-                domain = .today
+                domain = .agenda
             } else if let selection, moved.contains(selection) {
                 self.selection = next
             }
@@ -1638,11 +1687,16 @@ import TaDaCore
         }
     }
 
-    /// Makes the tasks at `paths` due today. Tasks already due today aren't written.
-    func makeDueToday(_ paths: [String]) async {
-        let today = today
-        for path in paths where index[path]?.properties.dueDate != today {
-            await setProperty("dueDate", to: .date(today), in: path)
+    /// The day a task made in the Agenda or dropped on it is due: the selected day, or today when a week is selected.
+    var agendaDueDay: LocalDate {
+        if case let .day(day) = agendaSelection { day } else { today }
+    }
+
+    /// Makes the tasks at `paths` due on `agendaDueDay`. Tasks already due then aren't written.
+    func makeDueOnAgendaDay(_ paths: [String]) async {
+        let day = agendaDueDay
+        for path in paths where index[path]?.properties.dueDate != day {
+            await setProperty("dueDate", to: .date(day), in: path)
         }
     }
 
@@ -1654,25 +1708,25 @@ import TaDaCore
     }
 
     /// Creates an untitled task and selects it with its title ready to type. On a project's or area's page it's filed
-    /// there; in Today, Loose tasks and a tag's page it's filed with the selected task's project or area; in Today it's
-    /// due today; on a tag's page it carries the tag, and on Untagged it stays there; anywhere else it opens in Loose
+    /// there; in the Agenda, Loose tasks and a tag's page it's filed with the selected task's project or area; in the
+    /// Agenda it's due on the selected day, or today when a week is selected; on a tag's page it carries the tag, and on Untagged it stays there; anywhere else it opens in Loose
     /// tasks.
     func newTask() async {
         let parent = domainParent ?? selectedGroup
         var tags: [Tag] = []
         if case .tag(_?) = domain, let shownTag { tags = [shownTag] }
         var text = Self.newTask(in: parent, tags: tags, today: today)
-        if domain == .today { text = FrontmatterEditor.set("dueDate", to: .date(today), in: text) }
+        if domain == .agenda { text = FrontmatterEditor.set("dueDate", to: .date(agendaDueDay), in: text) }
         guard let path = await create(text, in: Vault.taskFolder) else { return }
         titleFocus = path
-        if case .tag = domain {} else if parent == nil, domain != .today { domain = .loose }
+        if case .tag = domain {} else if parent == nil, domain != .agenda { domain = .loose }
         selection = path
     }
 
-    /// In Today, Loose tasks and a tag's page, the project or area of the selected task, whose group it shows in.
+    /// In the Agenda, Loose tasks and a tag's page, the project or area of the selected task, whose group it shows in.
     private var selectedGroup: Item? {
         switch domain {
-        case .today, .loose, .tag: break
+        case .agenda, .loose, .tag: break
         default: return nil
         }
         guard let task = selection.flatMap({ index[$0] }), task.properties.kind == .task else { return nil }
@@ -1817,6 +1871,34 @@ import TaDaCore
         selection = path
     }
 
+    /// Selects the note for a day or week, found by its name in its folder; when there is none, creates it at that name
+    /// with the template's text, and its folders, and selects it. A name that's taken is never numbered.
+    func openOrCreateNote(for period: AgendaSelection) async {
+        let names = dailyNoteNames
+        let path: String, templatePath: String?
+        let found: () -> Item?
+        switch period {
+        case let .day(day): (path, templatePath, found) = (names.path(for: day), dailyTemplate, { self.index.dailyNote(for: day, names: names) })
+        case let .week(week): (path, templatePath, found) = (names.path(for: week), weekTemplate, { self.index.weekNote(for: week, names: names) })
+        }
+        if let existing = found() {
+            selection = existing.path
+            return
+        }
+        guard let vault else { return }
+        let folder = Vault.folder(of: path), filename = String(path.split(separator: "/").last ?? "")
+        let (template, isTaken) = await Self.run {
+            (templatePath.flatMap { try? vault.read($0) },
+             vault.filenames(in: folder).contains { $0.caseInsensitiveCompare(filename) == .orderedSame })
+        }
+        if isTaken {
+            await refresh()
+            selection = found()?.path ?? path
+        } else if let created = await create(NewFile.dailyNote(template: template, today: today), in: folder, title: Item.title(ofPath: path)) {
+            selection = created
+        }
+    }
+
     /// Creates "Untitled folder" in `parent`, or the folder whose page shows (else at the top level), its name ready to
     /// type.
     func newFolder(in parent: String? = nil) async {
@@ -1956,6 +2038,11 @@ import TaDaCore
     private(set) var todayTasks: [Item] = []
     private(set) var looseTasks: [Item] = []
     private(set) var upcoming: [AgendaEntry] = []
+    /// The Agenda's tasks when a day is selected, grouped as Today's are, and its entries when a week is selected.
+    private(set) var agendaTasks: [Item] = []
+    private(set) var agendaWeekEntries: [AgendaEntry] = []
+    /// What the days in `agendaRange` show: their dots.
+    private(set) var agendaMarks: [LocalDate: DayMarks] = [:]
     /// Active projects with their progress.
     private(set) var projects: [ProjectProgress] = []
     /// Active projects without an area.
@@ -1991,6 +2078,14 @@ import TaDaCore
     var todayReminders: [ExternalReminder] { integrations.todayReminders }
     var upcomingEvents: [LocalDate: [DayEvent]] { integrations.upcomingEvents }
     var upcomingReminders: [LocalDate: [ExternalReminder]] { integrations.upcomingReminders }
+    /// The events and reminders on any fetched day.
+    /// A reminder's day is the one it's due on; today's are those due today or overdue.
+    func events(on day: LocalDate) -> [DayEvent] {
+        day == today ? todayEvents : upcomingEvents[day] ?? integrations.pastEvents[day] ?? []
+    }
+    func reminders(on day: LocalDate) -> [ExternalReminder] {
+        day == today ? todayReminders : upcomingReminders[day] ?? integrations.pastReminders[day] ?? []
+    }
     /// Reminders due after `day`, by month, for Upcoming's later months.
     func remindersByMonth(after day: LocalDate) -> [LocalDate: [ExternalReminder]] {
         Dictionary(grouping: upcomingReminders.filter { $0.key > day }.sorted { $0.key < $1.key }.flatMap(\.value)) { $0.due!.startOfMonth }
@@ -1998,7 +2093,7 @@ import TaDaCore
 
     /// Whether any event covers `day`, for the month calendar's and week strip's dots.
     func hasEvents(on day: LocalDate) -> Bool {
-        day == today ? !todayEvents.isEmpty : upcomingEvents[day] != nil
+        !events(on: day).isEmpty
     }
 
     /// Settings ▸ Notifications: the app icon's badge.
@@ -2020,6 +2115,8 @@ import TaDaCore
         if let i = todayTasks.firstIndex(where: { $0.path == item.path }) { todayTasks[i] = item }
         if let i = looseTasks.firstIndex(where: { $0.path == item.path }) { looseTasks[i] = item }
         for i in upcoming.indices where upcoming[i].item.path == item.path { upcoming[i].item = item }
+        if let i = agendaTasks.firstIndex(where: { $0.path == item.path }) { agendaTasks[i] = item }
+        for i in agendaWeekEntries.indices where agendaWeekEntries[i].item.path == item.path { agendaWeekEntries[i].item = item }
         if let i = projects.firstIndex(where: { $0.project.path == item.path }) { projects[i].project = item }
         if let i = looseProjects.firstIndex(where: { $0.project.path == item.path }) { looseProjects[i].project = item }
         if let i = logbook.firstIndex(where: { $0.path == item.path }) { logbook[i] = item }
@@ -2055,14 +2152,58 @@ import TaDaCore
             .sorted(by: VaultIndex.byTitle)
         updateTags()
         updateNotes()
-        updateIntegrations()
+        updateAgenda()
         notifications.update(count: todayCount)
     }
 
-    /// Fetches events and reminders from today to the later of Upcoming's last date and the end of next month, which
-    /// the month calendar shows, but no more than a year ahead.
+    /// The selected period's tasks or entries, the dots for the days shown, and the events and reminders to fetch.
+    private func updateAgenda() {
+        switch agendaSelection {
+        case let .day(day):
+            agendaTasks = index.agendaDay(day, today: today)
+            agendaWeekEntries = []
+        case let .week(week):
+            agendaTasks = []
+            agendaWeekEntries = index.agendaWeek(week)
+        }
+        let range = agendaRange
+        agendaMarks = index.dayMarks(from: range.lowerBound, through: range.upperBound, names: dailyNoteNames)
+        updateIntegrations()
+    }
+
+    /// The days the Agenda shows: the selected week, or when the month is open, every week of its month.
+    var agendaRange: ClosedRange<LocalDate> {
+        let week: ISOWeek, anchor: LocalDate
+        switch agendaSelection {
+        case let .day(day): (week, anchor) = (day.isoWeek, day)
+        case let .week(selected): (week, anchor) = (selected, selected.firstDay.adding(days: 3))
+        }
+        let weeks = anchor.isoWeeksOfMonth
+        guard agendaMonthOpen, let first = weeks.first, let last = weeks.last else {
+            return week.firstDay...week.firstDay.adding(days: 6)
+        }
+        return first.firstDay...last.firstDay.adding(days: 6)
+    }
+
+    /// Steps the Agenda a day, or a week when a week is selected.
+    func stepAgenda(by offset: Int) {
+        switch agendaSelection {
+        case let .day(day): agendaSelection = .day(day.adding(days: offset))
+        case let .week(week): agendaSelection = .week(week.adding(weeks: offset))
+        }
+    }
+
+    func showAgendaToday() {
+        agendaSelection = .day(today)
+    }
+
+    /// Fetches events and reminders from the earlier of today and the first day shown to the later of Upcoming's last
+    /// date, the end of next month, which the month calendar shows, and the last day shown, but no more than a year
+    /// ahead of today.
     private func updateIntegrations() {
-        integrations.update(today: today, through: Self.integrationsWindowEnd(today: today, upcomingLast: upcoming.last?.date))
+        let range = agendaRange
+        integrations.update(today: today, from: range.lowerBound,
+                            through: max(range.upperBound, Self.integrationsWindowEnd(today: today, upcomingLast: upcoming.last?.date)))
     }
 
     static func integrationsWindowEnd(today: LocalDate, upcomingLast: LocalDate?) -> LocalDate {

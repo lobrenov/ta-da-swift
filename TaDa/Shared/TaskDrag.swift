@@ -1,4 +1,4 @@
-// Dragging task and note files: task rows drag as their files, onto the sidebar's projects, areas, Loose tasks and Today,
+// Dragging task and note files: task rows drag as their files, onto the sidebar's projects, areas, Loose tasks and Agenda,
 // note rows onto its notes folders and Loose, or either into other apps as a drag from Finder would, and the project menu
 // or a calendar opens under a row for ⌘P, ⌘S or ⌘D. A drag on a picked row takes every picked task, or every picked
 // note. Other apps get copies: Finder never moves a file out of the folder.
@@ -26,9 +26,9 @@ extension View {
         .dragPreviewsFormation(.stack)
     }
 
-    /// Takes dropped task rows: a project or area files them under it, Loose tasks empties their parent and Today
-    /// makes them due today. An area also takes dropped projects, and a notes folder (`""` for Loose) dropped notes,
-    /// moving them into it. Rings the row while a drag is over it.
+    /// Takes dropped task rows: a project or area files them under it, Loose tasks empties their parent and Agenda
+    /// makes them due on its selected day. An area also takes dropped projects, and a notes folder (`""` for Loose)
+    /// dropped notes, moving them into it. Rings the row while a drag is over it.
     func taskDrop(_ model: AppModel, onto target: TaskDropTarget, cornerRadius: CGFloat = 7) -> some View {
         modifier(TaskDropZone(model: model, target: target, cornerRadius: cornerRadius))
     }
@@ -48,7 +48,7 @@ enum TaskDropTarget {
     case project(Item)
     case area(Item)
     case loose
-    case today
+    case agenda
     case folder(String)
 }
 
@@ -94,7 +94,7 @@ private struct TaskDropZone: ViewModifier {
                     case .area(let area):
                         await model.setParent(area, of: paths.filter { [.task, .project].contains(model.index[$0]?.properties.kind) })
                     case .loose: await model.setParent(nil, of: tasks)
-                    case .today: await model.makeDueToday(tasks)
+                    case .agenda: await model.makeDueOnAgendaDay(tasks)
                     case .folder(let folder):
                         for path in paths where model.index[path]?.properties.kind == .note && Vault.folder(of: path) != folder {
                             await model.moveNote(path, to: folder)

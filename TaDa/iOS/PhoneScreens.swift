@@ -13,7 +13,7 @@ struct PhoneTaskListScreen: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let all = kind == .today ? model.todayTasks : model.looseTasks
+        let all = kind == .today ? model.agendaTasks : model.looseTasks
         let filter = model.tagFilter(on: domain)
         let shownTasks = filter.apply(all)
         let grouping = model.grouping(of: list)
@@ -71,7 +71,7 @@ struct PhoneTaskListScreen: View {
     }
 
     private var list: GroupedList { kind == .today ? .today : .loose }
-    private var domain: AppModel.Domain { kind == .today ? .today : .loose }
+    private var domain: AppModel.Domain { kind == .today ? .agenda : .loose }
 
     private var empty: some View {
         switch kind {
@@ -86,7 +86,7 @@ struct PhoneTaskListScreen: View {
 
     /// A new task opens with its title ready to type: due today in Today, a loose task in Loose.
     private func newTask() async {
-        model.domain = kind == .today ? .today : .loose
+        model.domain = kind == .today ? .agenda : .loose
         await model.newTask()
         if let path = model.selection { nav.push(.file(path)) }
     }
@@ -152,7 +152,7 @@ struct PhoneUpcomingScreen: View {
     }
 
     private func newTask() async {
-        model.domain = .upcoming
+        model.domain = .agenda
         await model.newTask()
         if let path = model.selection { nav.push(.file(path)) }
     }
