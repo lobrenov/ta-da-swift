@@ -60,6 +60,13 @@ struct VaultSettingsView: View {
                     folder("tasks/", "New tasks, one markdown file each")
                     folder("projects/", "New projects, one markdown file each")
                     folder("areas/", "New areas, one markdown file each")
+                    if model.dailyFolder == model.weekFolder || !model.weekNotes {
+                        folder(noteFolder(model.dailyFolder), model.weekNotes && model.dailyFolder == model.weekFolder
+                               ? "Daily and week notes" : "Daily notes")
+                    } else {
+                        folder(noteFolder(model.dailyFolder), "Daily notes")
+                        folder(noteFolder(model.weekFolder), "Week notes")
+                    }
                 }
                 .padding(.vertical, 6)
                 .background(theme.color(\.code), in: .rect(cornerRadius: 10))
@@ -85,6 +92,9 @@ struct VaultSettingsView: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+
+    /// A note folder as the list shows it, with the vault's top level as `/`.
+    private func noteFolder(_ path: String) -> String { path.isEmpty ? "/" : path + "/" }
 
     private func folder(_ path: String, _ description: String) -> some View {
         HStack(spacing: 16) {

@@ -1,4 +1,4 @@
-// The Other tab: Tags, Logbook and Trash, and Settings (Vault, Themes, Editor, Integrations, Notifications, Haptics), with the folder's sync state under them.
+// The Other tab: Tags, Logbook and Trash, and Settings (Vault, Themes, Editor, Daily notes, Integrations, Notifications, Haptics), with the folder's sync state under them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -29,6 +29,9 @@ struct PhoneOtherScreen: View {
                 }
                 NavigationLink(value: PhoneRoute.settings(.editor)) {
                     row("Editor", "pencil", tint: \.doing, value: "")
+                }
+                NavigationLink(value: PhoneRoute.settings(.dailyNotes)) {
+                    row("Daily notes", "calendar.badge.clock", tint: \.done, value: "")
                 }
                 NavigationLink(value: PhoneRoute.integrations) {
                     row("Integrations", "calendar", tint: \.deadline, value: integrationsValue)
@@ -130,6 +133,8 @@ struct PhoneSettingsScreen: View {
                     toggle("Tags", "#", \.tags)
                 }
                 .id(SettingsSection.editor)
+                dailyNotes
+                    .id(SettingsSection.dailyNotes)
                 notifications
                     .id(SettingsSection.notifications)
                 Section {
@@ -149,6 +154,44 @@ struct PhoneSettingsScreen: View {
             .folderImporter(isPresented: $isPicking, model: model)
             .onAppear { proxy.scrollTo(section, anchor: .top) }
         }
+    }
+
+    private var dailyNotes: some View {
+        Group {
+            Section {
+                folderField($model.dailyFolder)
+                template($model.dailyTemplate)
+            } header: {
+                Text("Daily notes")
+            } footer: {
+                Text("File name YYYY-MM-DD, e.g. \(model.dailyNoteExample)")
+            }
+            Section {
+                Toggle("Week notes", isOn: $model.weekNotes)
+                folderField($model.weekFolder)
+                    .disabled(!model.weekNotes)
+                template($model.weekTemplate)
+                    .disabled(!model.weekNotes)
+            } header: {
+                Text("Week notes")
+            } footer: {
+                Text("File name GGGG-[W]WW, e.g. \(model.weekNoteExample). Each week opens with its note in the Agenda.")
+            }
+        }
+    }
+
+    private func folderField(_ folder: Binding<String>) -> some View {
+        LabeledContent("Folder") {
+            DailyFolderField(folder: folder)
+        }
+    }
+
+    private func template(_ template: Binding<String?>) -> some View {
+        Picker("Template", selection: template) {
+            Text("None").tag(String?.none)
+            ForEach(model.templateChoices) { Text($0.path.dropLast(3)).tag(String?.some($0.path)) }
+        }
+        .pickerStyle(.navigationLink)
     }
 
     private var notifications: some View {
@@ -192,6 +235,33 @@ struct PhoneSettingsScreen: View {
                     .background(theme.color(\.surface), in: .rect(cornerRadius: 5))
             }
         }
+    }
+}
+
+/// A folder path typed into a field, committed on Return or when the field loses focus; empty is the vault's top level.
+private struct DailyFolderField: View {
+    @Binding var folder: String
+    @State private var draft = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        TextField("Vault folder", text: $draft)
+            .multilineTextAlignment(.trailing)
+            .font(.system(size: 15, design: .monospaced))
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .submitLabel(.done)
+            .focused($isFocused)
+            .onSubmit(commit)
+            .onAppear { draft = folder }
+            .onChange(of: folder) { draft = folder }
+            .onChange(of: isFocused) { if !isFocused { commit() } }
+    }
+
+    private func commit() {
+        let cleaned = AppModel.cleanedFolder(draft)
+        draft = cleaned
+        if cleaned != folder { folder = cleaned }
     }
 }
 

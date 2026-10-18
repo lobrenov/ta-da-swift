@@ -164,3 +164,12 @@ struct AgendaModelTests {
         #expect(model.agendaMarks[LocalDate("2026-10-02")!]?.hasOpenBoxes == true)
     }
 }
+
+struct DailyNotesSettingsTests {
+    @Test func typedFoldersLoseWhitespaceAndOuterSlashes() {
+        #expect(AppModel.cleanedFolder("  /Periodic Notes/Daily/ ") == "Periodic Notes/Daily")
+        #expect(AppModel.cleanedFolder("Journal") == "Journal")
+        #expect(AppModel.cleanedFolder(" / ") == "")
+        #expect(AppModel.cleanedFolder("") == "")
+    }
+}

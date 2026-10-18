@@ -37,7 +37,7 @@ enum PhoneRoute: Hashable {
 }
 
 enum SettingsSection: String, Hashable, CaseIterable {
-    case vault, themes, editor, notifications, haptics
+    case vault, themes, editor, dailyNotes, notifications, haptics
 }
 
 /// A picker over everything: a due date or deadline for one or more files, a project or area for tasks, an area
