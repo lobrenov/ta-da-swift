@@ -470,7 +470,7 @@ struct WrappingHStack: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var y = bounds.minY
-        for row in rows(of: subviews, width: bounds.width) {
+        for row in rows(of: subviews, width: proposal.width ?? .infinity) {
             var x = bounds.minX
             for index in row.indices {
                 let size = subviews[index].sizeThatFits(.unspecified)

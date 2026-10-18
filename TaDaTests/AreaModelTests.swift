@@ -58,12 +58,12 @@ struct AreaModelTests {
 
     @Test func newTaskInTodayJoinsTheSelectedTasksGroup() async throws {
         let model = await folder.model()
-        model.show(.today)
+        model.show(.agenda)
         model.selection = "tasks/Weed.md"
         await model.newTask()
         let path = try #require(model.selection)
         let task = try #require(model.index[path])
-        #expect(model.domain == .today)
+        #expect(model.domain == .agenda)
         #expect(task.properties.project?.title == "Garden")
         #expect(task.properties.dueDate == model.today)
     }
@@ -108,7 +108,7 @@ struct AreaModelTests {
         let request = try #require(model.trashConfirmation)
         model.trashConfirmation = nil
         await model.confirmTrash(request)
-        #expect(model.trashConfirmation == nil && model.domain == .today)
+        #expect(model.trashConfirmation == nil && model.domain == .agenda)
         #expect(model.index.items.keys.sorted() == ["projects/Side.md", "tasks/Loose.md"])
         #expect(model.trash.count == 4)
 

@@ -226,8 +226,8 @@ struct OutsideChangesTests {
         model.searchText = "oth"
         #expect(model.isSearching)
         #expect(model.index.search(model.searchText).map(\.title) == ["Other"])
-        model.show(.upcoming)
-        #expect(model.searchText.isEmpty && model.domain == .upcoming)
+        model.show(.loose)
+        #expect(model.searchText.isEmpty && model.domain == .loose)
     }
 
     @Test func anOutsideEditReachesTheLiveEditor() async throws {

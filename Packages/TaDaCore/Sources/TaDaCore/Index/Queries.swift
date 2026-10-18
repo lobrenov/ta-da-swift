@@ -54,6 +54,14 @@ public struct AreaProjects: Hashable, Sendable, Identifiable {
     public var id: String { area.path }
 }
 
+/// What a date shows in the Agenda's strip, month and week rows.
+public struct DayMarks: Hashable, Sendable {
+    /// An open task is due or at its deadline that day.
+    public var hasOpenTasks: Bool
+    /// That day's daily note has unchecked boxes.
+    public var hasOpenBoxes: Bool
+}
+
 /// The saved queries behind the sidebar domains. `today` is always passed in. Today, Upcoming and
 /// Loose list tasks; projects show their dates on their own page. Each list applies a per-item test to
 /// every task, and the tests answer for one file too.
@@ -62,6 +70,36 @@ extension VaultIndex {
     /// Sorted by their earliest date, then title.
     public func today(_ today: LocalDate) -> [Item] {
         tasks.filter { isInToday($0, today: today) }.sorted { Self.byDate($0, $1) }
+    }
+
+    /// The tasks an Agenda day lists. Today's list for `today`; for any other day, tasks due or at their deadline that
+    /// day that are open or Done, sorted by their earliest date, then title.
+    public func agendaDay(_ date: LocalDate, today: LocalDate) -> [Item] {
+        if date == today { return self.today(today) }
+        return tasks.filter { !agendaEntries(of: $0, on: [date]).isEmpty }.sorted { Self.byDate($0, $1) }
+    }
+
+    /// The entries an Agenda week lists: open or Done tasks' due dates and deadlines within the week, in Upcoming's order.
+    public func agendaWeek(_ week: ISOWeek) -> [AgendaEntry] {
+        tasks.flatMap { agendaEntries(of: $0, on: Set(week.days)) }.sorted(by: Self.byAgendaOrder)
+    }
+
+    /// For each date from `from` through `through` that has either mark. The daily note is looked up by `names`.
+    public func dayMarks(from: LocalDate, through: LocalDate,
+                         names: DailyNoteNames = DailyNoteNames()) -> [LocalDate: DayMarks] {
+        guard from <= through else { return [:] }
+        var marks: [LocalDate: DayMarks] = [:]
+        for task in tasks where !task.properties.status.isClosed {
+            for date in [task.properties.dueDate, task.properties.deadline].compactMap({ $0 }) where (from...through).contains(date) {
+                marks[date, default: DayMarks(hasOpenTasks: false, hasOpenBoxes: false)].hasOpenTasks = true
+            }
+        }
+        for offset in 0...from.days(to: through) {
+            let date = from.adding(days: offset)
+            guard let note = dailyNote(for: date, names: names), openCheckboxCount(note) > 0 else { continue }
+            marks[date, default: DayMarks(hasOpenTasks: false, hasOpenBoxes: false)].hasOpenBoxes = true
+        }
+        return marks
     }
 
     /// Whether a task is in Today: open and due or at its deadline today or earlier, or completed (Done or Cancelled) today.
@@ -167,6 +205,16 @@ extension VaultIndex {
             let (ta, tb) = (matches(a.title), matches(b.title))
             return ta != tb ? ta : Self.byTitle(a, b)
         }
+    }
+
+    /// A task's entries on `dates`, when it's open or Done.
+    private func agendaEntries(of item: Item, on dates: Set<LocalDate>) -> [AgendaEntry] {
+        let p = item.properties
+        guard p.kind == .task, p.status != .cancelled else { return [] }
+        return [p.dueDate.map { AgendaEntry(item: item, date: $0, kind: .due) },
+                p.deadline.map { AgendaEntry(item: item, date: $0, kind: .deadline) }]
+            .compactMap { $0 }
+            .filter { dates.contains($0.date) }
     }
 
     /// Upcoming's order: by date, due before deadline, then title.

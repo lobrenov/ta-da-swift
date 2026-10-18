@@ -83,7 +83,7 @@ private struct SwipeToPick: ViewModifier {
 }
 
 /// A pan that starts only when it moves left and mostly sideways, so the list still scrolls and the back swipe
-/// still works.
+/// still works. A horizontally scrolling parent waits for it to fail.
 private struct PickPan: UIGestureRecognizerRepresentable {
     let changed: (CGFloat) -> Void
     let ended: (_ isCancelled: Bool) -> Void
@@ -114,6 +114,14 @@ private struct PickPan: UIGestureRecognizerRepresentable {
             guard let pan = recognizer as? UIPanGestureRecognizer, let view = pan.view else { return false }
             let velocity = pan.velocity(in: view)
             return velocity.x < 0 && -velocity.x > abs(velocity.y) * 1.5
+        }
+
+        /// A horizontally scrolling parent, as the Agenda's pages, waits for this pan to fail: a leftward pan that
+        /// starts on a row picks it, and any other pan scrolls the parent.
+        func gestureRecognizer(_ recognizer: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+            guard let scrollView = other.view as? UIScrollView, other === scrollView.panGestureRecognizer,
+                  recognizer.view?.isDescendant(of: scrollView) == true else { return false }
+            return scrollView.contentSize.width > scrollView.bounds.width
         }
     }
 }

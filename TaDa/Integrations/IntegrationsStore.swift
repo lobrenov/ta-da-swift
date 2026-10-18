@@ -1,4 +1,4 @@
-// The device's Calendar events and Reminders for Today and Upcoming, read through EventKit. Ta Da never writes them.
+// The device's Calendar events and Reminders for the Agenda's days, read through EventKit. Ta Da never writes them.
 import CoreGraphics
 import EventKit
 import Foundation
@@ -54,18 +54,21 @@ final class IntegrationsStore {
 
     // MARK: Lists
 
-    /// Today's events and reminders (due today or overdue), and Upcoming's by day after today.
+    /// Today's events and reminders (due today or overdue), Upcoming's by day after today, and those by day before today
+    /// from the window's first day. A past day's reminders are the incomplete ones due then.
     private(set) var todayEvents: [DayEvent] = []
     private(set) var todayReminders: [ExternalReminder] = []
     private(set) var upcomingEvents: [LocalDate: [DayEvent]] = [:]
     private(set) var upcomingReminders: [LocalDate: [ExternalReminder]] = [:]
+    private(set) var pastEvents: [LocalDate: [DayEvent]] = [:]
+    private(set) var pastReminders: [LocalDate: [ExternalReminder]] = [:]
 
     private let defaults: any SettingsStore
     @ObservationIgnored private var eventStore: EKEventStore?
     @ObservationIgnored private var storeObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var timeZoneObserver: (any NSObjectProtocol)?
-    /// Today and the last day fetched.
-    @ObservationIgnored private var window: (today: LocalDate, last: LocalDate)?
+    /// Today and the first and last days fetched.
+    @ObservationIgnored private(set) var window: (today: LocalDate, first: LocalDate, last: LocalDate)?
     @ObservationIgnored private var fetches = 0
 
     private enum Keys {
@@ -89,7 +92,7 @@ final class IntegrationsStore {
         kind == .events ? showsEvents : showsReminders
     }
 
-    /// Whether the switch is on and access is granted, so the kind shows in Today and Upcoming.
+    /// Whether the switch is on and access is granted, so the kind shows in the Agenda.
     func isShown(_ kind: Kind) -> Bool {
         isOn(kind) && status(kind) == .fullAccess
     }
@@ -138,12 +141,14 @@ final class IntegrationsStore {
         fetch()
     }
 
-    /// Fetches for Today and for Upcoming through `last`, when either has changed.
-    func update(today: LocalDate, through last: LocalDate) {
-        if let window, window.today == today, window.last == last { return }
-        window = (today, max(today, last))
+    /// Fetches from `first` (or today, if earlier) through `last`, unless the day is the same and the window already
+    /// covers them.
+    func update(today: LocalDate, from first: LocalDate, through last: LocalDate) {
+        if let window, window.today == today, window.first <= first, last <= window.last { return }
+        window = (today, min(today, first), max(today, last))
         fetch()
     }
+
 
     /// Reads access again when the app becomes active. When it changed, a switch whose access went is turned off and the
     /// store forgets what it read before fetching again. The calendars' own changes and a new day fetch on their own.
@@ -205,7 +210,7 @@ final class IntegrationsStore {
             return apply(events: [], reminders: [], window: window)
         }
         let calendar = Calendar.current
-        let dates = window.map { ($0.today.date(in: calendar), $0.last.adding(days: 1).date(in: calendar)) }
+        let dates = window.map { ($0.first.date(in: calendar), $0.last.adding(days: 1).date(in: calendar)) }
         let hiddenCalendars = showsEvents ? hiddenCalendars : nil, hiddenLists = showsReminders ? hiddenLists : nil
         let fetcher = Fetcher(store: store())
         Task {
@@ -219,17 +224,23 @@ final class IntegrationsStore {
         }
     }
 
-    /// Places one fetch's events and reminders in Today and on Upcoming's days.
-    func apply(events: [ExternalEvent], reminders: [ExternalReminder], window: (today: LocalDate, last: LocalDate)?) {
+    /// Places one fetch's events and reminders in Today, on Upcoming's days and on the days before today.
+    func apply(events: [ExternalEvent], reminders: [ExternalReminder], window: (today: LocalDate, first: LocalDate, last: LocalDate)?) {
         let today = window?.today ?? LocalDate(Date())
         let todayEvents = DayEvent.on(today, from: events)
         let upcomingEvents = window.map { DayEvent.byDay(events, from: today.adding(days: 1), through: $0.last) } ?? [:]
+        let pastEvents = window.map { DayEvent.byDay(events, from: $0.first, through: today.adding(days: -1)) } ?? [:]
         let todayReminders = ExternalReminder.today(reminders, today: today)
         let upcomingReminders = ExternalReminder.upcoming(reminders, after: today)
-        // Assigning an equal list would still redraw Today and Upcoming.
+        let first = window?.first ?? today
+        let pastReminders = Dictionary(grouping: reminders.filter { $0.due.map { first <= $0 && $0 < today } ?? false }) { $0.due! }
+            .mapValues { $0.sorted { ($0.title, $0.id) < ($1.title, $1.id) } }
+        // Assigning an equal list would still redraw the Agenda.
         if todayEvents != self.todayEvents { self.todayEvents = todayEvents }
         if upcomingEvents != self.upcomingEvents { self.upcomingEvents = upcomingEvents }
         if todayReminders != self.todayReminders { self.todayReminders = todayReminders }
+        if pastEvents != self.pastEvents { self.pastEvents = pastEvents }
+        if pastReminders != self.pastReminders { self.pastReminders = pastReminders }
         if upcomingReminders != self.upcomingReminders { self.upcomingReminders = upcomingReminders }
     }
 

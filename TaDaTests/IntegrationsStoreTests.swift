@@ -87,7 +87,7 @@ struct IntegrationsStoreTests {
             ExternalReminder(identifier: "r2", title: "Soon", due: today.adding(days: 3), color: "#0A84FF"),
             ExternalReminder(identifier: "r3", title: "Later", due: today.adding(days: 20), color: "#0A84FF"),
         ]
-        model.integrations.apply(events: events, reminders: reminders, window: (today, today.adding(days: 40)))
+        model.integrations.apply(events: events, reminders: reminders, window: (today, today, today.adding(days: 40)))
 
         #expect(model.todayEvents.map(\.event.title) == ["Standup"])
         #expect(model.todayReminders.map(\.title) == ["Overdue"])
@@ -95,8 +95,41 @@ struct IntegrationsStoreTests {
         #expect(model.upcomingReminders[today.adding(days: 3)]?.map(\.title) == ["Soon"])
         #expect(model.hasEvents(on: today) && model.hasEvents(on: today.adding(days: 2)))
         #expect(!model.hasEvents(on: today.adding(days: 1)) && !model.hasEvents(on: today.adding(days: 4)))
-        let later = today.adding(days: 20)
-        #expect(model.remindersByMonth(after: today.adding(days: 7))[later.startOfMonth]?.map(\.title) == ["Later"])
+    }
+
+    @Test func pastDaysKeepTheirEventsAndOverdueReminders() {
+        let model = AppModel(defaults: TestSettings())
+        let today = model.today
+        func at(_ day: LocalDate, _ hour: Int) -> Date { Calendar.current.date(byAdding: .hour, value: hour, to: day.date())! }
+        let events = [ExternalEvent(identifier: "a", title: "Dentist", start: at(today.adding(days: -3), 9), end: at(today.adding(days: -3), 10),
+                                    isAllDay: false, color: "#FF9500")]
+        let reminders = [ExternalReminder(identifier: "r1", title: "Overdue", due: today.adding(days: -2), color: "#FF453A"),
+                         ExternalReminder(identifier: "r2", title: "Too early", due: today.adding(days: -9), color: "#FF453A")]
+        model.integrations.apply(events: events, reminders: reminders, window: (today, today.adding(days: -5), today.adding(days: 40)))
+
+        #expect(model.events(on: today.adding(days: -3)).map(\.event.title) == ["Dentist"])
+        #expect(model.hasEvents(on: today.adding(days: -3)) && !model.hasEvents(on: today.adding(days: -2)))
+        #expect(model.reminders(on: today.adding(days: -2)).map(\.title) == ["Overdue"])
+        #expect(model.reminders(on: today.adding(days: -9)).isEmpty, "before the window")
+    }
+
+    @Test func theWindowStartsAtTheMonthShownAndStaysWhileItCoversTheSelection() async throws {
+        let folder = try TestFolder()
+        let model = await folder.model(today: LocalDate("2026-10-18")!)
+        let window = { model.integrations.window }
+        model.agendaSelection = .day(LocalDate("2026-07-15")!)
+        model.agendaMonthOpen = true
+        #expect(model.agendaRange == LocalDate("2026-06-29")!...LocalDate("2026-08-02")!)
+        #expect(window()?.today == LocalDate("2026-10-18") && window()?.first == LocalDate("2026-06-29"))
+        #expect(window()?.last == LocalDate("2026-11-30"))
+
+        model.agendaSelection = .week(LocalDate("2026-07-01")!.isoWeek)
+        #expect(window()?.first == LocalDate("2026-06-29"), "still covered")
+        model.agendaSelection = .day(LocalDate("2026-05-10")!)
+        #expect(window()?.first == LocalDate("2026-04-27"), "left the covered range")
+        model.agendaSelection = .day(LocalDate("2026-10-18")!)
+        model.agendaMonthOpen = false
+        #expect(window()?.first == LocalDate("2026-04-27"), "later days stay covered")
     }
 
     @Test func coloursBecomeSRGBHex() {

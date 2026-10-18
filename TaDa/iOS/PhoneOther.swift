@@ -1,4 +1,4 @@
-// The Other tab: Tags, Logbook and Trash, and Settings (Vault, Themes, Editor, Integrations, Notifications, Haptics), with the folder's sync state under them.
+// The Other tab: Logbook and Trash, and Settings (Vault, Themes, Editor, Daily notes, Integrations, Notifications, Haptics), with the folder's sync state under them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -10,9 +10,6 @@ struct PhoneOtherScreen: View {
     var body: some View {
         List {
             Section {
-                NavigationLink(value: PhoneRoute.tags) {
-                    row("Tags", "tag", tint: \.accent, value: "\(model.tagCount)")
-                }
                 NavigationLink(value: PhoneRoute.logbook) {
                     row("Logbook", AppModel.Domain.logbook.systemImage, tint: \.done, value: "")
                 }
@@ -29,6 +26,9 @@ struct PhoneOtherScreen: View {
                 }
                 NavigationLink(value: PhoneRoute.settings(.editor)) {
                     row("Editor", "pencil", tint: \.doing, value: "")
+                }
+                NavigationLink(value: PhoneRoute.settings(.dailyNotes)) {
+                    row("Daily notes", "calendar.badge.clock", tint: \.done, value: "")
                 }
                 NavigationLink(value: PhoneRoute.integrations) {
                     row("Integrations", "calendar", tint: \.deadline, value: integrationsValue)
@@ -130,6 +130,8 @@ struct PhoneSettingsScreen: View {
                     toggle("Tags", "#", \.tags)
                 }
                 .id(SettingsSection.editor)
+                dailyNotes
+                    .id(SettingsSection.dailyNotes)
                 notifications
                     .id(SettingsSection.notifications)
                 Section {
@@ -151,6 +153,47 @@ struct PhoneSettingsScreen: View {
         }
     }
 
+    private var dailyNotes: some View {
+        Group {
+            Section {
+                folderField($model.dailyFolder)
+                template($model.dailyTemplate)
+            } header: {
+                Text("Daily notes")
+            } footer: {
+                Text("File name YYYY-MM-DD, e.g. \(model.dailyNoteExample)")
+            }
+            Section {
+                Toggle("Week notes", isOn: $model.weekNotes)
+                folderField($model.weekFolder)
+                    .disabled(!model.weekNotes)
+                template($model.weekTemplate)
+                    .disabled(!model.weekNotes)
+            } header: {
+                Text("Week notes")
+            } footer: {
+                Text("File name GGGG-[W]WW, e.g. \(model.weekNoteExample). Each week opens with its note in the Agenda.")
+            }
+        }
+    }
+
+    private func folderField(_ folder: Binding<String>) -> some View {
+        LabeledContent("Folder") {
+            DailyFolderField(folder: folder)
+        }
+    }
+
+    private func template(_ template: Binding<String?>) -> some View {
+        Picker("Template", selection: template) {
+            Text("None").tag(String?.none)
+            if let missing = model.missingTemplate(template.wrappedValue) {
+                Text(missing.missingTemplateLabel).foregroundStyle(theme.color(\.muted)).tag(String?.some(missing))
+            }
+            ForEach(model.templateChoices) { Text($0.path.dropLast(3)).tag(String?.some($0.path)) }
+        }
+        .pickerStyle(.navigationLink)
+    }
+
     private var notifications: some View {
         let store = model.notifications
         return Section {
@@ -166,7 +209,7 @@ struct PhoneSettingsScreen: View {
         } footer: {
             Text(store.access == .denied
                  ? "Ta Da can’t show badges. Turn on Allow Notifications and Badges in Settings ▸ Apps ▸ Ta Da ▸ Notifications."
-                 : "The app icon counts the open tasks due or at their deadline today or earlier, as in Today.")
+                 : "The app icon counts the open tasks due or at their deadline today or earlier, as in today's Agenda.")
         }
     }
 
@@ -192,6 +235,33 @@ struct PhoneSettingsScreen: View {
                     .background(theme.color(\.surface), in: .rect(cornerRadius: 5))
             }
         }
+    }
+}
+
+/// A folder path typed into a field, committed on Return or when the field loses focus; empty is the vault's top level.
+private struct DailyFolderField: View {
+    @Binding var folder: String
+    @State private var draft = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        TextField("Vault folder", text: $draft)
+            .multilineTextAlignment(.trailing)
+            .scaledFont(size: 15, design: .monospaced)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .submitLabel(.done)
+            .focused($isFocused)
+            .onSubmit(commit)
+            .onAppear { draft = folder }
+            .onChange(of: folder) { draft = folder }
+            .onChange(of: isFocused) { if !isFocused { commit() } }
+    }
+
+    private func commit() {
+        let cleaned = AppModel.cleanedFolder(draft)
+        draft = cleaned
+        if cleaned != folder { folder = cleaned }
     }
 }
 
@@ -273,7 +343,7 @@ struct PhoneTrashScreen: View {
         .navigationTitle(search.isOpen ? "" : "Trash")
         .navigationSubtitle(search.isOpen ? "" : "\(count) file\(count == 1 ? "" : "s") in .trash/\(picked.isEmpty ? "" : " · \(picked.count) selected")")
         .navigationBarBackButtonHidden(search.isOpen)
-        .toolbar(.hidden, for: .tabBar)
+        .background { TabBarHiddenOnTop() }
         .toolbar {
             if search.isOpen {
                 // Keeps the navigation bar, so the rows stay below the search field in its row.

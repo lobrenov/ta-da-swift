@@ -199,3 +199,34 @@ private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
     #expect(names("") == ["Home", "errands", "home/garden", "people", "quick win", "Work", "Work/Clients", "people/dan", "People/Max"])
     #expect(names("", limit: 2) == ["Home", "errands"])
 }
+
+@Test func agendaDayIsTodaysListForTodayAndDatedTasksOtherwise() {
+    #expect(index.agendaDay(today, today: today).map(\.title) == index.today(today).map(\.title))
+    #expect(index.agendaDay(LocalDate("2026-10-05")!, today: today).map(\.title) == ["Done today", "Same day"])
+    #expect(index.agendaDay(LocalDate("2026-10-01")!, today: today).map(\.title) == ["Done earlier", "Overdue deadline"])
+    #expect(index.agendaDay(LocalDate("2026-10-04")!, today: today).isEmpty)
+    let cancelled = VaultIndex([makeItem("tasks/Dropped.md", "type: task\nstatus: Cancelled\ndueDate: 2026-10-03\ncompletedDate: 2026-10-01")])
+    #expect(cancelled.agendaDay(LocalDate("2026-10-03")!, today: today).isEmpty)
+}
+
+@Test func agendaWeekHasEntriesDatedWithinTheWeek() {
+    let entries = index.agendaWeek(ISOWeek(year: 2026, week: 41)!).map { "\($0.date) \($0.kind) \($0.item.title)" }
+    #expect(entries == [
+        "2026-10-05 due Done today",
+        "2026-10-05 due Same day",
+        "2026-10-05 deadline Same day",
+        "2026-10-08 deadline Tomorrow",
+        "2026-10-09 due Overdue deadline",
+    ])
+    #expect(index.agendaWeek(ISOWeek(year: 2026, week: 42)!).isEmpty)
+}
+
+@Test func agendaOnTheDesignVault() async {
+    let design = await Vault(root: sampleVault).loadIndex()
+    #expect(design.agendaDay(today, today: today).map(\.path) == design.today(today).map(\.path))
+    let tomorrow = today.adding(days: 1)
+    #expect(design.agendaDay(tomorrow, today: today).allSatisfy { $0.properties.dueDate == tomorrow || $0.properties.deadline == tomorrow })
+    let entries = design.agendaWeek(today.isoWeek)
+    #expect(!entries.isEmpty && entries.allSatisfy { today.isoWeek.days.contains($0.date) })
+    #expect(entries.map(\.date) == entries.map(\.date).sorted())
+}

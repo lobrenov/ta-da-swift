@@ -12,7 +12,7 @@ struct IntegrationsSettingsView: View {
 
     var body: some View {
         SettingsPage(title: "Integrations",
-                     summary: "Show events and reminders from this Mac in Today and Upcoming. Ta Da only reads them.",
+                     summary: "Show events and reminders from this Mac in the Agenda. Ta Da only reads them.",
                      spacing: 18) {
             VStack(spacing: 0) {
                 ForEach(IntegrationsStore.Kind.allCases, id: \.self) { kind in

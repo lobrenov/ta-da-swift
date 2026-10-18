@@ -1,5 +1,4 @@
-// The area right of the sidebar: a domain's list beside the selected document, Upcoming's month view
-// when nothing is selected, or a project's or area's own page.
+// The area right of the sidebar: a domain's list beside the selected document, or a project's or area's own page.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -40,27 +39,19 @@ struct WorkspaceView: View {
 
     @ViewBuilder private var domainLayout: some View {
         switch model.domain {
-        case .today:
-            split { TaskListView(model: model, kind: .today).id(AppModel.Domain.today) }
+        case .agenda:
+            split {
+                switch model.agendaSelection {
+                case let .day(day): AgendaDayList(model: model, day: day)
+                case let .week(week): AgendaWeekList(model: model, week: week)
+                }
+            }
         case .loose:
-            split { TaskListView(model: model, kind: .loose).id(AppModel.Domain.loose) }
+            split { TaskListView(model: model).id(AppModel.Domain.loose) }
         case .trash:
             TrashView(model: model)
         case .logbook:
             split { LogbookView(model: model) }
-        case .upcoming:
-            if model.selection == nil, model.multiSelection.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    upcomingHeader.padding(.horizontal, 40)
-                    HStack(alignment: .top, spacing: 40) {
-                        AgendaView(model: model, style: .wide)
-                        ScrollView { MonthCalendarView(model: model) }.scrollIndicators(.never).frame(width: 300)
-                    }
-                    .padding(.horizontal, 40)
-                }
-            } else {
-                split { AgendaView(model: model, style: .column) }
-            }
         case let .project(path):
             if let project = model.index[path] {
                 if model.selection == path {
@@ -88,19 +79,6 @@ struct WorkspaceView: View {
         case let .folder(path):
             split { FolderBrowserView(model: model, folder: path).id(model.domain) }
         }
-    }
-
-    /// Upcoming's header over the agenda and month calendar, with the dates' legend.
-    private var upcomingHeader: some View {
-        DomainHeader(.upcoming) {
-            HStack(spacing: 16) {
-                ForEach([AgendaEntry.Kind.due, .deadline], id: \.self) { kind in
-                    Chip(systemImage: kind.systemImage, tint: kind.tint, text: kind.key)
-                }
-            }
-        }
-        .padding(.top, 12)
-        .padding(.bottom, 10)
     }
 
     /// The browser column, the rule and the document pane at their narrowest.

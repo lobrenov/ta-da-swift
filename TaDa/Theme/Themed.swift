@@ -16,19 +16,33 @@ extension View {
 
 private struct Themed: ViewModifier {
     let model: AppModel
+    #if os(iOS)
+    @State private var registration: (any UITraitChangeRegistration)?
+    #endif
 
     func body(content: Content) -> some View {
         content
             .environment(\.theme, model.theme)
             // Light schemes use the light system appearance so pickers, context menus and scroll bars match.
-            .preferredColorScheme(model.theme.isDark ? .dark : .light)
             #if os(macOS)
+            .preferredColorScheme(model.theme.isDark ? .dark : .light)
             .onReceive(NSApp.publisher(for: \.effectiveAppearance)) { _ in
                 model.systemIsDark = Appearance.systemIsDark
             }
             #else
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            // Overrides the windows, not the scene, so the scene keeps the device's appearance.
+            .onChange(of: model.theme.isDark, initial: true) { _, isDark in
+                for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+                    for window in scene.windows { window.overrideUserInterfaceStyle = isDark ? .dark : .light }
+                }
+            }
+            .onAppear {
+                guard registration == nil,
+                      let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
                 model.systemIsDark = Appearance.systemIsDark
+                registration = scene.registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (_: UIWindowScene, _) in
+                    model.systemIsDark = Appearance.systemIsDark
+                }
             }
             #endif
     }

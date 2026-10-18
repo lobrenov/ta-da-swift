@@ -1,4 +1,4 @@
-// A reminder in Today or Upcoming: a circle in its list's colour and its title; in Today an overdue one shows its due
+// A reminder in the Agenda: a circle in its list's colour and its title; in Today an overdue one shows its due
 // date in `deadline`, and in Upcoming's later months each shows its date. Reminders aren't links.
 import SwiftUI
 import TaDaCore

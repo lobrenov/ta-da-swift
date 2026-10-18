@@ -14,10 +14,10 @@ One task file as a row in a browser list: checkbox, title, and a meta line drawn
 - A click opens the file. Shift-click picks a range from the last task clicked on its own or ⌘-clicked; ⌘-click adds or removes one task. Every picked row shows `is-selected`, and the editor shows "N tasks selected" instead of a file.
 - Picked tasks that a filter or search hides drop out of the selection, so nothing unseen is deleted.
 - Escape clears the selection; ⌫ moves the picked tasks to the trash; ⌘P opens the project menu, and ⌘S and ⌘D the due date's and deadline's calendar, under the first picked row.
-- Rows drag onto the sidebar's projects, areas, Loose tasks and Today, and into other apps as their files; dragging a picked row takes every picked task.
+- Rows drag onto the sidebar's projects, areas, Loose tasks and Agenda, and into other apps as their files; dragging a picked row takes every picked task.
 
 ## Rules
 
-- Show only what the view does not already say: Today shows only an overdue due date; a project hides its own name; a project's or area's task list shows date icons without the words.
+- Show only what the view does not already say: an Agenda day shows only an overdue due date; a project hides its own name; a project's or area's task list shows date icons without the words.
 - Dates are short and relative where possible: "Today", "Tue 6 Oct", "Deadline Fri 16".
 - Let the title wrap to a second line rather than truncate in the browser pane.

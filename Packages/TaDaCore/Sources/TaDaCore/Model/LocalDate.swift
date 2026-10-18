@@ -113,3 +113,61 @@ extension LocalDate {
 
     private var midnightUTC: Date { date(in: Self.utc) }
 }
+
+/// An ISO 8601 week: it starts on Monday, and belongs to the year that holds its Thursday.
+public struct ISOWeek: Hashable, Comparable, Sendable, CustomStringConvertible {
+    public let year: Int
+    /// 1 to 52, or 53 in a long year.
+    public let week: Int
+
+    /// Returns nil for weeks the year doesn't have, such as week 53 of 2027.
+    public init?(year: Int, week: Int) {
+        guard let lastDay = LocalDate(year: year, month: 12, day: 28), (1...lastDay.isoWeek.week).contains(week) else { return nil }
+        self.year = year
+        self.week = week
+    }
+
+    private init(unchecked year: Int, _ week: Int) {
+        self.year = year
+        self.week = week
+    }
+
+    /// `GGGG-[W]WW`, e.g. `2026-W40`.
+    public var description: String { String(format: "%04d-W%02d", year, week) }
+
+    public static func < (lhs: ISOWeek, rhs: ISOWeek) -> Bool {
+        (lhs.year, lhs.week) < (rhs.year, rhs.week)
+    }
+
+    /// The week's Monday.
+    public var firstDay: LocalDate {
+        LocalDate(year: year, month: 1, day: 4)!.mondayOfWeek.adding(days: (week - 1) * 7)
+    }
+
+    /// Monday to Sunday.
+    public var days: [LocalDate] { (0..<7).map { firstDay.adding(days: $0) } }
+
+    public func adding(weeks: Int) -> ISOWeek {
+        firstDay.adding(days: weeks * 7).isoWeek
+    }
+
+    fileprivate init(containing date: LocalDate) {
+        let thursday = date.mondayOfWeek.adding(days: 3)
+        let dayOfYear = LocalDate(year: thursday.year, month: 1, day: 1)!.days(to: thursday)
+        self.init(unchecked: thursday.year, dayOfYear / 7 + 1)
+    }
+}
+
+extension LocalDate {
+    /// The ISO week this day is in. Late December can be week 1 of the next year, and early January week 52 or 53.
+    public var isoWeek: ISOWeek { ISOWeek(containing: self) }
+
+    /// The ISO weeks that have a day in this day's month, in order.
+    public var isoWeeksOfMonth: [ISOWeek] {
+        let last = addingMonths(1).adding(days: -1)
+        let first = startOfMonth.isoWeek
+        return (0...first.firstDay.days(to: last.mondayOfWeek) / 7).map { first.adding(weeks: $0) }
+    }
+
+    fileprivate var mondayOfWeek: LocalDate { adding(days: -((weekday + 5) % 7)) }
+}

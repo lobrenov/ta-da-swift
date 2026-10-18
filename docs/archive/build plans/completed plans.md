@@ -14,3 +14,4 @@ Finished build plans, kept for their decisions and milestones. A finished plan m
 | `date phrases v1.md` | Typed dates in the Mac's date menu: `DatePhrase` in TaDaCore and the calendar's field. | 2026-10-13 |
 | `tables v2.md` | The Mac's live table grid: cells edited in place with markdown, Tab and arrow keys, grab handles to move rows and columns, and rightClickMenu. | 2026-10-15 |
 | `group and filter v1.md` | Group (Project, Status, Date, Open) on Today, Loose tasks and projects, and the tag filter on those, areas and Notes folders, on Mac and iPhone. | 2026-10-16 |
+| `Daily Agenda.md` | Daily and week notes, and one Agenda in place of Today and Upcoming (a day or ISO week, with a week strip and month), Settings ▸ Daily notes, and the iPhone's Agenda, Tasks, Tags, Notes and Other tabs, on Mac and iPhone. | 2026-10-19 |

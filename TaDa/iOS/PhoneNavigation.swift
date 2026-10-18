@@ -5,13 +5,15 @@ import SwiftUI
 import TaDaCore
 
 enum PhoneTab: Hashable {
-    case today, upcoming, loose, projects, other
+    case agenda, tasks, tags, notes, other
 }
 
 /// A screen pushed onto a tab's stack.
 enum PhoneRoute: Hashable {
     /// A task's or project's file.
     case file(String)
+    /// The loose tasks: those with no project or area.
+    case loose
     /// A project's tasks.
     case project(String)
     /// An area's projects and tasks.
@@ -22,22 +24,22 @@ enum PhoneRoute: Hashable {
     case integrations
     case logbook
     case trash
-    /// Untagged and the tag tree.
-    case tags
     /// A tag's page, by path; nil for Untagged.
     case tag(String?)
+    /// A notes folder's notes and subfolders, by path; `""` for Loose, the top level.
+    case folder(String)
 
     /// The file the screen shows, if it shows one.
     var path: String? {
         switch self {
         case let .file(path), let .project(path), let .area(path): path
-        case .settings, .integrations, .logbook, .trash, .tags, .tag: nil
+        case .loose, .settings, .integrations, .logbook, .trash, .tag, .folder: nil
         }
     }
 }
 
 enum SettingsSection: String, Hashable, CaseIterable {
-    case vault, themes, editor, notifications, haptics
+    case vault, themes, editor, dailyNotes, notifications, haptics
 }
 
 /// A picker over everything: a due date or deadline for one or more files, a project or area for tasks, an area
@@ -156,8 +158,13 @@ enum Haptic: Equatable {
     }
 }
 
+/// What tapping the tab that's already selected does.
+enum PhoneTabReselect: Equatable {
+    case popToRoot, showAgendaToday
+}
+
 @Observable final class PhoneNavigation {
-    var tab = PhoneTab.today
+    var tab = PhoneTab.agenda
     /// Each tab's pushed screens, so a tab keeps its place while another is shown.
     var stacks: [PhoneTab: [PhoneRoute]] = [:]
     var sheet: PhoneSheet?
@@ -193,6 +200,13 @@ enum Haptic: Equatable {
     /// Takes the screens for files that are gone out of every tab, as after a delete.
     func dropScreens(where isGone: (String) -> Bool) {
         stacks = stacks.mapValues { routes in routes.filter { $0.path.map { !isGone($0) } ?? true } }
+    }
+
+    /// What tapping `tab` does when it's the selected one: pop its pushed screens, else (on the Agenda) go to today.
+    func reselection(of tab: PhoneTab, agenda: AppModel.AgendaSelection, today: LocalDate) -> PhoneTabReselect? {
+        guard tab == self.tab else { return nil }
+        if !(stacks[tab] ?? []).isEmpty { return .popToRoot }
+        return tab == .agenda && agenda != .day(today) ? .showAgendaToday : nil
     }
 
     func stack(_ tab: PhoneTab) -> Binding<[PhoneRoute]> {

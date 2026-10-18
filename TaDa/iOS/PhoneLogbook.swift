@@ -40,7 +40,7 @@ struct PhoneLogbookScreen: View {
         }
         .navigationTitle("Logbook")
         .navigationSubtitle("Completed files in \(Vault.logbookFolder)/")
-        .toolbar(.hidden, for: .tabBar)
+        .background { TabBarHiddenOnTop() }
         .toolbar {
             ToolbarItem(placement: .bottomBar) {
                 Text(waiting == 0 ? "Up to date · logs every night" : "\(waiting) completed today · logs every night")

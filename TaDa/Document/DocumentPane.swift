@@ -32,10 +32,24 @@ struct DocumentPane: View {
             EmptyState(systemImage: "exclamationmark.triangle", title: "Couldn’t open the file", message: "\(error)")
         } else if model.selection == nil, model.multiSelection.count > 1 {
             EmptyState(systemImage: "doc.on.doc", title: "\(model.multiSelection.count) tasks selected")
+        } else if model.selection == nil, model.domain == .agenda, !model.isSearching, let create = agendaCreation {
+            EmptyState(systemImage: "doc.text", title: create.title, message: "Uses the template set in Settings ▸ Daily notes.",
+                       button: ("Create \(create.file)", { Task { await model.openOrCreateNote(for: model.agendaSelection) } }))
         } else if model.selection == nil {
             EmptyState(systemImage: "doc.text", title: "No task selected", message: "Pick a task to read and edit it here.")
         } else {
             Color.clear
+        }
+    }
+}
+
+extension DocumentPane {
+    /// What the Agenda's empty pane offers: the note for its day, or for its week while week notes are on.
+    private var agendaCreation: (title: String, file: String)? {
+        let file = String(model.notePath(for: model.agendaSelection).split(separator: "/").last ?? "")
+        switch model.agendaSelection {
+        case .day: return ("No note for this day yet.", file)
+        case .week: return model.weekNotes ? ("No note for this week yet.", file) : nil
         }
     }
 }

@@ -91,8 +91,8 @@ struct TagModelTests {
         model.show(.area("areas/Home.md"))
         #expect(model.sidebarMode == .projects)
         model.sidebarMode = .tags
-        model.show(.today)
-        #expect(model.sidebarMode == .tags, "Today and the rows above the switch leave it alone")
+        model.show(.agenda)
+        #expect(model.sidebarMode == .tags, "Agenda and the rows above the switch leave it alone")
         model.show(.loose)
         #expect(model.sidebarMode == .projects)
     }

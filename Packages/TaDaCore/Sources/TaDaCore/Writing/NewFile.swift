@@ -28,6 +28,11 @@ public enum NewFile {
         tags.isEmpty ? block(["createdDate: \(today)", "tags: []"], tags: []) : block(["createdDate: \(today)"], tags: tags)
     }
 
+    /// A note's frontmatter, then the template's body. The template's own frontmatter isn't copied.
+    public static func dailyNote(template: String?, today: LocalDate) -> String {
+        note(today: today) + (template.map { FrontmatterSplitter.split($0).body } ?? "")
+    }
+
     private static func block(_ keys: [String], tags: [Tag]) -> String {
         var keys = keys
         if !tags.isEmpty { keys.append("tags: [\(tags.unique.map { FrontmatterEditor.flowItem($0.name) }.joined(separator: ", "))]") }

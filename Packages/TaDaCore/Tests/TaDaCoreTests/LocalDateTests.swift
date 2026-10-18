@@ -78,3 +78,56 @@ func localDateRejects(_ text: String) {
     #expect(LocalDate("2026-10-04")!.nextWeek(firstWeekday: 2) == LocalDate("2026-10-05")!)
     #expect(LocalDate("2026-10-02")!.nextWeek(firstWeekday: 1) == LocalDate("2026-10-04")!)
 }
+
+private func week(_ text: String) -> ISOWeek { LocalDate(text)!.isoWeek }
+
+@Test(arguments: [
+    ("2026-10-02", 2026, 40), ("2026-09-28", 2026, 40), ("2026-10-04", 2026, 40), ("2026-10-05", 2026, 41),
+    ("2020-12-31", 2020, 53), ("2021-01-03", 2020, 53), ("2021-01-04", 2021, 1),
+    ("2026-12-31", 2026, 53), ("2027-01-01", 2026, 53), ("2027-01-03", 2026, 53), ("2027-01-04", 2027, 1),
+    ("2024-12-30", 2025, 1), ("2025-12-29", 2026, 1), ("2026-01-01", 2026, 1), ("2016-01-01", 2015, 53),
+])
+func isoWeekOfADate(_ text: String, _ year: Int, _ number: Int) {
+    #expect((week(text).year, week(text).week) == (year, number))
+}
+
+@Test func isoWeekDaysRunMondayToSunday() throws {
+    let days = ISOWeek(year: 2026, week: 53)!.days
+    #expect(days.map(\.description) == ["2026-12-28", "2026-12-29", "2026-12-30", "2026-12-31", "2027-01-01", "2027-01-02", "2027-01-03"])
+    #expect(days.allSatisfy { $0.isoWeek == ISOWeek(year: 2026, week: 53) })
+    #expect(days.map(\.weekday) == [2, 3, 4, 5, 6, 7, 1])
+    #expect(ISOWeek(year: 2027, week: 1)!.firstDay.description == "2027-01-04")
+    #expect(ISOWeek(year: 2020, week: 1)!.firstDay.description == "2019-12-30")
+}
+
+@Test func isoWeeksExistOnlyWhenTheYearHasThem() {
+    #expect(ISOWeek(year: 2026, week: 53) != nil && ISOWeek(year: 2027, week: 53) == nil)
+    #expect(ISOWeek(year: 2020, week: 53) != nil && ISOWeek(year: 2026, week: 0) == nil && ISOWeek(year: 2026, week: 54) == nil)
+    #expect(ISOWeek(year: 2026, week: 40)!.description == "2026-W40")
+}
+
+@Test func addingWeeksCrossesYears() {
+    #expect(ISOWeek(year: 2026, week: 52)!.adding(weeks: 1) == ISOWeek(year: 2026, week: 53))
+    #expect(ISOWeek(year: 2026, week: 53)!.adding(weeks: 1) == ISOWeek(year: 2027, week: 1))
+    #expect(ISOWeek(year: 2027, week: 1)!.adding(weeks: -2) == ISOWeek(year: 2026, week: 52))
+    #expect(ISOWeek(year: 2026, week: 40)!.adding(weeks: 0) == ISOWeek(year: 2026, week: 40))
+    #expect(ISOWeek(year: 2026, week: 53)! < ISOWeek(year: 2027, week: 1)!)
+}
+
+/// 2026-03-29 and 2026-10-25 are daylight-saving changes in Europe, 2026-03-08 and 2026-11-01 in the US.
+@Test(arguments: ["2026-03-08", "2026-03-29", "2026-10-25", "2026-11-01"])
+func isoWeekMathIgnoresDaylightSaving(_ text: String) {
+    let date = LocalDate(text)!
+    let week = date.isoWeek
+    #expect(week.days.contains(date) && week.days.count == 7)
+    #expect(week.days.map(\.weekday) == [2, 3, 4, 5, 6, 7, 1])
+    #expect(week.adding(weeks: 1).firstDay == week.firstDay.adding(days: 7))
+    #expect(week.adding(weeks: 1).adding(weeks: -1) == week)
+}
+
+@Test func monthsListTheirIsoWeeks() {
+    #expect(LocalDate("2026-10-15")!.isoWeeksOfMonth.map(\.description) == ["2026-W40", "2026-W41", "2026-W42", "2026-W43", "2026-W44"])
+    #expect(LocalDate("2026-12-01")!.isoWeeksOfMonth.map(\.description) == ["2026-W49", "2026-W50", "2026-W51", "2026-W52", "2026-W53"])
+    #expect(LocalDate("2027-01-20")!.isoWeeksOfMonth.map(\.description) == ["2026-W53", "2027-W01", "2027-W02", "2027-W03", "2027-W04"])
+    #expect(LocalDate("2026-02-10")!.isoWeeksOfMonth.map(\.description) == ["2026-W05", "2026-W06", "2026-W07", "2026-W08", "2026-W09"])
+}

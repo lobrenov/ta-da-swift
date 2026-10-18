@@ -93,7 +93,7 @@ func untypedFilesAreNotesOnlyAtNotePaths(_ text: String) {
     #expect(item.warnings.count == 1)
 }
 
-/// Every SampleVault file parses cleanly; the note without frontmatter is a note.
+/// Every SampleVault file parses cleanly; the note without frontmatter and the daily and week notes are notes.
 @Test func sampleVaultParses() throws {
     let files = try sampleFiles()
     #expect(files.count > 20)
@@ -103,7 +103,7 @@ func untypedFilesAreNotesOnlyAtNotePaths(_ text: String) {
         let title = file.deletingPathExtension().lastPathComponent
         let item = try #require(Item(parsing: try String(contentsOf: file, encoding: .utf8), path: file.lastPathComponent), "\(title) didn't parse")
         guard item.properties.kind != .note else {
-            #expect(file.path.contains("/notes/"), "\(title) is a note")
+            #expect(file.path.contains("/notes/") || file.path.contains("/Periodic Notes/"), "\(title) is a note")
             continue
         }
         // The design's tasks name an area beside their project, which ignores it.

@@ -133,10 +133,10 @@ struct FileInspector: View {
             let reason = p.status.isClosed ? "completed today"
                 : index.isOverdue(item, today: today) ? "overdue"
                 : p.dueDate.map { $0 <= today } == true ? "dueDate" : "deadline"
-            places.append(Place(.today, reason: reason))
+            places.append(Place(.agenda, title: "Today", reason: reason))
         }
         for entry in index.upcomingEntries(of: item, after: today) {
-            places.append(Place(.upcoming, title: "Upcoming · \(entry.date.formatted(.weekdayDayMonth))", reason: entry.kind.key))
+            places.append(Place(.agenda, title: "Agenda · \(entry.date.formatted(.weekdayDayMonth))", reason: entry.kind.key))
         }
         if let parent = index.parent(of: item) {
             let isArea = parent.properties.kind == .area

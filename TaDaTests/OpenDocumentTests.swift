@@ -130,10 +130,10 @@ struct OpenDocumentTests {
     @Test func newTasksLandWhereTheyShow() async throws {
         let model = await folder.model()
         await model.newTask()
-        #expect(model.domain == .today)
+        #expect(model.domain == .agenda)
         #expect(model.index.today(model.today).map(\.path).contains("tasks/Untitled.md"), "due today")
 
-        model.domain = .upcoming
+        model.domain = .logbook
         await model.newTask()
         #expect(model.domain == .loose)
         #expect(model.selection == "tasks/Untitled 2.md")

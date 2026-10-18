@@ -141,15 +141,24 @@ struct PhoneNavigationTests {
 
     @Test func aRenameAndADeleteUpdateEveryTabsScreens() {
         let nav = PhoneNavigation()
-        nav.stacks = [.projects: [.area("areas/Home.md"), .file("tasks/Rent.md")], .today: [.file("tasks/Weed.md"), .trash]]
+        nav.stacks = [.tasks: [.area("areas/Home.md"), .file("tasks/Rent.md")], .agenda: [.file("tasks/Weed.md"), .trash],
+                      .tags: [.tag("home"), .area("areas/Home.md")], .notes: [.folder("Meetings"), .file("notes/Weed.md")]]
         nav.replace(.area("areas/Home.md"), with: .area("areas/House.md"))
-        #expect(nav.stacks[.projects] == [.area("areas/House.md"), .file("tasks/Rent.md")])
-        nav.dropScreens { $0 != "tasks/Weed.md" }
-        #expect(nav.stacks[.projects] == [] && nav.stacks[.today] == [.file("tasks/Weed.md"), .trash])
+        #expect(nav.stacks[.tasks] == [.area("areas/House.md"), .file("tasks/Rent.md")])
+        #expect(nav.stacks[.tags] == [.tag("home"), .area("areas/House.md")])
+        nav.dropScreens { $0 == "tasks/Rent.md" || $0 == "notes/Weed.md" }
+        #expect(nav.stacks[.tasks] == [.area("areas/House.md")])
+        #expect(nav.stacks[.agenda] == [.file("tasks/Weed.md"), .trash])
+        #expect(nav.stacks[.notes] == [.folder("Meetings")])
+    }
+
+    @Test func theAgendaIsTheFirstTabAndFolderScreensShowNoFile() {
+        #expect(PhoneNavigation().tab == .agenda)
+        #expect(PhoneRoute.loose.path == nil && PhoneRoute.folder("Meetings").path == nil && PhoneRoute.folder("") != PhoneRoute.folder("Meetings"))
     }
 
     @Test func tagScreensShowNoFileAndTheTagSheetIsPerFile() {
-        #expect(PhoneRoute.tags.path == nil && PhoneRoute.tag("home").path == nil && PhoneRoute.tag(nil).path == nil)
+        #expect(PhoneRoute.tag("home").path == nil && PhoneRoute.tag(nil).path == nil)
         #expect(PhoneRoute.tag("home") != PhoneRoute.tag(nil))
         #expect(PhoneSheet.tags(path: "a.md").id != PhoneSheet.tags(path: "b.md").id)
         #expect(PhoneSheet.tags(path: "a.md").id != PhoneSheet.move(paths: ["a.md"]).id)
@@ -158,10 +167,23 @@ struct PhoneNavigationTests {
     @Test func aDeletedFilesScreensGoButTagScreensStay() {
         let nav = PhoneNavigation()
         nav.tab = .other
-        nav.push(.tags)
         nav.push(.tag("home"))
         nav.push(.file("tasks/a.md"))
         nav.dropScreens { $0 == "tasks/a.md" }
-        #expect(nav.stacks[.other] == [.tags, .tag("home")])
+        #expect(nav.stacks[.other] == [.tag("home")])
+    }
+
+    @Test func tappingTheSelectedTabPopsItsScreensThenGoesToToday() {
+        let today = LocalDate("2026-10-18")!
+        let nav = PhoneNavigation()
+        let elsewhere = AppModel.AgendaSelection.day(today.adding(days: 3))
+        #expect(nav.reselection(of: .agenda, agenda: elsewhere, today: today) == .showAgendaToday)
+        #expect(nav.reselection(of: .agenda, agenda: .week(today.isoWeek), today: today) == .showAgendaToday)
+        #expect(nav.reselection(of: .agenda, agenda: .day(today), today: today) == nil)
+        nav.push(.file("tasks/a.md"))
+        #expect(nav.reselection(of: .agenda, agenda: elsewhere, today: today) == .popToRoot, "pushed screens pop first")
+        #expect(nav.reselection(of: .tasks, agenda: elsewhere, today: today) == nil, "another tab is a plain switch")
+        nav.tab = .tags
+        #expect(nav.reselection(of: .tags, agenda: elsewhere, today: today) == nil, "only the Agenda goes to today")
     }
 }

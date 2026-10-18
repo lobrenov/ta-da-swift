@@ -1,4 +1,4 @@
-// Sidebar: search, Today and Upcoming, Logbook, Trash with its count, then the Tasks | Tags | Notes switch. Tasks lists
+// Sidebar: search, Agenda, Logbook, Trash with its count, then the Tasks | Tags | Notes switch. Tasks lists
 // Loose tasks, active projects without an area, then each area with its active projects under it; Tags lists Untagged
 // and the tag tree; Notes lists Loose (the top level) and the folder tree. Then the folder line, Settings and the New
 // buttons. Task rows drop onto Today, Loose tasks, the
@@ -41,9 +41,8 @@ struct SidebarView: View {
                 .padding(.bottom, 4)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
-                    row(.today, count: model.todayCount)
-                        .taskDrop(model, onto: .today)
-                    row(.upcoming, count: nil)
+                    row(.agenda, count: model.todayCount)
+                        .taskDrop(model, onto: .agenda)
                     row(.logbook, count: nil)
                         .padding(.top, 8)
                     row(.trash, count: model.trashCount)

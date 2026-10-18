@@ -10,18 +10,18 @@ struct PhoneRootView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        TabView(selection: $nav.tab) {
-            Tab("Today", systemImage: "star.fill", value: PhoneTab.today) {
-                stack(.today) { PhoneTaskListScreen(model: model, kind: .today) }
+        TabView(selection: Binding(get: { nav.tab }, set: select)) {
+            Tab("Agenda", systemImage: "calendar", value: PhoneTab.agenda) {
+                stack(.agenda) { PhoneAgendaScreen(model: model) }
             }
-            Tab("Upcoming", systemImage: "calendar", value: PhoneTab.upcoming) {
-                stack(.upcoming) { PhoneUpcomingScreen(model: model) }
+            Tab("Tasks", systemImage: "checkmark.square", value: PhoneTab.tasks) {
+                stack(.tasks) { PhoneTasksScreen(model: model) }
             }
-            Tab("Loose", systemImage: "tray", value: PhoneTab.loose) {
-                stack(.loose) { PhoneTaskListScreen(model: model, kind: .loose) }
+            Tab("Tags", systemImage: "tag", value: PhoneTab.tags) {
+                stack(.tags) { PhoneTagsScreen(model: model) }
             }
-            Tab("Projects", systemImage: "chart.pie", value: PhoneTab.projects) {
-                stack(.projects) { PhoneProjectsScreen(model: model) }
+            Tab("Notes", systemImage: "doc.text", value: PhoneTab.notes) {
+                stack(.notes) { PhoneNotesScreen(model: model) }
             }
             Tab("Other", systemImage: "ellipsis.circle", value: PhoneTab.other) {
                 stack(.other) { PhoneOtherScreen(model: model) }
@@ -67,6 +67,17 @@ struct PhoneRootView: View {
         .onChange(of: nav.tab) { nav.endPicking() }
     }
 
+    /// Picks `tab`; picking the selected one again pops its screens, or takes the Agenda to today.
+    private func select(_ tab: PhoneTab) {
+        switch nav.reselection(of: tab, agenda: model.agendaSelection, today: model.today) {
+        case .popToRoot: nav.stacks[tab] = []
+        case .showAgendaToday:
+            nav.play(.pick)
+            withAnimation(AgendaMotion.spring) { model.showAgendaToday() }
+        case nil: nav.tab = tab
+        }
+    }
+
     /// Deletes what `request` asked about, and `images`, then drops the screens of the files that went.
     private func trash(_ request: AppModel.TrashConfirmation, images: [String] = []) {
         nav.play(.trash)
@@ -96,14 +107,15 @@ struct PhoneRootView: View {
                 root().navigationDestination(for: PhoneRoute.self) { route in
                     switch route {
                     case let .file(path): PhoneFileScreen(model: model, path: path)
+                    case .loose: PhoneTaskListScreen(model: model)
                     case let .project(path): PhoneProjectScreen(model: model, path: path)
                     case let .area(path): PhoneAreaScreen(model: model, path: path)
                     case let .settings(section): PhoneSettingsScreen(model: model, section: section)
                     case .integrations: PhoneIntegrationsScreen(store: model.integrations)
                     case .logbook: PhoneLogbookScreen(model: model)
                     case .trash: PhoneTrashScreen(model: model)
-                    case .tags: PhoneTagsScreen(model: model)
                     case let .tag(path): PhoneTagScreen(model: model, path: path)
+                    case let .folder(path): PhoneFolderScreen(model: model, path: path)
                     }
                 }
             }

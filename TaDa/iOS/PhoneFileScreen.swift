@@ -34,7 +34,7 @@ struct PhoneFileScreen: View {
         }
         .background { theme.color(\.bg).ignoresSafeArea() }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
+        .background { TabBarHiddenOnTop() }
         .toolbar {
             if search.isOpen {
                 // Keeps the navigation bar, so the page stays below the search field in its row.

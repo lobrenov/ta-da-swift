@@ -1,4 +1,4 @@
-// The calendar under a dueDate or deadline chip: its month in a popup panel like Upcoming's calendar, with
+// The calendar under a dueDate or deadline chip: its month in a popup panel, with
 // Today, Tomorrow, Next week and Clear. A date typed in its field ("fri", "3d", "25/12") moves a cursor to it,
 // and ↵ sets it.
 import SwiftUI
@@ -302,6 +302,25 @@ private struct PickerDayCell: View {
         if day == model.today { parts.append("today") }
         if day == model.other { parts.append(model.kind == .due ? "deadline" : "due date") }
         return parts.joined(separator: ", ")
+    }
+}
+
+/// The chevron that shows the previous or next month.
+struct MonthStepButton: View {
+    let forward: Bool
+    let action: () -> Void
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: forward ? "chevron.right" : "chevron.left")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(theme.color(\.muted))
+                .frame(width: 22, height: 22)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(forward ? "Next month" : "Previous month")
     }
 }
 #endif
