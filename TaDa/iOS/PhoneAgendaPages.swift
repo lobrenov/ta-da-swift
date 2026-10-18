@@ -289,7 +289,7 @@ private struct AgendaNoteCard: View {
     let note: Item
     let name: String
     let systemImage: String
-    @State private var lines: [NoteBoxLine] = []
+    @State private var loaded: [NoteBoxLine]?
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -310,7 +310,12 @@ private struct AgendaNoteCard: View {
                 .padding(.top, 10)
                 .padding(.bottom, 6)
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(lines.indices, id: \.self) { line(lines[$0]) }
+                    if let lines = model.cachedBoxLines(of: note) ?? loaded {
+                        ForEach(lines.indices, id: \.self) { line(lines[$0]) }
+                    } else {
+                        // Room for the lines until they're read, so nothing below moves.
+                        ForEach(0..<NoteBoxLine.count(of: note.checkboxes), id: \.self) { _ in Color.clear.scaledMinHeight(26) }
+                    }
                     if let summary = note.summary {
                         Text(summary).scaledFont(size: 15).foregroundStyle(theme.color(\.muted)).lineLimit(1).padding(.top, 4)
                     }
@@ -326,7 +331,7 @@ private struct AgendaNoteCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Open the \(name.lowercased()), \(boxes.done) of \(boxes.total) done")
-        .task(id: note) { lines = await model.boxLines(of: note, limit: 6) }
+        .task(id: note) { loaded = await model.boxLines(of: note) }
     }
 
     private func line(_ line: NoteBoxLine) -> some View {

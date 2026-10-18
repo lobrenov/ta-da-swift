@@ -616,6 +616,7 @@ import TaDaCore
     private func apply(_ changes: VaultChanges, from vault: Vault) async {
         guard !changes.isEmpty else { return }
         let open = document
+        for path in changes.changed.keys { boxLineCache[path] = nil }
         updateIndex { index in
             for path in changes.removed where path != open?.path { index.remove(path) }
             for (path, item) in changes.changed where path != open?.path {
@@ -904,6 +905,7 @@ import TaDaCore
     }
 
     private func documentChanged(_ document: OpenDocument) {
+        boxLineCache[document.path] = nil
         if let item = document.item {
             if index[item.path] != item { updateIndex(replacing: item) }
         } else if index[document.path] != nil {
@@ -1899,11 +1901,28 @@ import TaDaCore
         }
     }
 
-    /// The first `limit` checkbox lines of a note, read from its file.
-    func boxLines(of note: Item, limit: Int) async -> [NoteBoxLine] {
-        guard let vault else { return [] }
+    /// The checkbox lines the Agenda's note cards drew, by note path, with the item they were read for.
+    @ObservationIgnored private var boxLineCache: [String: (item: Item, lines: [NoteBoxLine])] = [:]
+
+    /// The lines of `note`'s card, if they were read for this version of it.
+    func cachedBoxLines(of note: Item) -> [NoteBoxLine]? {
+        boxLineCache[note.path].flatMap { $0.item == note ? $0.lines : nil }
+    }
+
+    /// The first `NoteBoxLine.limit` checkbox lines of a note, from the open document or its file, kept until the note changes.
+    func boxLines(of note: Item) async -> [NoteBoxLine] {
+        if let cached = cachedBoxLines(of: note) { return cached }
         let boxes = note.checkboxes, path = note.path
-        return await Self.run { (try? vault.read(path)).map { NoteBoxLine.lines(in: $0, boxes: boxes, limit: limit) } ?? [] }
+        let lines: [NoteBoxLine]
+        if let document, document.path == path {
+            lines = NoteBoxLine.lines(in: document.text, boxes: boxes)
+        } else if let vault {
+            lines = await Self.run { (try? vault.read(path)).map { NoteBoxLine.lines(in: $0, boxes: boxes) } ?? [] }
+        } else {
+            return []
+        }
+        if index[path] == note { boxLineCache[path] = (note, lines) }
+        return lines
     }
 
     /// The note of a day or week, if there is one. A week's shows only while week notes are on.
@@ -2140,6 +2159,7 @@ import TaDaCore
     /// Changes the index, then the lists. Several changes in one call update the lists once.
     private func updateIndex(_ change: (inout VaultIndex) -> Void) {
         change(&index)
+        boxLineCache = boxLineCache.filter { index[$0.key] == $0.value.item }
         updateLists()
     }
 

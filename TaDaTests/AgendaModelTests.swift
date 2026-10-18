@@ -151,6 +151,24 @@ struct AgendaModelTests {
         #expect(model.index.items.keys.filter { $0.lowercased().hasSuffix("2026-w40.md") }.count == 1)
     }
 
+    @Test func aNoteCardsLinesAreKeptUntilTheNoteChanges() async throws {
+        let model = await folder.model(today: LocalDate("2026-10-02")!)
+        let path = "periodic notes/daily notes/2026-10-02.md"
+        let note = try #require(model.index[path])
+        #expect(model.cachedBoxLines(of: note) == nil)
+        #expect(await model.boxLines(of: note) == [NoteBoxLine(text: "Call", state: .open)])
+        #expect(model.cachedBoxLines(of: note) == [NoteBoxLine(text: "Call", state: .open)], "a revisit draws at once")
+
+        model.selection = path
+        await model.loading?.value
+        let document = try #require(model.document)
+        document.text = "- [ ] Calls\n"
+        #expect(model.cachedBoxLines(of: try #require(model.index[path])) == nil, "a label edit drops it, though the item is the same")
+        #expect(await model.boxLines(of: try #require(model.index[path])) == [NoteBoxLine(text: "Calls", state: .open)])
+        document.text = "- [x] Calls\n- [ ] Write\n"
+        #expect(await model.boxLines(of: try #require(model.index[path])).map(\.state) == [.done, .open])
+    }
+
     @Test func tickingABoxInADailyNoteUpdatesItsDot() async throws {
         let model = await folder.model(today: LocalDate("2026-10-02")!)
         let path = "periodic notes/daily notes/2026-10-02.md"

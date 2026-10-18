@@ -8,8 +8,16 @@ nonisolated struct NoteBoxLine: Hashable, Sendable {
     let text: String
     let state: State
 
+    /// How many lines a card shows at most.
+    static let limit = 6
+
+    /// How many lines the card of a note with these checkboxes shows, before they're read.
+    static func count(of checkboxes: [Checkbox]) -> Int {
+        min(limit, checkboxes.count { $0.state == .open || $0.state == .done })
+    }
+
     /// The open and done checkbox lines of `text` that `checkboxes` locate, in order, up to `limit`.
-    static func lines(in text: String, boxes checkboxes: [Checkbox], limit: Int) -> [NoteBoxLine] {
+    static func lines(in text: String, boxes checkboxes: [Checkbox]) -> [NoteBoxLine] {
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
         var result: [NoteBoxLine] = []
         for box in checkboxes where result.count < limit && lines.indices.contains(box.lineIndex) {

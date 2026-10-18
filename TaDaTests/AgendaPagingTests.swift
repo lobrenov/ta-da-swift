@@ -55,10 +55,15 @@ struct AgendaPagingTests {
     @Test func boxLinesTakeOpenAndDoneBoxesInOrder() throws {
         let text = "---\ntags: []\n---\n## Plan\n\n- [x] Call the bank\n- [/] Draft the Starfall rules\n- [-] Dropped\n- [ ] Book the Kombi’s roadworthy\n  - [ ] Nested\n"
         let item = try #require(Item(parsing: text, path: "Daily/2026-10-02.md"))
-        let lines = NoteBoxLine.lines(in: text, boxes: item.checkboxes, limit: 4)
+        let lines = NoteBoxLine.lines(in: text, boxes: item.checkboxes)
         #expect(lines == [NoteBoxLine(text: "Call the bank", state: .done), NoteBoxLine(text: "Draft the Starfall rules", state: .doing),
                           NoteBoxLine(text: "Book the Kombi’s roadworthy", state: .open), NoteBoxLine(text: "Nested", state: .open)])
-        #expect(NoteBoxLine.lines(in: text, boxes: item.checkboxes, limit: 2).count == 2)
-        #expect(NoteBoxLine.lines(in: "", boxes: item.checkboxes, limit: 4).isEmpty)
+        #expect(NoteBoxLine.count(of: item.checkboxes) == 4, "the cancelled box takes no room")
+        #expect(NoteBoxLine.lines(in: "", boxes: item.checkboxes).isEmpty)
+
+        let many = (1...9).map { "- [ ] Box \($0)\n" }.joined()
+        let long = try #require(Item(parsing: many, path: "Daily/2026-10-03.md"))
+        #expect(NoteBoxLine.count(of: long.checkboxes) == NoteBoxLine.limit)
+        #expect(NoteBoxLine.lines(in: many, boxes: long.checkboxes).count == NoteBoxLine.limit)
     }
 }
