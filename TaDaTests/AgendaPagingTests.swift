@@ -36,6 +36,20 @@ struct AgendaPagingTests {
         #expect(AgendaPaging.weekKey(of: day("2026-10-05")) == key + 1)
     }
 
+    @Test func theTitleNamesTheMonthOfTheShownWeeksMonday() {
+        func title(_ selection: AppModel.AgendaSelection, monthOpen: Bool = false) -> LocalDate {
+            AgendaPaging.titleDate(of: selection, monthOpen: monthOpen)
+        }
+        let boundary = AppModel.AgendaSelection.week(LocalDate("2026-10-01")!.isoWeek)
+        #expect(title(.week(LocalDate("2026-09-28")!.isoWeek)).month == 9, "Monday in September, Sunday in October")
+        #expect(title(day("2026-10-04")).month == 9)
+        #expect(title(boundary).month == 9)
+        #expect(title(day("2026-10-14")).month == 10)
+        let yearEnd = title(day("2026-12-30"))
+        #expect(yearEnd.year == 2026 && yearEnd.month == 12)
+        #expect(title(boundary, monthOpen: true).month == 10, "the open month is the shown month")
+    }
+
     @Test func swipingTheStripMovesWholeWeeks() {
         let key = AgendaPaging.weekKey(of: day("2026-10-02"))
         #expect(AgendaPaging.selection(movingToWeek: key + 1, from: day("2026-10-02")) == day("2026-10-09"), "a day keeps its weekday")

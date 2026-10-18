@@ -80,6 +80,12 @@ enum AgendaPaging {
         return center - monthReach...center + monthReach
     }
 
+    /// The date whose month the Mac strip's title names: the shown month, or with the week showing, the month of the
+    /// shown week's Monday.
+    static func titleDate(of selection: AppModel.AgendaSelection, monthOpen: Bool) -> LocalDate {
+        monthOpen ? selection.anchor : week(forKey: weekKey(of: selection)).firstDay
+    }
+
     /// What scrolling the Mac strip to month `key` selects: the selection moved by whole months.
     static func selection(movingToMonth key: Int, from selection: AppModel.AgendaSelection) -> AppModel.AgendaSelection {
         self.selection(stepping: key - monthKey(of: selection), byMonth: true, from: selection)

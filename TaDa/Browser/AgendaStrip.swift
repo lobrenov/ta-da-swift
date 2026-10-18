@@ -25,9 +25,8 @@ struct AgendaStrip: View {
                     controls
                 }
             }
-            if model.agendaMonthOpen {
-                Text(model.agendaAnchor.formatted(.monthYear)).font(.system(size: 13, weight: .bold)).foregroundStyle(theme.color(\.strong))
-            }
+            Text(AgendaPaging.titleDate(of: model.agendaSelection, monthOpen: model.agendaMonthOpen).formatted(.monthYear))
+                .font(.system(size: 13, weight: .bold)).foregroundStyle(theme.color(\.strong))
             VStack(spacing: 2) {
                 initials
                 pages
