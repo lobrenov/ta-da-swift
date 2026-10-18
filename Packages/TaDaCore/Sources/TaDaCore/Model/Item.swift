@@ -47,9 +47,10 @@ public struct Item: Hashable, Sendable, Identifiable {
     /// Whether the file has been logged: it's in `Ta Da/Logbook/` or the old `.logbook/`.
     public var isLogged: Bool { Self.isLogged(path) }
 
-    /// Whether a path is in `Ta Da/Logbook/` or the old `.logbook/`.
+    /// Whether a path is in `Ta Da/Logbook/` or the old `.logbook/`, ignoring case.
     public static func isLogged(_ path: String) -> Bool {
-        path.hasPrefix(Vault.logbookFolder + "/") || path.hasPrefix(Vault.legacyLogbookFolder + "/")
+        let path = path.lowercased()
+        return path.hasPrefix(Vault.logbookFolder.lowercased() + "/") || path.hasPrefix(Vault.legacyLogbookFolder + "/")
     }
 
     /// A note when the text has no `type: task`, `type: project` or `type: area` and the path is a note path; nil when

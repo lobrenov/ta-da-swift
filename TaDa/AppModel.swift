@@ -1181,12 +1181,14 @@ import TaDaCore
         case data(Data, extension: String)
     }
 
-    /// Saves a pasted or dropped image into `Ta Da/attachments/`, numbering a taken name, and returns its `![[ ]]`. An image
+    /// Saves a pasted or dropped image into `Ta Da/attachments/`, numbering a name taken there or in the old
+    /// `attachments/`, and returns its `![[ ]]`. An image
     /// already in the folder isn't copied. The file is written off the main actor, in order (`savingImage` finishes
     /// when they all are). Nil when it can't be saved, with the reason in `errorMessage`.
     func embed(_ image: PastedImage) -> String? {
         guard let vault else { return nil }
-        let taken = Set(attachments.filter { Vault.folder(of: $0) == Vault.attachmentFolder }.map { String($0.split(separator: "/").last ?? "") })
+        let folders = [Vault.attachmentFolder.lowercased(), Vault.legacyAttachmentFolder]
+        let taken = Set(attachments.filter { folders.contains(Vault.folder(of: $0).lowercased()) }.map { String($0.split(separator: "/").last ?? "") })
         let path: String
         var save: (@Sendable () throws -> Void)?
         switch image {

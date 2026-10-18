@@ -4,13 +4,17 @@ import Foundation
 /// resolves by filename, so they can live anywhere in the folder.
 extension Vault {
     public static let attachmentFolder = home + "/attachments"
+    /// The old layout's attachments folder, which new images' names also avoid.
+    public static let legacyAttachmentFolder = "attachments"
     /// The old layout's top-level folders, lowercased: Ta Da made them before `Ta Da/`.
     public static let legacyFolders: Set<String> = ["tasks", "projects", "areas", "attachments"]
     public static let imageExtensions: Set<String> = ["avif", "bmp", "gif", "heic", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"]
 
-    /// Writes `data` as `Ta Da/attachments/<filename>`, numbering the name if it's taken. Returns the new path.
+    /// Writes `data` as `Ta Da/attachments/<filename>`, numbering the name if it's taken there or in the old
+    /// `attachments/`. Returns the new path.
     public func saveAttachment(_ data: Data, as filename: String) throws -> String {
-        let path = Self.attachmentPath(named: filename, avoiding: filenames(in: Self.attachmentFolder))
+        let taken = filenames(in: Self.attachmentFolder).union(filenames(in: Self.legacyAttachmentFolder))
+        let path = Self.attachmentPath(named: filename, avoiding: taken)
         try saveAttachment(data, at: path)
         return path
     }
@@ -118,6 +122,6 @@ extension Vault {
         }
         let matches = paths.filter { $0.split(separator: "/").last?.lowercased() == name }
         return matches.first { $0.lowercased() == attachmentFolder.lowercased() + "/" + name }
-            ?? matches.first { $0.lowercased() == "attachments/" + name } ?? matches.min()
+            ?? matches.first { $0.lowercased() == legacyAttachmentFolder + "/" + name } ?? matches.min()
     }
 }

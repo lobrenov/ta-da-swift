@@ -195,7 +195,7 @@ struct TrashView: View {
                     if let deleted = entry.deleted {
                         Text("Deleted \(LocalDate(deleted).formatted(.weekdayDayMonth))")
                     }
-                    Text("from \(isProject ? Vault.projectFolder : Vault.taskFolder)/")
+                    Text("restores to \(isProject ? Vault.projectFolder : Vault.taskFolder)/")
                         .font(.system(size: 11, design: .monospaced))
                 }
                 .font(.system(size: 11.5))
@@ -236,7 +236,7 @@ struct TrashView: View {
                     if let deleted = entry.deleted {
                         Text("Deleted \(LocalDate(deleted).formatted(.weekdayDayMonth))")
                     }
-                    Text("from \(Vault.attachmentFolder)/")
+                    Text("restores to \(Vault.attachmentFolder)/")
                         .font(.system(size: 11, design: .monospaced))
                 }
                 .font(.system(size: 11.5))

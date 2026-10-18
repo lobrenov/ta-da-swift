@@ -214,7 +214,7 @@ extension Vault {
         var movedImages: [String: String] = [:]
         func bringBack(_ image: TrashedAttachment) throws {
             guard movedImages[image.path] == nil else { return }
-            let path = try moveFile(image.path, into: Self.attachmentFolder)
+            let path = try moveFile(image.path, into: Self.attachmentFolder, taken: filenames(in: Self.legacyAttachmentFolder))
             movedImages[image.path] = path
             restored.append(path)
         }

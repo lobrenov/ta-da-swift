@@ -45,3 +45,16 @@ private let done = "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-01\n--
     #expect(Vault.attachmentPath(for: link, in: ["a/front.jpg", "attachments/front.jpg"]) == "attachments/front.jpg")
     #expect(Vault.attachmentPath(for: link, in: ["b/front.jpg", "a/front.jpg"]) == "a/front.jpg")
 }
+
+@Test func theLogbookIsFoundInAnyCase() {
+    #expect(Item.isLogged("ta da/logbook/2026-10/X.md") && Item.isLogged(".logbook/2026-10/X.md"))
+    #expect(!Item.isLogged("Ta Da/tasks/X.md") && !Item.isLogged("Logbook/X.md"))
+}
+
+@Test func newImagesAvoidNamesInTheOldAttachmentsFolder() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("old", "attachments/diagram.png", in: folder)
+        #expect(try vault.saveAttachment(Data("new".utf8), as: "diagram.png") == "Ta Da/attachments/diagram 2.png")
+    }
+}
