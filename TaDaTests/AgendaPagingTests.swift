@@ -87,11 +87,24 @@ struct AgendaPagingTests {
                 == .week(LocalDate("2026-11-30")!.isoWeek), "Thursday 2026-12-31 to 2026-11-30")
     }
 
+    @Test func monthPagesCountMonthsAndMoveTheSelectionByThem() {
+        let key = AgendaPaging.monthKey(of: day("2026-10-02"))
+        #expect(AgendaPaging.monthStart(forKey: key) == LocalDate("2026-10-01")!)
+        #expect(AgendaPaging.monthStart(forKey: key + 3) == LocalDate("2027-01-01")!)
+        #expect(AgendaPaging.monthKey(of: day("2026-10-31")) == key)
+        #expect(AgendaPaging.monthKey(of: .week(LocalDate("2026-10-26")!.isoWeek)) == key, "its Thursday, 2026-10-29")
+        #expect(AgendaPaging.monthKey(of: .week(LocalDate("2026-09-28")!.isoWeek)) == key, "its Thursday, 2026-10-01")
+        #expect(AgendaPaging.selection(movingToMonth: key + 1, from: day("2026-10-31")) == day("2026-11-30"), "clamped")
+        #expect(AgendaPaging.selection(movingToMonth: key - 10, from: day("2026-10-15")) == day("2025-12-15"))
+        #expect(AgendaPaging.selection(movingToMonth: key, from: day("2026-10-02")) == day("2026-10-02"))
+        let months = AgendaPaging.months(today: LocalDate("2026-10-02")!)
+        #expect(months.contains(key) && months.count == 2 * AgendaPaging.monthReach + 1)
+    }
+
     @Test func swipesNeedDistanceAndAClearDirection() {
         let far = AgendaSwipe.threshold
-        #expect(AgendaSwipe.decide(dx: -far, dy: 0, monthOpen: false) == .step(1))
-        #expect(AgendaSwipe.decide(dx: far, dy: 5, monthOpen: true) == .step(-1))
-        #expect(AgendaSwipe.decide(dx: -far + 1, dy: 0, monthOpen: false) == nil)
+        #expect(AgendaSwipe.decide(dx: -far, dy: 0, monthOpen: false) == nil, "sideways scrolls the pages")
+        #expect(AgendaSwipe.decide(dx: 0, dy: far - 1, monthOpen: false) == nil)
         #expect(AgendaSwipe.decide(dx: -far, dy: far, monthOpen: false) == nil, "diagonal")
         #expect(AgendaSwipe.decide(dx: 0, dy: far, monthOpen: false) == .openMonth)
         #expect(AgendaSwipe.decide(dx: 0, dy: -far, monthOpen: true) == .closeMonth)
@@ -101,11 +114,11 @@ struct AgendaPagingTests {
 
     @Test func aGestureFiresOnce() {
         var tracker = AgendaSwipeTracker()
-        #expect(tracker.add(dx: -30, dy: 0, monthOpen: false) == nil)
-        #expect(tracker.add(dx: -30, dy: 0, monthOpen: false) == .step(1))
-        #expect(tracker.add(dx: -30, dy: 0, monthOpen: false) == nil)
+        #expect(tracker.add(dx: 0, dy: 30, monthOpen: false) == nil)
+        #expect(tracker.add(dx: 0, dy: 30, monthOpen: false) == .openMonth)
+        #expect(tracker.add(dx: 0, dy: 30, monthOpen: false) == nil)
         tracker.reset()
-        #expect(tracker.add(dx: 50, dy: 0, monthOpen: false) == .step(-1))
+        #expect(tracker.add(dx: 0, dy: -50, monthOpen: true) == .closeMonth)
     }
 
     @Test func monthDragFollowsTheFingerWithinTheRange() {

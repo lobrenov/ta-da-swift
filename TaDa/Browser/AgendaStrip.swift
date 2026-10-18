@@ -10,23 +10,8 @@ struct AgendaStrip: View {
     @Environment(\.theme) private var theme
 
     private static let weekColumn: CGFloat = 40
-
-    /// Which way the grid last slid; the slide is set before the step so the grid leaving uses it too.
-    private enum Slide { case none, next, previous }
-    @State private var slide = Slide.none
-
-    private var slideTransition: AnyTransition {
-        switch slide {
-        case .none: .opacity
-        case .next: .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))
-        case .previous: .asymmetric(insertion: .move(edge: .leading), removal: .move(edge: .trailing))
-        }
-    }
-
-    private var weeks: [ISOWeek] {
-        let range = model.agendaRange
-        return (0..<(range.lowerBound.days(to: range.upperBound) + 1) / 7).map { range.lowerBound.adding(days: $0 * 7).isoWeek }
-    }
+    private static let rowHeight: CGFloat = 38
+    private static let rowSpacing: CGFloat = 2
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -45,36 +30,70 @@ struct AgendaStrip: View {
             }
             VStack(spacing: 2) {
                 initials
-                ForEach(weeks, id: \.self) { week in
-                    HStack(spacing: 0) {
-                        weekCell(week).frame(width: Self.weekColumn)
-                        ForEach(week.days, id: \.self) { dayCell($0).frame(maxWidth: .infinity) }
-                    }
-                }
+                pages
             }
-            .id(ShownPeriod(first: model.agendaRange.lowerBound, monthOpen: model.agendaMonthOpen))
-            .transition(slideTransition)
         }
         .clipped()
         .background(AgendaSwipeCatcher(monthOpen: model.agendaMonthOpen, onSwipe: swipe))
     }
 
-    private struct ShownPeriod: Hashable {
-        let first: LocalDate
-        let monthOpen: Bool
+    private func swipe(_ swipe: AgendaSwipe) {
+        DispatchQueue.main.async { withAnimation(AgendaMotion.spring) { model.agendaMonthOpen = swipe == .openMonth } }
     }
 
-    private func swipe(_ swipe: AgendaSwipe) {
-        let apply: () -> Void
-        switch swipe {
-        case let .step(steps):
-            slide = steps > 0 ? .next : .previous
-            apply = { model.agendaSelection = AgendaPaging.selection(stepping: steps, byMonth: model.agendaMonthOpen, from: model.agendaSelection) }
-        case .openMonth, .closeMonth:
-            slide = .none
-            apply = { model.agendaMonthOpen = swipe == .openMonth }
+    /// What a ScrollView of pages is rebuilt for: its kind and its width.
+    private struct ShownPages: Hashable {
+        let open: Bool
+        let width: CGFloat
+    }
+
+    /// The week, or with the month open the months, as pages that scroll sideways and settle a page at a time. The strip is
+    /// as tall as the settled page's rows.
+    private var pages: some View {
+        let open = model.agendaMonthOpen
+        let rows = open ? model.agendaAnchor.isoWeeksOfMonth.count : 1
+        let marks = model.agendaMarks
+        return GeometryReader { proxy in ScrollView(.horizontal) {
+            LazyHStack(spacing: 0) {
+                if open {
+                    ForEach(AgendaPaging.months(today: model.today), id: \.self) { key in
+                        let month = AgendaPaging.monthStart(forKey: key)
+                        VStack(spacing: Self.rowSpacing) {
+                            ForEach(month.isoWeeksOfMonth, id: \.self) { weekRow($0, month: month, marks: marks) }
+                        }
+                        .frame(width: proxy.size.width)
+                    }
+                } else {
+                    ForEach(AgendaPaging.weeks(today: model.today), id: \.self) { key in
+                        weekRow(AgendaPaging.week(forKey: key), month: model.agendaAnchor, marks: marks).frame(width: proxy.size.width)
+                    }
+                }
+            }
+            .scrollTargetLayout()
         }
-        DispatchQueue.main.async { withAnimation(AgendaMotion.spring, apply) }
+        .scrollTargetBehavior(.paging)
+        .scrollIndicators(.hidden)
+        .scrollPosition(id: Binding<Int?> {
+            open ? AgendaPaging.monthKey(of: model.agendaSelection) : AgendaPaging.weekKey(of: model.agendaSelection)
+        } set: { key in
+            guard let key else { return }
+            let selection = model.agendaSelection
+            if open, key != AgendaPaging.monthKey(of: selection) {
+                model.agendaSelection = AgendaPaging.selection(movingToMonth: key, from: selection)
+            } else if !open, key != AgendaPaging.weekKey(of: selection) {
+                model.agendaSelection = AgendaPaging.selection(movingToWeek: key, from: selection)
+            }
+        })
+        .id(ShownPages(open: open, width: proxy.size.width)) }
+        .frame(height: CGFloat(rows) * Self.rowHeight + CGFloat(rows - 1) * Self.rowSpacing)
+        .animation(AgendaMotion.spring, value: rows)
+    }
+
+    private func weekRow(_ week: ISOWeek, month: LocalDate, marks: [LocalDate: DayMarks]) -> some View {
+        HStack(spacing: 0) {
+            weekCell(week).frame(width: Self.weekColumn)
+            ForEach(week.days, id: \.self) { dayCell($0, month: month, marks: marks).frame(maxWidth: .infinity) }
+        }
     }
 
     private var initials: some View {
@@ -102,15 +121,15 @@ struct AgendaStrip: View {
     private var stepper: some View {
         let unit: String = if case .week = model.agendaSelection { "week" } else { "day" }
         return HStack(spacing: 0) {
-            stepButton("chevron.left", label: "Previous \(unit)") { model.stepAgenda(by: -1) }
+            stepButton("chevron.left", label: "Previous \(unit)") { withAnimation(AgendaMotion.spring) { model.stepAgenda(by: -1) } }
             Rectangle().fill(theme.color(\.border)).frame(width: 1)
-            Button { model.showAgendaToday() } label: {
+            Button { withAnimation(AgendaMotion.spring) { model.showAgendaToday() } } label: {
                 Text("Today").font(.system(size: 12)).foregroundStyle(theme.color(\.fg)).padding(.horizontal, 8)
                     .frame(maxHeight: .infinity).contentShape(.rect)
             }
             .buttonStyle(.plain)
             Rectangle().fill(theme.color(\.border)).frame(width: 1)
-            stepButton("chevron.right", label: "Next \(unit)") { model.stepAgenda(by: 1) }
+            stepButton("chevron.right", label: "Next \(unit)") { withAnimation(AgendaMotion.spring) { model.stepAgenda(by: 1) } }
         }
         .frame(height: 26)
         .background(theme.color(\.code), in: .rect(cornerRadius: 7))
@@ -139,7 +158,7 @@ struct AgendaStrip: View {
                 .frame(width: 24, height: 22)
                 .background(selected ? theme.color(\.strong) : .clear, in: .rect(cornerRadius: 11))
                 .padding(.top, 4)
-                .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .top)
+                .frame(maxWidth: .infinity, minHeight: Self.rowHeight, maxHeight: Self.rowHeight, alignment: .top)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -147,10 +166,10 @@ struct AgendaStrip: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private func dayCell(_ day: LocalDate) -> some View {
+    private func dayCell(_ day: LocalDate, month: LocalDate, marks: [LocalDate: DayMarks]) -> some View {
         let selected = model.agendaSelection == .day(day)
         let isToday = day == model.today
-        let faded = day.month != model.agendaAnchor.month || day < model.today
+        let faded = day.month != month.month || day < model.today
         return Button { model.agendaSelection = .day(day) } label: {
             VStack(spacing: 3) {
                 Text("\(day.day)")
@@ -158,19 +177,19 @@ struct AgendaStrip: View {
                     .foregroundStyle(theme.color(selected ? \.bg : isToday ? \.accent : faded ? \.muted : \.fg))
                     .frame(width: 24, height: 22)
                     .background(selected ? theme.color(isToday ? \.accent : \.strong) : .clear, in: .rect(cornerRadius: 11))
-                AgendaDots(model: model, day: day, size: 4)
+                AgendaDots(model: model, day: day, size: 4, marks: marks[day])
             }
             .padding(.top, 4)
-            .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .top)
+            .frame(maxWidth: .infinity, minHeight: Self.rowHeight, maxHeight: Self.rowHeight, alignment: .top)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel((isToday ? "Today, " : "") + day.formatted(.weekdayDayMonth) + AgendaDots.spoken(model, day))
+        .accessibilityLabel((isToday ? "Today, " : "") + day.formatted(.weekdayDayMonth) + AgendaDots.spoken(model, day, marks: marks[day]))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
-/// Reports a trackpad swipe over its frame: one per gesture, from the scroll phases, and none for momentum. A mouse
+/// Reports a vertical trackpad swipe over its frame: one per gesture, from the scroll phases, and none for momentum. A mouse
 /// wheel has no phases and is ignored.
 private struct AgendaSwipeCatcher: NSViewRepresentable {
     let monthOpen: Bool

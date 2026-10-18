@@ -2100,7 +2100,7 @@ import TaDaCore
     /// The Agenda's tasks when a day is selected, grouped as Today's are, and its entries when a week is selected.
     private(set) var agendaTasks: [Item] = []
     private(set) var agendaWeekEntries: [AgendaEntry] = []
-    /// What the days in `agendaRange` show: their dots.
+    /// What the days in `agendaMarksRange` show: their dots.
     private(set) var agendaMarks: [LocalDate: DayMarks] = [:]
     /// Active projects with their progress.
     private(set) var projects: [ProjectProgress] = []
@@ -2168,7 +2168,7 @@ import TaDaCore
     private func updateIndex(replacing item: Item) {
         guard let old = index[item.path], old.properties == item.properties else { return updateIndex { $0.update(item) } }
         index.update(item)
-        if old.checkboxes != item.checkboxes, let date = dailyNoteNames.date(atPath: item.path), agendaRange.contains(date) {
+        if old.checkboxes != item.checkboxes, let date = dailyNoteNames.date(atPath: item.path), agendaMarksRange.contains(date) {
             updateAgendaMarks()
         }
         if let i = todayTasks.firstIndex(where: { $0.path == item.path }) { todayTasks[i] = item }
@@ -2230,7 +2230,7 @@ import TaDaCore
     }
 
     private func updateAgendaMarks() {
-        let range = agendaRange
+        let range = agendaMarksRange
         agendaMarks = index.dayMarks(from: range.lowerBound, through: range.upperBound, names: dailyNoteNames)
     }
 
@@ -2246,6 +2246,16 @@ import TaDaCore
             return week.firstDay...week.firstDay.adding(days: 6)
         }
         return first.firstDay...last.firstDay.adding(days: 6)
+    }
+
+    /// The days `agendaRange` shows and those of the page before and after it (a week, or a month), which a swipe draws.
+    var agendaMarksRange: ClosedRange<LocalDate> {
+        let range = agendaRange
+        guard agendaMonthOpen else { return range.lowerBound.adding(days: -7)...range.upperBound.adding(days: 7) }
+        let month = agendaAnchor.startOfMonth
+        let first = month.addingMonths(-1).isoWeeksOfMonth.first?.firstDay ?? range.lowerBound
+        let last = month.addingMonths(1).isoWeeksOfMonth.last?.firstDay.adding(days: 6) ?? range.upperBound
+        return first...last
     }
 
     /// Steps the Agenda a day, or a week when a week is selected.

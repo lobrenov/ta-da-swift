@@ -63,7 +63,29 @@ enum AgendaPaging {
         }
     }
 
-    /// What swiping the Mac strip `steps` periods selects: a week or, with the month open, a month. A day keeps its
+    /// The Mac strip's month pages: keys count months from the epoch, and each page is the month of a selection's anchor.
+    static let monthReach = 24
+
+    static func monthKey(of selection: AppModel.AgendaSelection) -> Int {
+        let anchor = selection.anchor
+        return (anchor.year - epoch.year) * 12 + anchor.month - 1
+    }
+
+    static func monthStart(forKey key: Int) -> LocalDate {
+        LocalDate(year: epoch.year + key / 12, month: key % 12 + 1, day: 1)!
+    }
+
+    static func months(today: LocalDate) -> ClosedRange<Int> {
+        let center = monthKey(of: .day(today))
+        return center - monthReach...center + monthReach
+    }
+
+    /// What scrolling the Mac strip to month `key` selects: the selection moved by whole months.
+    static func selection(movingToMonth key: Int, from selection: AppModel.AgendaSelection) -> AppModel.AgendaSelection {
+        self.selection(stepping: key - monthKey(of: selection), byMonth: true, from: selection)
+    }
+
+    /// What stepping the Mac strip `steps` periods selects: a week or, with the month open, a month. A day keeps its
     /// weekday or its day of the month (the last day of a shorter month); a week moves to the one holding its
     /// Thursday, moved by the same months.
     static func selection(stepping steps: Int, byMonth: Bool, from selection: AppModel.AgendaSelection) -> AppModel.AgendaSelection {
@@ -75,18 +97,15 @@ enum AgendaPaging {
     }
 }
 
-/// What a trackpad swipe on the Mac strip does.
+/// What a vertical trackpad swipe on the Mac strip does.
 enum AgendaSwipe: Equatable {
-    /// Next (+1) or previous (-1) period.
-    case step(Int)
     case openMonth, closeMonth
 
     /// Points of scrolling a swipe needs.
     static let threshold = 40.0
 
-    /// The swipe `dx` and `dy` add up to, which moves content: left is next, down opens the month, up closes it.
+    /// The swipe `dx` and `dy` add up to, which moves content: down opens the month, up closes it.
     static func decide(dx: Double, dy: Double, monthOpen: Bool) -> AgendaSwipe? {
-        if abs(dx) >= threshold, abs(dx) > abs(dy) { return .step(dx < 0 ? 1 : -1) }
         guard abs(dy) >= threshold, abs(dy) > abs(dx), (dy > 0) != monthOpen else { return nil }
         return monthOpen ? .closeMonth : .openMonth
     }

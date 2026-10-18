@@ -44,14 +44,19 @@ extension Theme {
     var dueFill: Color { color(\.due).opacity(isDark ? 0.18 : 0.16) }
 }
 
-extension AppModel {
-    /// The day the Agenda's month is the month of: the selected day, or the middle of the selected week.
-    var agendaAnchor: LocalDate {
-        switch agendaSelection {
+extension AppModel.AgendaSelection {
+    /// The day the Agenda's month is the month of: the day, or the middle of the week.
+    var anchor: LocalDate {
+        switch self {
         case let .day(day): day
         case let .week(week): week.firstDay.adding(days: 3)
         }
     }
+}
+
+extension AppModel {
+    /// The day the Agenda's month is the month of: the selected day, or the middle of the selected week.
+    var agendaAnchor: LocalDate { agendaSelection.anchor }
 
     /// "Today", "Tomorrow" or "Yesterday" for the days around today.
     func relativeDayName(_ day: LocalDate) -> String? {

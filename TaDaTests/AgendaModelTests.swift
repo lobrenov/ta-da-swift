@@ -58,7 +58,8 @@ struct AgendaModelTests {
 
         model.agendaSelection = .week(LocalDate("2026-10-02")!.isoWeek)
         #expect(model.agendaTasks.isEmpty && model.agendaWeekEntries.map(\.item.title) == ["Due today"], "Monday the 5th is the next week")
-        #expect(model.agendaMarks[LocalDate("2026-10-05")!] == nil, "outside the shown week")
+        #expect(model.agendaMarks[LocalDate("2026-10-05")!]?.hasOpenTasks == true, "the next week is marked for the swipe")
+        #expect(model.agendaMarks[LocalDate("2026-10-12")!] == nil, "two weeks on")
 
         model.agendaMonthOpen = true
         #expect(model.agendaMarks[LocalDate("2026-10-05")!]?.hasOpenTasks == true && model.agendaMarks[LocalDate("2026-10-05")!]?.hasOpenBoxes == false)
