@@ -1,12 +1,12 @@
-// The lists the tabs open on: Today (grouped by area and project, starting with the day's events and reminders), Tasks
-// (the loose tasks, then the projects with the areas), Upcoming (a week strip over the days ahead, each with its events
+// The lists the tabs open on: Today and Loose (grouped by area and project; Today starts with the day's events and
+// reminders), Tasks (the Loose row, then the projects with the areas), Upcoming (a week strip over the days ahead, each with its events
 // and reminders before its tasks), a project's tasks, and an area's projects and tasks.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
 
 struct PhoneTaskListScreen: View {
-    enum Kind { case today, loose, tasks }
+    enum Kind { case today, loose }
 
     let model: AppModel
     let kind: Kind
@@ -25,18 +25,18 @@ struct PhoneTaskListScreen: View {
             : sections.filter { !model.isFolded($0, by: grouping, in: list.foldKey) }.flatMap(\.tasks).map(\.path)
         let dates: TaskRow.Dates = kind == .today ? .overdueDueAndDeadline : .labelled
 
-        PhoneList(model: model, title: title, subtitle: subtitle(open: open),
+        PhoneList(model: model, title: kind == .today ? "Today" : "Loose tasks",
+                  subtitle: kind == .today
+                      ? "\(model.today.date().formatted(.dateTime.weekday(.wide).day().month(.wide))) · \(tasks(open))"
+                      : "No project or area · \(tasks(open))",
                   titleAccessory: AnyView(PhoneGroupMenu(model: model, list: list)),
                   pickable: pickable, add: newTask) {
-            if kind == .tasks {
-                Button("New Project", systemImage: "chart.pie") { Task { await newProject() } }
-                Button("New Area", systemImage: "cube") { Task { await newArea() } }
-            }
+            EmptyView()
         } content: {
             let showsCalendar = kind == .today && !filter.isActive
             let events = showsCalendar ? model.todayEvents : [], reminders = showsCalendar ? model.todayReminders : []
             PhoneTagFilterBar(model: model, domain: domain, items: all, shown: shownTasks.count)
-            if all.isEmpty, events.isEmpty, reminders.isEmpty, kind != .tasks || model.projects.isEmpty && model.areas.isEmpty {
+            if all.isEmpty, events.isEmpty, reminders.isEmpty {
                 empty.padding(.top, 60)
             } else if shownTasks.isEmpty, filter.isActive {
                 ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
@@ -68,43 +68,79 @@ struct PhoneTaskListScreen: View {
                 PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: dates,
                                   place: kind == .today ? { model.index.parent(of: $0)?.title } : nil)
             }
-            if kind == .tasks { PhoneProjectRows(model: model) }
         }
     }
 
     private var list: GroupedList { kind == .today ? .today : .loose }
     private var domain: AppModel.Domain { kind == .today ? .agenda : .loose }
 
-    private var title: String {
-        switch kind {
-        case .today: "Today"
-        case .loose: "Loose tasks"
-        case .tasks: "Tasks"
-        }
-    }
-
-    private func subtitle(open: Int) -> String {
-        switch kind {
-        case .today: "\(model.today.date().formatted(.dateTime.weekday(.wide).day().month(.wide))) · \(tasks(open))"
-        case .loose: "No project or area · \(tasks(open))"
-        case .tasks: "\(tasks(open)) loose · \(model.projects.count == 1 ? "1 project" : "\(model.projects.count) projects") · \(model.areas.count == 1 ? "1 area" : "\(model.areas.count) areas")"
-        }
-    }
-
     private var empty: some View {
         switch kind {
         case .today:
             ContentUnavailableView("Nothing due today", systemImage: "star",
                                    description: Text("Tasks due or at their deadline today, or overdue, show here."))
-        case .loose, .tasks:
+        case .loose:
             ContentUnavailableView("No loose tasks", systemImage: "tray",
                                    description: Text("Open tasks that don’t belong to a project or an area show here."))
         }
     }
 
-    /// A new task opens with its title ready to type: due today in Today, a loose task in Loose and Tasks.
+    /// A new task opens with its title ready to type: due today in Today, a loose task in Loose.
     private func newTask() async {
         model.domain = domain
+        await model.newTask()
+        if let path = model.selection { nav.push(.file(path)) }
+    }
+}
+
+/// The Tasks tab: a Loose tasks row, then the loose projects and the areas with their projects.
+struct PhoneTasksScreen: View {
+    let model: AppModel
+    @Environment(PhoneNavigation.self) private var nav
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let open = model.looseTasks.count { !$0.properties.status.isClosed }
+        PhoneList(model: model, title: "Tasks",
+                  subtitle: "\(tasks(open)) loose · \(model.projects.count == 1 ? "1 project" : "\(model.projects.count) projects") · \(model.areas.count == 1 ? "1 area" : "\(model.areas.count) areas")",
+                  add: newTask) {
+            Button("New Project", systemImage: "chart.pie") { Task { await newProject() } }
+            Button("New Area", systemImage: "cube") { Task { await newArea() } }
+        } content: {
+            VStack(spacing: 0) {
+                Button { nav.push(.loose) } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "tray")
+                            .scaledFont(size: 22)
+                            .foregroundStyle(theme.color(\.accent))
+                            .frame(width: 24)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Loose tasks")
+                                .scaledFont(size: 17, weight: .semibold)
+                                .foregroundStyle(theme.color(\.strong))
+                            Text("\(tasks(open)) with no project or area")
+                                .scaledFont(size: 13)
+                                .foregroundStyle(theme.color(\.muted))
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.right")
+                            .scaledFont(size: 14, weight: .semibold)
+                            .foregroundStyle(theme.color(\.muted))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                PhoneRowSeparator(inset: 52)
+            }
+            PhoneProjectRows(model: model)
+        }
+    }
+
+    /// A new loose task opens with its title ready to type.
+    private func newTask() async {
+        model.domain = .loose
         await model.newTask()
         if let path = model.selection { nav.push(.file(path)) }
     }
@@ -117,15 +153,6 @@ struct PhoneTaskListScreen: View {
     private func newArea() async {
         await model.newArea()
         if let path = model.selection { nav.push(.file(path)) }
-    }
-}
-
-/// The Tasks tab: the loose tasks, then the loose projects and the areas with their projects.
-struct PhoneTasksScreen: View {
-    let model: AppModel
-
-    var body: some View {
-        PhoneTaskListScreen(model: model, kind: .tasks)
     }
 }
 

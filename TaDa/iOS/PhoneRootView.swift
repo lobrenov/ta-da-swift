@@ -96,6 +96,7 @@ struct PhoneRootView: View {
                 root().navigationDestination(for: PhoneRoute.self) { route in
                     switch route {
                     case let .file(path): PhoneFileScreen(model: model, path: path)
+                    case .loose: PhoneTaskListScreen(model: model, kind: .loose)
                     case let .project(path): PhoneProjectScreen(model: model, path: path)
                     case let .area(path): PhoneAreaScreen(model: model, path: path)
                     case let .settings(section): PhoneSettingsScreen(model: model, section: section)

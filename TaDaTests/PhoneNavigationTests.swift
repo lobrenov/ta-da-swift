@@ -154,7 +154,7 @@ struct PhoneNavigationTests {
 
     @Test func theAgendaIsTheFirstTabAndFolderScreensShowNoFile() {
         #expect(PhoneNavigation().tab == .agenda)
-        #expect(PhoneRoute.folder("Meetings").path == nil && PhoneRoute.folder("") != PhoneRoute.folder("Meetings"))
+        #expect(PhoneRoute.loose.path == nil && PhoneRoute.folder("Meetings").path == nil && PhoneRoute.folder("") != PhoneRoute.folder("Meetings"))
     }
 
     @Test func tagScreensShowNoFileAndTheTagSheetIsPerFile() {

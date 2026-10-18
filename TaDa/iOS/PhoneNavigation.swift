@@ -12,6 +12,8 @@ enum PhoneTab: Hashable {
 enum PhoneRoute: Hashable {
     /// A task's or project's file.
     case file(String)
+    /// The loose tasks: those with no project or area.
+    case loose
     /// A project's tasks.
     case project(String)
     /// An area's projects and tasks.
@@ -31,7 +33,7 @@ enum PhoneRoute: Hashable {
     var path: String? {
         switch self {
         case let .file(path), let .project(path), let .area(path): path
-        case .settings, .integrations, .logbook, .trash, .tag, .folder: nil
+        case .loose, .settings, .integrations, .logbook, .trash, .tag, .folder: nil
         }
     }
 }
