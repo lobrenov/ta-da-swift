@@ -228,7 +228,7 @@ struct AgendaWeekRow: View {
         let isSelected = model.agendaSelection == .week(week)
         HStack(spacing: 0) {
             weekCell(isSelected).frame(width: Self.weekColumn)
-            ForEach(week.days, id: \.self) { dayCell($0, bandCell: isSelected).frame(maxWidth: .infinity) }
+            ForEach(week.days, id: \.self) { dayCell($0).frame(maxWidth: .infinity) }
         }
         .frame(height: height)
     }
@@ -245,11 +245,10 @@ struct AgendaWeekRow: View {
                 .scaledFont(size: 13, weight: isSelected ? .bold : .semibold)
                 .monospacedDigit()
                 .foregroundStyle(theme.color(isSelected ? \.bg : hasNote ? \.link : \.muted))
-                .frame(width: 30, height: 26)
-                .background(isSelected ? theme.color(\.strong) : .clear, in: .rect(cornerRadius: 8))
-                .padding(.top, 4)
+                .frame(width: 30, height: 30)
+                .background(isSelected ? theme.color(\.strong) : .clear, in: .circle)
+                .padding(.top, 2)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .background(isSelected ? theme.color(\.side) : .clear, in: .rect(cornerRadius: 10))
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -257,7 +256,7 @@ struct AgendaWeekRow: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private func dayCell(_ day: LocalDate, bandCell: Bool) -> some View {
+    private func dayCell(_ day: LocalDate) -> some View {
         let isSelected = model.agendaSelection == .day(day)
         let isToday = day == model.today
         let faded = day.month != model.agendaAnchor.month || day < model.today
@@ -272,7 +271,6 @@ struct AgendaWeekRow: View {
             }
             .padding(.top, 2)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(bandCell ? theme.color(\.side) : .clear, in: .rect(cornerRadius: 10))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

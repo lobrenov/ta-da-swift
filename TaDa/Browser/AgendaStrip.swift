@@ -11,6 +11,18 @@ struct AgendaStrip: View {
 
     private static let weekColumn: CGFloat = 40
 
+    /// Which way the grid last slid; the slide is set before the step so the grid leaving uses it too.
+    private enum Slide { case none, next, previous }
+    @State private var slide = Slide.none
+
+    private var slideTransition: AnyTransition {
+        switch slide {
+        case .none: .opacity
+        case .next: .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading))
+        case .previous: .asymmetric(insertion: .move(edge: .leading), removal: .move(edge: .trailing))
+        }
+    }
+
     private var weeks: [ISOWeek] {
         let range = model.agendaRange
         return (0..<(range.lowerBound.days(to: range.upperBound) + 1) / 7).map { range.lowerBound.adding(days: $0 * 7).isoWeek }
@@ -36,11 +48,33 @@ struct AgendaStrip: View {
                 ForEach(weeks, id: \.self) { week in
                     HStack(spacing: 0) {
                         weekCell(week).frame(width: Self.weekColumn)
-                        ForEach(week.days, id: \.self) { dayCell($0, in: week).frame(maxWidth: .infinity) }
+                        ForEach(week.days, id: \.self) { dayCell($0).frame(maxWidth: .infinity) }
                     }
                 }
             }
+            .id(ShownPeriod(first: model.agendaRange.lowerBound, monthOpen: model.agendaMonthOpen))
+            .transition(slideTransition)
         }
+        .clipped()
+        .background(AgendaSwipeCatcher(monthOpen: model.agendaMonthOpen, onSwipe: swipe))
+    }
+
+    private struct ShownPeriod: Hashable {
+        let first: LocalDate
+        let monthOpen: Bool
+    }
+
+    private func swipe(_ swipe: AgendaSwipe) {
+        let apply: () -> Void
+        switch swipe {
+        case let .step(steps):
+            slide = steps > 0 ? .next : .previous
+            apply = { model.agendaSelection = AgendaPaging.selection(stepping: steps, byMonth: model.agendaMonthOpen, from: model.agendaSelection) }
+        case .openMonth, .closeMonth:
+            slide = .none
+            apply = { model.agendaMonthOpen = swipe == .openMonth }
+        }
+        DispatchQueue.main.async { withAnimation(AgendaMotion.spring, apply) }
     }
 
     private var initials: some View {
@@ -102,11 +136,10 @@ struct AgendaStrip: View {
             Text("\(week.week)")
                 .font(.system(size: 11, weight: selected ? .bold : .semibold, design: .monospaced))
                 .foregroundStyle(theme.color(selected ? \.bg : hasNote ? \.link : \.muted))
-                .frame(width: 28, height: 22)
-                .background(selected ? theme.color(\.strong) : .clear, in: .rect(cornerRadius: 6))
+                .frame(width: 24, height: 22)
+                .background(selected ? theme.color(\.strong) : .clear, in: .rect(cornerRadius: 11))
                 .padding(.top, 4)
                 .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .top)
-                .background(selected ? theme.color(\.side) : .clear, in: .rect(cornerRadius: 7))
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -114,7 +147,7 @@ struct AgendaStrip: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private func dayCell(_ day: LocalDate, in week: ISOWeek) -> some View {
+    private func dayCell(_ day: LocalDate) -> some View {
         let selected = model.agendaSelection == .day(day)
         let isToday = day == model.today
         let faded = day.month != model.agendaAnchor.month || day < model.today
@@ -129,12 +162,55 @@ struct AgendaStrip: View {
             }
             .padding(.top, 4)
             .frame(maxWidth: .infinity, minHeight: 38, maxHeight: 38, alignment: .top)
-            .background(model.agendaSelection == .week(week) ? theme.color(\.side) : .clear, in: .rect(cornerRadius: 7))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .accessibilityLabel((isToday ? "Today, " : "") + day.formatted(.weekdayDayMonth) + AgendaDots.spoken(model, day))
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// Reports a trackpad swipe over its frame: one per gesture, from the scroll phases, and none for momentum. A mouse
+/// wheel has no phases and is ignored.
+private struct AgendaSwipeCatcher: NSViewRepresentable {
+    let monthOpen: Bool
+    let onSwipe: (AgendaSwipe) -> Void
+
+    func makeNSView(context: Context) -> CatcherView { CatcherView() }
+
+    func updateNSView(_ view: CatcherView, context: Context) {
+        view.monthOpen = monthOpen
+        view.onSwipe = onSwipe
+    }
+
+    final class CatcherView: NSView {
+        var monthOpen = false
+        var onSwipe: (AgendaSwipe) -> Void = { _ in }
+        private var tracker = AgendaSwipeTracker()
+        private var monitor: Any?
+
+        override func viewDidMoveToWindow() {
+            if let monitor { NSEvent.removeMonitor(monitor) }
+            monitor = window == nil ? nil : NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+                self?.scrolled(event)
+                return event
+            }
+        }
+
+        isolated deinit { if let monitor { NSEvent.removeMonitor(monitor) } }
+
+        private func scrolled(_ event: NSEvent) {
+            guard event.window === window, bounds.contains(convert(event.locationInWindow, from: nil)) else { return }
+            if event.phase.contains(.began) || event.phase.contains(.mayBegin) { tracker.reset() }
+            guard event.momentumPhase.isEmpty, event.phase.contains(.changed) || event.phase.contains(.began) else {
+                if event.phase.contains(.ended) || event.phase.contains(.cancelled) { tracker.reset() }
+                return
+            }
+            let sign = event.isDirectionInvertedFromDevice ? 1.0 : -1.0
+            if let swipe = tracker.add(dx: event.scrollingDeltaX * sign, dy: event.scrollingDeltaY * sign, monthOpen: monthOpen) {
+                onSwipe(swipe)
+            }
+        }
     }
 }
 #endif

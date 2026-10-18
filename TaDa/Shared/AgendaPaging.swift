@@ -61,4 +61,48 @@ enum AgendaPaging {
         case let .week(week): return .week(week.adding(weeks: weeks))
         }
     }
+
+    /// What swiping the Mac strip `steps` periods selects: a week or, with the month open, a month. A day keeps its
+    /// weekday or its day of the month (the last day of a shorter month); a week moves to the one holding its
+    /// Thursday, moved by the same months.
+    static func selection(stepping steps: Int, byMonth: Bool, from selection: AppModel.AgendaSelection) -> AppModel.AgendaSelection {
+        switch selection {
+        case let .day(day): .day(byMonth ? day.adding(months: steps) ?? day : day.adding(days: steps * 7))
+        case let .week(week):
+            .week(byMonth ? (week.firstDay.adding(days: 3).adding(months: steps) ?? week.firstDay).isoWeek : week.adding(weeks: steps))
+        }
+    }
+}
+
+/// What a trackpad swipe on the Mac strip does.
+enum AgendaSwipe: Equatable {
+    /// Next (+1) or previous (-1) period.
+    case step(Int)
+    case openMonth, closeMonth
+
+    /// Points of scrolling a swipe needs.
+    static let threshold = 40.0
+
+    /// The swipe `dx` and `dy` add up to, which moves content: left is next, down opens the month, up closes it.
+    static func decide(dx: Double, dy: Double, monthOpen: Bool) -> AgendaSwipe? {
+        if abs(dx) >= threshold, abs(dx) > abs(dy) { return .step(dx < 0 ? 1 : -1) }
+        guard abs(dy) >= threshold, abs(dy) > abs(dx), (dy > 0) != monthOpen else { return nil }
+        return monthOpen ? .closeMonth : .openMonth
+    }
+}
+
+/// One swipe's scrolling, firing once.
+struct AgendaSwipeTracker {
+    private var dx = 0.0, dy = 0.0, fired = false
+
+    mutating func reset() { self = AgendaSwipeTracker() }
+
+    mutating func add(dx: Double, dy: Double, monthOpen: Bool) -> AgendaSwipe? {
+        guard !fired else { return nil }
+        self.dx += dx
+        self.dy += dy
+        let swipe = AgendaSwipe.decide(dx: self.dx, dy: self.dy, monthOpen: monthOpen)
+        fired = swipe != nil
+        return swipe
+    }
 }

@@ -34,6 +34,11 @@ struct AgendaDots: View {
     }
 }
 
+/// The one spring of the Agenda's slides and its week-to-month opening.
+enum AgendaMotion {
+    static let spring = Animation.smooth(duration: 0.3)
+}
+
 extension Theme {
     /// A badge's fill for `due`: 18% in dark schemes and 16% in light ones.
     var dueFill: Color { color(\.due).opacity(isDark ? 0.18 : 0.16) }

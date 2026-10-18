@@ -66,4 +66,44 @@ struct AgendaPagingTests {
         #expect(NoteBoxLine.count(of: long.checkboxes) == NoteBoxLine.limit)
         #expect(NoteBoxLine.lines(in: many, boxes: long.checkboxes).count == NoteBoxLine.limit)
     }
+
+    @Test func swipingByWeekMovesSevenDaysOrAWeek() {
+        #expect(AgendaPaging.selection(stepping: 1, byMonth: false, from: day("2026-10-02")) == day("2026-10-09"))
+        #expect(AgendaPaging.selection(stepping: -1, byMonth: false, from: day("2026-01-02")) == day("2025-12-26"), "across a year")
+        let week = AppModel.AgendaSelection.week(LocalDate("2026-10-02")!.isoWeek)
+        #expect(AgendaPaging.selection(stepping: 1, byMonth: false, from: week) == .week(LocalDate("2026-10-05")!.isoWeek))
+    }
+
+    @Test func swipingByMonthClampsAndCrossesYears() {
+        #expect(AgendaPaging.selection(stepping: 1, byMonth: true, from: day("2026-01-31")) == day("2026-02-28"))
+        #expect(AgendaPaging.selection(stepping: 1, byMonth: true, from: day("2026-12-15")) == day("2027-01-15"))
+        #expect(AgendaPaging.selection(stepping: -1, byMonth: true, from: day("2026-01-15")) == day("2025-12-15"))
+        #expect(AgendaPaging.selection(stepping: 1, byMonth: true, from: day("2026-10-02")) == day("2026-11-02"))
+        // Thursday 2026-10-01 moves to 2026-11-01, a Sunday, in week 2026-10-26.
+        let week = AppModel.AgendaSelection.week(LocalDate("2026-09-28")!.isoWeek)
+        #expect(AgendaPaging.selection(stepping: 1, byMonth: true, from: week) == .week(LocalDate("2026-10-26")!.isoWeek))
+        #expect(AgendaPaging.selection(stepping: -1, byMonth: true, from: .week(LocalDate("2026-12-28")!.isoWeek))
+                == .week(LocalDate("2026-11-30")!.isoWeek), "Thursday 2026-12-31 to 2026-11-30")
+    }
+
+    @Test func swipesNeedDistanceAndAClearDirection() {
+        let far = AgendaSwipe.threshold
+        #expect(AgendaSwipe.decide(dx: -far, dy: 0, monthOpen: false) == .step(1))
+        #expect(AgendaSwipe.decide(dx: far, dy: 5, monthOpen: true) == .step(-1))
+        #expect(AgendaSwipe.decide(dx: -far + 1, dy: 0, monthOpen: false) == nil)
+        #expect(AgendaSwipe.decide(dx: -far, dy: far, monthOpen: false) == nil, "diagonal")
+        #expect(AgendaSwipe.decide(dx: 0, dy: far, monthOpen: false) == .openMonth)
+        #expect(AgendaSwipe.decide(dx: 0, dy: -far, monthOpen: true) == .closeMonth)
+        #expect(AgendaSwipe.decide(dx: 0, dy: -far, monthOpen: false) == nil, "nothing above the week")
+        #expect(AgendaSwipe.decide(dx: 0, dy: far, monthOpen: true) == nil)
+    }
+
+    @Test func aGestureFiresOnce() {
+        var tracker = AgendaSwipeTracker()
+        #expect(tracker.add(dx: -30, dy: 0, monthOpen: false) == nil)
+        #expect(tracker.add(dx: -30, dy: 0, monthOpen: false) == .step(1))
+        #expect(tracker.add(dx: -30, dy: 0, monthOpen: false) == nil)
+        tracker.reset()
+        #expect(tracker.add(dx: 50, dy: 0, monthOpen: false) == .step(-1))
+    }
 }
