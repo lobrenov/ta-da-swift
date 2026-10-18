@@ -5,7 +5,7 @@ import SwiftUI
 import TaDaCore
 
 enum PhoneTab: Hashable {
-    case today, upcoming, loose, projects, other
+    case agenda, tasks, tags, notes, other
 }
 
 /// A screen pushed onto a tab's stack.
@@ -22,16 +22,16 @@ enum PhoneRoute: Hashable {
     case integrations
     case logbook
     case trash
-    /// Untagged and the tag tree.
-    case tags
     /// A tag's page, by path; nil for Untagged.
     case tag(String?)
+    /// A notes folder's notes and subfolders, by path; `""` for Loose, the top level.
+    case folder(String)
 
     /// The file the screen shows, if it shows one.
     var path: String? {
         switch self {
         case let .file(path), let .project(path), let .area(path): path
-        case .settings, .integrations, .logbook, .trash, .tags, .tag: nil
+        case .settings, .integrations, .logbook, .trash, .tag, .folder: nil
         }
     }
 }
@@ -157,7 +157,7 @@ enum Haptic: Equatable {
 }
 
 @Observable final class PhoneNavigation {
-    var tab = PhoneTab.today
+    var tab = PhoneTab.agenda
     /// Each tab's pushed screens, so a tab keeps its place while another is shown.
     var stacks: [PhoneTab: [PhoneRoute]] = [:]
     var sheet: PhoneSheet?

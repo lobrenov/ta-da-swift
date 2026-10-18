@@ -11,17 +11,17 @@ struct PhoneRootView: View {
 
     var body: some View {
         TabView(selection: $nav.tab) {
-            Tab("Today", systemImage: "star.fill", value: PhoneTab.today) {
-                stack(.today) { PhoneTaskListScreen(model: model, kind: .today) }
+            Tab("Agenda", systemImage: "calendar", value: PhoneTab.agenda) {
+                stack(.agenda) { PhoneTaskListScreen(model: model, kind: .today) }
             }
-            Tab("Upcoming", systemImage: "calendar", value: PhoneTab.upcoming) {
-                stack(.upcoming) { PhoneUpcomingScreen(model: model) }
+            Tab("Tasks", systemImage: "checkmark.square", value: PhoneTab.tasks) {
+                stack(.tasks) { PhoneTasksScreen(model: model) }
             }
-            Tab("Loose", systemImage: "tray", value: PhoneTab.loose) {
-                stack(.loose) { PhoneTaskListScreen(model: model, kind: .loose) }
+            Tab("Tags", systemImage: "tag", value: PhoneTab.tags) {
+                stack(.tags) { PhoneTagsScreen(model: model) }
             }
-            Tab("Projects", systemImage: "chart.pie", value: PhoneTab.projects) {
-                stack(.projects) { PhoneProjectsScreen(model: model) }
+            Tab("Notes", systemImage: "doc.text", value: PhoneTab.notes) {
+                stack(.notes) { PhoneNotesScreen(model: model) }
             }
             Tab("Other", systemImage: "ellipsis.circle", value: PhoneTab.other) {
                 stack(.other) { PhoneOtherScreen(model: model) }
@@ -102,8 +102,8 @@ struct PhoneRootView: View {
                     case .integrations: PhoneIntegrationsScreen(store: model.integrations)
                     case .logbook: PhoneLogbookScreen(model: model)
                     case .trash: PhoneTrashScreen(model: model)
-                    case .tags: PhoneTagsScreen(model: model)
                     case let .tag(path): PhoneTagScreen(model: model, path: path)
+                    case let .folder(path): PhoneFolderScreen(model: model, path: path)
                     }
                 }
             }

@@ -25,6 +25,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     var fileButton: (label: String, open: () -> Void)? = nil
     var pickable: [String] = []
     var add: (() async -> Void)? = nil
+    var addLabel = "New Task"
     /// A row to scroll to the top, as Upcoming's week strip asks.
     var scrollTarget: ScrollRequest? = nil
     @ViewBuilder var menu: MenuItems
@@ -72,7 +73,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottomTrailing) {
             if let add, !nav.isPicking, !search.isSearching {
-                FloatingAddButton { Task { await add() } }
+                FloatingAddButton(label: addLabel) { Task { await add() } }
             }
         }
         .toolbar {
@@ -145,6 +146,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
 
 /// The accent + at a list's bottom right that makes a new file.
 struct FloatingAddButton: View {
+    var label = "New Task"
     let action: () -> Void
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
@@ -161,7 +163,7 @@ struct FloatingAddButton: View {
         .buttonStyle(.glassProminent)
         .buttonBorderShape(.circle)
         .tint(theme.color(\.accent))
-        .accessibilityLabel("New Task")
+        .accessibilityLabel(label)
         .padding(.trailing, 20)
         .padding(.bottom, 12)
     }

@@ -1932,13 +1932,13 @@ import TaDaCore
         return parts.indices.dropLast().map { parts[...$0].joined(separator: "/") }
     }
 
-    /// Creates "Untitled folder" in `parent`, or the folder whose page shows (else at the top level), its name ready to
-    /// type.
-    func newFolder(in parent: String? = nil) async {
+    /// Creates a folder called `name` in `parent`, or the folder whose page shows (else at the top level), its name ready
+    /// to type.
+    func newFolder(named name: String = "Untitled folder", in parent: String? = nil) async {
         guard let vault else { return }
         let parent = parent ?? shownFolder ?? ""
         do {
-            let path = try await Self.run { try vault.createFolder(named: "Untitled folder", in: parent) }
+            let path = try await Self.run { try vault.createFolder(named: name, in: parent) }
             knownFolders.insert(path)
             foldedFolders.remove(parent)
             updateNotes()
