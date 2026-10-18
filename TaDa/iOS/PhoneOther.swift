@@ -110,6 +110,11 @@ struct PhoneSettingsScreen: View {
                     value("Contents", "\(tasks(model.index.tasks.count)) · \(model.index.projects.count) projects · \(model.index.areas.count) areas")
                     Button("Change Folder…") { isPicking = true }
                         .foregroundStyle(theme.color(\.accent))
+                    if !model.oldLayoutFolders.isEmpty {
+                        Button("Move \(MoveIntoHomeText.folders(model)) into “\(Vault.home)”") { Task { await model.moveIntoHome() } }
+                            .foregroundStyle(theme.color(\.accent))
+                            .disabled(model.isMovingIntoHome)
+                    }
                 }
                 .id(SettingsSection.vault)
                 Section("Themes") {

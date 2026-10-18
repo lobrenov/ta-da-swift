@@ -50,6 +50,15 @@ struct VaultSettingsView: View {
                     row("Contents") {
                         Text("^[\(model.index.tasks.count) task](inflect: true) · ^[\(model.index.projects.count) project](inflect: true) · ^[\(model.index.areas.count) area](inflect: true)")
                     }
+                    if !model.oldLayoutFolders.isEmpty {
+                        Hairline()
+                        row("Layout") {
+                            Text("\(MoveIntoHomeText.folders(model)) at the top level")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            SettingsButton("Move into “\(Vault.home)”") { Task { await model.moveIntoHome() } }
+                                .disabled(model.isMovingIntoHome)
+                        }
+                    }
                 }
             }
             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))

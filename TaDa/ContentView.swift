@@ -60,6 +60,7 @@ struct ContentView: View {
         } message: { request in
             Text(request.count == 0 ? "It holds no notes." : "Its \(request.count == 1 ? "note goes" : "\(request.count) notes go") with it. You can restore them from Trash.")
         }
+        .moveIntoHomeAlert(model)
         .task { await model.start() }
     }
 
@@ -92,6 +93,7 @@ struct ContentView: View {
         } message: {
             Text(model.errorMessage ?? "")
         }
+        .moveIntoHomeAlert(model)
         .task { await model.start() }
     }
 }

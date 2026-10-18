@@ -26,7 +26,7 @@ extension Vault {
             } else {
                 return nil
             }
-            guard folderExists(name), !files(under: name).isEmpty else { return nil }
+            guard folderExists(name), !files(under: name, limit: 1).isEmpty else { return nil }
             return (name, to)
         }
     }
@@ -78,9 +78,9 @@ extension Vault {
         try CoordinatedFileIO.move(folderURL(from), to: folderURL(to))
     }
 
-    /// The files under `folder` at any depth, iCloud Drive placeholders by the path they'll have. Other hidden files and
-    /// folders are left out.
-    private func files(under folder: String) -> [String] {
+    /// The files under `folder` at any depth, up to `limit`, iCloud Drive placeholders by the path they'll have. Other
+    /// hidden files and folders are left out.
+    private func files(under folder: String, limit: Int = .max) -> [String] {
         guard let entries = FileManager.default.enumerator(
             at: folderURL(folder), includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsPackageDescendants]
         ) else { return [] }
@@ -98,6 +98,7 @@ extension Vault {
             }
             let parent = url.deletingLastPathComponent().standardizedFileURL.pathComponents.dropFirst(rootComponents)
             paths.append((parent + [name]).joined(separator: "/"))
+            if paths.count == limit { break }
         }
         return paths.sorted()
     }

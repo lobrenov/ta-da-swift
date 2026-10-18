@@ -437,6 +437,7 @@ import TaDaCore
         static let foldedTags = "foldedTags"
         static let foldedFolders = "foldedFolders"
         static let lastLogged = "lastLogged"
+        static let moveDeclined = "moveDeclined"
         static let quickEntryHotkey = "quickEntryHotkey"
         static let browserWidth = "browserWidth"
         static let groupings = "groupings"
@@ -537,6 +538,8 @@ import TaDaCore
         trashedAttachments = await Self.run { vault.trashedAttachments() }
         attachments = await Self.run { vault.attachmentPaths() }
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
+        oldLayoutFolders = await Self.run { vault.oldLayoutFolders().map(\.from) }
+        moveDeclined = Self.moveDeclined(folder, in: defaults)
         state = .ready
         #if os(iOS)
         await Self.run { vault.downloadPlaceholders() }
@@ -608,6 +611,8 @@ import TaDaCore
                 trashSelection.formIntersection(trash.map(\.id) + trashedAttachments.map(\.id))
                 let attachments = await Self.run { vault.attachmentPaths() }
                 if attachments != self.attachments { self.attachments = attachments }
+                let old = await Self.run { vault.oldLayoutFolders().map(\.from) }
+                if old != oldLayoutFolders { oldLayoutFolders = old }
                 multiSelection = multiSelection.filter { index[$0] != nil }
             } while refreshAgain
         }
@@ -1459,6 +1464,56 @@ import TaDaCore
     private func nextSelection(skipping removed: [String]) -> String? {
         guard let selection, let paths = arrowKeyList?.paths, let i = paths.firstIndex(of: selection) else { return nil }
         return paths[(i + 1)...].first { !removed.contains($0) } ?? paths[..<i].last { !removed.contains($0) }
+    }
+
+    // MARK: Moving into Ta Da/
+
+    /// The old layout's top-level folders that hold files (`Vault.oldLayoutFolders()`); empty once the folder is moved.
+    private(set) var oldLayoutFolders: [String] = []
+    /// Not Now was chosen for this folder on this device.
+    private(set) var moveDeclined = false
+    /// Whether `moveIntoHome()` is running.
+    private(set) var isMovingIntoHome = false
+
+    /// Whether to ask once about moving the old layout into `Ta Da/`.
+    var offersMove: Bool { state == .ready && !oldLayoutFolders.isEmpty && !moveDeclined && !isMovingIntoHome }
+
+    /// Not Now: stops asking for this folder on this device. Settings ▸ Vault still offers the move.
+    func declineMove() {
+        guard let folder = vault?.root else { return }
+        moveDeclined = true
+        Self.setMoveDeclined(folder, in: defaults)
+    }
+
+    static func moveDeclined(_ folder: URL, in defaults: any SettingsStore) -> Bool {
+        defaults.dictionary(forKey: Keys.moveDeclined)?[folder.resolvingSymlinksInPath().path] as? Bool == true
+    }
+
+    static func setMoveDeclined(_ folder: URL, in defaults: any SettingsStore) {
+        var folders = defaults.dictionary(forKey: Keys.moveDeclined) ?? [:]
+        folders[folder.resolvingSymlinksInPath().path] = true
+        defaults.set(folders, forKey: Keys.moveDeclined)
+    }
+
+    /// Saves the open file, moves the old layout's folders into `Ta Da/` (`Vault.moveIntoHome`), follows the moved files
+    /// and refreshes. Files that couldn't be moved or relinked are named in `errorMessage`.
+    func moveIntoHome() async {
+        guard let vault, !isMovingIntoHome else { return }
+        isMovingIntoHome = true
+        defer { isMovingIntoHome = false }
+        if let document { await save(document) }
+        let index = index
+        let result = await Self.run { vault.moveIntoHome(index: index) }
+        let loaded = await Self.run { result.moved.values.compactMap { try? vault.load($0) } }
+        var items = Dictionary(loaded.map { ($0.path, $0) }) { a, _ in a }
+        for item in result.relinked { items[item.path] = item }
+        for (old, new) in result.moved { follow(old, to: new, items: items[new].map { [$0] } ?? []) }
+        for item in result.relinked where result.moved.values.contains(item.path) == false { updateIndex(replacing: item) }
+        let problems = [(result.notMoved, "couldn’t be moved"), (result.failed, "couldn’t have their links updated")]
+            .filter { !$0.0.isEmpty }
+            .map { paths, what in "\(paths.count == 1 ? "1 file" : "\(paths.count) files") \(what): \(paths.prefix(5).map { Item.title(ofPath: $0) }.formatted(.list(type: .and)))." }
+        if !problems.isEmpty { errorMessage = (problems + ["Try again from Settings ▸ Vault."]).joined(separator: " ") }
+        await refresh()
     }
 
     // MARK: Logbook

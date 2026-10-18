@@ -27,6 +27,8 @@ struct DesignRenderTests {
 
         // The fixtures count as logged that day, so opening them moves nothing to `.logbook/`.
         AppModel.setLastLogged(sampleVault, to: LocalDate("2026-10-02")!, in: defaults)
+        // The fixture keeps the old layout; no move question over the renders.
+        AppModel.setMoveDeclined(sampleVault, in: defaults)
         let model = AppModel(defaults: defaults)
         model.today = LocalDate("2026-10-02")!
         await model.choose(sampleVault)
