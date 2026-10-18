@@ -6,8 +6,11 @@ extension View {
     /// Shows the move question while `model.offersMove`.
     func moveIntoHomeAlert(_ model: AppModel) -> some View {
         alert("Move Ta Da’s files into “\(Vault.home)”?", isPresented: Binding { model.offersMove } set: { _ in }) {
-            Button("Move") { Task { await model.moveIntoHome() } }
-            Button("Not Now", role: .cancel) { model.declineMove() }
+            Button("Move") {
+                model.answerMove()
+                Task { await model.moveIntoHome() }
+            }
+            Button("Not Now", role: .cancel) { model.answerMove() }
         } message: {
             Text("Ta Da now keeps the files it makes in a “\(Vault.home)” folder. This moves \(MoveIntoHomeText.folders(model)) into it, and links written with their paths follow. You can also do this later in Settings ▸ Vault.")
         }

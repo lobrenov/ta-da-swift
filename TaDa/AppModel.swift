@@ -1,6 +1,9 @@
 // The app's root state: the chosen folder, its index, the sidebar selection, the open document and the theme.
 import Foundation
 import TaDaCore
+#if os(iOS)
+import UIKit
+#endif
 
 @Observable final class AppModel {
     enum Domain: Hashable {
@@ -586,7 +589,8 @@ import TaDaCore
     /// watcher fires and when the app becomes active. Calls during a refresh fold into one more pass, so
     /// each call returns after a pass that started after it.
     func refresh() async {
-        guard let vault else { return }
+        // `moveIntoHome()` refreshes once it's done.
+        guard let vault, !isMovingIntoHome else { return }
         if let refreshing {
             refreshAgain = true
             await refreshing.value
@@ -1165,6 +1169,11 @@ import TaDaCore
             index.remove(path)
             for item in items { index.update(item) }
         }
+        followPointers(path, to: newPath)
+    }
+
+    /// Points the open document, the selection, the domain and the kept folds, filters and recent files at a moved file.
+    private func followPointers(_ path: String, to newPath: String) {
         if let document, document.path == path { document.path = newPath }
         if domain == .project(path) { domain = .project(newPath) }
         if domain == .area(path) { domain = .area(newPath) }
@@ -1470,16 +1479,18 @@ import TaDaCore
 
     /// The old layout's top-level folders that hold files (`Vault.oldLayoutFolders()`); empty once the folder is moved.
     private(set) var oldLayoutFolders: [String] = []
-    /// Not Now was chosen for this folder on this device.
+    /// The move question was answered (Move or Not Now) for this folder on this device.
     private(set) var moveDeclined = false
     /// Whether `moveIntoHome()` is running.
     private(set) var isMovingIntoHome = false
 
-    /// Whether to ask once about moving the old layout into `Ta Da/`.
-    var offersMove: Bool { state == .ready && !oldLayoutFolders.isEmpty && !moveDeclined && !isMovingIntoHome }
+    /// Whether to ask once about moving the old layout into `Ta Da/`: not while logging, moving or showing an error.
+    var offersMove: Bool {
+        state == .ready && !oldLayoutFolders.isEmpty && !moveDeclined && !isMovingIntoHome && !isLogging && errorMessage == nil
+    }
 
-    /// Not Now: stops asking for this folder on this device. Settings ▸ Vault still offers the move.
-    func declineMove() {
+    /// Answers the move question (Move or Not Now) for this folder on this device. Settings ▸ Vault still offers the move.
+    func answerMove() {
         guard let folder = vault?.root else { return }
         moveDeclined = true
         Self.setMoveDeclined(folder, in: defaults)
@@ -1495,25 +1506,34 @@ import TaDaCore
         defaults.set(folders, forKey: Keys.moveDeclined)
     }
 
-    /// Saves the open file, moves the old layout's folders into `Ta Da/` (`Vault.moveIntoHome`), follows the moved files
-    /// and refreshes. Files that couldn't be moved or relinked are named in `errorMessage`.
+    /// Saves the open file, moves the old layout's folders into `Ta Da/` (`Vault.moveIntoHome`), follows the moved files,
+    /// refreshes and logs if due. Refreshing and logging wait while it runs. Files that couldn't be moved or relinked
+    /// are named in `errorMessage`.
     func moveIntoHome() async {
-        guard let vault, !isMovingIntoHome else { return }
+        guard let vault, !isMovingIntoHome, !isLogging else { return }
         isMovingIntoHome = true
-        defer { isMovingIntoHome = false }
+        #if os(iOS)
+        let background = UIApplication.shared.beginBackgroundTask(withName: "Move into Ta Da")
+        defer { UIApplication.shared.endBackgroundTask(background) }
+        #endif
         if let document { await save(document) }
+        pendingSave?.cancel()
         let index = index
         let result = await Self.run { vault.moveIntoHome(index: index) }
         let loaded = await Self.run { result.moved.values.compactMap { try? vault.load($0) } }
-        var items = Dictionary(loaded.map { ($0.path, $0) }) { a, _ in a }
-        for item in result.relinked { items[item.path] = item }
-        for (old, new) in result.moved { follow(old, to: new, items: items[new].map { [$0] } ?? []) }
-        for item in result.relinked where result.moved.values.contains(item.path) == false { updateIndex(replacing: item) }
+        updateIndex { index in
+            for old in result.moved.keys { index.remove(old) }
+            for item in loaded + result.relinked { index.update(item) }
+        }
+        for (old, new) in result.moved { followPointers(old, to: new) }
+        if let document, result.moved.values.contains(document.path) { document.isRemovedOnDisk = false }
         let problems = [(result.notMoved, "couldn’t be moved"), (result.failed, "couldn’t have their links updated")]
             .filter { !$0.0.isEmpty }
             .map { paths, what in "\(paths.count == 1 ? "1 file" : "\(paths.count) files") \(what): \(paths.prefix(5).map { Item.title(ofPath: $0) }.formatted(.list(type: .and)))." }
         if !problems.isEmpty { errorMessage = (problems + ["Try again from Settings ▸ Vault."]).joined(separator: " ") }
+        isMovingIntoHome = false
         await refresh()
+        await logIfDue()
     }
 
     // MARK: Logbook
@@ -1523,7 +1543,7 @@ import TaDaCore
     /// device has since logged.
     /// Each folder's day is kept once its logging succeeds; after a failure the next open or day change tries again.
     func logIfDue() async {
-        guard state == .ready, !isLogging, let folder = vault?.root,
+        guard state == .ready, !isLogging, !isMovingIntoHome, let folder = vault?.root,
               Self.lastLogged(folder, in: defaults) != today else { return }
         isLogging = true
         defer { isLogging = false }

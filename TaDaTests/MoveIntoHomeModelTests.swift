@@ -15,10 +15,10 @@ struct MoveIntoHomeModelTests {
         ])
     }
 
-    @Test func anOldLayoutIsOfferedUntilNotNow() async throws {
+    @Test func anOldLayoutIsOfferedUntilAnswered() async throws {
         let model = await folder.model()
         #expect(model.oldLayoutFolders == ["projects", "tasks"] && model.offersMove)
-        model.declineMove()
+        model.answerMove()
         #expect(!model.offersMove)
         #expect(await folder.model().offersMove == false, "kept for the folder")
     }
