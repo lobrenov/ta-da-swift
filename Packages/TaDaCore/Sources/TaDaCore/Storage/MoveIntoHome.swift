@@ -3,9 +3,15 @@ import Foundation
 /// Moving a vault from the old layout: the top-level `tasks/`, `projects/`, `areas/`, `attachments/` and `.logbook/` go
 /// into their folders in `Ta Da/`. Body links and embeds written with a moved file's path follow it.
 extension Vault {
-    /// The result of `moveIntoHome(index:)`: each moved file's new path by its old one, the files whose links or embeds
-    /// were rewritten as they now are, and the files whose links couldn't be rewritten.
-    public typealias MovedIntoHome = (moved: [String: String], relinked: [Item], failed: [String])
+    /// The result of `moveIntoHome(index:)`: each moved file's new path by its old one, the files that couldn't be moved
+    /// (iCloud Drive placeholders not downloaded yet among them), the files whose links were rewritten as they now are,
+    /// and the files whose links couldn't be rewritten.
+    public struct MovedIntoHome: Sendable {
+        public var moved: [String: String] = [:]
+        public var notMoved: [String] = []
+        public var relinked: [Item] = []
+        public var failed: [String] = []
+    }
 
     /// The old layout's top-level folders that hold a file (iCloud Drive placeholders count), each with the folder in
     /// `Ta Da/` it moves to, sorted by name.
@@ -25,34 +31,45 @@ extension Vault {
         }
     }
 
-    /// Moves each of `oldLayoutFolders()` into `Ta Da/`: the whole folder when its destination doesn't exist, else file by
-    /// file, numbering names taken there. A file already gone (another device moved it) is skipped, and old folders left
-    /// with no files are removed. Then body links and embeds written with an old path point at the new one, links by
-    /// title follow a numbered file whose old title found it, and embeds by filename follow a numbered image.
-    public func moveIntoHome(index: VaultIndex) throws -> MovedIntoHome {
+    /// Moves each of `oldLayoutFolders()` into `Ta Da/` (named as on disk when it exists in another case): the whole
+    /// folder when its destination doesn't exist, else file by file, numbering names taken there. A file that's gone
+    /// (another device moved it) is skipped; one that can't be moved, or is a placeholder, is listed as not moved. Old
+    /// folders left with no files are removed. Then body links and embeds written with an old path point at the new one,
+    /// links by title follow a numbered file whose old title found it, embeds by filename follow a numbered image, and a
+    /// numbered project's or area's files point their `project` or `area` link at its new title.
+    public func moveIntoHome(index: VaultIndex) -> MovedIntoHome {
         let images = attachmentPaths()
-        var moved: [String: String] = [:]
-        var firstError: (any Error)?
+        var result = MovedIntoHome()
         for (from, to) in oldLayoutFolders() {
-            let paths = files(under: from)
+            let to = onDisk(to), paths = files(under: from)
             if !folderExists(to), (try? moveFolder(from, to: to)) != nil {
-                for path in paths { moved[path] = to + path.dropFirst(from.count) }
+                for path in paths { result.moved[path] = to + path.dropFirst(from.count) }
                 continue
             }
             for path in paths {
                 let subfolder = String(Self.folder(of: path).dropFirst(from.count).drop { $0 == "/" })
-                let folder = subfolder.isEmpty ? to : Self.join(to, subfolder)
+                let folder = subfolder.isEmpty ? to : onDisk(Self.join(to, subfolder))
                 do {
-                    moved[path] = try moveFile(path, into: folder)
-                } catch where FileManager.default.fileExists(atPath: url(for: path).path(percentEncoded: false)) {
-                    firstError = firstError ?? error
-                } catch {}
+                    result.moved[path] = try moveFile(path, into: folder)
+                } catch {
+                    let placeholder = Self.join(Self.folder(of: path), "." + (path.split(separator: "/").last ?? "") + ".icloud")
+                    if [path, placeholder].contains(where: { FileManager.default.fileExists(atPath: url(for: $0).path(percentEncoded: false)) }) {
+                        result.notMoved.append(path)
+                    }
+                }
             }
             removeIfEmpty(from)
         }
-        if let firstError, moved.isEmpty { throw firstError }
-        let (relinked, failed) = relinkMoved(moved, index: index, images: images)
-        return (moved, relinked, failed)
+        relinkMoved(&result, index: index, images: images)
+        return result
+    }
+
+    /// `path` with each folder in it that exists named as on disk, matched ignoring case.
+    func onDisk(_ path: String) -> String {
+        path.split(separator: "/").reduce("") { resolved, part in
+            let name = filenames(in: resolved).first { $0.lowercased() == part.lowercased() } ?? String(part)
+            return Self.join(resolved, name)
+        }
     }
 
     /// Moves the folder `from` to `to`, which doesn't exist, creating `to`'s parent.
@@ -96,43 +113,58 @@ extension Vault {
         try? manager.removeItem(at: folderURL(folder))
     }
 
-    /// Rewrites the body links and embeds that named a moved file, in every file of `index` (at its path now). `images`
-    /// are the image paths before the move. A file that can't be rewritten doesn't stop the rest.
-    private func relinkMoved(_ moved: [String: String], index: VaultIndex, images: [String]) -> (relinked: [Item], failed: [String]) {
-        var notes: [String: String] = [:], titles: [String: String] = [:]
-        for (old, new) in moved where old.lowercased().hasSuffix(".md") {
-            notes[String(old.dropLast(3)).lowercased()] = String(new.dropLast(3))
-            let title = Item.title(ofPath: old)
-            if Item.title(ofPath: new) != title, index.items(titled: title).first?.path == old {
-                titles[title.lowercased()] = Item.title(ofPath: new)
+    /// Rewrites the links and embeds that named a moved file, in every file of `index` (at its path now). `images` are the
+    /// image paths before the move. A file that can't be rewritten doesn't stop the rest.
+    private func relinkMoved(_ result: inout MovedIntoHome, index: VaultIndex, images: [String]) {
+        let moved = result.moved
+        // Old path, and a note's without `.md`, lowercased → new path in the same form.
+        var paths: [String: String] = [:], titles: [String: String] = [:]
+        var relinked: [String: Item] = [:], failed: Set<String> = []
+        for (old, new) in moved {
+            paths[old.lowercased()] = new
+            guard old.lowercased().hasSuffix(".md") else { continue }
+            paths[String(old.dropLast(3)).lowercased()] = String(new.dropLast(3))
+            let title = Item.title(ofPath: old), newTitle = Item.title(ofPath: new)
+            guard newTitle != title else { continue }
+            if index.items(titled: title).first?.path == old { titles[title.lowercased()] = newTitle }
+            guard let parent = index[old], [.project, .area].contains(parent.properties.kind) else { continue }
+            let key = parent.properties.kind == .project ? "project" : "area"
+            let children = key == "project" ? index.tasks(in: parent, includingLogged: true)
+                : index.projects(in: parent, includingLogged: true) + index.tasks(in: parent, includingLogged: true)
+            for child in children {
+                let path = moved[child.path] ?? child.path
+                do {
+                    if let item = try relink(path, key: key, from: title, to: newTitle) { relinked[path] = item }
+                } catch {
+                    failed.insert(path)
+                }
             }
         }
-        let movedImages = Dictionary(moved.filter { Self.isImage($0.key) }.map { ($0.key.lowercased(), $0.value) }) { a, _ in a }
         let link = { (target: Substring) -> String? in
+            if target.contains("/") { return paths[target.lowercased()] }
             let ext = target.lowercased().hasSuffix(".md") ? String(target.suffix(3)) : ""
-            let bare = target.dropLast(ext.count).lowercased()
-            return (bare.contains("/") ? notes[bare] : titles[bare]).map { $0 + ext }
+            return titles[target.dropLast(ext.count).lowercased()].map { $0 + ext }
         }
         let embed = { (target: Substring, image: WikiLink) -> String? in
-            if target.contains("/") { return movedImages[target.lowercased()] }
+            if target.contains("/") { return paths[target.lowercased()] }
             guard let old = Self.attachmentPath(for: image, in: images), let new = moved[old],
                   new.split(separator: "/").last != old.split(separator: "/").last else { return nil }
             return String(new.split(separator: "/").last ?? "")
         }
-        var relinked: [Item] = [], failed: [String] = []
         for item in index.items.values.sorted(by: { $0.path < $1.path })
         where item.links.contains(where: { link(Substring($0.target)) != nil })
             || item.embeds.contains(where: { embed(Substring($0.target), $0) != nil }) {
             let path = moved[item.path] ?? item.path
             do {
                 if let item = try update(path, { Self.rewriteEmbedTargets(in: Self.rewriteLinkTargets(in: $0, link), embed) }) {
-                    relinked.append(item)
+                    relinked[path] = item
                 }
             } catch {
-                failed.append(path)
+                failed.insert(path)
             }
         }
-        return (relinked, failed)
+        result.relinked = relinked.keys.sorted().compactMap { relinked[$0] }
+        result.failed = failed.sorted()
     }
 
     /// Replaces the target of each `![[ ]]` in the body that `transform` gives a new one, keeping anything after `|`.
