@@ -34,7 +34,7 @@ struct PhoneFileScreen: View {
         }
         .background { theme.color(\.bg).ignoresSafeArea() }
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
+        .background { TabBarHiddenOnTop() }
         .toolbar {
             if search.isOpen {
                 // Keeps the navigation bar, so the page stays below the search field in its row.
@@ -230,6 +230,37 @@ struct PhoneFileScreen: View {
             InlineCheckbox.draw(marker, in: rect, tint: tint, background: theme.bg, context: context.cgContext)
         }
         .withRenderingMode(.alwaysOriginal)
+    }
+}
+
+/// Hides the tab bar while the screen is on top, through the tab bar controller as the navigation transition that
+/// shows or covers the screen starts, so the bar animates with the push and the pop; a cancelled swipe back puts it back.
+private struct TabBarHiddenOnTop: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+    func updateUIViewController(_ controller: Controller, context: Context) {}
+
+    final class Controller: UIViewController {
+        override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            setTabBarHidden(true)
+        }
+
+        override func viewWillDisappear(_ animated: Bool) {
+            super.viewWillDisappear(animated)
+            setTabBarHidden(false)
+        }
+
+        private func setTabBarHidden(_ hidden: Bool) {
+            guard let tabBarController else { return }
+            guard let coordinator = transitionCoordinator else {
+                tabBarController.setTabBarHidden(hidden, animated: false)
+                return
+            }
+            tabBarController.setTabBarHidden(hidden, animated: true)
+            coordinator.animate(alongsideTransition: nil) { context in
+                if context.isCancelled { tabBarController.setTabBarHidden(!hidden, animated: true) }
+            }
+        }
     }
 }
 
