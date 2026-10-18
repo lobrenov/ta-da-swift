@@ -2131,7 +2131,7 @@ import TaDaCore
     /// The lists of the tag page or Untagged, while one shows.
     private(set) var tagPage: TagBrowser?
 
-    /// Calendar events and Reminders, shown before each day's tasks in Today and Upcoming.
+    /// Calendar events and Reminders, shown before each day's tasks in the Agenda.
     let integrations: IntegrationsStore
     var todayEvents: [DayEvent] { integrations.todayEvents }
     var todayReminders: [ExternalReminder] { integrations.todayReminders }

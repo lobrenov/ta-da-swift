@@ -209,7 +209,7 @@ struct PhoneSettingsScreen: View {
         } footer: {
             Text(store.access == .denied
                  ? "Ta Da can’t show badges. Turn on Allow Notifications and Badges in Settings ▸ Apps ▸ Ta Da ▸ Notifications."
-                 : "The app icon counts the open tasks due or at their deadline today or earlier, as in Today.")
+                 : "The app icon counts the open tasks due or at their deadline today or earlier, as in today's Agenda.")
         }
     }
 

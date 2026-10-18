@@ -34,7 +34,7 @@ struct HotkeysSettingsView: View {
     typealias KeyRow = (what: String, keys: [String])
 
     static let fileKeys: [KeyRow] = [("New task or note", ["⌘N"]), ("New project", ["⇧⌘N"]), ("New area", ["⌥⌘N"]),
-                                     ("Search files", ["⌥⌘F"]), ("Today, Upcoming, Loose tasks, Trash, Logbook", ["⌘1–⌘5"]),
+                                     ("Search files", ["⌥⌘F"]), ("Agenda, Loose tasks, Trash, Logbook", ["⌘1–⌘4"]),
                                      ("Live or Source", ["⌘E"]), ("Toggle sidebar", ["⌃⌘S"]), ("Settings", ["⌘,"])]
 
     static let taskKeys: [KeyRow] = [("Move to a project or area", ["⌘P"]), ("Schedule", ["⌘S"]), ("Set deadline", ["⌘D"]),

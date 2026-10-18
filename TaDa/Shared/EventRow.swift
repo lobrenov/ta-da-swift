@@ -1,4 +1,4 @@
-// A Calendar event on one day in Today or Upcoming: a bar in its calendar's colour, its start (or All day, or "until"
+// A Calendar event on one day in the Agenda: a bar in its calendar's colour, its start (or All day, or "until"
 // its end) and its title, with "Day n of m" for an all-day event spanning days. Clicking or tapping opens Calendar.
 import SwiftUI
 import TaDaCore

@@ -28,7 +28,7 @@ struct NotificationsSettingsView: View {
                 Text("Badges")
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.color(\.strong))
-                Text("The Dock icon counts the open tasks due or at their deadline today or earlier, as in Today")
+                Text("The Dock icon counts the open tasks due or at their deadline today or earlier, as in today's Agenda")
                     .font(.system(size: 12))
                     .foregroundStyle(theme.color(\.muted))
             }

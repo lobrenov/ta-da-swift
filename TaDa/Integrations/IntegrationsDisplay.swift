@@ -10,10 +10,10 @@ extension IntegrationsStore.Kind {
     var choiceNoun: String { self == .events ? "calendars" : "lists" }
     var toggleLabel: String { self == .events ? "Show events" : "Show reminders" }
     var macHint: String {
-        self == .events ? "Calendar events in Today and Upcoming"
-            : "Reminders with a due date: due or overdue in Today, by date in Upcoming"
+        self == .events ? "Calendar events in the Agenda"
+            : "Reminders with a due date, on that day in the Agenda; today's include overdue ones"
     }
-    var phoneHint: String { self == .events ? "In Today and Upcoming" : "Those with a due date" }
+    var phoneHint: String { self == .events ? "In the Agenda" : "Those with a due date" }
 
     /// Where access is turned on: System Settings' Privacy & Security pane on the Mac, Ta Da's settings on iPhone.
     var privacySettingsURL: URL {

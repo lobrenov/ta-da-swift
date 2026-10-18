@@ -1,4 +1,4 @@
-// The device's Calendar events and Reminders for the Agenda's days, Today and Upcoming, read through EventKit. Ta Da never writes them.
+// The device's Calendar events and Reminders for the Agenda's days, read through EventKit. Ta Da never writes them.
 import CoreGraphics
 import EventKit
 import Foundation
@@ -92,7 +92,7 @@ final class IntegrationsStore {
         kind == .events ? showsEvents : showsReminders
     }
 
-    /// Whether the switch is on and access is granted, so the kind shows in Today and Upcoming.
+    /// Whether the switch is on and access is granted, so the kind shows in the Agenda.
     func isShown(_ kind: Kind) -> Bool {
         isOn(kind) && status(kind) == .fullAccess
     }
@@ -235,7 +235,7 @@ final class IntegrationsStore {
         let first = window?.first ?? today
         let pastReminders = Dictionary(grouping: reminders.filter { $0.due.map { first <= $0 && $0 < today } ?? false }) { $0.due! }
             .mapValues { $0.sorted { ($0.title, $0.id) < ($1.title, $1.id) } }
-        // Assigning an equal list would still redraw Today and Upcoming.
+        // Assigning an equal list would still redraw the Agenda.
         if todayEvents != self.todayEvents { self.todayEvents = todayEvents }
         if upcomingEvents != self.upcomingEvents { self.upcomingEvents = upcomingEvents }
         if todayReminders != self.todayReminders { self.todayReminders = todayReminders }

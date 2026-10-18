@@ -403,8 +403,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Ta Da";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Ta Da shows your calendar events beside your tasks in Today and Upcoming. It never changes your calendars.";
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Ta Da shows your reminders beside your tasks in Today and Upcoming. It never changes your reminders.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Ta Da shows your calendar events beside your tasks in the Agenda. It never changes your calendars.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Ta Da shows your reminders beside your tasks in the Agenda. It never changes your reminders.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -462,8 +462,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Ta Da";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Ta Da shows your calendar events beside your tasks in Today and Upcoming. It never changes your calendars.";
-				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Ta Da shows your reminders beside your tasks in Today and Upcoming. It never changes your reminders.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Ta Da shows your calendar events beside your tasks in the Agenda. It never changes your calendars.";
+				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Ta Da shows your reminders beside your tasks in the Agenda. It never changes your reminders.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
