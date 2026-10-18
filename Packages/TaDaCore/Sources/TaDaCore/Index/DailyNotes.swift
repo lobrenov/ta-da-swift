@@ -36,23 +36,29 @@ public struct DailyNoteNames: Hashable, Sendable {
         folder.isEmpty ? "\(name).md" : "\(folder)/\(name).md"
     }
 
-    /// The filename without `.md` when the path is straight in `folder`.
+    /// The filename without `.md` when the path is straight in `folder`, whose case is ignored.
     private static func name(of path: String, in folder: String) -> String? {
         let prefix = folder.isEmpty ? "" : folder + "/"
-        guard path.hasPrefix(prefix), path.hasSuffix(".md") else { return nil }
-        let name = path.dropFirst(prefix.count).dropLast(3)
+        guard path.hasSuffix(".md") else { return nil }
+        var rest = Substring(path)
+        if !prefix.isEmpty {
+            guard let range = path.range(of: prefix, options: [.caseInsensitive, .anchored]) else { return nil }
+            rest = path[range.upperBound...]
+        }
+        let name = rest.dropLast(3)
         return name.contains("/") ? nil : String(name)
     }
 }
 
-/// Daily and week notes are plain notes found by their exact path. A note renamed away from its name isn't found.
+/// Daily and week notes are plain notes found by their name, in the folder in any case. A note renamed away from its
+/// name isn't found.
 extension VaultIndex {
     public func dailyNote(for date: LocalDate, names: DailyNoteNames = DailyNoteNames()) -> Item? {
-        note(atPath: names.path(for: date))
+        note(titled: "\(date)") { names.date(atPath: $0) == date }
     }
 
     public func weekNote(for week: ISOWeek, names: DailyNoteNames = DailyNoteNames()) -> Item? {
-        note(atPath: names.path(for: week))
+        note(titled: "\(week)") { names.week(atPath: $0) == week }
     }
 
     /// The unchecked boxes in a file: those with the Open state (`[ ]`, `[/]`, `[>]`, `[<]`).
@@ -60,7 +66,7 @@ extension VaultIndex {
         item.checkboxes.count { $0.state == .open }
     }
 
-    private func note(atPath path: String) -> Item? {
-        items[path].flatMap { $0.properties.kind == .note && !$0.isLogged ? $0 : nil }
+    private func note(titled title: String, where matches: (String) -> Bool) -> Item? {
+        items(titled: title).first { $0.properties.kind == .note && !$0.isLogged && matches($0.path) }
     }
 }

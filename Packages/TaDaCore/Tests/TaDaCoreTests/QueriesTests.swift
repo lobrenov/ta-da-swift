@@ -210,7 +210,7 @@ private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
 }
 
 @Test func agendaWeekHasEntriesDatedWithinTheWeek() {
-    let entries = index.agendaWeek(ISOWeek(year: 2026, week: 41)!, today: today).map { "\($0.date) \($0.kind) \($0.item.title)" }
+    let entries = index.agendaWeek(ISOWeek(year: 2026, week: 41)!).map { "\($0.date) \($0.kind) \($0.item.title)" }
     #expect(entries == [
         "2026-10-05 due Done today",
         "2026-10-05 due Same day",
@@ -218,7 +218,7 @@ private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
         "2026-10-08 deadline Tomorrow",
         "2026-10-09 due Overdue deadline",
     ])
-    #expect(index.agendaWeek(ISOWeek(year: 2026, week: 42)!, today: today).isEmpty)
+    #expect(index.agendaWeek(ISOWeek(year: 2026, week: 42)!).isEmpty)
 }
 
 @Test func agendaOnTheDesignVault() async {
@@ -226,7 +226,7 @@ private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
     #expect(design.agendaDay(today, today: today).map(\.path) == design.today(today).map(\.path))
     let tomorrow = today.adding(days: 1)
     #expect(design.agendaDay(tomorrow, today: today).allSatisfy { $0.properties.dueDate == tomorrow || $0.properties.deadline == tomorrow })
-    let entries = design.agendaWeek(today.isoWeek, today: today)
+    let entries = design.agendaWeek(today.isoWeek)
     #expect(!entries.isEmpty && entries.allSatisfy { today.isoWeek.days.contains($0.date) })
     #expect(entries.map(\.date) == entries.map(\.date).sorted())
 }

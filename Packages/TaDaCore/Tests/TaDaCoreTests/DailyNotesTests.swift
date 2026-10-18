@@ -49,6 +49,18 @@ private func daily(_ path: String, body: String = "") -> Item {
     #expect(index.dailyNote(for: LocalDate("2026-10-01")!)?.title == "2026-10-01")
 }
 
+@Test func folderCaseIsIgnoredInBothDirections() {
+    let index = VaultIndex([daily("periodic notes/DAILY notes/2026-10-02.md"), daily("Periodic Notes/Weekly Notes/2026-W40.md")])
+    #expect(index.dailyNote(for: date)?.path == "periodic notes/DAILY notes/2026-10-02.md", "the real path is kept")
+    let typed = DailyNoteNames(dailyFolder: "PERIODIC notes/daily NOTES", weekFolder: "periodic notes/weekly notes")
+    #expect(index.dailyNote(for: date, names: typed)?.path == "periodic notes/DAILY notes/2026-10-02.md")
+    #expect(index.weekNote(for: week, names: typed)?.path == "Periodic Notes/Weekly Notes/2026-W40.md")
+    #expect(typed.date(atPath: "Periodic Notes/Daily Notes/2026-10-02.md") == date)
+    #expect(typed.week(atPath: "PERIODIC NOTES/WEEKLY NOTES/2026-W40.md") == week)
+    #expect(typed.date(atPath: "Periodic Notes/Daily Notes/Sub/2026-10-02.md") == nil)
+    #expect(index.dailyNote(for: date, names: DailyNoteNames(dailyFolder: "Other")) == nil)
+}
+
 @Test func aTypedFileAtTheNamePathIsNotANote() {
     let task = makeItem("Periodic Notes/Daily Notes/2026-10-02.md", "type: task\nstatus: Doing")
     #expect(VaultIndex([task]).dailyNote(for: date) == nil)
@@ -80,17 +92,17 @@ private func daily(_ path: String, body: String = "") -> Item {
         daily("Periodic Notes/Daily Notes/2026-10-06.md", body: "- [-] a\n"),
         daily("Periodic Notes/Daily Notes/2026-10-07.md"),
     ])
-    let marks = index.dayMarks(from: date, through: LocalDate("2026-10-08")!, today: date)
+    let marks = index.dayMarks(from: date, through: LocalDate("2026-10-08")!)
     #expect(marks == [
         date: DayMarks(hasOpenTasks: true, hasOpenBoxes: true),
         LocalDate("2026-10-03")!: DayMarks(hasOpenTasks: false, hasOpenBoxes: true),
         LocalDate("2026-10-04")!: DayMarks(hasOpenTasks: true, hasOpenBoxes: false),
     ])
-    #expect(index.dayMarks(from: date, through: date.adding(days: -1), today: date).isEmpty)
+    #expect(index.dayMarks(from: date, through: date.adding(days: -1)).isEmpty)
 }
 
 @Test func marksOnTheDesignVault() async {
     let index = await Vault(root: sampleVault).loadIndex()
-    let marks = index.dayMarks(from: date, through: date.adding(days: 6), today: date)
+    let marks = index.dayMarks(from: date, through: date.adding(days: 6))
     #expect(marks[date]?.hasOpenTasks == true && marks.values.allSatisfy { !$0.hasOpenBoxes })
 }

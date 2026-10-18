@@ -80,12 +80,12 @@ extension VaultIndex {
     }
 
     /// The entries an Agenda week lists: open or Done tasks' due dates and deadlines within the week, in Upcoming's order.
-    public func agendaWeek(_ week: ISOWeek, today: LocalDate) -> [AgendaEntry] {
+    public func agendaWeek(_ week: ISOWeek) -> [AgendaEntry] {
         tasks.flatMap { agendaEntries(of: $0, on: Set(week.days)) }.sorted(by: Self.byAgendaOrder)
     }
 
     /// For each date from `from` through `through` that has either mark. The daily note is looked up by `names`.
-    public func dayMarks(from: LocalDate, through: LocalDate, today: LocalDate,
+    public func dayMarks(from: LocalDate, through: LocalDate,
                          names: DailyNoteNames = DailyNoteNames()) -> [LocalDate: DayMarks] {
         guard from <= through else { return [:] }
         var marks: [LocalDate: DayMarks] = [:]
