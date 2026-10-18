@@ -68,7 +68,7 @@ private struct PhoneAgendaDay: View {
                 }
                 if !all.isEmpty {
                     HStack {
-                        Text("Due and deadlines").scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong))
+                        Text("Scheduled").scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong))
                             .accessibilityAddTraits(.isHeader)
                         Spacer(minLength: 8)
                         PhoneGroupMenu(model: model, list: list)

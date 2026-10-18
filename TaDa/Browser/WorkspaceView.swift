@@ -107,13 +107,13 @@ struct WorkspaceView: View {
     }
 }
 
-/// The browser column, a rule and the document pane. The browser is `browserWidth` wide, at least 260, or else half
+/// The browser column, a rule and the document pane. The browser is `browserWidth` wide, at least 320, or else half
 /// the width from 320 to 460; the document pane keeps at least 360.
 private struct SplitLayout: Layout {
     var browserWidth: CGFloat?
 
     static let space = "split"
-    static let minBrowser: CGFloat = 260
+    static let minBrowser: CGFloat = 320
 
     /// A dragged width, at least `minBrowser` and leaving the document pane 360 of the split's width.
     static func clamp(_ width: CGFloat, in total: CGFloat) -> CGFloat { max(minBrowser, min(width, total - 1 - 360)) }

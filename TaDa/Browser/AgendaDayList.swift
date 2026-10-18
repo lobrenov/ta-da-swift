@@ -1,5 +1,5 @@
 // The Agenda's day: its heading, the daily note's row, the day's events then reminders, then its tasks as Today's list
-// groups them, under Due and deadlines. A day's tasks keep Today's Group menu and tag filter; while tags are picked the
+// groups them, under Scheduled. A day's tasks keep Today's Group menu and tag filter; while tags are picked the
 // events and reminders hide.
 #if os(macOS)
 import SwiftUI
@@ -49,7 +49,7 @@ struct AgendaDayList: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "calendar").font(.system(size: 12)).foregroundStyle(theme.color(\.due))
                                     .accessibilityHidden(true)
-                                Text("Due and deadlines").fontWeight(.semibold).foregroundStyle(theme.color(\.strong))
+                                Text("Scheduled").fontWeight(.semibold).foregroundStyle(theme.color(\.strong))
                                 Spacer(minLength: 8)
                                 GroupButton(model: model, list: list)
                             }
