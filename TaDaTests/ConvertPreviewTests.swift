@@ -16,7 +16,7 @@ struct ConvertPreviewTests {
 
     @Test func aTaskShowsItsMoveAddedKeysAndSubtasks() throws {
         let task = try preview(.task, parent: .project("Trip"))
-        #expect(task.from == "Packing list.md" && task.to == "tasks/Packing list.md")
+        #expect(task.from == "Packing list.md" && task.to == "Ta Da/tasks/Packing list.md")
         #expect(task.lines.map { ($0.change == .added ? "+ " : "  ") + $0.text } == [
             "  ---", "+ type: task", "+ status: Not Started", "+ project: \"[[Trip]]\"", "  createdDate: 2026-10-04",
             "  tags: [travel]", "  ---",
@@ -27,7 +27,7 @@ struct ConvertPreviewTests {
 
     @Test func aProjectNumbersATakenNameAndCountsFolderLinks() throws {
         let project = try preview(.project, taken: ["Packing list.md"], folderLinks: 2)
-        #expect(project.to == "projects/Packing list 2.md")
+        #expect(project.to == "Ta Da/projects/Packing list 2.md")
         #expect(project.links == "2 links written with its folder are rewritten.")
     }
 
@@ -67,7 +67,7 @@ struct ConvertPreviewTests {
         let folder = try TestFolder([
             "Meeting #3.md": "Body\n",
             "Packing list.md": "Body\n",
-            "projects/Packing list.md": "---\ntype: project\nstatus: Doing\n---\n",
+            "Ta Da/projects/Packing list.md": "---\ntype: project\nstatus: Doing\n---\n",
         ])
         let model = await folder.model()
         let vault = try #require(model.vault)

@@ -9,7 +9,7 @@ struct NoteModelTests {
 
     init() throws {
         folder = try TestFolder([
-            "projects/Ark.md": "---\ntype: project\nstatus: Doing\n---\n",
+            "Ta Da/projects/Ark.md": "---\ntype: project\nstatus: Doing\n---\n",
             "Idea.md": "Loose idea\n",
             "Meetings/Ark call.md": "---\ncreatedDate: 2026-10-01\ntags: [work]\n---\n- [ ] Dates\n",
             "Meetings/2026/Standup.md": "Nothing to report.\n",
@@ -63,7 +63,7 @@ struct NoteModelTests {
         #expect(model.selection == "Untitled 2.md")
         model.show(.loose)
         await model.newTaskOrNote()
-        #expect(model.domain == .loose && model.selection == "tasks/Untitled.md")
+        #expect(model.domain == .loose && model.selection == "Ta Da/tasks/Untitled.md")
 
         model.show(.folder("Meetings"))
         model.toggleFolderFolded("Meetings")
@@ -118,9 +118,9 @@ struct NoteModelTests {
         let model = await folder.model()
         model.show(.folder("Meetings"))
         await model.convert("Meetings/Ark call.md", to: .task, parent: .project("Ark"))
-        #expect(model.domain == .project("projects/Ark.md") && model.selection == "tasks/Ark call.md")
-        #expect(model.sidebarMode == .projects && model.index["tasks/Ark call.md"]?.properties.kind == .task)
-        #expect(try folder.read("Links.md") == "[[tasks/Ark call]]\n")
+        #expect(model.domain == .project("Ta Da/projects/Ark.md") && model.selection == "Ta Da/tasks/Ark call.md")
+        #expect(model.sidebarMode == .projects && model.index["Ta Da/tasks/Ark call.md"]?.properties.kind == .task)
+        #expect(try folder.read("Links.md") == "[[Ta Da/tasks/Ark call]]\n")
     }
 
     @Test func trashedNotesRestoreToTheirFolder() async {
@@ -138,8 +138,8 @@ struct NoteModelTests {
         await model.loading?.value
         await model.convert("Meetings/Ark call.md", to: .task)
         let document = try #require(model.document)
-        #expect(document.path == "tasks/Ark call.md" && document.text.hasPrefix("---\ntype: task\n"))
-        #expect(document.diskText == nil && !document.isDirty && model.index["tasks/Ark call.md"]?.properties.kind == .task)
+        #expect(document.path == "Ta Da/tasks/Ark call.md" && document.text.hasPrefix("---\ntype: task\n"))
+        #expect(document.diskText == nil && !document.isDirty && model.index["Ta Da/tasks/Ark call.md"]?.properties.kind == .task)
     }
 
     @Test func movingTheOpenNoteKeepsItsUnsavedEdits() async throws {

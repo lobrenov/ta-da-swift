@@ -1,14 +1,16 @@
 import Foundation
 
-/// The user's chosen folder. Paths are relative to it, e.g. `tasks/Pick a test framework.md`.
+/// The user's chosen folder. Paths are relative to it, e.g. `Ta Da/tasks/Pick a test framework.md`.
 /// File work is synchronous apart from `loadIndex()`: call it off the main actor.
 public struct Vault: Sendable {
     public let root: URL
 
+    /// Ta Da's own folder, at the top level: what Ta Da creates goes in it.
+    public static let home = "Ta Da"
     /// New files go here; existing files can live anywhere.
-    public static let taskFolder = "tasks"
-    public static let projectFolder = "projects"
-    public static let areaFolder = "areas"
+    public static let taskFolder = home + "/tasks"
+    public static let projectFolder = home + "/projects"
+    public static let areaFolder = home + "/areas"
 
     public init(root: URL) {
         self.root = root.standardizedFileURL
@@ -18,14 +20,14 @@ public struct Vault: Sendable {
         root.appending(path: path, directoryHint: .notDirectory)
     }
 
-    /// The path of `url` when it's a Markdown file outside hidden folders, or in `.logbook/`, as `markdownPaths()` lists
-    /// them.
+    /// The path of `url` when it's a Markdown file outside hidden folders, or in the old `.logbook/`, as `markdownPaths()`
+    /// lists them.
     public func path(of url: URL) -> String? {
         let root = root.resolvingSymlinksInPath().pathComponents
         let components = url.resolvingSymlinksInPath().pathComponents
         guard components.count > root.count, components.starts(with: root), url.pathExtension.lowercased() == "md" else { return nil }
         let relative = components.dropFirst(root.count)
-        let inside = relative.first == Self.logbookFolder ? relative.dropFirst() : relative
+        let inside = relative.first == Self.legacyLogbookFolder ? relative.dropFirst() : relative
         return inside.contains { $0.hasPrefix(".") } ? nil : relative.joined(separator: "/")
     }
 
@@ -58,7 +60,7 @@ public struct Vault: Sendable {
     // MARK: Scanning
 
     /// Every `.md` file, recursively. Hidden files and folders (including `.obsidian` and `.trash`)
-    /// and packages are skipped, except `.logbook/`. Sorted for a stable order.
+    /// and packages are skipped, except the old `.logbook/`. Sorted for a stable order.
     public func markdownPaths() -> [String] {
         modificationDates().keys.sorted()
     }
@@ -71,7 +73,7 @@ public struct Vault: Sendable {
         ) else { return [:] }
         // Not `.skipsHiddenFiles`: in iCloud Drive it finds nothing inside `.logbook`. Hidden files are skipped below.
         let logged = FileManager.default.enumerator(
-            at: url(for: Self.logbookFolder), includingPropertiesForKeys: Array(keys), options: [.skipsPackageDescendants]
+            at: url(for: Self.legacyLogbookFolder), includingPropertiesForKeys: Array(keys), options: [.skipsPackageDescendants]
         )
         let rootComponents = root.pathComponents.count
         var dates: [String: Date] = [:]
@@ -84,8 +86,8 @@ public struct Vault: Sendable {
         return dates
     }
 
-    /// Folders that hold no files at any depth: outside hidden folders, packages and the top-level `areas/`, `projects/`,
-    /// `tasks/` and `attachments/`. Hidden files don't count, but iCloud Drive's placeholders for files not downloaded yet
+    /// Folders that hold no files at any depth: outside hidden folders, packages and the top-level reserved folders
+    /// (`Item.reservedFolders`). Hidden files don't count, but iCloud Drive's placeholders for files not downloaded yet
     /// do. A full walk of the folder: call it off the main actor.
     public func emptyFolders() -> Set<String> {
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isPackageKey]
@@ -129,7 +131,8 @@ public struct Vault: Sendable {
     }
 
     /// Markdown files and images that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show
-    /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders other than `.logbook/` are skipped.
+    /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders other than the old `.logbook/` are
+    /// skipped.
     public func placeholderPaths() -> [String] {
         guard let files = FileManager.default.enumerator(
             at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsPackageDescendants]
@@ -138,7 +141,7 @@ public struct Vault: Sendable {
         var paths: [String] = []
         for case let url as URL in files where url.lastPathComponent.hasPrefix(".") {
             if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
-                if url.standardizedFileURL.pathComponents.dropFirst(rootComponents) != [Self.logbookFolder] { files.skipDescendants() }
+                if url.standardizedFileURL.pathComponents.dropFirst(rootComponents) != [Self.legacyLogbookFolder] { files.skipDescendants() }
                 continue
             }
             guard let original = Self.placeholderOriginal(url.lastPathComponent),
@@ -312,7 +315,7 @@ public struct Vault: Sendable {
         folder.isEmpty ? name : folder + "/" + name
     }
 
-    /// `tasks/Name.md` → `tasks`; `Name.md` → empty.
+    /// `Ta Da/tasks/Name.md` → `Ta Da/tasks`; `Name.md` → empty.
     public static func folder(of path: String) -> String {
         path.split(separator: "/").dropLast().joined(separator: "/")
     }

@@ -1067,7 +1067,7 @@ import TaDaCore
 
     /// Sets the status; Done and Cancelled also set `completedDate`, anything else clears it. Unless `confirmed`,
     /// completing or cancelling a project that has open tasks asks first through `completionConfirmation`. A reopened task
-    /// sets its Done or Cancelled project to Doing; a logged file that's reopened goes back to `tasks/` or `projects/`.
+    /// sets its Done or Cancelled project to Doing; a logged file that's reopened goes back to `Ta Da/tasks/` or `Ta Da/projects/`.
     func setStatus(_ status: Status, in path: String, confirmed: Bool = false) async {
         if editDraft(path, { $0.status = status }) { return }
         guard index[path]?.properties.kind != .note else { return }
@@ -1175,13 +1175,13 @@ import TaDaCore
 
     /// An image pasted or dropped into the editor.
     enum PastedImage {
-        /// An image file: one in the folder is embedded where it is; another is copied into `attachments/`.
+        /// An image file: one in the folder is embedded where it is; another is copied into `Ta Da/attachments/`.
         case file(URL)
         /// Image data without a file, saved as `Pasted image <time>.<ext>`.
         case data(Data, extension: String)
     }
 
-    /// Saves a pasted or dropped image into `attachments/`, numbering a taken name, and returns its `![[ ]]`. An image
+    /// Saves a pasted or dropped image into `Ta Da/attachments/`, numbering a taken name, and returns its `![[ ]]`. An image
     /// already in the folder isn't copied. The file is written off the main actor, in order (`savingImage` finishes
     /// when they all are). Nil when it can't be saved, with the reason in `errorMessage`.
     func embed(_ image: PastedImage) -> String? {
@@ -1362,7 +1362,7 @@ import TaDaCore
         }
     }
 
-    /// Moves trashed files back to `tasks/`, `projects/` and `areas/`, each bringing back its parents, and notes back to
+    /// Moves trashed files back to `Ta Da/tasks/`, `Ta Da/projects/` and `Ta Da/areas/`, each bringing back its parents, and notes back to
     /// their folders.
     func restore(_ paths: Set<String>) async {
         guard let vault else { return }
@@ -1518,14 +1518,14 @@ import TaDaCore
     /// Whether Log Now has anything to log or ask about.
     var hasFilesToLog: Bool { logbook.contains { !$0.isLogged } }
 
-    /// Moves files to `.logbook/`. Returns false when that failed.
+    /// Moves files to the Logbook. Returns false when that failed.
     @discardableResult
     private func log(_ paths: [String]) async -> Bool {
         guard !paths.isEmpty else { return true }
         return await moveFiles("log the files") { try $0.log(paths, index: $1, today: $2) } != nil
     }
 
-    /// A logged file that isn't Done or Cancelled any more goes back to `tasks/` or `projects/`, bringing back its logged
+    /// A logged file that isn't Done or Cancelled any more goes back to `Ta Da/tasks/` or `Ta Da/projects/`, bringing back its logged
     /// project as Doing. A task reopened from Done or Cancelled sets its Done or Cancelled project to Doing, and an open
     /// task whose project is logged brings it back as Doing.
     private func reopenParent(of path: String, wasClosed: Bool) async {

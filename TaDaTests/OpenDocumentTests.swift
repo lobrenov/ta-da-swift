@@ -14,14 +14,14 @@ struct OpenDocumentTests {
 
     init() throws {
         folder = try TestFolder([
-            "projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\nThe project.\n",
-            "tasks/Task.md": Self.task,
-            "tasks/Other.md": "---\ntype: task\nstatus: Not Started\nproject: \"[[ta da mvp]]\"\n---\nSee [[Task]].\n",
+            "Ta Da/projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\nThe project.\n",
+            "Ta Da/tasks/Task.md": Self.task,
+            "Ta Da/tasks/Other.md": "---\ntype: task\nstatus: Not Started\nproject: \"[[ta da mvp]]\"\n---\nSee [[Task]].\n",
         ])
     }
 
     @Test func selectingAFileOpensItsTextWithoutChangingIt() async throws {
-        let model = await folder.model(selecting: "tasks/Task.md")
+        let model = await folder.model(selecting: "Ta Da/tasks/Task.md")
         let document = try #require(model.document)
         #expect(document.text == Self.task)
         #expect(document.body == "Body line.\n\n- [ ] One\n- [x] Two\n")
@@ -30,122 +30,122 @@ struct OpenDocumentTests {
     }
 
     @Test func bodyEditsUpdateTheIndexAndSaveOnlyTheBody() async throws {
-        let model = await folder.model(selecting: "tasks/Task.md")
+        let model = await folder.model(selecting: "Ta Da/tasks/Task.md")
         let document = try #require(model.document)
         document.body = document.body.replacingOccurrences(of: "- [ ] One", with: "- [x] One")
         #expect(document.isDirty)
-        #expect(model.index["tasks/Task.md"].map { $0.subtasks.done == 2 && $0.subtasks.total == 2 } == true)
+        #expect(model.index["Ta Da/tasks/Task.md"].map { $0.subtasks.done == 2 && $0.subtasks.total == 2 } == true)
 
         await model.save(document)
         #expect(!document.isDirty)
-        #expect(try folder.read("tasks/Task.md") == Self.task.replacingOccurrences(of: "- [ ] One", with: "- [x] One"))
+        #expect(try folder.read("Ta Da/tasks/Task.md") == Self.task.replacingOccurrences(of: "- [ ] One", with: "- [x] One"))
     }
 
     @Test func tickingASubtaskStartsANotStartedTask() async throws {
-        try folder.write(Self.task.replacingOccurrences(of: "Doing # keep", with: "Not Started"), "tasks/Task.md")
-        let model = await folder.model(selecting: "tasks/Task.md")
+        try folder.write(Self.task.replacingOccurrences(of: "Doing # keep", with: "Not Started"), "Ta Da/tasks/Task.md")
+        let model = await folder.model(selecting: "Ta Da/tasks/Task.md")
         let document = try #require(model.document)
         document.body = document.body.replacingOccurrences(of: "- [ ] One", with: "- [x] One")
-        #expect(model.index["tasks/Task.md"]?.properties.status == .doing)
+        #expect(model.index["Ta Da/tasks/Task.md"]?.properties.status == .doing)
         #expect(document.text.contains("status: Doing\n"))
         #expect(document.body.contains("- [x] One"))
         document.body = document.body.replacingOccurrences(of: "- [x]", with: "- [ ]")
-        #expect(model.index["tasks/Task.md"]?.properties.status == .doing, "unticking leaves it")
+        #expect(model.index["Ta Da/tasks/Task.md"]?.properties.status == .doing, "unticking leaves it")
     }
 
     @Test func aSubtaskTickedInAnotherAppLeavesTheStatus() async throws {
         let notStarted = Self.task.replacingOccurrences(of: "Doing # keep", with: "Not Started")
-        try folder.write(notStarted, "tasks/Task.md")
-        let model = await folder.model(selecting: "tasks/Task.md")
-        try folder.write(notStarted.replacingOccurrences(of: "- [ ] One", with: "- [x] One"), "tasks/Task.md")
+        try folder.write(notStarted, "Ta Da/tasks/Task.md")
+        let model = await folder.model(selecting: "Ta Da/tasks/Task.md")
+        try folder.write(notStarted.replacingOccurrences(of: "- [ ] One", with: "- [x] One"), "Ta Da/tasks/Task.md")
         await model.refresh()
         #expect(model.document?.body.contains("- [x] One") == true)
-        #expect(model.index["tasks/Task.md"]?.properties.status == .notStarted)
+        #expect(model.index["Ta Da/tasks/Task.md"]?.properties.status == .notStarted)
     }
 
     @Test func editsSaveAfterAPause() async throws {
-        let model = await folder.model(selecting: "tasks/Task.md")
+        let model = await folder.model(selecting: "Ta Da/tasks/Task.md")
         model.saveDelay = .milliseconds(50)
         let document = try #require(model.document)
         document.body += "More.\n"
-        #expect(try folder.read("tasks/Task.md") == Self.task, "not yet")
-        for _ in 0..<50 where try folder.read("tasks/Task.md") != Self.task + "More.\n" {
+        #expect(try folder.read("Ta Da/tasks/Task.md") == Self.task, "not yet")
+        for _ in 0..<50 where try folder.read("Ta Da/tasks/Task.md") != Self.task + "More.\n" {
             try await Task.sleep(for: .milliseconds(100))
         }
-        #expect(try folder.read("tasks/Task.md") == Self.task + "More.\n", "within 5 s")
+        #expect(try folder.read("Ta Da/tasks/Task.md") == Self.task + "More.\n", "within 5 s")
     }
 
     @Test func propertyEditsOnTheOpenFileGoThroughItsText() async throws {
-        let model = await folder.model(selecting: "tasks/Task.md")
+        let model = await folder.model(selecting: "Ta Da/tasks/Task.md")
         let document = try #require(model.document)
-        await model.setStatus(.done, in: "tasks/Task.md")
-        await model.setProperty("deadline", to: .date(LocalDate("2026-10-09")!), in: "tasks/Task.md")
-        await model.setProperty("dueDate", to: nil, in: "tasks/Task.md")
+        await model.setStatus(.done, in: "Ta Da/tasks/Task.md")
+        await model.setProperty("deadline", to: .date(LocalDate("2026-10-09")!), in: "Ta Da/tasks/Task.md")
+        await model.setProperty("dueDate", to: nil, in: "Ta Da/tasks/Task.md")
         let expected = "---\ntype: task\nstatus: Done\nproject: \"[[Ta Da MVP]]\"\ndueDate:\ncompletedDate: 2026-10-03\ndeadline: 2026-10-09\n---\nBody line.\n\n- [ ] One\n- [x] Two\n"
         #expect(document.text == expected)
-        #expect(model.index["tasks/Task.md"]?.properties.deadline == LocalDate("2026-10-09"))
-        #expect(try folder.read("tasks/Task.md") == Self.task, "saved later")
+        #expect(model.index["Ta Da/tasks/Task.md"]?.properties.deadline == LocalDate("2026-10-09"))
+        #expect(try folder.read("Ta Da/tasks/Task.md") == Self.task, "saved later")
 
         // Switching files saves the previous one first.
-        model.selection = "tasks/Other.md"
+        model.selection = "Ta Da/tasks/Other.md"
         await model.loading?.value
-        #expect(try folder.read("tasks/Task.md") == expected)
-        #expect(model.document?.path == "tasks/Other.md")
+        #expect(try folder.read("Ta Da/tasks/Task.md") == expected)
+        #expect(model.document?.path == "Ta Da/tasks/Other.md")
     }
 
     @Test func rowCompletionOfTheOpenFileEditsTheBuffer() async throws {
-        let model = await folder.model(selecting: "tasks/Task.md")
-        await model.toggleCompletion(try #require(model.index["tasks/Task.md"]))
+        let model = await folder.model(selecting: "Ta Da/tasks/Task.md")
+        await model.toggleCompletion(try #require(model.index["Ta Da/tasks/Task.md"]))
         #expect(model.document?.item?.properties.status == .done)
         #expect(model.document?.isDirty == true)
     }
 
     @Test func renamingATaskMovesItsFileAndKeepsItOpen() async throws {
-        let model = await folder.model(selecting: "tasks/Task.md")
+        let model = await folder.model(selecting: "Ta Da/tasks/Task.md")
         model.document?.body += "Unsaved.\n"
-        await model.rename("tasks/Task.md", to: "Renamed: task")
-        #expect(model.selection == "tasks/Renamed - task.md")
-        #expect(model.document?.path == "tasks/Renamed - task.md")
-        #expect(model.index["tasks/Task.md"] == nil)
-        #expect(model.index["tasks/Renamed - task.md"] != nil)
-        #expect(try folder.read("tasks/Renamed - task.md") == Self.task + "Unsaved.\n", "saved before the move")
-        #expect(!FileManager.default.fileExists(atPath: folder.url.appending(path: "tasks/Task.md").path))
-        #expect(try folder.read("tasks/Other.md").contains("See [[Renamed - task]]."), "body links follow the rename")
+        await model.rename("Ta Da/tasks/Task.md", to: "Renamed: task")
+        #expect(model.selection == "Ta Da/tasks/Renamed - task.md")
+        #expect(model.document?.path == "Ta Da/tasks/Renamed - task.md")
+        #expect(model.index["Ta Da/tasks/Task.md"] == nil)
+        #expect(model.index["Ta Da/tasks/Renamed - task.md"] != nil)
+        #expect(try folder.read("Ta Da/tasks/Renamed - task.md") == Self.task + "Unsaved.\n", "saved before the move")
+        #expect(!FileManager.default.fileExists(atPath: folder.url.appending(path: "Ta Da/tasks/Task.md").path))
+        #expect(try folder.read("Ta Da/tasks/Other.md").contains("See [[Renamed - task]]."), "body links follow the rename")
     }
 
     @Test func renamingAProjectRelinksItsTasks() async throws {
         let model = await folder.model()
-        model.open("projects/Ta Da MVP.md")
+        model.open("Ta Da/projects/Ta Da MVP.md")
         await model.loading?.value
-        await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
-        #expect(model.domain == .project("projects/Ta Da 1.0.md"))
-        #expect(model.selection == "projects/Ta Da 1.0.md")
-        #expect(try folder.read("tasks/Task.md") == Self.task.replacingOccurrences(of: "[[Ta Da MVP]]", with: "[[Ta Da 1.0]]"))
-        #expect(try folder.read("tasks/Other.md").contains("project: \"[[Ta Da 1.0]]\"\n"))
-        let project = try #require(model.index["projects/Ta Da 1.0.md"])
+        await model.rename("Ta Da/projects/Ta Da MVP.md", to: "Ta Da 1.0")
+        #expect(model.domain == .project("Ta Da/projects/Ta Da 1.0.md"))
+        #expect(model.selection == "Ta Da/projects/Ta Da 1.0.md")
+        #expect(try folder.read("Ta Da/tasks/Task.md") == Self.task.replacingOccurrences(of: "[[Ta Da MVP]]", with: "[[Ta Da 1.0]]"))
+        #expect(try folder.read("Ta Da/tasks/Other.md").contains("project: \"[[Ta Da 1.0]]\"\n"))
+        let project = try #require(model.index["Ta Da/projects/Ta Da 1.0.md"])
         #expect(model.index.tasks(in: project).map(\.title) == ["Other", "Task"])
     }
 
     @Test func aTaskThatCantBeRelinkedDoesntUndoTheRename() async throws {
         let model = await folder.model()
-        model.open("projects/Ta Da MVP.md")
+        model.open("Ta Da/projects/Ta Da MVP.md")
         await model.loading?.value
-        try Data([0xff, 0xfe]).write(to: folder.url.appending(path: "tasks/Other.md"))
-        await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
-        #expect(model.selection == "projects/Ta Da 1.0.md")
-        #expect(model.document?.path == "projects/Ta Da 1.0.md")
-        #expect(try folder.read("tasks/Task.md").contains("project: \"[[Ta Da 1.0]]\"\n"))
+        try Data([0xff, 0xfe]).write(to: folder.url.appending(path: "Ta Da/tasks/Other.md"))
+        await model.rename("Ta Da/projects/Ta Da MVP.md", to: "Ta Da 1.0")
+        #expect(model.selection == "Ta Da/projects/Ta Da 1.0.md")
+        #expect(model.document?.path == "Ta Da/projects/Ta Da 1.0.md")
+        #expect(try folder.read("Ta Da/tasks/Task.md").contains("project: \"[[Ta Da 1.0]]\"\n"))
         #expect(model.errorMessage?.contains("“Other”") == true)
     }
 
     @Test func newLinkedTaskIsCreatedSelectedAndReadyToName() async throws {
         let model = await folder.model()
-        model.domain = .project("projects/Ta Da MVP.md")
+        model.domain = .project("Ta Da/projects/Ta Da MVP.md")
         await model.newTask()
-        #expect(model.selection == "tasks/Untitled.md")
-        #expect(model.titleFocus == "tasks/Untitled.md")
-        #expect(try folder.read("tasks/Untitled.md") == "---\ntype: task\nstatus: Not Started\nproject: \"[[Ta Da MVP]]\"\ncreatedDate: 2026-10-03\n---\n")
-        let project = try #require(model.index["projects/Ta Da MVP.md"])
+        #expect(model.selection == "Ta Da/tasks/Untitled.md")
+        #expect(model.titleFocus == "Ta Da/tasks/Untitled.md")
+        #expect(try folder.read("Ta Da/tasks/Untitled.md") == "---\ntype: task\nstatus: Not Started\nproject: \"[[Ta Da MVP]]\"\ncreatedDate: 2026-10-03\n---\n")
+        let project = try #require(model.index["Ta Da/projects/Ta Da MVP.md"])
         #expect(model.index.tasks(in: project).map(\.title).contains("Untitled"))
     }
 
@@ -153,22 +153,22 @@ struct OpenDocumentTests {
         let model = await folder.model()
         await model.newTask()
         #expect(model.domain == .agenda)
-        #expect(model.index.today(model.today).map(\.path).contains("tasks/Untitled.md"), "due today")
+        #expect(model.index.today(model.today).map(\.path).contains("Ta Da/tasks/Untitled.md"), "due today")
 
         model.domain = .logbook
         await model.newTask()
         #expect(model.domain == .loose)
-        #expect(model.selection == "tasks/Untitled 2.md")
+        #expect(model.selection == "Ta Da/tasks/Untitled 2.md")
 
         await model.newProject()
-        #expect(model.domain == .project("projects/Untitled.md"))
-        #expect(model.selection == "projects/Untitled.md")
+        #expect(model.domain == .project("Ta Da/projects/Untitled.md"))
+        #expect(model.selection == "Ta Da/projects/Untitled.md")
     }
 
     @Test func aDeletedSelectionShowsAnError() async throws {
         let model = await folder.model()
-        try FileManager.default.removeItem(at: folder.url.appending(path: "tasks/Other.md"))
-        model.selection = "tasks/Other.md"
+        try FileManager.default.removeItem(at: folder.url.appending(path: "Ta Da/tasks/Other.md"))
+        model.selection = "Ta Da/tasks/Other.md"
         await model.loading?.value
         #expect(model.document == nil)
         #expect(model.documentError?.contains("Other") == true)
@@ -182,7 +182,7 @@ struct OpenDocumentTests {
         defer { window.close() }
         window.contentView = NSHostingView(rootView: ContentView(model: model))
         window.orderFrontRegardless()
-        model.selection = "tasks/Task.md"
+        model.selection = "Ta Da/tasks/Task.md"
 
         func textView(in view: NSView) -> NSTextView? {
             if let textView = view as? NSTextView, textView.isEditable { return textView }

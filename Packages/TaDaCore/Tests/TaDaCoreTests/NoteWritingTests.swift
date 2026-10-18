@@ -39,7 +39,7 @@ private func exists(_ path: String, in folder: URL) -> Bool {
     let note = "---\ntype: meeting\nstatus: whatever\ncreatedDate:\narea: \"[[Old]]\"\ntags: []\n---\n"
     let text = NoteConversion.text(note, to: .task, status: .done, parent: nil, today: today)
     #expect(text == "---\ntype: task\nstatus: Done\ncreatedDate: 2026-10-12\narea:\ntags: []\ncompletedDate: 2026-10-12\n---\n")
-    let task = try #require(Item(parsing: text, path: "tasks/x.md"))
+    let task = try #require(Item(parsing: text, path: "Ta Da/tasks/x.md"))
     #expect(task.properties.kind == .task && task.properties.area == nil && task.warnings.isEmpty)
 }
 
@@ -47,13 +47,13 @@ private func exists(_ path: String, in folder: URL) -> Bool {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
         try writeFile("---\ntags: []\n---\nAgenda\n", "Meetings/Ark.md", in: folder)
-        try writeFile("---\ntype: project\nstatus: Done\n---\n", ".logbook/2026-09/Ark.md", in: folder)
+        try writeFile("---\ntype: project\nstatus: Done\n---\n", "Ta Da/Logbook/2026-09/Ark.md", in: folder)
         try writeFile("See [[Meetings/Ark|the call]], [[Ark#Agenda]] and [[Meetings/Ark.md]].\n", "Links.md", in: folder)
         let result = try vault.convert("Meetings/Ark.md", to: .project, index: await vault.loadIndex(), today: today)
-        #expect(result.path == "projects/Ark 2.md" && result.failed.isEmpty)
-        #expect(try read("projects/Ark 2.md", in: folder) == "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-12\ntags: []\n---\nAgenda\n")
+        #expect(result.path == "Ta Da/projects/Ark 2.md" && result.failed.isEmpty)
+        #expect(try read("Ta Da/projects/Ark 2.md", in: folder) == "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-12\ntags: []\n---\nAgenda\n")
         #expect(!exists("Meetings/Ark.md", in: folder))
-        #expect(try read("Links.md", in: folder) == "See [[projects/Ark 2|the call]], [[Ark 2#Agenda]] and [[projects/Ark 2.md]].\n")
+        #expect(try read("Links.md", in: folder) == "See [[Ta Da/projects/Ark 2|the call]], [[Ark 2#Agenda]] and [[Ta Da/projects/Ark 2.md]].\n")
         #expect(result.relinked.map(\.path) == ["Links.md"])
     }
 }
@@ -70,7 +70,7 @@ private func exists(_ path: String, in folder: URL) -> Bool {
 @Test func convertReadsBackFromOddFrontmatter() throws {
     for note in ["---\nnever closed\n", "---\n- a\n---\n", "---\n---\n"] {
         let text = NoteConversion.text(note, to: .task, status: .notStarted, parent: nil, today: today)
-        #expect(Item(parsing: text, path: "tasks/x.md")?.properties.kind == .task, "\(note)")
+        #expect(Item(parsing: text, path: "Ta Da/tasks/x.md")?.properties.kind == .task, "\(note)")
     }
 }
 
@@ -78,7 +78,7 @@ private func exists(_ path: String, in folder: URL) -> Bool {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
         try writeFile("Body\n", "Note.md", in: folder)
-        try writeFile("not a folder", "tasks", in: folder)
+        try writeFile("not a folder", "Ta Da/tasks", in: folder)
         let index = await vault.loadIndex()
         #expect(throws: (any Error).self) { try vault.convert("Note.md", to: .task, index: index, today: today) }
         #expect(try read("Note.md", in: folder) == "Body\n")
@@ -88,9 +88,9 @@ private func exists(_ path: String, in folder: URL) -> Bool {
 @Test func convertLeavesTypedFilesAlone() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        try writeFile("---\ntype: task\nstatus: Doing\n---\n", "tasks/T.md", in: folder)
-        let result = try vault.convert("tasks/T.md", to: .project, index: await vault.loadIndex(), today: today)
-        #expect(result.path == "tasks/T.md" && exists("tasks/T.md", in: folder))
+        try writeFile("---\ntype: task\nstatus: Doing\n---\n", "Ta Da/tasks/T.md", in: folder)
+        let result = try vault.convert("Ta Da/tasks/T.md", to: .project, index: await vault.loadIndex(), today: today)
+        #expect(result.path == "Ta Da/tasks/T.md" && exists("Ta Da/tasks/T.md", in: folder))
     }
 }
 

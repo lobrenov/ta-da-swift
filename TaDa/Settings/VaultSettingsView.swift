@@ -57,9 +57,9 @@ struct VaultSettingsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(title: "Folders in the vault")
                 VStack(spacing: 0) {
-                    folder("tasks/", "New tasks, one markdown file each")
-                    folder("projects/", "New projects, one markdown file each")
-                    folder("areas/", "New areas, one markdown file each")
+                    folder(Vault.taskFolder + "/", "New tasks, one markdown file each")
+                    folder(Vault.projectFolder + "/", "New projects, one markdown file each")
+                    folder(Vault.areaFolder + "/", "New areas, one markdown file each")
                     if model.dailyFolder == model.weekFolder || !model.weekNotes {
                         folder(noteFolder(model.dailyFolder), model.weekNotes && model.dailyFolder == model.weekFolder
                                ? "Daily and week notes" : "Daily notes")

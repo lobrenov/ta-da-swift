@@ -71,8 +71,8 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
         let first = try vault.create(task, in: Vault.taskFolder, title: "Game Jam: Starfall")
         let second = try vault.create(task, in: Vault.taskFolder, title: "game jam: starfall")
         let root = try vault.create(task, in: "", title: "Root")
-        #expect(first == "tasks/Game Jam - Starfall.md")
-        #expect(second == "tasks/game jam - starfall 2.md")
+        #expect(first == "Ta Da/tasks/Game Jam - Starfall.md")
+        #expect(second == "Ta Da/tasks/game jam - starfall 2.md")
         #expect(root == "Root.md")
         #expect(try vault.read(first) == task)
     }

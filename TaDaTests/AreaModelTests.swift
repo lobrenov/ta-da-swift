@@ -9,12 +9,12 @@ struct AreaModelTests {
 
     init() throws {
         folder = try TestFolder([
-            "areas/Home.md": "---\ntype: area\n---\n",
-            "projects/Garden.md": "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n",
-            "projects/Side.md": "---\ntype: project\nstatus: Doing\n---\n",
-            "tasks/Weed.md": "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\n---\n",
-            "tasks/Rent.md": "---\ntype: task\nstatus: Doing\narea: \"[[Home]]\"\ndueDate: 2026-10-03\n---\n",
-            "tasks/Loose.md": "---\ntype: task\nstatus: Not Started\n---\n",
+            "Ta Da/areas/Home.md": "---\ntype: area\n---\n",
+            "Ta Da/projects/Garden.md": "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n",
+            "Ta Da/projects/Side.md": "---\ntype: project\nstatus: Doing\n---\n",
+            "Ta Da/tasks/Weed.md": "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\n---\n",
+            "Ta Da/tasks/Rent.md": "---\ntype: task\nstatus: Doing\narea: \"[[Home]]\"\ndueDate: 2026-10-03\n---\n",
+            "Ta Da/tasks/Loose.md": "---\ntype: task\nstatus: Not Started\n---\n",
         ])
     }
 
@@ -27,28 +27,28 @@ struct AreaModelTests {
 
     @Test func settingAParentWritesOneKey() async throws {
         let model = await folder.model()
-        let home = try #require(model.index["areas/Home.md"])
-        let side = try #require(model.index["projects/Side.md"])
-        await model.setParent(home, of: ["tasks/Weed.md", "tasks/Loose.md", "projects/Side.md"])
-        #expect(try folder.read("tasks/Weed.md") == "---\ntype: task\nstatus: Doing\nproject:\narea: \"[[Home]]\"\n---\n")
-        #expect(try folder.read("tasks/Loose.md") == "---\ntype: task\nstatus: Not Started\narea: \"[[Home]]\"\n---\n")
-        #expect(try folder.read("projects/Side.md") == "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n")
+        let home = try #require(model.index["Ta Da/areas/Home.md"])
+        let side = try #require(model.index["Ta Da/projects/Side.md"])
+        await model.setParent(home, of: ["Ta Da/tasks/Weed.md", "Ta Da/tasks/Loose.md", "Ta Da/projects/Side.md"])
+        #expect(try folder.read("Ta Da/tasks/Weed.md") == "---\ntype: task\nstatus: Doing\nproject:\narea: \"[[Home]]\"\n---\n")
+        #expect(try folder.read("Ta Da/tasks/Loose.md") == "---\ntype: task\nstatus: Not Started\narea: \"[[Home]]\"\n---\n")
+        #expect(try folder.read("Ta Da/projects/Side.md") == "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n")
         #expect(model.looseTasks.isEmpty && model.looseProjects.isEmpty)
 
-        await model.setParent(side, of: ["tasks/Rent.md", "projects/Garden.md"])
-        #expect(try folder.read("tasks/Rent.md") == "---\ntype: task\nstatus: Doing\narea:\ndueDate: 2026-10-03\nproject: \"[[Side]]\"\n---\n")
-        #expect(model.index["projects/Garden.md"]?.properties.area?.title == "Home", "a project doesn't go under a project")
+        await model.setParent(side, of: ["Ta Da/tasks/Rent.md", "Ta Da/projects/Garden.md"])
+        #expect(try folder.read("Ta Da/tasks/Rent.md") == "---\ntype: task\nstatus: Doing\narea:\ndueDate: 2026-10-03\nproject: \"[[Side]]\"\n---\n")
+        #expect(model.index["Ta Da/projects/Garden.md"]?.properties.area?.title == "Home", "a project doesn't go under a project")
 
-        await model.setParent(nil, of: ["projects/Side.md"])
+        await model.setParent(nil, of: ["Ta Da/projects/Side.md"])
         #expect(model.looseProjects.map(\.project.title) == ["Side"])
     }
 
     @Test func newFilesOnAnAreaPageGoInIt() async throws {
         let model = await folder.model()
-        model.show(.area("areas/Home.md"))
+        model.show(.area("Ta Da/areas/Home.md"))
         await model.newTask()
         let task = try #require(model.selection)
-        #expect(model.domain == .area("areas/Home.md"))
+        #expect(model.domain == .area("Ta Da/areas/Home.md"))
         #expect(model.index[task]?.properties.area?.title == "Home")
         await model.newProject()
         let project = try #require(model.selection)
@@ -59,7 +59,7 @@ struct AreaModelTests {
     @Test func newTaskInTodayJoinsTheSelectedTasksGroup() async throws {
         let model = await folder.model()
         model.show(.agenda)
-        model.selection = "tasks/Weed.md"
+        model.selection = "Ta Da/tasks/Weed.md"
         await model.newTask()
         let path = try #require(model.selection)
         let task = try #require(model.index[path])
@@ -71,12 +71,12 @@ struct AreaModelTests {
     @Test func newAreaOpensItsPage() async throws {
         let model = await folder.model()
         await model.newArea()
-        #expect(model.domain == .area("areas/Untitled.md") && model.titleFocus == "areas/Untitled.md")
-        #expect(try folder.read("areas/Untitled.md") == NewFile.area(today: model.today))
+        #expect(model.domain == .area("Ta Da/areas/Untitled.md") && model.titleFocus == "Ta Da/areas/Untitled.md")
+        #expect(try folder.read("Ta Da/areas/Untitled.md") == NewFile.area(today: model.today))
     }
 
     @Test func creatingANamedAreaResolvesFilesThatNameIt() async throws {
-        try folder.write("---\ntype: task\nstatus: Doing\narea: Work\n---\n", "tasks/Timesheet.md")
+        try folder.write("---\ntype: task\nstatus: Doing\narea: Work\n---\n", "Ta Da/tasks/Timesheet.md")
         let model = await folder.model()
         #expect(model.looseTasks.map(\.title).contains("Timesheet"))
         await model.newArea(named: "Work")
@@ -86,20 +86,20 @@ struct AreaModelTests {
 
     @Test func renamingAnAreaRelinksAndFollowsIt() async throws {
         let model = await folder.model()
-        model.show(.area("areas/Home.md"))
-        await model.rename("areas/Home.md", to: "House")
-        #expect(model.domain == .area("areas/House.md"))
-        #expect(try folder.read("projects/Garden.md").contains("area: \"[[House]]\""))
-        #expect(try folder.read("tasks/Rent.md").contains("area: \"[[House]]\""))
+        model.show(.area("Ta Da/areas/Home.md"))
+        await model.rename("Ta Da/areas/Home.md", to: "House")
+        #expect(model.domain == .area("Ta Da/areas/House.md"))
+        #expect(try folder.read("Ta Da/projects/Garden.md").contains("area: \"[[House]]\""))
+        #expect(try folder.read("Ta Da/tasks/Rent.md").contains("area: \"[[House]]\""))
         #expect(model.areas.first?.projects.map(\.project.title) == ["Garden"])
     }
 
     @Test func deletingAnAreaAsksFirstThenTakesEverything() async throws {
         let model = await folder.model()
-        model.show(.area("areas/Home.md"))
-        await model.moveToTrash(["areas/Home.md"])
+        model.show(.area("Ta Da/areas/Home.md"))
+        await model.moveToTrash(["Ta Da/areas/Home.md"])
         #expect(model.trashConfirmation?.count == 4)
-        #expect(model.index["areas/Home.md"] != nil)
+        #expect(model.index["Ta Da/areas/Home.md"] != nil)
         let text = TrashConfirmationText(model: model)
         #expect(text.title == "Delete “Home”?")
         #expect(text.message.hasPrefix("Home, its 1 project and their 1 task, and its 1 own task move to the Trash."))
@@ -109,12 +109,12 @@ struct AreaModelTests {
         model.trashConfirmation = nil
         await model.confirmTrash(request)
         #expect(model.trashConfirmation == nil && model.domain == .agenda)
-        #expect(model.index.items.keys.sorted() == ["projects/Side.md", "tasks/Loose.md"])
+        #expect(model.index.items.keys.sorted() == ["Ta Da/projects/Side.md", "Ta Da/tasks/Loose.md"])
         #expect(model.trash.count == 4)
 
         model.show(.trash)
         await model.restore([".trash/Weed.md"])
-        #expect(model.index.items.keys.sorted() == ["areas/Home.md", "projects/Garden.md", "projects/Side.md", "tasks/Loose.md", "tasks/Weed.md"])
-        #expect(model.trashNote == "3 items restored to areas/, projects/, and tasks/")
+        #expect(model.index.items.keys.sorted() == ["Ta Da/areas/Home.md", "Ta Da/projects/Garden.md", "Ta Da/projects/Side.md", "Ta Da/tasks/Loose.md", "Ta Da/tasks/Weed.md"])
+        #expect(model.trashNote == "3 items restored to Ta Da/areas/, Ta Da/projects/, and Ta Da/tasks/")
     }
 }

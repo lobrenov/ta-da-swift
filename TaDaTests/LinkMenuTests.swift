@@ -9,35 +9,35 @@ struct LinkMenuTests {
 
     init() throws {
         folder = try TestFolder([
-            "areas/Home.md": "---\ntype: area\n---\n",
-            "projects/Sell the Kombi.md": "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n",
-            "tasks/Photograph the Kombi.md": "---\ntype: task\nstatus: Doing\nproject: \"[[Sell the Kombi]]\"\n---\n",
-            "tasks/Kombi service history.md": "---\ntype: task\nstatus: Done\nproject: \"[[Sell the Kombi]]\"\n---\n",
-            "tasks/Submit timesheet.md": "---\ntype: task\nstatus: Not Started\n---\n",
-            "tasks/Fix the gate.md": "---\ntype: task\nstatus: Blocked\narea: \"[[Home]]\"\n---\n",
-            "attachments/front.jpg": "x",
+            "Ta Da/areas/Home.md": "---\ntype: area\n---\n",
+            "Ta Da/projects/Sell the Kombi.md": "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n",
+            "Ta Da/tasks/Photograph the Kombi.md": "---\ntype: task\nstatus: Doing\nproject: \"[[Sell the Kombi]]\"\n---\n",
+            "Ta Da/tasks/Kombi service history.md": "---\ntype: task\nstatus: Done\nproject: \"[[Sell the Kombi]]\"\n---\n",
+            "Ta Da/tasks/Submit timesheet.md": "---\ntype: task\nstatus: Not Started\n---\n",
+            "Ta Da/tasks/Fix the gate.md": "---\ntype: task\nstatus: Blocked\narea: \"[[Home]]\"\n---\n",
+            "Ta Da/attachments/front.jpg": "x",
             "notes/odometer.png": "x",
         ])
     }
 
     @Test func openingFilesMakesThemRecentAndRenamingFollows() async throws {
-        let model = await folder.model(selecting: "tasks/Submit timesheet.md")
-        model.selection = "projects/Sell the Kombi.md"
+        let model = await folder.model(selecting: "Ta Da/tasks/Submit timesheet.md")
+        model.selection = "Ta Da/projects/Sell the Kombi.md"
         await model.loading?.value
-        #expect(model.recentFiles == ["projects/Sell the Kombi.md", "tasks/Submit timesheet.md"])
-        await model.rename("tasks/Submit timesheet.md", to: "Submit the timesheet")
-        #expect(model.recentFiles == ["projects/Sell the Kombi.md", "tasks/Submit the timesheet.md"])
+        #expect(model.recentFiles == ["Ta Da/projects/Sell the Kombi.md", "Ta Da/tasks/Submit timesheet.md"])
+        await model.rename("Ta Da/tasks/Submit timesheet.md", to: "Submit the timesheet")
+        #expect(model.recentFiles == ["Ta Da/projects/Sell the Kombi.md", "Ta Da/tasks/Submit the timesheet.md"])
         #expect(AppModel(defaults: folder.defaults).recentFiles == model.recentFiles)
     }
 
     @Test func anEmptyLinkQueryListsRecentFilesButTheOpenOne() async {
         let model = await folder.model()
         let search = LinkMenuSearch()
-        search.source = LinkMenuSource(index: model.index, vault: model.vault, openPath: "tasks/Submit timesheet.md")
+        search.source = LinkMenuSource(index: model.index, vault: model.vault, openPath: "Ta Da/tasks/Submit timesheet.md")
         let all = search.choices(.link, query: "")
         #expect(all.label == nil && all.choices.map(\.title) == ["Fix the gate", "Home", "Kombi service history",
                                                                  "Photograph the Kombi", "Sell the Kombi"])
-        search.source.recent = ["tasks/Submit timesheet.md", "tasks/Photograph the Kombi.md", "gone.md"]
+        search.source.recent = ["Ta Da/tasks/Submit timesheet.md", "Ta Da/tasks/Photograph the Kombi.md", "gone.md"]
         let recent = search.choices(.link, query: "")
         #expect(recent.label == "Recent" && recent.choices.map(\.title) == ["Photograph the Kombi"])
     }
@@ -45,7 +45,7 @@ struct LinkMenuTests {
     @Test func aLinkQueryRanksRecentFilesFirstAndHintsTheParent() async {
         let model = await folder.model()
         let search = LinkMenuSearch()
-        search.source = LinkMenuSource(index: model.index, vault: model.vault, recent: ["tasks/Photograph the Kombi.md"])
+        search.source = LinkMenuSource(index: model.index, vault: model.vault, recent: ["Ta Da/tasks/Photograph the Kombi.md"])
         let choices = search.choices(.link, query: "kombi").choices
         #expect(choices.map(\.title) == ["Kombi service history", "Photograph the Kombi", "Sell the Kombi"])
         #expect(choices.map(\.hint) == ["Sell the Kombi", "Sell the Kombi", "Project"])
@@ -81,7 +81,7 @@ struct LinkMenuTests {
         let pasted = try #require(model.embed(.data(Data([1, 2]), extension: "png")))
         await model.savingImage?.value
         #expect(pasted.hasPrefix("![[Pasted image ") && pasted.hasSuffix(".png]]"))
-        #expect(model.attachments.first?.hasPrefix("attachments/Pasted image ") == true)
+        #expect(model.attachments.first?.hasPrefix("Ta Da/attachments/Pasted image ") == true)
         #expect(model.embed(.file(folder.url.appending(path: "notes/odometer.png"))) == "![[odometer.png]]")
         #expect(model.attachments.count == 3, "a folder image isn't copied")
         let outside = FileManager.default.temporaryDirectory.appending(path: "front.jpg")
@@ -89,6 +89,6 @@ struct LinkMenuTests {
         defer { try? FileManager.default.removeItem(at: outside) }
         #expect(model.embed(.file(outside)) == "![[front 2.jpg]]", "a copy numbers a taken name")
         await model.savingImage?.value
-        #expect(try Data(contentsOf: folder.url.appending(path: "attachments/front 2.jpg")) == Data([3]))
+        #expect(try Data(contentsOf: folder.url.appending(path: "Ta Da/attachments/front 2.jpg")) == Data([3]))
     }
 }

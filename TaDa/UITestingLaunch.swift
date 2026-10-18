@@ -26,13 +26,13 @@ extension AppModel {
         try? FileManager.default.removeItem(at: folder)
         let today = LocalDate(Date()).description
         for (path, text) in [
-            ("tasks/Alpha.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\nFirst line.\n"),
-            ("tasks/Beta.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\n"),
-            ("projects/Website.md", "---\ntype: project\nstatus: Doing\n---\n"),
-            ("projects/Roadmap.md", "---\ntype: project\nstatus: Doing\n---\n"),
+            ("Ta Da/tasks/Alpha.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\nFirst line.\n"),
+            ("Ta Da/tasks/Beta.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\n"),
+            ("Ta Da/projects/Website.md", "---\ntype: project\nstatus: Doing\n---\n"),
+            ("Ta Da/projects/Roadmap.md", "---\ntype: project\nstatus: Doing\n---\n"),
         ] + (1...25).map({ n in
             // Enough linked tasks that a new one's row starts below the project page's fold.
-            (String(format: "tasks/Step %02d.md", n), "---\ntype: task\nstatus: Not Started\nproject: \"[[Roadmap]]\"\n---\n")
+            (String(format: "Ta Da/tasks/Step %02d.md", n), "---\ntype: task\nstatus: Not Started\nproject: \"[[Roadmap]]\"\n---\n")
         }) {
             let url = folder.appending(path: path)
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

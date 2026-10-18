@@ -1,6 +1,6 @@
 // Trash: the Ta Da files in `.trash/`, each with the images in `.trash/attachments/` that went with it, then the images
 // that no trashed file embeds. A click picks a row; shift- and ⌘-click pick several. Picked files are restored to
-// `tasks/`, `projects/` and `areas/` with their parents and images, and Empty Trash moves everything to the Mac's Trash.
+// `Ta Da/tasks/`, `Ta Da/projects/` and `Ta Da/areas/` with their parents and images, and Empty Trash moves everything to the Mac's Trash.
 // A single pane, like the other archive views.
 #if os(macOS)
 import SwiftUI

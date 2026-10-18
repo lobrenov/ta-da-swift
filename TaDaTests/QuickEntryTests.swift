@@ -10,11 +10,11 @@ struct QuickEntryTests {
 
     init() throws {
         folder = try TestFolder([
-            "projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n",
-            "areas/Personal.md": "---\ntype: area\n---\n",
-            "tasks/Call Bea.md": "---\ntype: task\nstatus: Not Started\n---\n",
-            "tasks/Notes.md": "Not a Ta Da file\n",
-            ".logbook/2026-09/Shipped.md": "---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n",
+            "Ta Da/projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n",
+            "Ta Da/areas/Personal.md": "---\ntype: area\n---\n",
+            "Ta Da/tasks/Call Bea.md": "---\ntype: task\nstatus: Not Started\n---\n",
+            "Ta Da/tasks/Notes.md": "Not a Ta Da file\n",
+            "Ta Da/Logbook/2026-09/Shipped.md": "---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n",
         ])
     }
 
@@ -44,19 +44,19 @@ struct QuickEntryTests {
             #expect(try folder.read(path) == draft.text(today: model.today))
             #expect(model.index[path]?.properties.tags == draft.tags)
         }
-        #expect(model.index["tasks/Book venue.md"]?.properties.project?.title == "Ta Da MVP")
+        #expect(model.index["Ta Da/tasks/Book venue.md"]?.properties.project?.title == "Ta Da MVP")
         #expect(model.projects.first { $0.project.title == "Ta Da MVP" }?.total == 1)
     }
 
     @Test func aTakenNameIsNumberedAsThePathSays() async throws {
         let model = await folder.model()
-        let cases = [(draft(.task, "Call Bea"), "tasks/Call Bea 2.md"),
-                     (draft(.task, "call bea"), "tasks/call bea 2.md"),
-                     (draft(.project, "Ta Da MVP"), "projects/Ta Da MVP 2.md"),
-                     (draft(.project, "Shipped"), "projects/Shipped 2.md"),
-                     (draft(.area, "Personal"), "areas/Personal 2.md"),
-                     (draft(.task, "Notes"), "tasks/Notes 2.md"),
-                     (draft(.task, "New: plan"), "tasks/New - plan.md")]
+        let cases = [(draft(.task, "Call Bea"), "Ta Da/tasks/Call Bea 2.md"),
+                     (draft(.task, "call bea"), "Ta Da/tasks/call bea 2.md"),
+                     (draft(.project, "Ta Da MVP"), "Ta Da/projects/Ta Da MVP 2.md"),
+                     (draft(.project, "Shipped"), "Ta Da/projects/Shipped 2.md"),
+                     (draft(.area, "Personal"), "Ta Da/areas/Personal 2.md"),
+                     (draft(.task, "Notes"), "Ta Da/tasks/Notes 2.md"),
+                     (draft(.task, "New: plan"), "Ta Da/tasks/New - plan.md")]
         let taken = model.quickEntryTakenNames()
         for (draft, expected) in cases {
             #expect(AppModel.quickEntryPath(for: draft, taken: taken) == expected)
@@ -68,9 +68,9 @@ struct QuickEntryTests {
 
     @Test func thePickersEditTheDraftAndWriteNothing() async throws {
         let model = await folder.model()
-        let before = try FileManager.default.contentsOfDirectory(atPath: folder.url.appending(path: "tasks").path)
+        let before = try FileManager.default.contentsOfDirectory(atPath: folder.url.appending(path: "Ta Da/tasks").path)
         let path = AppModel.quickEntryDraftPath
-        let project = try #require(model.index["projects/Ta Da MVP.md"]), area = try #require(model.index["areas/Personal.md"])
+        let project = try #require(model.index["Ta Da/projects/Ta Da MVP.md"]), area = try #require(model.index["Ta Da/areas/Personal.md"])
 
         await model.setStatus(.done, in: path)
         await model.setParent(project, of: [path])
@@ -98,7 +98,7 @@ struct QuickEntryTests {
         await model.setParent(nil, of: [path])
         #expect(model.quickEntryDraft.parent == nil)
 
-        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.url.appending(path: "tasks").path) == before)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.url.appending(path: "Ta Da/tasks").path) == before)
         #expect(model.index[path] == nil)
     }
 
@@ -154,7 +154,7 @@ struct QuickEntryPanelTests {
     }
 
     @Test func opensAFloatingPanelOnEverySpaceAndCreatesFromIt() async throws {
-        let folder = try TestFolder(["projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n"])
+        let folder = try TestFolder(["Ta Da/projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n"])
         let model = await folder.model()
         let quickEntry = QuickEntryPanel(model: model)
         quickEntry.open()
@@ -198,7 +198,7 @@ struct QuickEntryPanelTests {
         draft.parent = .project("Ta Da MVP")
         quickEntry.create(draft, opening: false)
         #expect(!quickEntry.isOpen)
-        #expect(await within { model.index["tasks/Book venue.md"] != nil })
-        #expect(try folder.read("tasks/Book venue.md") == draft.text(today: model.today))
+        #expect(await within { model.index["Ta Da/tasks/Book venue.md"] != nil })
+        #expect(try folder.read("Ta Da/tasks/Book venue.md") == draft.text(today: model.today))
     }
 }

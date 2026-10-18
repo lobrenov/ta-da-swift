@@ -18,14 +18,14 @@ private func full(_ kind: Item.Kind, parent: Parent?) -> QuickEntryDraft {
 @Test func freshDraftIsALooseNotStartedTask() {
     let draft = QuickEntryDraft()
     #expect(draft.kind == .task && draft.title.isEmpty && draft.status == .notStarted && draft.parent == nil)
-    #expect(draft.folder == "tasks")
+    #expect(draft.folder == Vault.taskFolder)
     #expect(draft.text(today: today) == NewFile.task(today: today))
 }
 
 @Test func taskDraftWritesEveryField() throws {
     let text = full(.task, parent: .project("Game Jam")).text(today: today)
     #expect(text == "---\ntype: task\nstatus: Doing\nproject: \"[[Game Jam]]\"\ncreatedDate: 2026-10-12\ntags: [people/bea]\ndueDate: 2026-10-14\ndeadline: 2026-10-20\n---\n")
-    let item = try #require(Item(parsing: text, path: "tasks/Call Bea.md"))
+    let item = try #require(Item(parsing: text, path: "Ta Da/tasks/Call Bea.md"))
     #expect(item.properties.kind == .task && item.properties.status == .doing && item.warnings.isEmpty)
     #expect(item.properties.project?.title == "Game Jam" && item.properties.area == nil)
     #expect(item.properties.dueDate == LocalDate("2026-10-14") && item.properties.deadline == LocalDate("2026-10-20"))
@@ -39,9 +39,9 @@ private func full(_ kind: Item.Kind, parent: Parent?) -> QuickEntryDraft {
 
 @Test func projectDraftWritesEveryField() throws {
     let draft = full(.project, parent: .area("Personal"))
-    #expect(draft.folder == "projects")
+    #expect(draft.folder == Vault.projectFolder)
     #expect(draft.text(today: today) == "---\ntype: project\nstatus: Doing\narea: \"[[Personal]]\"\ncreatedDate: 2026-10-12\ntags: [people/bea]\ndueDate: 2026-10-14\ndeadline: 2026-10-20\n---\n")
-    let item = try #require(Item(parsing: draft.text(today: today), path: "projects/Call Bea.md"))
+    let item = try #require(Item(parsing: draft.text(today: today), path: "Ta Da/projects/Call Bea.md"))
     #expect(item.properties.kind == .project && item.properties.status == .doing && item.warnings.isEmpty)
     #expect(item.properties.area?.title == "Personal")
     #expect(item.properties.dueDate == LocalDate("2026-10-14") && item.properties.deadline == LocalDate("2026-10-20"))
@@ -50,7 +50,7 @@ private func full(_ kind: Item.Kind, parent: Parent?) -> QuickEntryDraft {
 
 @Test func areaDraftWritesOnlyTags() {
     let draft = full(.area, parent: .area("Personal"))
-    #expect(draft.folder == "areas")
+    #expect(draft.folder == Vault.areaFolder)
     #expect(draft.text(today: today) == "---\ntype: area\ncreatedDate: 2026-10-12\ntags: [people/bea]\n---\n")
 }
 

@@ -11,11 +11,11 @@ struct AppModelTests {
 
     init() throws {
         folder = try TestFolder([
-            "projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n",
-            "projects/Shipped.md": "---\ntype: project\nstatus: Done\n---\n",
-            "tasks/Due today.md": "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\n---\n",
-            "tasks/Done.md": "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-02\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\n---\n",
-            "tasks/Loose.md": "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\n---\n",
+            "Ta Da/projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n",
+            "Ta Da/projects/Shipped.md": "---\ntype: project\nstatus: Done\n---\n",
+            "Ta Da/tasks/Due today.md": "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\n---\n",
+            "Ta Da/tasks/Done.md": "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-02\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\n---\n",
+            "Ta Da/tasks/Loose.md": "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\n---\n",
             "notes/Note.md": "Just a note\n",
         ])
     }
@@ -44,7 +44,7 @@ struct AppModelTests {
         model.today = LocalDate("2026-10-02")!
         #expect(model.todayTasks.map(\.title) == ["Loose", "Done", "Due today"] && model.upcoming.isEmpty)
 
-        model.selection = "tasks/Loose.md"
+        model.selection = "Ta Da/tasks/Loose.md"
         await model.loading?.value
         let document = try #require(model.document)
         document.text += "- [ ] Step\n"
@@ -53,7 +53,7 @@ struct AppModelTests {
         document.text = document.text.replacingOccurrences(of: "status: Not Started", with: "status: Not Started\nproject: \"[[Ta Da MVP]]\"")
         #expect(model.looseTasks.isEmpty && model.projects.map(\.total) == [3])
 
-        try Data("---\ntype: task\nstatus: Doing\n---\n".utf8).write(to: folder.url.appending(path: "tasks/New.md"))
+        try Data("---\ntype: task\nstatus: Doing\n---\n".utf8).write(to: folder.url.appending(path: "Ta Da/tasks/New.md"))
         await model.refresh()
         #expect(model.looseTasks.map(\.title) == ["New"])
     }
@@ -87,65 +87,65 @@ struct AppModelTests {
 
     @Test func completingAndReopeningChangesOnlyStatusAndCompletedDate() async throws {
         let model = await folder.model(today: LocalDate("2026-10-03")!)
-        let url = folder.url.appending(path: "tasks/Due today.md")
+        let url = folder.url.appending(path: "Ta Da/tasks/Due today.md")
         func expected(_ status: String, _ completed: String) -> String {
             "---\ntype: task\nstatus: \(status)\ndueDate: 2026-10-02\nproject: \"[[Ta Da MVP]]\"\ncompletedDate:\(completed)\n---\n"
         }
 
-        await model.toggleCompletion(try #require(model.index["tasks/Due today.md"]))
+        await model.toggleCompletion(try #require(model.index["Ta Da/tasks/Due today.md"]))
         #expect(try String(contentsOf: url, encoding: .utf8) == expected("Done", " 2026-10-03"))
-        #expect(model.index["tasks/Due today.md"]?.properties.status == .done)
+        #expect(model.index["Ta Da/tasks/Due today.md"]?.properties.status == .done)
         #expect(model.projects.first?.open == 0)
 
-        await model.toggleCompletion(try #require(model.index["tasks/Due today.md"]))
+        await model.toggleCompletion(try #require(model.index["Ta Da/tasks/Due today.md"]))
         #expect(try String(contentsOf: url, encoding: .utf8) == expected("Not Started", ""))
-        #expect(model.index["tasks/Due today.md"]?.properties.status == .notStarted)
+        #expect(model.index["Ta Da/tasks/Due today.md"]?.properties.status == .notStarted)
     }
 
     @Test func completionReadsTheStatusFromTheFileNotTheList() async throws {
         let model = await folder.model()
-        let stale = try #require(model.index["tasks/Loose.md"])
+        let stale = try #require(model.index["Ta Da/tasks/Loose.md"])
         // Another app completed it after the index was read.
-        let url = folder.url.appending(path: "tasks/Loose.md")
+        let url = folder.url.appending(path: "Ta Da/tasks/Loose.md")
         try String(contentsOf: url, encoding: .utf8).replacingOccurrences(of: "Not Started", with: "Done")
             .write(to: url, atomically: true, encoding: .utf8)
         await model.toggleCompletion(stale)
-        #expect(model.index["tasks/Loose.md"]?.properties.status == .notStarted)
+        #expect(model.index["Ta Da/tasks/Loose.md"]?.properties.status == .notStarted)
     }
 
     @Test func aProjectMadeFromTheProjectMenuIsLinkedToTheTask() async throws {
         let model = await folder.model(today: LocalDate("2026-10-06")!)
-        await model.newProject(named: "Q4: Launch", linking: ["tasks/Loose.md"])
-        #expect(try String(contentsOf: folder.url.appending(path: "projects/Q4 - Launch.md"), encoding: .utf8)
+        await model.newProject(named: "Q4: Launch", linking: ["Ta Da/tasks/Loose.md"])
+        #expect(try String(contentsOf: folder.url.appending(path: "Ta Da/projects/Q4 - Launch.md"), encoding: .utf8)
                 == "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-06\n---\n")
-        #expect(try String(contentsOf: folder.url.appending(path: "tasks/Loose.md"), encoding: .utf8)
+        #expect(try String(contentsOf: folder.url.appending(path: "Ta Da/tasks/Loose.md"), encoding: .utf8)
                 == "---\ntype: task\nstatus: Not Started\ndeadline: 2026-09-30\nproject: \"[[Q4 - Launch]]\"\n---\n")
-        #expect(model.index.project(of: try #require(model.index["tasks/Loose.md"]))?.path == "projects/Q4 - Launch.md")
+        #expect(model.index.project(of: try #require(model.index["Ta Da/tasks/Loose.md"]))?.path == "Ta Da/projects/Q4 - Launch.md")
         #expect(model.titleFocus == nil, "the new project's title isn't focused; the task stays open")
     }
 
     @Test func savingToAMissingFileReportsAnError() async throws {
         let model = await folder.model()
-        let item = try #require(model.index["tasks/Loose.md"])
-        try FileManager.default.removeItem(at: folder.url.appending(path: "tasks/Loose.md"))
+        let item = try #require(model.index["Ta Da/tasks/Loose.md"])
+        try FileManager.default.removeItem(at: folder.url.appending(path: "Ta Da/tasks/Loose.md"))
         await model.toggleCompletion(item)
         #expect(model.errorMessage?.contains("Loose") == true)
     }
 
     @Test func pickingADomainClearsTheSelectionAndProjectsOpenAsPages() async {
         let model = await folder.model()
-        model.selection = "tasks/Loose.md"
+        model.selection = "Ta Da/tasks/Loose.md"
         model.domain = .agenda
-        #expect(model.selection == "tasks/Loose.md", "same domain keeps the selection")
+        #expect(model.selection == "Ta Da/tasks/Loose.md", "same domain keeps the selection")
         model.domain = .loose
         #expect(model.selection == nil)
 
-        model.open("projects/Ta Da MVP.md")
-        #expect(model.domain == .project("projects/Ta Da MVP.md"))
-        #expect(model.selection == "projects/Ta Da MVP.md")
-        model.open("tasks/Due today.md")
-        #expect(model.domain == .project("projects/Ta Da MVP.md"))
-        #expect(model.selection == "tasks/Due today.md")
+        model.open("Ta Da/projects/Ta Da MVP.md")
+        #expect(model.domain == .project("Ta Da/projects/Ta Da MVP.md"))
+        #expect(model.selection == "Ta Da/projects/Ta Da MVP.md")
+        model.open("Ta Da/tasks/Due today.md")
+        #expect(model.domain == .project("Ta Da/projects/Ta Da MVP.md"))
+        #expect(model.selection == "Ta Da/tasks/Due today.md")
     }
 
     @Test func autocompleteIsOnUntilASwitchIsTurnedOff() {
@@ -223,30 +223,30 @@ struct AppModelTests {
 
     @Test func aNewLinkedTaskIsNotStartedAndLeavesTheProjectPageOpen() async throws {
         let model = await folder.model()
-        model.open("projects/Ta Da MVP.md")
-        let project = try #require(model.index["projects/Ta Da MVP.md"])
+        model.open("Ta Da/projects/Ta Da MVP.md")
+        let project = try #require(model.index["Ta Da/projects/Ta Da MVP.md"])
         await model.newLinkedTask(in: project)
 
         let task = try #require(model.index.tasks(in: project).first { $0.title == "Untitled" })
         #expect(task.properties.status == .notStarted)
         #expect(try folder.read(task.path).contains("project: \"[[Ta Da MVP]]\""))
-        #expect(model.selection == "projects/Ta Da MVP.md" && model.domain == .project("projects/Ta Da MVP.md"))
+        #expect(model.selection == "Ta Da/projects/Ta Da MVP.md" && model.domain == .project("Ta Da/projects/Ta Da MVP.md"))
         #expect(model.titleFocus == task.path)
     }
 
     @Test func foldedGroupsSurviveARelaunchAndFollowARename() async {
         let model = await folder.model()
-        model.toggleFolded("Completed", in: "projects/Ta Da MVP.md")
-        #expect(model.isFolded("Completed", in: "projects/Ta Da MVP.md"))
-        #expect(!model.isFolded("Open", in: "projects/Ta Da MVP.md") && !model.isFolded("Completed", in: "projects/Shipped.md"))
-        #expect(AppModel(defaults: folder.defaults).isFolded("Completed", in: "projects/Ta Da MVP.md"), "survives a relaunch")
+        model.toggleFolded("Completed", in: "Ta Da/projects/Ta Da MVP.md")
+        #expect(model.isFolded("Completed", in: "Ta Da/projects/Ta Da MVP.md"))
+        #expect(!model.isFolded("Open", in: "Ta Da/projects/Ta Da MVP.md") && !model.isFolded("Completed", in: "Ta Da/projects/Shipped.md"))
+        #expect(AppModel(defaults: folder.defaults).isFolded("Completed", in: "Ta Da/projects/Ta Da MVP.md"), "survives a relaunch")
 
-        await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
-        #expect(model.isFolded("Completed", in: "projects/Ta Da 1.0.md"))
-        #expect(!model.isFolded("Completed", in: "projects/Ta Da MVP.md"))
+        await model.rename("Ta Da/projects/Ta Da MVP.md", to: "Ta Da 1.0")
+        #expect(model.isFolded("Completed", in: "Ta Da/projects/Ta Da 1.0.md"))
+        #expect(!model.isFolded("Completed", in: "Ta Da/projects/Ta Da MVP.md"))
 
-        model.toggleFolded("Completed", in: "projects/Ta Da 1.0.md")
-        #expect(!model.isFolded("Completed", in: "projects/Ta Da 1.0.md"))
+        model.toggleFolded("Completed", in: "Ta Da/projects/Ta Da 1.0.md")
+        #expect(!model.isFolded("Completed", in: "Ta Da/projects/Ta Da 1.0.md"))
     }
 
     @Test func groupingsAreKeptPerListAndSurviveARelaunch() async {
@@ -265,41 +265,41 @@ struct AppModelTests {
         let model = await folder.model()
         let done = ListSection(kind: .status(.done), tasks: []), completed = ListSection(kind: .completed, tasks: [])
         #expect(model.isFolded(done, by: .status, in: GroupedList.loose.foldKey))
-        #expect(model.isFolded(completed, by: .date, in: "projects/Ta Da MVP.md"))
-        #expect(!model.isFolded(completed, by: .open, in: "projects/Ta Da MVP.md"))
+        #expect(model.isFolded(completed, by: .date, in: "Ta Da/projects/Ta Da MVP.md"))
+        #expect(!model.isFolded(completed, by: .open, in: "Ta Da/projects/Ta Da MVP.md"))
         model.toggleFolded(done, by: .status, in: GroupedList.loose.foldKey)
         #expect(!model.isFolded(done, by: .status, in: GroupedList.loose.foldKey))
     }
 
     @Test func tagFiltersArePerPageAndFollowARename() async {
         let model = await folder.model()
-        model.toggleFilterTag("bug", on: .project("projects/Ta Da MVP.md"))
-        model.toggleFilterTag("dev", on: .project("projects/Ta Da MVP.md"))
-        #expect(model.tagFilter(on: .project("projects/Ta Da MVP.md")).picked == ["bug", "dev"])
+        model.toggleFilterTag("bug", on: .project("Ta Da/projects/Ta Da MVP.md"))
+        model.toggleFilterTag("dev", on: .project("Ta Da/projects/Ta Da MVP.md"))
+        #expect(model.tagFilter(on: .project("Ta Da/projects/Ta Da MVP.md")).picked == ["bug", "dev"])
         #expect(!model.tagFilter(on: .agenda).isActive)
-        await model.rename("projects/Ta Da MVP.md", to: "Ta Da 1.0")
-        #expect(model.tagFilter(on: .project("projects/Ta Da 1.0.md")).picked == ["bug", "dev"])
-        model.toggleFilterTag("bug", on: .project("projects/Ta Da 1.0.md"))
-        #expect(model.tagFilter(on: .project("projects/Ta Da 1.0.md")).picked == ["dev"])
-        model.clearTagFilter(on: .project("projects/Ta Da 1.0.md"))
-        #expect(!model.tagFilter(on: .project("projects/Ta Da 1.0.md")).isActive)
+        await model.rename("Ta Da/projects/Ta Da MVP.md", to: "Ta Da 1.0")
+        #expect(model.tagFilter(on: .project("Ta Da/projects/Ta Da 1.0.md")).picked == ["bug", "dev"])
+        model.toggleFilterTag("bug", on: .project("Ta Da/projects/Ta Da 1.0.md"))
+        #expect(model.tagFilter(on: .project("Ta Da/projects/Ta Da 1.0.md")).picked == ["dev"])
+        model.clearTagFilter(on: .project("Ta Da/projects/Ta Da 1.0.md"))
+        #expect(!model.tagFilter(on: .project("Ta Da/projects/Ta Da 1.0.md")).isActive)
     }
 
     @Test func deletingTheSelectedTaskSelectsTheNextOne() async {
         let model = await folder.model()
         model.show(.loose)
-        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: ["tasks/Due today.md", "tasks/Loose.md"])
-        model.selection = "tasks/Due today.md"
-        await model.moveToTrash(["tasks/Due today.md"])
-        #expect(model.index["tasks/Due today.md"] == nil)
-        #expect(model.selection == "tasks/Loose.md")
+        model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: ["Ta Da/tasks/Due today.md", "Ta Da/tasks/Loose.md"])
+        model.selection = "Ta Da/tasks/Due today.md"
+        await model.moveToTrash(["Ta Da/tasks/Due today.md"])
+        #expect(model.index["Ta Da/tasks/Due today.md"] == nil)
+        #expect(model.selection == "Ta Da/tasks/Loose.md")
         #expect(model.trash.map(\.id) == [".trash/Due today.md"])
         #expect(FileManager.default.fileExists(atPath: folder.url.appending(path: ".trash/Due today.md").path(percentEncoded: false)))
     }
 
     @Test func clickingTheShownProjectAgainOpensItsFileAndOnceMoreReturns() async {
         let model = await folder.model()
-        let path = "projects/Ta Da MVP.md"
+        let path = "Ta Da/projects/Ta Da MVP.md"
         model.pickProjectOrArea(.project(path))
         #expect(model.domain == .project(path) && model.selection == nil)
         model.pickProjectOrArea(.project(path))
@@ -307,16 +307,16 @@ struct AppModelTests {
         model.pickProjectOrArea(.project(path))
         #expect(model.selection == nil)
         model.pickProjectOrArea(.project(path))
-        model.pickProjectOrArea(.project("projects/Shipped.md"))
-        #expect(model.domain == .project("projects/Shipped.md") && model.selection == nil)
+        model.pickProjectOrArea(.project("Ta Da/projects/Shipped.md"))
+        #expect(model.domain == .project("Ta Da/projects/Shipped.md") && model.selection == nil)
     }
 
     @Test func aDeletedProjectTakesItsTasksAndTheyBringItBack() async {
         let model = await folder.model()
-        model.show(.project("projects/Ta Da MVP.md"))
-        await model.moveToTrash(["projects/Ta Da MVP.md"])
+        model.show(.project("Ta Da/projects/Ta Da MVP.md"))
+        await model.moveToTrash(["Ta Da/projects/Ta Da MVP.md"])
         #expect(model.domain == .agenda)
-        #expect(model.index.items.keys.sorted() == ["notes/Note.md", "projects/Shipped.md", "tasks/Loose.md"])
+        #expect(model.index.items.keys.sorted() == ["Ta Da/projects/Shipped.md", "Ta Da/tasks/Loose.md", "notes/Note.md"])
         #expect(Set(model.trash.map(\.id)) == [".trash/Ta Da MVP.md", ".trash/Due today.md", ".trash/Done.md"])
 
         model.show(.trash)
@@ -325,12 +325,12 @@ struct AppModelTests {
         #expect(model.trash.isEmpty && model.trashSelection.isEmpty)
         #expect(model.index.items.count == 6)
         #expect(model.projects.map { "\($0.project.title) \($0.open)/\($0.total)" } == ["Ta Da MVP 1/2"])
-        #expect(model.trashNote == "3 items restored to projects/ and tasks/")
+        #expect(model.trashNote == "3 items restored to Ta Da/projects/ and Ta Da/tasks/")
     }
 
     @Test func shiftAndCommandClicksPickSeveralTasksToDelete() async {
         let model = await folder.model()
-        let paths = ["tasks/Due today.md", "tasks/Loose.md", "tasks/Done.md"]
+        let paths = ["Ta Da/tasks/Due today.md", "Ta Da/tasks/Loose.md", "Ta Da/tasks/Done.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[0]
         model.extendSelection(to: paths[2])
@@ -347,13 +347,13 @@ struct AppModelTests {
         model.extendSelection(to: paths[0])
         await model.moveToTrash(model.multiSelection.sorted())
         #expect(model.multiSelection.isEmpty && model.errorMessage == nil)
-        #expect(model.index.items.keys.sorted() == ["notes/Note.md", "projects/Shipped.md", "projects/Ta Da MVP.md", "tasks/Done.md"])
+        #expect(model.index.items.keys.sorted() == ["Ta Da/projects/Shipped.md", "Ta Da/projects/Ta Da MVP.md", "Ta Da/tasks/Done.md", "notes/Note.md"])
         #expect(model.trash.count == 2)
     }
 
     @Test func clicksInTrashPickFilesWithoutOpeningThem() async {
         let model = await folder.model()
-        for path in ["tasks/Due today.md", "tasks/Loose.md", "tasks/Done.md"] { await model.moveToTrash([path]) }
+        for path in ["Ta Da/tasks/Due today.md", "Ta Da/tasks/Loose.md", "Ta Da/tasks/Done.md"] { await model.moveToTrash([path]) }
         model.show(.trash)
         let paths = model.trash.map(\.id)
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
@@ -370,7 +370,7 @@ struct AppModelTests {
 
     @Test func movesActOnTheRowOrEveryPickedTaskInListOrder() async {
         let model = await folder.model()
-        let paths = ["projects/Ta Da MVP.md", "tasks/Loose.md", "tasks/Due today.md", "tasks/Done.md"]
+        let paths = ["Ta Da/projects/Ta Da MVP.md", "Ta Da/tasks/Loose.md", "Ta Da/tasks/Due today.md", "Ta Da/tasks/Done.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[2]
         #expect(model.moveTargets() == [paths[2]], "the open task")
@@ -385,7 +385,7 @@ struct AppModelTests {
 
     @Test func datesActOnProjectsToo() async {
         let model = await folder.model()
-        let paths = ["projects/Ta Da MVP.md", "tasks/Loose.md", "tasks/Due today.md"]
+        let paths = ["Ta Da/projects/Ta Da MVP.md", "Ta Da/tasks/Loose.md", "Ta Da/tasks/Due today.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[0]
         #expect(model.dateTargets() == [paths[0]], "the open project")
@@ -398,7 +398,7 @@ struct AppModelTests {
 
     @Test func showMoveMenuAsksTheChipOrTheFirstPickedRow() async {
         let model = await folder.model()
-        let paths = ["tasks/Loose.md", "tasks/Due today.md"]
+        let paths = ["Ta Da/tasks/Loose.md", "Ta Da/tasks/Due today.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[1]
         model.showMoveMenu()
@@ -414,7 +414,7 @@ struct AppModelTests {
 
     @Test func showMoveMenuAsksForTheAreaMenuOnAProject() async {
         let model = await folder.model()
-        let paths = ["projects/Ta Da MVP.md", "tasks/Loose.md"]
+        let paths = ["Ta Da/projects/Ta Da MVP.md", "Ta Da/tasks/Loose.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[0]
         #expect(model.areaTargets() == [paths[0]])
@@ -431,12 +431,12 @@ struct AppModelTests {
 
     @Test func showDateMenuAsksTheChipOrTheFirstPickedRow() async {
         let model = await folder.model()
-        let paths = ["tasks/Loose.md", "tasks/Due today.md"]
+        let paths = ["Ta Da/tasks/Loose.md", "Ta Da/tasks/Due today.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
-        model.selection = "projects/Ta Da MVP.md"
+        model.selection = "Ta Da/projects/Ta Da MVP.md"
         model.showDateMenu(.deadline)
         #expect(model.propertyMenuRequest?.menu == .date(.deadline))
-        #expect(model.propertyMenuRequest?.paths == ["projects/Ta Da MVP.md"] && model.propertyMenuRequest?.onChip == true)
+        #expect(model.propertyMenuRequest?.paths == ["Ta Da/projects/Ta Da MVP.md"] && model.propertyMenuRequest?.onChip == true)
 
         model.selection = paths[0]
         model.extendSelection(to: paths[1])
@@ -451,7 +451,7 @@ struct AppModelTests {
         model.showTagMenu()
         #expect(model.propertyMenuRequest == nil, "no open file")
 
-        let paths = ["tasks/Loose.md", "tasks/Due today.md"]
+        let paths = ["Ta Da/tasks/Loose.md", "Ta Da/tasks/Due today.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[1]
         model.showTagMenu()
@@ -467,7 +467,7 @@ struct AppModelTests {
 
     @Test func settingSeveralDatesWritesOnlyTheOnesThatChange() async throws {
         let model = await folder.model()
-        let files = ["tasks/Due today.md", "tasks/Loose.md", "projects/Ta Da MVP.md"]
+        let files = ["Ta Da/tasks/Due today.md", "Ta Da/tasks/Loose.md", "Ta Da/projects/Ta Da MVP.md"]
         let before = try folder.read(files[1])
 
         await model.setDate(.deadline, to: LocalDate("2026-09-30"), of: files)
@@ -482,9 +482,9 @@ struct AppModelTests {
 
     @Test func movingSeveralTasksWritesOnlyTheOnesThatChange() async throws {
         let model = await folder.model()
-        let tasks = ["tasks/Due today.md", "tasks/Loose.md"]
+        let tasks = ["Ta Da/tasks/Due today.md", "Ta Da/tasks/Loose.md"]
         let before = try folder.read(tasks[0])
-        let project = try #require(model.index["projects/Ta Da MVP.md"])
+        let project = try #require(model.index["Ta Da/projects/Ta Da MVP.md"])
 
         await model.setParent(project, of: tasks)
         #expect(try folder.read(tasks[0]) == before, "already in the project")
@@ -501,9 +501,9 @@ struct AppModelTests {
 
     @Test func aNewProjectFromTheMenuTakesEveryTask() async throws {
         let model = await folder.model()
-        await model.newProject(named: "Launch", linking: ["tasks/Due today.md", "tasks/Loose.md"])
-        #expect(model.index.tasks(in: try #require(model.index["projects/Launch.md"])).map(\.path).sorted()
-                == ["tasks/Due today.md", "tasks/Loose.md"])
+        await model.newProject(named: "Launch", linking: ["Ta Da/tasks/Due today.md", "Ta Da/tasks/Loose.md"])
+        #expect(model.index.tasks(in: try #require(model.index["Ta Da/projects/Launch.md"])).map(\.path).sorted()
+                == ["Ta Da/tasks/Due today.md", "Ta Da/tasks/Loose.md"])
     }
 
     @Test(arguments: [

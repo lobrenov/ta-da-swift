@@ -11,9 +11,9 @@ struct KeyboardTests {
 
     init() throws {
         folder = try TestFolder([
-            "tasks/A.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-01\n---\nFirst line.\n",
-            "tasks/B.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-02\n---\n- [ ] One\n",
-            "tasks/C.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-03\n---\n",
+            "Ta Da/tasks/A.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-01\n---\nFirst line.\n",
+            "Ta Da/tasks/B.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-02\n---\n- [ ] One\n",
+            "Ta Da/tasks/C.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-03\n---\n",
         ])
     }
 
@@ -70,25 +70,25 @@ struct KeyboardTests {
 
         try await listHasKeyboard(in: window)
         try await down(window)
-        #expect(model.selection == "tasks/A.md")
+        #expect(model.selection == "Ta Da/tasks/A.md")
         try await down(window)
         try await down(window)
         try await down(window)
-        #expect(model.selection == "tasks/C.md", "stops at the last task")
+        #expect(model.selection == "Ta Da/tasks/C.md", "stops at the last task")
         try await up(window)
-        #expect(model.selection == "tasks/B.md")
+        #expect(model.selection == "Ta Da/tasks/B.md")
 
         let textView = try await loadedEditor(in: window)
         window.makeFirstResponder(textView)
         try await down(window)
-        #expect(model.selection == "tasks/B.md", "the editor keeps its arrow keys")
+        #expect(model.selection == "Ta Da/tasks/B.md", "the editor keeps its arrow keys")
 
         // Picking a row (as a click does) takes the keyboard from the editor.
-        model.selection = "tasks/C.md"
+        model.selection = "Ta Da/tasks/C.md"
         try await settle()
         #expect(!(window.firstResponder is NSTextView))
         try await up(window)
-        #expect(model.selection == "tasks/B.md")
+        #expect(model.selection == "Ta Da/tasks/B.md")
         try await press(0x1B, code: 53, in: window)
         #expect(model.selection == nil, "Escape clears the selection")
     }
@@ -97,7 +97,7 @@ struct KeyboardTests {
         let notes = try TestFolder([
             "Meetings/Ark.md": "---\ntags: [work]\n---\n",
             "Meetings/Budget.md": "Body\n",
-            "tasks/Plan.md": "---\ntype: task\nstatus: Doing\ntags: [work]\n---\n",
+            "Ta Da/tasks/Plan.md": "---\ntype: task\nstatus: Doing\ntags: [work]\n---\n",
         ])
         let model = await notes.model()
         model.show(.folder("Meetings"))
@@ -119,7 +119,7 @@ struct KeyboardTests {
         try await settle()
         try await down(window)
         try await down(window)
-        #expect(model.selection == "tasks/Plan.md", "a folded group's notes are skipped")
+        #expect(model.selection == "Ta Da/tasks/Plan.md", "a folded group's notes are skipped")
 
         model.searchText = "budget"
         model.selection = nil
@@ -148,12 +148,12 @@ struct KeyboardTests {
         #expect(model.trashSelection == [".trash/A.md"])
         try await press(NSDeleteCharacter, code: 51, modifiers: .command, in: window)
         for _ in 0..<50 where !model.trash.isEmpty { try await Task.sleep(for: .milliseconds(100)) }
-        #expect(model.trash.isEmpty && model.index["tasks/A.md"] != nil, "within 5 s")
+        #expect(model.trash.isEmpty && model.index["Ta Da/tasks/A.md"] != nil, "within 5 s")
     }
 
     @Test func addSubtaskEditsTheLineInTheLiveEditor() async throws {
         let model = await folder.model()
-        model.selection = "tasks/A.md"
+        model.selection = "Ta Da/tasks/A.md"
         let window = try await window(for: model)
         defer { window.orderOut(nil) }
 
@@ -182,7 +182,7 @@ struct KeyboardTests {
 
     @Test func addSubtaskFollowsTheEditorThatHasTheKeyboard() async throws {
         let model = await folder.model()
-        model.selection = "tasks/A.md"
+        model.selection = "Ta Da/tasks/A.md"
         let focus = FocusedEditorProbe.Box()
         let window = try await window(for: model, focus: focus)
         defer { window.orderOut(nil) }
@@ -193,7 +193,7 @@ struct KeyboardTests {
         #expect(focus.editor?.textView === live)
 
         // Picking a row gives the list the keyboard.
-        model.selection = "tasks/B.md"
+        model.selection = "Ta Da/tasks/B.md"
         try await settle()
         #expect(focus.editor == nil, "no editor has the keyboard, so Add Subtask is off")
 

@@ -1,6 +1,6 @@
 // The Logbook, pushed from the Other tab: the completed files not logged yet (logging tonight, or waiting for their
 // project's open tasks), then the logged ones by day and month, with Log Now in the bottom bar. A row's box reopens
-// a task, which goes back to `tasks/`; a tap opens the file.
+// a task, which goes back to `Ta Da/tasks/`; a tap opens the file.
 #if os(iOS)
 import SwiftUI
 import TaDaCore

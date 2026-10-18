@@ -12,11 +12,11 @@ private let today = LocalDate("2026-10-09")!
 @Test func moveToTrashCreatesTheFolderAndNumbersTakenNames() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        try writeFile(task, "tasks/A.md", in: folder)
+        try writeFile(task, "Ta Da/tasks/A.md", in: folder)
         try writeFile(task, "deep/a.md", in: folder)
         var index = await vault.loadIndex()
-        #expect(try vault.moveToTrash("tasks/A.md", index: index) == ["tasks/A.md"])
-        index.remove("tasks/A.md")
+        #expect(try vault.moveToTrash("Ta Da/tasks/A.md", index: index) == ["Ta Da/tasks/A.md"])
+        index.remove("Ta Da/tasks/A.md")
         #expect(try vault.moveToTrash("deep/a.md", index: index) == ["deep/a.md"])
         #expect(vault.markdownPaths().isEmpty)
         let trashed = vault.trashedItems()
@@ -28,13 +28,13 @@ private let today = LocalDate("2026-10-09")!
 @Test func aProjectGoesToTheTrashWithItsTasks() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        try writeFile(project, "projects/P.md", in: folder)
-        try writeFile(task(in: "P"), "tasks/One.md", in: folder)
+        try writeFile(project, "Ta Da/projects/P.md", in: folder)
+        try writeFile(task(in: "P"), "Ta Da/tasks/One.md", in: folder)
         try writeFile(task(in: "P"), "notes/Two.md", in: folder)
-        try writeFile(task, "tasks/Loose.md", in: folder)
-        let moved = try vault.moveToTrash("projects/P.md", index: await vault.loadIndex())
-        #expect(moved == ["projects/P.md", "tasks/One.md", "notes/Two.md"])
-        #expect(vault.markdownPaths() == ["tasks/Loose.md"])
+        try writeFile(task, "Ta Da/tasks/Loose.md", in: folder)
+        let moved = try vault.moveToTrash("Ta Da/projects/P.md", index: await vault.loadIndex())
+        #expect(moved == ["Ta Da/projects/P.md", "Ta Da/tasks/One.md", "notes/Two.md"])
+        #expect(vault.markdownPaths() == ["Ta Da/tasks/Loose.md"])
         let trashed = vault.trashedItems()
         let p = try #require(trashed.first { $0.id == ".trash/P.md" })
         #expect(TrashedItem.tasks(of: p.item, in: trashed).map(\.id) == [".trash/One.md", ".trash/Two.md"])
@@ -58,9 +58,9 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(project, ".trash/P.md", in: folder)
         try writeFile(task(in: "P"), ".trash/One.md", in: folder)
         try writeFile(task, ".trash/Loose.md", in: folder)
-        try writeFile(task, "tasks/Loose.md", in: folder)
+        try writeFile(task, "Ta Da/tasks/Loose.md", in: folder)
         let restored = try vault.restore([".trash/Loose.md", ".trash/P.md"], index: await vault.loadIndex(), today: today)
-        #expect(Set(restored) == ["projects/P.md", "tasks/Loose 2.md"])
+        #expect(Set(restored) == ["Ta Da/projects/P.md", "Ta Da/tasks/Loose 2.md"])
         #expect(vault.trashedItems().map(\.id) == [".trash/One.md"])
     }
 }
@@ -73,7 +73,7 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(task(in: "P"), ".trash/One.md", in: folder)
         try writeFile(task(in: "P"), ".trash/Two.md", in: folder)
         let restored = try vault.restore([".trash/One.md"], index: await vault.loadIndex(), today: today)
-        #expect(restored == ["areas/Home.md", "projects/P.md", "tasks/One.md"])
+        #expect(restored == ["Ta Da/areas/Home.md", "Ta Da/projects/P.md", "Ta Da/tasks/One.md"])
         #expect(vault.trashedItems().map(\.id) == [".trash/Two.md"])
     }
 }
@@ -85,8 +85,8 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(area, ".trash/Work.md", in: folder)
         try writeFile(filed("project", in: "Home"), ".trash/P.md", in: folder)
         try writeFile(filed("task", in: "Work"), ".trash/Filed.md", in: folder)
-        #expect(try vault.restore([".trash/P.md"], index: await vault.loadIndex(), today: today) == ["areas/Home.md", "projects/P.md"])
-        #expect(try vault.restore([".trash/Work.md"], index: await vault.loadIndex(), today: today) == ["areas/Work.md"])
+        #expect(try vault.restore([".trash/P.md"], index: await vault.loadIndex(), today: today) == ["Ta Da/areas/Home.md", "Ta Da/projects/P.md"])
+        #expect(try vault.restore([".trash/Work.md"], index: await vault.loadIndex(), today: today) == ["Ta Da/areas/Work.md"])
         #expect(vault.trashedItems().map(\.id) == [".trash/Filed.md"])
     }
 }
@@ -94,10 +94,10 @@ private let today = LocalDate("2026-10-09")!
 @Test func restoringKeepsAParentThatsInTheVault() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        try writeFile(project, "projects/P.md", in: folder)
+        try writeFile(project, "Ta Da/projects/P.md", in: folder)
         try writeFile(project, ".trash/P.md", in: folder)
         try writeFile(task(in: "P"), ".trash/One.md", in: folder)
-        #expect(try vault.restore([".trash/One.md"], index: await vault.loadIndex(), today: today) == ["tasks/One.md"])
+        #expect(try vault.restore([".trash/One.md"], index: await vault.loadIndex(), today: today) == ["Ta Da/tasks/One.md"])
         #expect(vault.trashedItems().map(\.id) == [".trash/P.md"])
     }
 }
@@ -108,9 +108,9 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(task(in: "Gone"), ".trash/One.md", in: folder)
         try writeFile(filed("project", in: "Gone area"), ".trash/P.md", in: folder)
         let restored = try vault.restore([".trash/One.md", ".trash/P.md"], index: await vault.loadIndex(), today: today)
-        #expect(Set(restored) == ["projects/Gone.md", "tasks/One.md", "areas/Gone area.md", "projects/P.md"])
-        #expect(try vault.read("projects/Gone.md") == NewFile.project(today: today))
-        #expect(try vault.read("areas/Gone area.md") == NewFile.area(today: today))
+        #expect(Set(restored) == ["Ta Da/projects/Gone.md", "Ta Da/tasks/One.md", "Ta Da/areas/Gone area.md", "Ta Da/projects/P.md"])
+        #expect(try vault.read("Ta Da/projects/Gone.md") == NewFile.project(today: today))
+        #expect(try vault.read("Ta Da/areas/Gone area.md") == NewFile.area(today: today))
     }
 }
 
@@ -123,8 +123,8 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(filed("project", in: "Gone area"), ".trash/P.md", in: folder)
         let restored = try vault.restore([".trash/One.md", ".trash/Two.md", ".trash/Three.md", ".trash/P.md"],
                                          index: await vault.loadIndex(), today: today)
-        #expect(Set(restored) == ["projects/Gone.md", "tasks/One.md", "tasks/Two.md", "areas/Gone area.md", "tasks/Three.md",
-                                  "projects/P.md"])
+        #expect(Set(restored) == ["Ta Da/projects/Gone.md", "Ta Da/tasks/One.md", "Ta Da/tasks/Two.md", "Ta Da/areas/Gone area.md", "Ta Da/tasks/Three.md",
+                                  "Ta Da/projects/P.md"])
         #expect(restored.count == 6)
     }
 }
@@ -132,11 +132,11 @@ private let today = LocalDate("2026-10-09")!
 @Test func restoringAParentUnderANewNameRelinksTheFile() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        try writeFile("A note, not a project\n", "projects/P.md", in: folder)
+        try writeFile("A note, not a project\n", "Ta Da/projects/P.md", in: folder)
         try writeFile(project, ".trash/P.md", in: folder)
         try writeFile(task(in: "P"), ".trash/One.md", in: folder)
-        #expect(try vault.restore([".trash/One.md"], index: await vault.loadIndex(), today: today) == ["projects/P 2.md", "tasks/One.md"])
-        #expect(try vault.read("tasks/One.md") == task(in: "P 2"))
+        #expect(try vault.restore([".trash/One.md"], index: await vault.loadIndex(), today: today) == ["Ta Da/projects/P 2.md", "Ta Da/tasks/One.md"])
+        #expect(try vault.read("Ta Da/tasks/One.md") == task(in: "P 2"))
     }
 }
 
@@ -154,14 +154,14 @@ private let today = LocalDate("2026-10-09")!
 @Test func anAreaGoesToTheTrashWithItsProjectsAndTasks() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        try writeFile(area, "areas/Home.md", in: folder)
-        try writeFile(filed("project", in: "Home"), "projects/P.md", in: folder)
-        try writeFile(task(in: "P"), "tasks/One.md", in: folder)
-        try writeFile(filed("task", in: "Home"), "tasks/Filed.md", in: folder)
-        try writeFile(task, "tasks/Loose.md", in: folder)
-        let moved = try vault.moveToTrash("areas/Home.md", index: await vault.loadIndex())
-        #expect(moved == ["areas/Home.md", "projects/P.md", "tasks/Filed.md", "tasks/One.md"])
-        #expect(vault.markdownPaths() == ["tasks/Loose.md"])
+        try writeFile(area, "Ta Da/areas/Home.md", in: folder)
+        try writeFile(filed("project", in: "Home"), "Ta Da/projects/P.md", in: folder)
+        try writeFile(task(in: "P"), "Ta Da/tasks/One.md", in: folder)
+        try writeFile(filed("task", in: "Home"), "Ta Da/tasks/Filed.md", in: folder)
+        try writeFile(task, "Ta Da/tasks/Loose.md", in: folder)
+        let moved = try vault.moveToTrash("Ta Da/areas/Home.md", index: await vault.loadIndex())
+        #expect(moved == ["Ta Da/areas/Home.md", "Ta Da/projects/P.md", "Ta Da/tasks/Filed.md", "Ta Da/tasks/One.md"])
+        #expect(vault.markdownPaths() == ["Ta Da/tasks/Loose.md"])
         let trashed = vault.trashedItems()
         let home = try #require(trashed.first { $0.id == ".trash/Home.md" })
         let contents = TrashedItem.contents(of: home.item, in: trashed)
@@ -186,11 +186,11 @@ private let today = LocalDate("2026-10-09")!
 @Test func imagesGoToTheTrashAloneAndNestUnderTheFilesThatEmbedThem() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        try writeFile("x", "attachments/front.jpg", in: folder)
+        try writeFile("x", "Ta Da/attachments/front.jpg", in: folder)
         try writeFile("x", "img/front.jpg", in: folder)
         try writeFile("x", ".trash/attachments/notes.txt", in: folder)
         try writeFile(task + "![[Front.jpg]] ![[odometer.png]]", ".trash/Photo.md", in: folder)
-        #expect(try vault.moveAttachmentsToTrash(["attachments/front.jpg", "img/front.jpg"])
+        #expect(try vault.moveAttachmentsToTrash(["Ta Da/attachments/front.jpg", "img/front.jpg"])
                 == [".trash/attachments/front.jpg", ".trash/attachments/front 2.jpg"])
         let attachments = vault.trashedAttachments()
         #expect(Set(attachments.map(\.id)) == [".trash/attachments/front.jpg", ".trash/attachments/front 2.jpg"])
@@ -206,10 +206,10 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(project + "![[board.jpg]]", ".trash/P.md", in: folder)
         try writeFile(task(in: "P") + "![[sketch.png]] ![[board.jpg]]", ".trash/T.md", in: folder)
         for name in ["board.jpg", "sketch.png", "odometer.png", "other.png"] { try writeFile("x", ".trash/attachments/\(name)", in: folder) }
-        try writeFile("y", "attachments/odometer.png", in: folder)
+        try writeFile("y", "Ta Da/attachments/odometer.png", in: folder)
         let restored = try vault.restore([".trash/T.md", ".trash/attachments/odometer.png"], index: await vault.loadIndex(), today: today)
-        #expect(restored.prefix(2) == ["projects/P.md", "tasks/T.md"])
-        #expect(Set(restored.dropFirst(2)) == ["attachments/board.jpg", "attachments/odometer 2.png", "attachments/sketch.png"])
+        #expect(restored.prefix(2) == ["Ta Da/projects/P.md", "Ta Da/tasks/T.md"])
+        #expect(Set(restored.dropFirst(2)) == ["Ta Da/attachments/board.jpg", "Ta Da/attachments/odometer 2.png", "Ta Da/attachments/sketch.png"])
         #expect(vault.trashedAttachments().map(\.id) == [".trash/attachments/other.png"])
     }
 }
@@ -272,7 +272,7 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(task + "![[shared.png]] ![[both.png]]", ".trash/G.md", in: folder)
         try writeFile(task + "![[both.png]]", ".trash/H.md", in: folder)
         for name in ["shared.png", "mine.png", "live.png", "both.png"] { try writeFile("x", ".trash/attachments/\(name)", in: folder) }
-        let liveFile = try #require(Item(parsing: task + "![[Live.png]]", path: "tasks/Live.md"))
+        let liveFile = try #require(Item(parsing: task + "![[Live.png]]", path: "Ta Da/tasks/Live.md"))
         let remove = { (url: URL) in try FileManager.default.removeItem(at: url) }
         try vault.discard([".trash/F.md"], index: VaultIndex([liveFile]), remove: remove)
         #expect(Set(vault.trashedAttachments().map(\.name)) == ["shared.png", "live.png", "both.png"])
@@ -306,11 +306,11 @@ private let today = LocalDate("2026-10-09")!
         try writeFile("mine", ".trash/attachments/x 2.png", in: folder)
         try writeFile("y", ".trash/attachments/y.png", in: folder)
         try writeFile("z", ".trash/attachments/z.png", in: folder)
-        try writeFile("live z", "attachments/z.png", in: folder)
+        try writeFile("live z", "Ta Da/attachments/z.png", in: folder)
         let restored = try vault.restore([".trash/F.md"], index: await vault.loadIndex(), today: today)
-        #expect(Set(restored) == ["tasks/F.md", "attachments/x 2.png", "attachments/y.png", "attachments/z 2.png"])
-        #expect(try String(contentsOf: vault.url(for: "attachments/x 2.png"), encoding: .utf8) == "mine")
-        let text = try vault.read("tasks/F.md")
+        #expect(Set(restored) == ["Ta Da/tasks/F.md", "Ta Da/attachments/x 2.png", "Ta Da/attachments/y.png", "Ta Da/attachments/z 2.png"])
+        #expect(try String(contentsOf: vault.url(for: "Ta Da/attachments/x 2.png"), encoding: .utf8) == "mine")
+        let text = try vault.read("Ta Da/tasks/F.md")
         #expect(text == task + "![[x 2.png]] ![[img/y.png]] ![[z 2.png]]")
         #expect(vault.trashedAttachments().map(\.id) == [".trash/attachments/x.png"])
     }

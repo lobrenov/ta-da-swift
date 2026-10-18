@@ -12,10 +12,10 @@ struct FileMenuTests {
 
     init() throws {
         folder = try TestFolder([
-            "projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n",
-            "tasks/One.md": "---\ntype: task\nstatus: Doing\n---\n",
-            "tasks/Two.md": "---\ntype: task\nstatus: Doing\n---\n",
-            "tasks/Three.md": "---\ntype: task\nstatus: Doing\n---\n",
+            "Ta Da/projects/Ta Da MVP.md": "---\ntype: project\nstatus: Doing\n---\n",
+            "Ta Da/tasks/One.md": "---\ntype: task\nstatus: Doing\n---\n",
+            "Ta Da/tasks/Two.md": "---\ntype: task\nstatus: Doing\n---\n",
+            "Ta Da/tasks/Three.md": "---\ntype: task\nstatus: Doing\n---\n",
         ])
     }
 
@@ -25,17 +25,17 @@ struct FileMenuTests {
 
     @Test func everyFileCanBeRevealedInFinderWithoutAShortcut() async {
         let model = await folder.model()
-        #expect(titles("tasks/One.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Reveal in Finder", "Delete"])
-        #expect(titles("projects/Ta Da MVP.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Reveal in Finder", "Delete"])
+        #expect(titles("Ta Da/tasks/One.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Reveal in Finder", "Delete"])
+        #expect(titles("Ta Da/projects/Ta Da MVP.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Reveal in Finder", "Delete"])
 
-        let paths = ["tasks/One.md", "tasks/Two.md", "tasks/Three.md"]
+        let paths = ["Ta Da/tasks/One.md", "Ta Da/tasks/Two.md", "Ta Da/tasks/Three.md"]
         model.arrowKeyList = AppModel.ArrowKeyList(id: UUID(), paths: paths, allowsMultipleSelection: true)
         model.selection = paths[0]
         model.extendSelection(to: paths[2])
         #expect(titles(paths[1], model) == ["Move 3 Tasks", "Schedule 3 Tasks", "Set Deadline…", "Reveal in Finder", "Delete 3 Tasks"])
         #expect(model.picked == Set(paths), "the menu bar's Reveal in Finder shows the picked tasks")
 
-        await model.moveToTrash(["tasks/One.md"])
+        await model.moveToTrash(["Ta Da/tasks/One.md"])
         model.show(.trash)
         let actions = FileMenuAction.actions(for: ".trash/One.md", model: model)
         #expect(actions.map(\.title) == ["Restore", "Reveal in Finder", "Delete Forever"])
@@ -50,7 +50,7 @@ struct FileMenuTests {
                                      "Reveal in Finder", "Move to Trash"])
         let page = FileMenuAction.noteActions(for: "Meetings/Ark.md", model: model, onRow: false, at: nil, in: nil)
         #expect(page.map(\.title) == ["Task…", "Project…", "Area…", "Reveal in Finder", "Move to Trash"])
-        #expect(page.prefix(3).map(\.shortcut) == ["tasks/", "projects/", "areas/"])
+        #expect(page.prefix(3).map(\.shortcut) == ["Ta Da/tasks/", "Ta Da/projects/", "Ta Da/areas/"])
         page[1].run()
         #expect(model.convertRequest?.path == "Meetings/Ark.md" && model.convertRequest?.kind == .project)
         page[4].run()
@@ -86,26 +86,26 @@ struct FileMenuTests {
 
     @Test func tagsOpensTheMenuForTheOneFileTheMenuActsOn() async {
         let model = await folder.model()
-        let tags = FileMenuAction.actions(for: "tasks/One.md", model: model).first { $0.title == "Tags…" }
+        let tags = FileMenuAction.actions(for: "Ta Da/tasks/One.md", model: model).first { $0.title == "Tags…" }
         #expect(tags?.shortcut == "⌘T")
         tags?.run()
         #expect(model.propertyMenuRequest?.menu == .tags)
-        #expect(model.propertyMenuRequest?.paths == ["tasks/One.md"] && model.propertyMenuRequest?.onChip == false)
+        #expect(model.propertyMenuRequest?.paths == ["Ta Da/tasks/One.md"] && model.propertyMenuRequest?.onChip == false)
     }
 
     @Test func anAreasMenuMakesFilesInItOpensItAndDeletes() async throws {
-        try folder.write("---\ntype: area\n---\n", "areas/Home.md")
+        try folder.write("---\ntype: area\n---\n", "Ta Da/areas/Home.md")
         let model = await folder.model()
-        #expect(titles("areas/Home.md", model) == ["New Task in Home", "New Project in Home", "Open Area File", "Tags…", "Reveal in Finder", "Delete"])
-        FileMenuAction.actions(for: "areas/Home.md", model: model).first { $0.title == "Open Area File" }?.run()
-        #expect(model.domain == .area("areas/Home.md") && model.selection == "areas/Home.md")
+        #expect(titles("Ta Da/areas/Home.md", model) == ["New Task in Home", "New Project in Home", "Open Area File", "Tags…", "Reveal in Finder", "Delete"])
+        FileMenuAction.actions(for: "Ta Da/areas/Home.md", model: model).first { $0.title == "Open Area File" }?.run()
+        #expect(model.domain == .area("Ta Da/areas/Home.md") && model.selection == "Ta Da/areas/Home.md")
     }
 
     @Test func aDraggedTaskIsItsFile() async throws {
         let model = await folder.model()
-        let url = try #require(model.vault?.url(for: "tasks/One.md"))
-        let file = TaskFile(path: "tasks/One.md", url: url)
+        let url = try #require(model.vault?.url(for: "Ta Da/tasks/One.md"))
+        let file = TaskFile(path: "Ta Da/tasks/One.md", url: url)
         #expect(file.exportedContentTypes().contains(.fileURL))
-        #expect(model.vault?.path(of: url) == "tasks/One.md", "a drop finds the task again")
+        #expect(model.vault?.path(of: url) == "Ta Da/tasks/One.md", "a drop finds the task again")
     }
 }

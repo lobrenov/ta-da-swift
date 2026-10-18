@@ -20,11 +20,11 @@ struct PropertyPickerTests {
 
     private func index() -> VaultIndex {
         let files = [
-            ("projects/Ta Da MVP.md", "---\ntype: project\nstatus: Doing\n---\n"),
-            ("projects/Game Jam - Starfall.md", "---\ntype: project\nstatus: Not Started\n---\n"),
-            ("projects/Shipped.md", "---\ntype: project\nstatus: Done\n---\n"),
-            ("tasks/Plan.md", "---\ntype: task\nstatus: Doing\nproject: \"[[Ta Da MVP]]\"\n---\n"),
-            ("tasks/Old.md", "---\ntype: task\nstatus: Done\nproject: \"[[Shipped]]\"\n---\n"),
+            ("Ta Da/projects/Ta Da MVP.md", "---\ntype: project\nstatus: Doing\n---\n"),
+            ("Ta Da/projects/Game Jam - Starfall.md", "---\ntype: project\nstatus: Not Started\n---\n"),
+            ("Ta Da/projects/Shipped.md", "---\ntype: project\nstatus: Done\n---\n"),
+            ("Ta Da/tasks/Plan.md", "---\ntype: task\nstatus: Doing\nproject: \"[[Ta Da MVP]]\"\n---\n"),
+            ("Ta Da/tasks/Old.md", "---\ntype: task\nstatus: Done\nproject: \"[[Shipped]]\"\n---\n"),
         ]
         return VaultIndex(files.compactMap { Item(parsing: $0.1, path: $0.0) })
     }
@@ -44,11 +44,11 @@ struct PropertyPickerTests {
 
     @Test func theMoveMenuListsLooseTasksThenActiveProjectsAndNewProject() {
         let index = index()
-        let plan = menu(index, task: "tasks/Plan.md")
+        let plan = menu(index, task: "Ta Da/tasks/Plan.md")
         #expect(plan.titles == ["Loose tasks", nil, "Game Jam - Starfall", "Ta Da MVP", nil, "New project…"])
         #expect(plan.highlight == 2, "opens on the current project")
 
-        let old = menu(index, task: "tasks/Old.md")
+        let old = menu(index, task: "Ta Da/tasks/Old.md")
         #expect(old.titles == ["Loose tasks", nil, "Game Jam - Starfall", "Shipped", "Ta Da MVP", nil, "New project…"],
                 "a done project is listed when it's the task's own")
         #expect(old.highlight == 2)
@@ -56,25 +56,25 @@ struct PropertyPickerTests {
 
     private func areaIndex() -> VaultIndex {
         let files = [
-            ("areas/Home.md", "---\ntype: area\n---\n"),
-            ("areas/Work.md", "---\ntype: area\n---\n"),
-            ("projects/Garden.md", "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n"),
-            ("projects/Side.md", "---\ntype: project\nstatus: Doing\n---\n"),
-            ("projects/Lost.md", "---\ntype: project\nstatus: Doing\narea: TTRPGs\n---\n"),
-            ("tasks/Rent.md", "---\ntype: task\nstatus: Doing\narea: \"[[Home]]\"\n---\n"),
-            ("tasks/2DS.md", "---\ntype: task\nstatus: Doing\narea: TTRPGs\n---\n"),
+            ("Ta Da/areas/Home.md", "---\ntype: area\n---\n"),
+            ("Ta Da/areas/Work.md", "---\ntype: area\n---\n"),
+            ("Ta Da/projects/Garden.md", "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\n---\n"),
+            ("Ta Da/projects/Side.md", "---\ntype: project\nstatus: Doing\n---\n"),
+            ("Ta Da/projects/Lost.md", "---\ntype: project\nstatus: Doing\narea: TTRPGs\n---\n"),
+            ("Ta Da/tasks/Rent.md", "---\ntype: task\nstatus: Doing\narea: \"[[Home]]\"\n---\n"),
+            ("Ta Da/tasks/2DS.md", "---\ntype: task\nstatus: Doing\narea: TTRPGs\n---\n"),
         ]
         return VaultIndex(files.compactMap { Item(parsing: $0.1, path: $0.0) })
     }
 
     @Test func theMoveMenuListsEachAreaWithItsProjects() {
         let index = areaIndex()
-        let rent = menu(index, task: "tasks/Rent.md")
+        let rent = menu(index, task: "Ta Da/tasks/Rent.md")
         #expect(rent.titles == ["Loose tasks", nil, "Lost", "Side", nil, "Home", "Garden", nil, "Work", nil, "New project…"])
         #expect(rent.highlight == 3, "opens on the current area")
-        #expect(menu(index, task: "tasks/Rent.md", query: "gard").titles == ["Garden", nil, "New project “gard”"])
+        #expect(menu(index, task: "Ta Da/tasks/Rent.md", query: "gard").titles == ["Garden", nil, "New project “gard”"])
 
-        let unresolved = menu(index, task: "tasks/2DS.md")
+        let unresolved = menu(index, task: "Ta Da/tasks/2DS.md")
         #expect(unresolved.titles.first == "Create Area “TTRPGs”")
         #expect(unresolved.highlight == nil, "a task whose area has no file has no current row")
     }
@@ -85,42 +85,42 @@ struct PropertyPickerTests {
             let menu = AreaChoice.menu(index: index, projects: [index[project]!], query: query, naming: false, existing: [])
             return (self.titles(menu.sections), menu.highlight)
         }
-        #expect(titles("projects/Garden.md").0 == ["Home", "Work", nil, "No area", "New Area…"])
-        #expect(titles("projects/Garden.md").1 == 0)
-        #expect(titles("projects/Side.md").1 == 2, "No area is current")
-        #expect(titles("projects/Lost.md").0.first == "Create Area “TTRPGs”")
-        #expect(titles("projects/Garden.md", query: "wo").0 == ["Work", nil, "New Area “wo”"])
+        #expect(titles("Ta Da/projects/Garden.md").0 == ["Home", "Work", nil, "No area", "New Area…"])
+        #expect(titles("Ta Da/projects/Garden.md").1 == 0)
+        #expect(titles("Ta Da/projects/Side.md").1 == 2, "No area is current")
+        #expect(titles("Ta Da/projects/Lost.md").0.first == "Create Area “TTRPGs”")
+        #expect(titles("Ta Da/projects/Garden.md", query: "wo").0 == ["Work", nil, "New Area “wo”"])
     }
 
     @Test func typingFiltersTheProjectsAndOffersOneByThatName() {
         let index = index()
-        let meg = menu(index, task: "tasks/Plan.md", query: " meg ")
+        let meg = menu(index, task: "Ta Da/tasks/Plan.md", query: " meg ")
         #expect(meg.titles == ["Game Jam - Starfall", nil, "New project “meg”"])
         #expect(meg.highlight == 0, "the first match, as the current project doesn't match")
 
-        let ta = menu(index, task: "tasks/Plan.md", query: "ta")
+        let ta = menu(index, task: "Ta Da/tasks/Plan.md", query: "ta")
         #expect(ta.titles == ["Ta Da MVP", nil, "New project “ta”"])
         #expect(ta.highlight == 0, "the current project, which matches")
 
-        let none = menu(index, task: "tasks/Plan.md", query: "launch")
+        let none = menu(index, task: "Ta Da/tasks/Plan.md", query: "launch")
         #expect(none.titles == ["New project “launch”"])
         #expect(none.highlight == 0)
     }
 
     @Test func newProjectShowsTheFileItWouldMake() {
         let index = index()
-        let task = index["tasks/Plan.md"]!
+        let task = index["Ta Da/tasks/Plan.md"]!
         let existing = Set(index.projects.map { String($0.path.split(separator: "/").last!) })
         let menu = ProjectChoice.menu(index: index, tasks: [task], query: "Ta Da MVP", naming: false, existing: existing)
-        #expect(menu.sections.last?.items.last?.accessibilityValue == "projects/Ta Da MVP 2.md")
+        #expect(menu.sections.last?.items.last?.accessibilityValue == "Ta Da/projects/Ta Da MVP 2.md")
         let colon = ProjectChoice.menu(index: index, tasks: [task], query: "Q4: Launch", naming: false, existing: existing)
-        #expect(colon.sections.last?.items.last?.accessibilityValue == "projects/Q4 - Launch.md")
+        #expect(colon.sections.last?.items.last?.accessibilityValue == "Ta Da/projects/Q4 - Launch.md")
     }
 
     @Test func namingANewProjectLeavesOnlyTheNewProjectRow() {
         let index = index()
-        #expect(menu(index, task: "tasks/Plan.md", naming: true).titles == ["New project…"])
-        let named = menu(index, task: "tasks/Plan.md", query: "Ta", naming: true)
+        #expect(menu(index, task: "Ta Da/tasks/Plan.md", naming: true).titles == ["New project…"])
+        let named = menu(index, task: "Ta Da/tasks/Plan.md", query: "Ta", naming: true)
         #expect(named.titles == ["New project “Ta”"])
         #expect(named.highlight == 0)
     }
@@ -200,12 +200,12 @@ struct PropertyPickerTests {
 
     private func tagMenu(_ query: String = "", keeping: String? = nil) -> (titles: [String?], labels: [String?], highlight: Int?) {
         let files = [
-            ("tasks/Weed.md", "---\ntype: task\nstatus: Doing\ntags: [home/garden]\n---\nAsk #people/max\n"),
-            ("tasks/Rent.md", "---\ntype: task\nstatus: Doing\ntags: [money, errands]\n---\n#people/dan\n"),
-            ("areas/Home.md", "---\ntype: area\ntags: [errands]\n---\n"),
+            ("Ta Da/tasks/Weed.md", "---\ntype: task\nstatus: Doing\ntags: [home/garden]\n---\nAsk #people/max\n"),
+            ("Ta Da/tasks/Rent.md", "---\ntype: task\nstatus: Doing\ntags: [money, errands]\n---\n#people/dan\n"),
+            ("Ta Da/areas/Home.md", "---\ntype: area\ntags: [errands]\n---\n"),
         ]
         let index = VaultIndex(files.compactMap { Item(parsing: $0.1, path: $0.0) })
-        let menu = TagChoice.menu(item: index["tasks/Weed.md"]!, tree: index.tagTree(), query: query, keeping: keeping)
+        let menu = TagChoice.menu(item: index["Ta Da/tasks/Weed.md"]!, tree: index.tagTree(), query: query, keeping: keeping)
         let values = menu.sections.flatMap(\.items).map { $0.accessibilityValue as String? }
         return (titles(menu.sections), values, menu.highlight)
     }

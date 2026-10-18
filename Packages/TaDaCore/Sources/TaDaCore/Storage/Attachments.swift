@@ -1,12 +1,14 @@
 import Foundation
 
-/// Attachments are image files that files embed with `![[name.png]]`. Ta Da saves them in `attachments/`; an embed
+/// Attachments are image files that files embed with `![[name.png]]`. Ta Da saves them in `Ta Da/attachments/`; an embed
 /// resolves by filename, so they can live anywhere in the folder.
 extension Vault {
-    public static let attachmentFolder = "attachments"
+    public static let attachmentFolder = home + "/attachments"
+    /// The old layout's top-level folders, lowercased: Ta Da made them before `Ta Da/`.
+    public static let legacyFolders: Set<String> = ["tasks", "projects", "areas", "attachments"]
     public static let imageExtensions: Set<String> = ["avif", "bmp", "gif", "heic", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"]
 
-    /// Writes `data` as `attachments/<filename>`, numbering the name if it's taken. Returns the new path.
+    /// Writes `data` as `Ta Da/attachments/<filename>`, numbering the name if it's taken. Returns the new path.
     public func saveAttachment(_ data: Data, as filename: String) throws -> String {
         let path = Self.attachmentPath(named: filename, avoiding: filenames(in: Self.attachmentFolder))
         try saveAttachment(data, at: path)
@@ -18,7 +20,7 @@ extension Vault {
         try CoordinatedFileIO.create(data, at: url(for: path))
     }
 
-    /// `attachments/<filename>`, numbered if the name is among `taken`, the filenames in `attachments/`.
+    /// `Ta Da/attachments/<filename>`, numbered if the name is among `taken`, the filenames in `Ta Da/attachments/`.
     public static func attachmentPath(named filename: String, avoiding taken: Set<String>) -> String {
         let (base, ext) = FileNaming.split(filename)
         return attachmentFolder + "/" + FileNaming.filename(for: base, extension: ext, existing: taken)
@@ -53,8 +55,8 @@ extension Vault {
         imageExtensions.contains(FileNaming.split(filename).ext.lowercased())
     }
 
-    /// The image an embed shows: the target as a path, else `attachments/<filename>`, else the first file with that
-    /// filename by path, ignoring case. Hidden folders, including `.trash`, are skipped. Nil when there's none.
+    /// The image an embed shows: the target as a path, else `Ta Da/attachments/<filename>`, else the old
+    /// `attachments/<filename>`, else the first file with that filename by path, ignoring case. Hidden folders, including `.trash`, are skipped. Nil when there's none.
     public func attachmentPath(for embed: WikiLink) -> String? {
         Self.attachmentPath(for: embed, in: attachmentPaths())
     }
@@ -115,6 +117,7 @@ extension Vault {
             return path
         }
         let matches = paths.filter { $0.split(separator: "/").last?.lowercased() == name }
-        return matches.first { $0.lowercased() == attachmentFolder + "/" + name } ?? matches.min()
+        return matches.first { $0.lowercased() == attachmentFolder.lowercased() + "/" + name }
+            ?? matches.first { $0.lowercased() == "attachments/" + name } ?? matches.min()
     }
 }
