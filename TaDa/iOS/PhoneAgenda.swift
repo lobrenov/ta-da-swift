@@ -140,8 +140,6 @@ struct PhoneAgendaStrip: View {
     let model: AppModel
     /// The progress of a drag in flight, from 0 (a week) to 1 (the month).
     @State private var drag: CGFloat?
-    /// Whether the drag in flight is vertical, decided once by its first movement.
-    @State private var isVertical: Bool?
     @ScaledMetric(relativeTo: .body) private var rowHeight = 46
     @Environment(\.theme) private var theme
 
@@ -172,21 +170,18 @@ struct PhoneAgendaStrip: View {
         .padding(.top, 8)
         .padding(.horizontal, 12)
         .overlay(alignment: .bottom) { Hairline() }
-        .simultaneousGesture(DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                if isVertical == nil { isVertical = AgendaMonthDrag.isVertical(dx: value.translation.width, dy: value.translation.height) }
-                guard isVertical == true else { return }
-                drag = AgendaMonthDrag.progress(start: model.agendaMonthOpen ? 1 : 0, translation: value.translation.height, range: range)
+        .gesture(AgendaVerticalPan { dy in
+            drag = AgendaMonthDrag.progress(start: model.agendaMonthOpen ? 1 : 0, translation: dy, range: range)
+        } onEnd: { dy, velocity in
+            guard drag != nil else { return }
+            let progress = AgendaMonthDrag.progress(start: model.agendaMonthOpen ? 1 : 0, translation: dy, range: range)
+            let open = AgendaMonthDrag.settlesOpen(progress: progress, velocity: velocity, range: range)
+            let speed = AgendaMonthDrag.settleVelocity(from: progress, open: open, velocity: velocity, range: range)
+            withAnimation(.interpolatingSpring(duration: 0.3, bounce: 0, initialVelocity: speed)) {
+                model.agendaMonthOpen = open
+                drag = nil
             }
-            .onEnded { value in
-                defer { isVertical = nil }
-                guard isVertical == true, let drag else { return }
-                let open = AgendaMonthDrag.settlesOpen(progress: drag, velocity: value.velocity.height, range: range)
-                withAnimation(AgendaMotion.spring) {
-                    model.agendaMonthOpen = open
-                    self.drag = nil
-                }
-            })
+        })
         // Eight columns: past this, the numbers wouldn't fit.
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
@@ -206,6 +201,8 @@ private struct AgendaStripRows: View, Animatable {
     }
 
     var body: some View {
+        // A flick's spring can overshoot either end.
+        let progress = min(max(progress, 0), 1)
         if progress <= 0 {
             AgendaWeekStrip(model: model, marks: marks)
         } else {
@@ -323,6 +320,40 @@ struct AgendaWeekRow: View {
         .buttonStyle(.plain)
         .accessibilityLabel((isToday ? "Today, " : "") + day.formatted(.weekdayDayMonth) + AgendaDots.spoken(model, day, marks: marks[day]))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// A vertical pan on the strip. Once it starts it cancels the touch for the buttons under it, so a swipe never picks.
+/// Sideways movement doesn't start it, which leaves the week row's paging alone.
+struct AgendaVerticalPan: UIGestureRecognizerRepresentable {
+    var onChange: (CGFloat) -> Void
+    /// The translation and velocity (points per second, down is positive). Cancelling ends with no velocity.
+    var onEnd: (CGFloat, CGFloat) -> Void
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let pan = UIPanGestureRecognizer()
+        pan.delegate = context.coordinator
+        return pan
+    }
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator { Coordinator() }
+
+    func handleUIGestureRecognizerAction(_ pan: UIPanGestureRecognizer, context: Context) {
+        let dy = pan.translation(in: pan.view).y
+        switch pan.state {
+        case .began, .changed: onChange(dy)
+        case .ended: onEnd(dy, pan.velocity(in: pan.view).y)
+        case .cancelled, .failed: onEnd(dy, 0)
+        default: break
+        }
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = recognizer as? UIPanGestureRecognizer else { return false }
+            let velocity = pan.velocity(in: pan.view)
+            return AgendaMonthDrag.isVertical(dx: velocity.x, dy: velocity.y)
+        }
     }
 }
 #endif

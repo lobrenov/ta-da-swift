@@ -150,4 +150,12 @@ enum AgendaMonthDrag {
     static func settlesOpen(progress: CGFloat, velocity: CGFloat, range: CGFloat) -> Bool {
         range > 0 && progress + velocity * projection / range > 0.5
     }
+
+    /// The settle spring's starting speed, matched to the finger's: SwiftUI's `initialVelocity` is the share of the
+    /// distance left covered per second.
+    static func settleVelocity(from progress: CGFloat, open: Bool, velocity: CGFloat, range: CGFloat) -> CGFloat {
+        let distance = (open ? 1 : 0) - progress
+        guard range > 0, abs(distance) > 0.001 else { return 0 }
+        return velocity / range / distance
+    }
 }

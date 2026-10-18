@@ -139,4 +139,12 @@ struct AgendaPagingTests {
         #expect(AgendaMonthDrag.settlesOpen(progress: 0.2, velocity: 800, range: range), "a flick down opens")
         #expect(!AgendaMonthDrag.settlesOpen(progress: 0.8, velocity: -800, range: range), "a flick up closes")
     }
+
+    @Test func monthDragSettlesAtTheFingersSpeed() {
+        let range: CGFloat = 192
+        #expect(AgendaMonthDrag.settleVelocity(from: 0.5, open: true, velocity: 960, range: range) == 10)
+        #expect(AgendaMonthDrag.settleVelocity(from: 0.5, open: false, velocity: -960, range: range) == 10, "toward the target is positive")
+        #expect(AgendaMonthDrag.settleVelocity(from: 1, open: true, velocity: 960, range: range) == 0, "already there")
+        #expect(AgendaMonthDrag.settleVelocity(from: 0.5, open: true, velocity: 960, range: 0) == 0)
+    }
 }
