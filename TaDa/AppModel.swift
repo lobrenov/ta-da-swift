@@ -1886,7 +1886,7 @@ import TaDaCore
             return
         }
         guard let vault else { return }
-        let folder = Vault.folder(of: path), filename = String(path.split(separator: "/").last ?? "")
+        let folder = existingCasing(ofFolder: Vault.folder(of: path)), filename = String(path.split(separator: "/").last ?? "")
         let (template, isTaken) = await Self.run {
             (templatePath.flatMap { try? vault.read($0) },
              vault.filenames(in: folder).contains { $0.caseInsensitiveCompare(filename) == .orderedSame })
@@ -1897,6 +1897,23 @@ import TaDaCore
         } else if let created = await create(NewFile.dailyNote(template: template, today: today), in: folder, title: Item.title(ofPath: path)) {
             selection = created
         }
+    }
+
+    /// `folder` as it's spelled on disk or in the notes' paths when a folder of that name exists in another case, else as given.
+    private func existingCasing(ofFolder folder: String) -> String {
+        var known = knownFolders.union(index.notes.map { Vault.folder(of: $0.path) })
+        for path in known { known.formUnion(Self.ancestors(of: path)) }
+        var resolved = ""
+        for name in folder.split(separator: "/") {
+            let wanted = resolved.isEmpty ? String(name) : resolved + "/" + name
+            resolved = known.sorted().first { $0.caseInsensitiveCompare(wanted) == .orderedSame } ?? wanted
+        }
+        return resolved
+    }
+
+    private static func ancestors(of path: String) -> [String] {
+        let parts = path.split(separator: "/")
+        return parts.indices.dropLast().map { parts[...$0].joined(separator: "/") }
     }
 
     /// Creates "Untitled folder" in `parent`, or the folder whose page shows (else at the top level), its name ready to
@@ -2112,6 +2129,9 @@ import TaDaCore
     private func updateIndex(replacing item: Item) {
         guard let old = index[item.path], old.properties == item.properties else { return updateIndex { $0.update(item) } }
         index.update(item)
+        if old.checkboxes != item.checkboxes, let date = dailyNoteNames.date(atPath: item.path), agendaRange.contains(date) {
+            updateAgendaMarks()
+        }
         if let i = todayTasks.firstIndex(where: { $0.path == item.path }) { todayTasks[i] = item }
         if let i = looseTasks.firstIndex(where: { $0.path == item.path }) { looseTasks[i] = item }
         for i in upcoming.indices where upcoming[i].item.path == item.path { upcoming[i].item = item }
@@ -2166,9 +2186,13 @@ import TaDaCore
             agendaTasks = []
             agendaWeekEntries = index.agendaWeek(week)
         }
+        updateAgendaMarks()
+        updateIntegrations()
+    }
+
+    private func updateAgendaMarks() {
         let range = agendaRange
         agendaMarks = index.dayMarks(from: range.lowerBound, through: range.upperBound, names: dailyNoteNames)
-        updateIntegrations()
     }
 
     /// The days the Agenda shows: the selected week, or when the month is open, every week of its month.

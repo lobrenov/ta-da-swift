@@ -124,7 +124,7 @@ struct AgendaModelTests {
         model.weekTemplate = "Templates/Missing.md"
         let week = LocalDate("2026-10-02")!.isoWeek
         await model.openOrCreateNote(for: .week(week))
-        #expect(model.selection == "Periodic Notes/Weekly Notes/2026-W40.md")
+        #expect(model.selection == "periodic notes/Weekly Notes/2026-W40.md")
         #expect(try folder.read("Periodic Notes/Weekly Notes/2026-W40.md") == NewFile.dailyNote(template: nil, today: model.today),
                 "a template that can't be read is left out")
     }
@@ -135,5 +135,32 @@ struct AgendaModelTests {
         await model.openOrCreateNote(for: .day(LocalDate("2026-10-04")!))
         #expect(model.selection == "periodic notes/daily notes/2026-10-04.md", "the file as the folder is on disk")
         #expect(try folder.read("Periodic Notes/Daily Notes/2026-10-04.md") == "Typed elsewhere\n")
+    }
+
+    @Test func aNewNoteGoesInTheExistingFolderInItsOwnCase() async throws {
+        let model = await folder.model(today: LocalDate("2026-10-02")!)
+        // Only "periodic notes/daily notes" exists, in lower case.
+        await model.openOrCreateNote(for: .day(LocalDate("2026-10-03")!))
+        #expect(model.selection == "periodic notes/daily notes/2026-10-03.md")
+        #expect(model.index["periodic notes/daily notes/2026-10-03.md"] != nil)
+
+        model.weekFolder = "PERIODIC NOTES/Weekly Notes"
+        await model.openOrCreateNote(for: .week(LocalDate("2026-10-02")!.isoWeek))
+        #expect(model.selection == "periodic notes/Weekly Notes/2026-W40.md", "the folder that exists keeps its case, the rest is as set")
+        await model.refresh()
+        #expect(model.index.items.keys.filter { $0.lowercased().hasSuffix("2026-w40.md") }.count == 1)
+    }
+
+    @Test func tickingABoxInADailyNoteUpdatesItsDot() async throws {
+        let model = await folder.model(today: LocalDate("2026-10-02")!)
+        let path = "periodic notes/daily notes/2026-10-02.md"
+        model.selection = path
+        await model.loading?.value
+        let document = try #require(model.document)
+        #expect(model.agendaMarks[LocalDate("2026-10-02")!]?.hasOpenBoxes == true)
+        document.text = "- [x] Call\n"
+        #expect(model.agendaMarks[LocalDate("2026-10-02")!]?.hasOpenBoxes != true)
+        document.text = "- [x] Call\n- [ ] Write\n"
+        #expect(model.agendaMarks[LocalDate("2026-10-02")!]?.hasOpenBoxes == true)
     }
 }
