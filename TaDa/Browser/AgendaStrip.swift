@@ -26,12 +26,14 @@ struct AgendaStrip: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            DomainHeader(.agenda) {
-                HStack(spacing: 8) {
-                    SegmentedControl(label: "Calendar size", options: [(false, "Week"), (true, "Month")],
-                                     selection: Binding { model.agendaMonthOpen } set: { model.agendaMonthOpen = $0 },
-                                     height: 22, unselectedWeight: .semibold)
-                    stepper
+            // Too narrow for the title and both controls, the title gives way and the icon stays.
+            ViewThatFits(in: .horizontal) {
+                DomainHeader(.agenda) { controls }
+                HStack {
+                    Image(systemName: AppModel.Domain.agenda.systemImage).font(.system(size: 20))
+                        .foregroundStyle(theme.color(AppModel.Domain.agenda.tint)).accessibilityLabel("Agenda")
+                    Spacer(minLength: 8)
+                    controls
                 }
             }
             if model.agendaMonthOpen {
@@ -59,6 +61,15 @@ struct AgendaStrip: View {
         .foregroundStyle(theme.color(\.muted))
         .padding(.bottom, 2)
         .accessibilityHidden(true)
+    }
+
+    private var controls: some View {
+        HStack(spacing: 8) {
+            SegmentedControl(label: "Calendar size", options: [(false, "Week"), (true, "Month")],
+                             selection: Binding { model.agendaMonthOpen } set: { model.agendaMonthOpen = $0 },
+                             height: 22, unselectedWeight: .semibold)
+            stepper
+        }
     }
 
     /// ‹ Today ›, which step a day, or a week when a week is picked.

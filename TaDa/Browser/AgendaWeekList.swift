@@ -24,6 +24,8 @@ struct AgendaWeekList: View {
                         .accessibilityAddTraits(.isHeader)
                     Text("\(week.firstDay.formatted(.dayMonth)) – \(week.firstDay.adding(days: 6).formatted(.dayMonth))")
                         .foregroundStyle(theme.color(\.muted))
+                        .lineLimit(1)
+                        .fixedSize()
                     Spacer(minLength: 0)
                     if week == model.today.isoWeek { Text("This week").fontWeight(.semibold).foregroundStyle(theme.color(\.accent)) }
                 }
@@ -62,7 +64,7 @@ struct AgendaWeekList: View {
     private func dayRow(_ day: LocalDate, entries: [AgendaEntry]) -> some View {
         let note = model.index.dailyNote(for: day, names: model.dailyNoteNames)
         let external = model.events(on: day).count + model.reminders(on: day).count
-        let due = entries.count { $0.date == day }
+        let due = Set(entries.filter { $0.date == day && !$0.item.properties.status.isClosed }.map(\.item.path)).count
         let counts = [external > 0 ? "\(external) \(external == 1 ? "event" : "events")" : nil, due > 0 ? "\(due) due" : nil]
             .compactMap { $0 }.joined(separator: " · ")
         let isToday = day == model.today
