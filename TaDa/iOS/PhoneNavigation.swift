@@ -158,6 +158,11 @@ enum Haptic: Equatable {
     }
 }
 
+/// What tapping the tab that's already selected does.
+enum PhoneTabReselect: Equatable {
+    case popToRoot, showAgendaToday
+}
+
 @Observable final class PhoneNavigation {
     var tab = PhoneTab.agenda
     /// Each tab's pushed screens, so a tab keeps its place while another is shown.
@@ -195,6 +200,13 @@ enum Haptic: Equatable {
     /// Takes the screens for files that are gone out of every tab, as after a delete.
     func dropScreens(where isGone: (String) -> Bool) {
         stacks = stacks.mapValues { routes in routes.filter { $0.path.map { !isGone($0) } ?? true } }
+    }
+
+    /// What tapping `tab` does when it's the selected one: pop its pushed screens, else (on the Agenda) go to today.
+    func reselection(of tab: PhoneTab, agenda: AppModel.AgendaSelection, today: LocalDate) -> PhoneTabReselect? {
+        guard tab == self.tab else { return nil }
+        if !(stacks[tab] ?? []).isEmpty { return .popToRoot }
+        return tab == .agenda && agenda != .day(today) ? .showAgendaToday : nil
     }
 
     func stack(_ tab: PhoneTab) -> Binding<[PhoneRoute]> {

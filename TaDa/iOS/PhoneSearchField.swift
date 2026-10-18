@@ -8,7 +8,9 @@ import SwiftUI
 final class ListSearch {
     /// How far past the top a list is pulled for search to open when the finger lifts.
     static let threshold: CGFloat = 60
-    static let morph = Animation.spring(response: 0.42, dampingFraction: 0.84)
+
+    /// The animation of the field opening and closing.
+    let morph: Animation
 
     var distance: CGFloat = 0
     /// Pulled past `threshold` while the finger is down; stays set while search is open.
@@ -17,11 +19,15 @@ final class ListSearch {
     var isFocused = false
     var query = ""
 
+    init(morph: Animation = .spring(response: 0.42, dampingFraction: 0.84)) {
+        self.morph = morph
+    }
+
     var isSearching: Bool { !query.trimmingCharacters(in: .whitespaces).isEmpty }
 
     func open() {
         // The keyboard comes once the field has landed: bringing it up holds the main thread for a moment.
-        withAnimation(Self.morph) {
+        withAnimation(morph) {
             isOpen = true
         } completion: { [self] in
             if isOpen { isFocused = true }
@@ -32,7 +38,7 @@ final class ListSearch {
         isArmed = false
         query = ""
         isFocused = false
-        withAnimation(Self.morph) { isOpen = false }
+        withAnimation(morph) { isOpen = false }
     }
 
     func reset() {
@@ -45,14 +51,16 @@ final class ListSearch {
 
 extension View {
     /// Pulling this scroll view past its top opens `search`, which the navigation stack draws above its bar; a tap
-    /// on the content closes it while nothing is typed.
-    func pullToSearch(_ search: ListSearch) -> some View {
-        modifier(PullToSearch(search: search))
+    /// on the content closes it while nothing is typed. A screen with several scroll views (`hostsSearch` false) hands
+    /// its stack the search itself.
+    func pullToSearch(_ search: ListSearch, hostsSearch: Bool = true) -> some View {
+        modifier(PullToSearch(search: search, hostsSearch: hostsSearch))
     }
 }
 
 private struct PullToSearch: ViewModifier {
     let search: ListSearch
+    let hostsSearch: Bool
     @State private var isDragging = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(SearchHost.self) private var searchHost
@@ -80,12 +88,13 @@ private struct PullToSearch: ViewModifier {
                         .onTapGesture { search.close() }
                 }
             }
-            .onAppear { searchHost.search = search }
+            .onAppear { if hostsSearch { searchHost.search = search } }
             .onDisappear {
+                guard hostsSearch else { return }
                 search.isFocused = false
                 if searchHost.search === search { searchHost.search = nil }
             }
-            .onChange(of: nav.tab) { search.reset() }
+            .onChange(of: nav.tab) { if hostsSearch { search.reset() } }
     }
 }
 

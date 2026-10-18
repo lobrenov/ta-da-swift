@@ -10,7 +10,7 @@ struct PhoneRootView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        TabView(selection: $nav.tab) {
+        TabView(selection: Binding(get: { nav.tab }, set: select)) {
             Tab("Agenda", systemImage: "calendar", value: PhoneTab.agenda) {
                 stack(.agenda) { PhoneAgendaScreen(model: model) }
             }
@@ -65,6 +65,17 @@ struct PhoneRootView: View {
         .environment(nav)
         .phoneHaptics(nav, enabled: model.haptics)
         .onChange(of: nav.tab) { nav.endPicking() }
+    }
+
+    /// Picks `tab`; picking the selected one again pops its screens, or takes the Agenda to today.
+    private func select(_ tab: PhoneTab) {
+        switch nav.reselection(of: tab, agenda: model.agendaSelection, today: model.today) {
+        case .popToRoot: nav.stacks[tab] = []
+        case .showAgendaToday:
+            nav.play(.pick)
+            withAnimation(AgendaMotion.spring) { model.showAgendaToday() }
+        case nil: nav.tab = tab
+        }
     }
 
     /// Deletes what `request` asked about, and `images`, then drops the screens of the files that went.

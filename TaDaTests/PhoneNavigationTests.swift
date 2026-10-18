@@ -172,4 +172,18 @@ struct PhoneNavigationTests {
         nav.dropScreens { $0 == "tasks/a.md" }
         #expect(nav.stacks[.other] == [.tag("home")])
     }
+
+    @Test func tappingTheSelectedTabPopsItsScreensThenGoesToToday() {
+        let today = LocalDate("2026-10-18")!
+        let nav = PhoneNavigation()
+        let elsewhere = AppModel.AgendaSelection.day(today.adding(days: 3))
+        #expect(nav.reselection(of: .agenda, agenda: elsewhere, today: today) == .showAgendaToday)
+        #expect(nav.reselection(of: .agenda, agenda: .week(today.isoWeek), today: today) == .showAgendaToday)
+        #expect(nav.reselection(of: .agenda, agenda: .day(today), today: today) == nil)
+        nav.push(.file("tasks/a.md"))
+        #expect(nav.reselection(of: .agenda, agenda: elsewhere, today: today) == .popToRoot, "pushed screens pop first")
+        #expect(nav.reselection(of: .tasks, agenda: elsewhere, today: today) == nil, "another tab is a plain switch")
+        nav.tab = .tags
+        #expect(nav.reselection(of: .tags, agenda: elsewhere, today: today) == nil, "only the Agenda goes to today")
+    }
 }

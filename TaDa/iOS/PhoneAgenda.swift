@@ -1,13 +1,14 @@
 // The Agenda tab: the title with the month button, the week strip (or the month when it's open), and the day or week
 // below it as a row of pages. Swiping the pages moves a day, or a week when a week is picked; swiping the strip moves
-// a week; both follow `AppModel.agendaSelection`.
+// a week; both follow `AppModel.agendaSelection`. Pulling a page down past its top opens search; pulling the strip
+// down opens the month.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
 
 struct PhoneAgendaScreen: View {
     let model: AppModel
-    @State private var search = ListSearch()
+    @State private var search = ListSearch(morph: AgendaMotion.spring)
     /// On screen: not in another tab, nor under a pushed screen. Only the page on screen sets what can be picked.
     @State private var isOnScreen = false
     @Environment(PhoneNavigation.self) private var nav
@@ -47,7 +48,6 @@ struct PhoneAgendaScreen: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Button("Search", systemImage: "magnifyingglass") { search.open() }
                         if !nav.pickable.isEmpty {
                             Button("Select", systemImage: "checkmark.circle") { nav.startPicking() }
                         }
@@ -83,7 +83,7 @@ struct PhoneAgendaScreen: View {
                 .accessibilityAction(named: "Previous \(unit)") { model.stepAgenda(by: -1) }
                 .accessibilityAction(named: "Next \(unit)") { model.stepAgenda(by: 1) }
             Spacer(minLength: 0)
-            Button { withAnimation { model.agendaMonthOpen.toggle() } } label: {
+            Button { withAnimation(AgendaMotion.spring) { model.agendaMonthOpen.toggle() } } label: {
                 HStack(spacing: 4) {
                     Text(model.agendaAnchor.formatted(.monthYear)).lineLimit(1)
                     Image(systemName: model.agendaMonthOpen ? "chevron.up" : "chevron.down")
@@ -108,7 +108,7 @@ struct PhoneAgendaScreen: View {
         return ScrollView(.horizontal) {
             LazyHStack(spacing: 0) {
                 ForEach(AgendaPaging.keys(like: selection, today: model.today), id: \.self) { key in
-                    PhoneAgendaPage(model: model, period: AgendaPaging.selection(forKey: key, like: selection), isOnScreen: isOnScreen)
+                    PhoneAgendaPage(model: model, period: AgendaPaging.selection(forKey: key, like: selection), isOnScreen: isOnScreen, search: search)
                         .containerRelativeFrame([.horizontal, .vertical])
                 }
             }
@@ -134,9 +134,15 @@ struct PhoneAgendaScreen: View {
     }
 }
 
-/// The weekday initials, then the week or the month, then the handle that opens and closes the month.
+/// The weekday initials, then the week or the month, then the handle that opens and closes the month. Dragging it
+/// vertically grows the strip between the two, and lifting settles it open or closed.
 struct PhoneAgendaStrip: View {
     let model: AppModel
+    /// The progress of a drag in flight, from 0 (a week) to 1 (the month).
+    @State private var drag: CGFloat?
+    /// Whether the drag in flight is vertical, decided once by its first movement.
+    @State private var isVertical: Bool?
+    @ScaledMetric(relativeTo: .body) private var rowHeight = 46
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -144,6 +150,7 @@ struct PhoneAgendaStrip: View {
         let selected = model.agendaSelection
         let first = AgendaPaging.week(forKey: AgendaPaging.weekKey(of: selected) - 1).firstDay
         let marks = model.agendaMarks.merging(model.index.dayMarks(from: first, through: first.adding(days: 20), names: model.dailyNoteNames)) { current, _ in current }
+        let range = AgendaMonthDrag.range(weeks: model.agendaAnchor.isoWeeksOfMonth.count, rowHeight: rowHeight)
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 Text("W").frame(width: AgendaWeekRow.weekColumn)
@@ -153,12 +160,8 @@ struct PhoneAgendaStrip: View {
             .foregroundStyle(theme.color(\.muted))
             .padding(.bottom, 2)
             .accessibilityHidden(true)
-            if model.agendaMonthOpen {
-                AgendaMonth(model: model, marks: marks)
-            } else {
-                AgendaWeekStrip(model: model, marks: marks)
-            }
-            Button { withAnimation { model.agendaMonthOpen.toggle() } } label: {
+            AgendaStripRows(model: model, marks: marks, progress: drag ?? (model.agendaMonthOpen ? 1 : 0), rowHeight: rowHeight)
+            Button { withAnimation(AgendaMotion.spring) { model.agendaMonthOpen.toggle() } } label: {
                 Capsule().fill(theme.color(\.surface)).frame(width: 36, height: 5)
                     .frame(maxWidth: .infinity, minHeight: 18)
                     .contentShape(.rect)
@@ -169,8 +172,51 @@ struct PhoneAgendaStrip: View {
         .padding(.top, 8)
         .padding(.horizontal, 12)
         .overlay(alignment: .bottom) { Hairline() }
+        .simultaneousGesture(DragGesture(minimumDistance: 10)
+            .onChanged { value in
+                if isVertical == nil { isVertical = AgendaMonthDrag.isVertical(dx: value.translation.width, dy: value.translation.height) }
+                guard isVertical == true else { return }
+                drag = AgendaMonthDrag.progress(start: model.agendaMonthOpen ? 1 : 0, translation: value.translation.height, range: range)
+            }
+            .onEnded { value in
+                defer { isVertical = nil }
+                guard isVertical == true, let drag else { return }
+                let open = AgendaMonthDrag.settlesOpen(progress: drag, velocity: value.velocity.height, range: range)
+                withAnimation(AgendaMotion.spring) {
+                    model.agendaMonthOpen = open
+                    self.drag = nil
+                }
+            })
         // Eight columns: past this, the numbers wouldn't fit.
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+    }
+}
+
+/// The strip's rows at `progress`: the week strip at rest as a week, else the month's rows, clipped to a height that
+/// grows from one row to all of them, with the selected week's row sliding from the top to its place.
+private struct AgendaStripRows: View, Animatable {
+    let model: AppModel
+    let marks: [LocalDate: DayMarks]
+    var progress: CGFloat
+    let rowHeight: CGFloat
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        if progress <= 0 {
+            AgendaWeekStrip(model: model, marks: marks)
+        } else {
+            let weeks = model.agendaAnchor.isoWeeksOfMonth
+            let selected = weeks.firstIndex { AgendaPaging.key(of: .week($0)) == AgendaPaging.weekKey(of: model.agendaSelection) } ?? 0
+            let pitch = rowHeight + AgendaMonthDrag.rowSpacing
+            AgendaMonth(model: model, weeks: weeks, marks: marks)
+                .offset(y: -CGFloat(selected) * pitch * (1 - progress))
+                .frame(height: rowHeight + AgendaMonthDrag.range(weeks: weeks.count, rowHeight: rowHeight) * progress, alignment: .top)
+                .clipped()
+        }
     }
 }
 
@@ -205,11 +251,12 @@ struct AgendaWeekStrip: View {
 /// Every ISO week of the selection's month.
 struct AgendaMonth: View {
     let model: AppModel
+    let weeks: [ISOWeek]
     let marks: [LocalDate: DayMarks]
 
     var body: some View {
-        VStack(spacing: 2) {
-            ForEach(model.agendaAnchor.isoWeeksOfMonth, id: \.self) { AgendaWeekRow(model: model, week: $0, marks: marks) }
+        VStack(spacing: AgendaMonthDrag.rowSpacing) {
+            ForEach(weeks, id: \.self) { AgendaWeekRow(model: model, week: $0, marks: marks) }
         }
     }
 }
@@ -240,7 +287,7 @@ struct AgendaWeekRow: View {
 
     private func weekCell(_ isSelected: Bool) -> some View {
         let hasNote = model.weekNotes && model.index.weekNote(for: week, names: model.dailyNoteNames) != nil
-        return Button { withAnimation { pick(.week(week)) } } label: {
+        return Button { withAnimation(AgendaMotion.spring) { pick(.week(week)) } } label: {
             Text("\(week.week)")
                 .scaledFont(size: 13, weight: isSelected ? .bold : .semibold)
                 .monospacedDigit()
@@ -260,7 +307,7 @@ struct AgendaWeekRow: View {
         let isSelected = model.agendaSelection == .day(day)
         let isToday = day == model.today
         let faded = day.month != model.agendaAnchor.month || day < model.today
-        return Button { withAnimation { pick(.day(day)) } } label: {
+        return Button { withAnimation(AgendaMotion.spring) { pick(.day(day)) } } label: {
             VStack(spacing: 3) {
                 Text("\(day.day)")
                     .scaledFont(size: 18, weight: isSelected || isToday ? .bold : .medium)

@@ -1,5 +1,6 @@
 // The iPhone Agenda's paging: the scroll key of each page (a day or a week) and of each strip week, so swiping either
 // moves the selection and the selection moves both.
+import CoreGraphics
 import TaDaCore
 
 enum AgendaPaging {
@@ -104,5 +105,30 @@ struct AgendaSwipeTracker {
         let swipe = AgendaSwipe.decide(dx: self.dx, dy: self.dy, monthOpen: monthOpen)
         fired = swipe != nil
         return swipe
+    }
+}
+
+/// Dragging the iPhone strip between one week and the month: `progress` runs from 0 (a week) to 1 (the month).
+enum AgendaMonthDrag {
+    static let rowSpacing: CGFloat = 2
+    /// How far the finger travels, in seconds of velocity, past where it lifts.
+    private static let projection: CGFloat = 0.15
+
+    /// How much taller the month is than a week.
+    static func range(weeks: Int, rowHeight: CGFloat) -> CGFloat {
+        CGFloat(max(weeks - 1, 0)) * (rowHeight + rowSpacing)
+    }
+
+    /// A mostly-vertical drag belongs to the month; a mostly-horizontal one pages.
+    static func isVertical(dx: CGFloat, dy: CGFloat) -> Bool { abs(dy) > abs(dx) }
+
+    /// The progress after the finger moves `translation` (down is positive) from `start`.
+    static func progress(start: CGFloat, translation: CGFloat, range: CGFloat) -> CGFloat {
+        range > 0 ? min(1, max(0, start + translation / range)) : start
+    }
+
+    /// Whether a drag lifted at `progress` with `velocity` (points per second, down is positive) settles open.
+    static func settlesOpen(progress: CGFloat, velocity: CGFloat, range: CGFloat) -> Bool {
+        range > 0 && progress + velocity * projection / range > 0.5
     }
 }

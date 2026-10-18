@@ -9,11 +9,12 @@ struct PhoneAgendaPage: View {
     let model: AppModel
     let period: AppModel.AgendaSelection
     let isOnScreen: Bool
+    let search: ListSearch
 
     var body: some View {
         switch period {
-        case let .day(day): PhoneAgendaDay(model: model, day: day, isOnScreen: isOnScreen)
-        case let .week(week): PhoneAgendaWeek(model: model, week: week, isOnScreen: isOnScreen)
+        case let .day(day): PhoneAgendaDay(model: model, day: day, isOnScreen: isOnScreen, search: search)
+        case let .week(week): PhoneAgendaWeek(model: model, week: week, isOnScreen: isOnScreen, search: search)
         }
     }
 }
@@ -28,6 +29,7 @@ private struct PhoneAgendaDay: View {
     let model: AppModel
     let day: LocalDate
     let isOnScreen: Bool
+    let search: ListSearch
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -99,6 +101,8 @@ private struct PhoneAgendaDay: View {
                 PickingBarClearance()
             }
         }
+        .scrollBounceBehavior(.always, axes: .vertical)
+        .pullToSearch(search, hostsSearch: false)
         .onChange(of: PickState(paths: pickable, isActive: isSelected && isOnScreen), initial: true) { _, state in
             if state.isActive { nav.setPickable(state.paths) }
         }
@@ -109,6 +113,7 @@ private struct PhoneAgendaWeek: View {
     let model: AppModel
     let week: ISOWeek
     let isOnScreen: Bool
+    let search: ListSearch
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -156,6 +161,8 @@ private struct PhoneAgendaWeek: View {
                 PickingBarClearance()
             }
         }
+        .scrollBounceBehavior(.always, axes: .vertical)
+        .pullToSearch(search, hostsSearch: false)
         .onChange(of: PickState(paths: paths, isActive: isSelected && isOnScreen), initial: true) { _, state in
             if state.isActive { nav.setPickable(state.paths) }
         }

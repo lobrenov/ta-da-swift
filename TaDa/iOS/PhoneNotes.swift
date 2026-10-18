@@ -17,11 +17,12 @@ struct PhoneNotesScreen: View {
                   add: { await newNote(in: "") }, addLabel: "New Note") {
             Button("New Folder", systemImage: "folder.badge.plus") { isNamingFolder = true }
         } content: {
-            FolderCard {
-                PhoneFolderRow(model: model, symbol: "tray", name: "Loose", path: "", count: model.looseNoteCount, isLast: true)
+            PhoneCard {
+                PhoneTreeRow(symbol: "tray", name: "Loose", spoken: Self.spoken("Loose", model.looseNoteCount), route: .folder(""),
+                             count: model.looseNoteCount, isLast: true)
             }
             .padding(.top, 10)
-            PhoneFolderLabel(title: "Folders")
+            PhoneCardLabel(title: "Folders")
             if model.folderTree.isEmpty {
                 Text("No folders yet")
                     .scaledFont(size: 15)
@@ -29,11 +30,14 @@ struct PhoneNotesScreen: View {
                     .padding(.horizontal, 32)
             } else {
                 let rows = visibleFolders
-                FolderCard {
+                PhoneCard {
                     ForEach(rows.indices, id: \.self) { i in
-                        PhoneFolderRow(model: model, symbol: "folder", name: rows[i].node.name, path: rows[i].node.path,
-                                       count: rows[i].node.count, depth: rows[i].depth, hasChildren: !rows[i].node.children.isEmpty,
-                                       isLast: i == rows.count - 1)
+                        let node = rows[i].node
+                        PhoneTreeRow(symbol: "folder", name: node.name, spoken: Self.spoken(node.name, node.count), route: .folder(node.path),
+                                     count: node.count, depth: rows[i].depth, hasChildren: !node.children.isEmpty,
+                                     isFolded: model.isFolderFolded(node.path), isLast: i == rows.count - 1) {
+                            model.toggleFolderFolded(node.path)
+                        }
                     }
                 }
             }
@@ -47,6 +51,10 @@ struct PhoneNotesScreen: View {
             nodes.flatMap { [($0, depth)] + (model.isFolderFolded($0.path) ? [] : rows($0.children, depth: depth + 1)) }
         }
         return rows(model.folderTree, depth: 0)
+    }
+
+    fileprivate static func spoken(_ name: String, _ count: Int) -> String {
+        "\(name), \(count == 1 ? "1 note" : "\(count) notes")"
     }
 
     private static func count(_ nodes: [FolderNode]) -> Int {
@@ -86,14 +94,14 @@ struct PhoneFolderScreen: View {
             Button("New Folder", systemImage: "folder.badge.plus") { isNamingFolder = true }
         } content: {
             if !children.isEmpty {
-                FolderCard {
+                PhoneCard {
                     ForEach(children) { child in
-                        PhoneFolderRow(model: model, symbol: "folder", name: child.name, path: child.path, count: child.count,
-                                       isLast: child.id == children.last?.id)
+                        PhoneTreeRow(symbol: "folder", name: child.name, spoken: PhoneNotesScreen.spoken(child.name, child.count),
+                                     route: .folder(child.path), count: child.count, isLast: child.id == children.last?.id)
                     }
                 }
                 .padding(.top, 10)
-                PhoneFolderLabel(title: "Notes")
+                PhoneCardLabel(title: "Notes")
             }
             ForEach(notes) { PhoneNoteRow(model: model, note: $0) }
             if notes.isEmpty {
@@ -123,100 +131,6 @@ struct PhoneFolderScreen: View {
 }
 
 // MARK: Pieces
-
-/// A group's small muted label above its card.
-private struct PhoneFolderLabel: View {
-    let title: String
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        Text(title)
-            .scaledFont(size: 13)
-            .foregroundStyle(theme.color(\.muted))
-            .padding(.horizontal, 32)
-            .padding(.top, 24)
-            .padding(.bottom, 7)
-            .accessibilityAddTraits(.isHeader)
-    }
-}
-
-/// Rows on a rounded `side` card with a hairline border.
-private struct FolderCard<Content: View>: View {
-    @ViewBuilder let content: Content
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        VStack(spacing: 0) { content }
-            .background(theme.color(\.side))
-            .clipShape(.rect(cornerRadius: 14))
-            .overlay { RoundedRectangle(cornerRadius: 14).stroke(theme.color(\.border)) }
-            .padding(.horizontal, 16)
-    }
-}
-
-/// A folder or Loose: its icon, name and count, opening its screen. With a `depth` it sits in the tree, indented 28pt
-/// per level, with a fold chevron before it when it has subfolders.
-private struct PhoneFolderRow: View {
-    let model: AppModel
-    let symbol: String
-    let name: String
-    let path: String
-    let count: Int
-    var depth: Int? = nil
-    var hasChildren = false
-    let isLast: Bool
-    @Environment(PhoneNavigation.self) private var nav
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        let folded = model.isFolderFolded(path)
-        HStack(spacing: 0) {
-            if depth != nil {
-                Button { withAnimation(.snappy) { model.toggleFolderFolded(path) } } label: {
-                    Image(systemName: "chevron.right")
-                        .scaledFont(size: 13, weight: .bold)
-                        .rotationEffect(.degrees(folded ? 0 : 90))
-                        .foregroundStyle(theme.color(\.accent))
-                        .opacity(hasChildren ? 1 : 0)
-                        .frame(width: 30)
-                        .frame(maxHeight: .infinity)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .disabled(!hasChildren)
-                .accessibilityHidden(!hasChildren)
-                .accessibilityLabel(folded ? "Expand \(name)" : "Collapse \(name)")
-            }
-            Button { nav.push(.folder(path)) } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: symbol)
-                        .scaledFont(size: 18)
-                        .foregroundStyle(theme.color(\.link))
-                        .frame(width: 24)
-                    HStack(spacing: 8) {
-                        Text(name)
-                            .scaledFont(size: 17)
-                            .foregroundStyle(theme.color(\.fg))
-                            .lineLimit(1)
-                        Spacer(minLength: 8)
-                        Text("\(count)").scaledFont(size: 17).foregroundStyle(theme.color(\.muted))
-                        Image(systemName: "chevron.right")
-                            .scaledFont(size: 13, weight: .semibold)
-                            .foregroundStyle(theme.color(\.muted))
-                    }
-                    .padding(.vertical, 11)
-                    .padding(.trailing, 14)
-                    .scaledMinHeight(44)
-                    .overlay(alignment: .bottom) { if !isLast { Hairline() } }
-                }
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(name), \(count == 1 ? "1 note" : "\(count) notes")")
-        }
-        .padding(.leading, depth.map { 8 + CGFloat($0) * 28 } ?? 16)
-    }
-}
 
 private struct NewFolderAlert: ViewModifier {
     let model: AppModel

@@ -10,70 +10,40 @@ struct PhoneTagsScreen: View {
 
     var body: some View {
         let tagged = model.taggedCount
-        List {
-            Section {
-                NavigationLink(value: PhoneRoute.tag(nil)) {
-                    row(Text("Untagged"), symbol: "tag.slash", tint: \.muted, count: model.untaggedCount)
-                }
-            } header: {
-                Text("\(model.tagCount == 1 ? "1 tag" : "\(model.tagCount) tags") · \(tagged == 1 ? "1 tagged file" : "\(tagged) tagged files")")
-                    .textCase(nil)
+        PhoneList(model: model, title: "Tags",
+                  subtitle: "\(model.tagCount == 1 ? "1 tag" : "\(model.tagCount) tags") · \(tagged == 1 ? "1 tagged file" : "\(tagged) tagged files")") {
+            EmptyView()
+        } content: {
+            PhoneCard {
+                PhoneTreeRow(symbol: "tag.slash", tint: \.muted, name: "Untagged", spoken: Self.spoken("Untagged", model.untaggedCount),
+                             route: .tag(nil), count: model.untaggedCount, isLast: true)
             }
-            if !model.tagTree.isEmpty {
-                Section("All tags") {
-                    ForEach(model.visibleTags, id: \.node.id) { entry in
-                        tagRow(entry.node, depth: entry.depth)
+            .padding(.top, 10)
+            PhoneCardLabel(title: "All tags")
+            if model.tagTree.isEmpty {
+                Text("No tags yet")
+                    .scaledFont(size: 15)
+                    .foregroundStyle(theme.color(\.muted))
+                    .padding(.horizontal, 32)
+            } else {
+                let rows = model.visibleTags
+                PhoneCard {
+                    ForEach(rows.indices, id: \.self) { i in
+                        let node = rows[i].node
+                        let path = node.tag.path
+                        PhoneTreeRow(symbol: "tag", tint: \.accent, name: node.tag.leaf, spoken: Self.spoken(node.tag.name, node.count),
+                                     route: .tag(path), count: node.count, depth: rows[i].depth, hasChildren: !node.children.isEmpty,
+                                     isFolded: model.isTagFolded(path), isLast: i == rows.count - 1) {
+                            model.toggleTagFolded(path)
+                        }
                     }
                 }
             }
         }
-        .listRowBackground(theme.color(\.code))
-        .scrollContentBackground(.hidden)
-        .background(theme.color(\.bg))
-        .navigationTitle("Tags")
     }
 
-    /// A tag: its fold chevron (for a parent), then its glyph, last segment and count, 28pt in per level.
-    private func tagRow(_ node: TagNode, depth: Int) -> some View {
-        let path = node.tag.path
-        let folded = model.isTagFolded(path)
-        return HStack(spacing: 0) {
-            Group {
-                if node.children.isEmpty {
-                    Color.clear
-                } else {
-                    Button { withAnimation(.snappy) { model.toggleTagFolded(path) } } label: {
-                        Image(systemName: "chevron.right")
-                            .scaledFont(size: 13, weight: .bold)
-                            .rotationEffect(.degrees(folded ? 0 : 90))
-                            .foregroundStyle(theme.color(\.accent))
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .contentShape(.rect)
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel(folded ? "Expand \(node.tag.leaf)" : "Collapse \(node.tag.leaf)")
-                }
-            }
-            .frame(width: 22)
-            .padding(.trailing, 8)
-            NavigationLink(value: PhoneRoute.tag(path)) {
-                row(Text(node.tag.leaf), symbol: "tag", tint: \.accent, count: node.count)
-            }
-        }
-        .padding(.leading, CGFloat(depth) * 28 - 8)
-        .listRowBackground(theme.color(\.code))
-    }
-
-    private func row(_ title: Text, symbol: String, tint: KeyPath<Theme, PlatformColor>, count: Int) -> some View {
-        HStack {
-            Label {
-                title.foregroundStyle(theme.color(\.fg)).lineLimit(1)
-            } icon: {
-                Image(systemName: symbol).foregroundStyle(theme.color(tint))
-            }
-            Spacer()
-            Text("\(count)").foregroundStyle(theme.color(\.muted))
-        }
+    private static func spoken(_ name: String, _ count: Int) -> String {
+        "\(name), \(count == 1 ? "1 file" : "\(count) files")"
     }
 }
 

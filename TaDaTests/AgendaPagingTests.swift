@@ -1,3 +1,4 @@
+import CoreGraphics
 import Testing
 import TaDaCore
 @testable import TaDa
@@ -105,5 +106,24 @@ struct AgendaPagingTests {
         #expect(tracker.add(dx: -30, dy: 0, monthOpen: false) == nil)
         tracker.reset()
         #expect(tracker.add(dx: 50, dy: 0, monthOpen: false) == .step(-1))
+    }
+
+    @Test func monthDragFollowsTheFingerWithinTheRange() {
+        let range = AgendaMonthDrag.range(weeks: 5, rowHeight: 46)
+        #expect(range == 192)
+        #expect(AgendaMonthDrag.progress(start: 0, translation: range / 2, range: range) == 0.5)
+        #expect(AgendaMonthDrag.progress(start: 0, translation: -50, range: range) == 0)
+        #expect(AgendaMonthDrag.progress(start: 1, translation: 500, range: range) == 1)
+        #expect(AgendaMonthDrag.progress(start: 1, translation: -range / 4, range: range) == 0.75)
+        #expect(AgendaMonthDrag.isVertical(dx: 3, dy: -12))
+        #expect(!AgendaMonthDrag.isVertical(dx: 12, dy: 3))
+    }
+
+    @Test func monthDragSettlesByPositionAndVelocity() {
+        let range: CGFloat = 192
+        #expect(AgendaMonthDrag.settlesOpen(progress: 0.6, velocity: 0, range: range))
+        #expect(!AgendaMonthDrag.settlesOpen(progress: 0.4, velocity: 0, range: range))
+        #expect(AgendaMonthDrag.settlesOpen(progress: 0.2, velocity: 800, range: range), "a flick down opens")
+        #expect(!AgendaMonthDrag.settlesOpen(progress: 0.8, velocity: -800, range: range), "a flick up closes")
     }
 }
