@@ -7,7 +7,7 @@ Daily and week notes, and one Agenda that shows a single day or week at a time i
 - **Not built:** the page's other boards (B as one continuous list, C1, and the first iPhone row's continuous Agenda).
 
 Starting point, as checked on 2026-10-18:
-- **Notes.** Any untyped `.md` file outside `areas/`, `projects/`, `tasks/`, `attachments/` and hidden folders is a note (`Item.isNotePath`), so `Daily/2026-10-02.md` is already one.
+- **Notes.** Any untyped `.md` file outside `areas/`, `projects/`, `tasks/`, `attachments/` and hidden folders is a note (`Item.isNotePath`), so `Periodic Notes/Daily Notes/2026-10-02.md` is already one.
   - Every item's checkboxes are indexed (`Item.checkboxes`, `BodyScanner`), so a note's unchecked boxes can be counted without reading files.
   - Nothing names or finds notes by date. There are no note templates.
   - `Vault.create` numbers a taken name.
@@ -22,8 +22,9 @@ Starting point, as checked on 2026-10-18:
 - **Dates.** `LocalDate` has no ISO week. `MonthGrid` starts on the locale's first weekday.
 
 ## Decisions
-- **Names.** A daily note is `<folder>/YYYY-MM-DD.md` and a week note is `<folder>/GGGG-[W]WW.md` (ISO year and week, e.g. `Daily/2026-W40.md`).
-  - The folder is set in Settings ▸ Daily notes and defaults to `Daily`.
+- **Names.** A daily note is `<daily folder>/YYYY-MM-DD.md` and a week note is `<week folder>/GGGG-[W]WW.md` (ISO year and week).
+  - The two folders are set separately in Settings ▸ Daily notes. They default to `Periodic Notes/Daily Notes` and `Periodic Notes/Weekly Notes`, e.g. `Periodic Notes/Daily Notes/2026-10-02.md` and `Periodic Notes/Weekly Notes/2026-W40.md`.
+  - Creating the first note creates its folders.
   - The name patterns are fixed. Custom formats go to the backlog.
 - **Plain notes.** Daily and week notes are ordinary notes with no `type`. They sit in the notes tree as any folder does, and the format doesn't change. A daily note renamed away from its date name is just a note.
 - **Finding a note.** A day's note is the note at its exact path, looked up in the index. It is created only when asked for (Start this day's note, Create in the editor, or typing into the empty editor), never by opening a day.
@@ -81,7 +82,7 @@ The milestones run in order. Each ends with its check passing. TaDaCore checks r
 ### D1 — Dates and daily notes (TaDaCore)
 - `LocalDate`: `isoWeek` (`ISOWeek`: year and week), `ISOWeek.days` (Monday to Sunday), `ISOWeek.adding(weeks:)`, the ISO week's first day, and the month's weeks as `ISOWeek`s.
 - `Index/DailyNotes.swift`:
-  - `DailyNoteNames(folder:)` gives a date's path and a week's path, and reads a path back to its date or week.
+  - `DailyNoteNames(dailyFolder:weekFolder:)` gives a date's path and a week's path, and reads a path back to its date or week.
   - Lookups on `VaultIndex`: `dailyNote(for:)`, `weekNote(for:)` and `openCheckboxCount(_:)`.
 - `Queries`:
   - `agendaDay(_:today:)`: Today's rule for `today`, dated entries for any other day.
@@ -90,7 +91,7 @@ The milestones run in order. Each ends with its check passing. TaDaCore checks r
 - `NewFile.dailyNote(template:today:)`: the note's frontmatter, then the template's body.
 - Check: Swift Testing cases.
   - ISO weeks across a year boundary (2026-W53 and 2027-W01, 2020-12-31 in W53), on both sides of daylight saving, and Monday starts.
-  - Names round-trip. A different folder. A renamed note isn't found.
+  - Names round-trip. Other folders, and both kinds in one folder. A renamed note isn't found.
   - The day and week queries on DesignVault with `today` = 2026-10-02.
   - Marks for a note with " ", "/", "x" and "-" boxes.
 
@@ -99,7 +100,7 @@ The milestones run in order. Each ends with its check passing. TaDaCore checks r
   - `agendaSelection` is `.day(LocalDate)` or `.week(ISOWeek)`. `agendaMonthOpen` is a Bool.
   - `updateLists()` builds the selected period's entries and the shown range's marks. `todayCount` is unchanged.
   - Every switch over `Domain` is updated, including `filterItems`, `newTask` (a new task in Agenda is due on the selected day), `show(_:)`, `BrowserChrome` and `FileInspector`'s places.
-- Settings keys in `AppModel.Keys`: `dailyFolder`, `weekNotes`, `dailyTemplate` and `weekTemplate`.
+- Settings keys in `AppModel.Keys`: `dailyFolder`, `weekFolder`, `weekNotes`, `dailyTemplate` and `weekTemplate`.
 - `openOrCreateNote(for:)`: selects the existing note, or creates it with the template and selects it.
 - `IntegrationsStore`: a fetch window from the shown range's first day. `AppModel` exposes events and reminders for any fetched date, and `hasEvents(on:)` covers past days.
 - Check: the app builds for macOS and iOS.
@@ -112,12 +113,11 @@ The milestones run in order. Each ends with its check passing. TaDaCore checks r
 
 ### D3 — Settings ▸ Daily notes
 - Mac: `Settings/DailyNotesSettingsView.swift`, a page after Editor (`AgendaMacSettings`).
-  - The folder: a field, plus a menu of the vault's folders.
-  - Daily: a template menu of notes, or None, with the name pattern shown.
-  - Week notes: the switch and a template menu.
-- `VaultSettingsView`'s "Folders in the vault" list adds the daily folder.
+  - Daily: the folder (a field, plus a menu of the vault's folders) and a template menu of notes, or None, with the name pattern shown.
+  - Week notes: the switch, the folder and a template menu.
+- `VaultSettingsView`'s "Folders in the vault" list adds the daily and week folders.
 - iPhone: a `dailyNotes` `SettingsSection` in `PhoneSettingsScreen`, linked from Other.
-- Check: by hand. Change the folder, pick and clear templates, turn week notes off. The SampleVault diff shows only the notes the app was asked to create.
+- Check: by hand. Change each folder, pick and clear templates, turn week notes off. The SampleVault diff shows only the notes the app was asked to create.
 
 ### D4 — Mac Agenda (B2)
 - Sidebar: one Agenda row (with the today count) in place of Today and Upcoming. ⌘1 to ⌘4 in `Commands.swift`.
@@ -131,7 +131,7 @@ The milestones run in order. Each ends with its check passing. TaDaCore checks r
 - Remove `AgendaView`, `MonthCalendarView` and `TaskListView`'s `.today` kind, with whatever else becomes unused.
 - `DesignRenderTests`:
   - The "today" and "upcoming" screens become "agenda-day" and "agenda-week". The "upcoming-task", "source", "search" and "area-today" screens use `.agenda`.
-  - DesignVault gets `Daily/2026-10-02.md`, `Daily/2026-10-01.md` and `Daily/2026-W40.md` from the canvas's data, and the design-count tests are updated.
+  - DesignVault gets `Periodic Notes/Daily Notes/2026-10-02.md` and `2026-10-01.md`, and `Periodic Notes/Weekly Notes/2026-W40.md`, from the canvas's data, and the design-count tests are updated.
 - UI tests: `testDeletingAndRestoringFiles`, `testArrowKeysMoveThroughTodayButNotWhileEditing` and `testDraggingATaskOntoASidebarProject` move to Agenda. Ask before running them.
 - Check: renders compared with the boards; by hand on SampleVault.
   - Step through a week with ← →.
@@ -173,7 +173,7 @@ The milestones run in order. Each ends with its check passing. TaDaCore checks r
   - Dynamic Type at the largest size.
 
 ### D7 — Docs and canvas
-- `docs/file-format.md`: a Daily notes part under Notes (folder, names, templates; they're plain notes).
+- `docs/file-format.md`: a Daily notes part under Notes (the two folders and their defaults, names, templates; they're plain notes).
 - `docs/architecture.md`:
   - Agenda in Files, Runtime, Window and Shortcuts.
   - The iPhone tabs.
