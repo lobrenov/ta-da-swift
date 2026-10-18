@@ -178,8 +178,6 @@ struct PhoneTagScreen: View {
                 }
             }
         }
-        // Opened from a file's chip or bubble, it brings back the tab bar the file's screen hid, while it's on top.
-        .toolbar(nav.stacks[nav.tab]?.last == .tag(path) ? .visible : .automatic, for: .tabBar)
         .onChange(of: tag, initial: true) { if let tag { lastTag = tag } }
         .onAppear { model.showPhoneTagPage(path) }
         .onDisappear {

@@ -273,7 +273,7 @@ struct PhoneTrashScreen: View {
         .navigationTitle(search.isOpen ? "" : "Trash")
         .navigationSubtitle(search.isOpen ? "" : "\(count) file\(count == 1 ? "" : "s") in .trash/\(picked.isEmpty ? "" : " · \(picked.count) selected")")
         .navigationBarBackButtonHidden(search.isOpen)
-        .toolbar(.hidden, for: .tabBar)
+        .background { TabBarHiddenOnTop() }
         .toolbar {
             if search.isOpen {
                 // Keeps the navigation bar, so the rows stay below the search field in its row.
