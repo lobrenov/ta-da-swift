@@ -94,6 +94,8 @@ import TaDaCore
     private(set) var documentError: String?
     /// A file whose title field should take focus when it opens (a file just created).
     var titleFocus: String?
+    /// A file whose body should take the keyboard, caret at its start, when it opens (Quick Entry's ⌘↵).
+    var bodyFocus: String?
     /// The last failed file operation, or a note about edits kept in a copy, shown as an alert.
     var errorMessage: String?
     /// Search text from the sidebar; while it isn't empty the browser shows matches.

@@ -28,6 +28,9 @@ struct LiveEditor: View {
     /// Copies, renames, reveals and deletes the images embeds draw, from the embed menu (`EmbedMenu.swift`);
     /// without it, images have no menu.
     var imageActions: AppModel? = nil
+    /// Gives the editor the keyboard, caret at the start, once its text view is in a window; then calls `onTookFocus`.
+    var takesFocus = false
+    var onTookFocus: () -> Void = {}
     /// Receives the link target (`[[Target|alias]]` reports `Target`).
     var onLinkClick: (String) -> Void = { _ in }
     /// Receives a clicked `#tag`, as written, without `#`; without it, tags draw as bubbles but don't open.
@@ -95,6 +98,18 @@ struct LiveEditor: View {
         )
         .focusedValue(\.editor, slashCommand)
         .onAppear { slashCommand.triggers = triggers }
+        .task(id: takesFocus) {
+            guard takesFocus else { return }
+            for _ in 0..<20 {
+                if let textView = slashCommand.textView, let window = textView.window {
+                    window.makeFirstResponder(textView)
+                    textView.setSelectedRange(NSRange(location: 0, length: 0))
+                    break
+                }
+                guard (try? await Task.sleep(for: .milliseconds(50))) != nil else { return }
+            }
+            onTookFocus()
+        }
         .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .onDisappear {
             slashMenu.hide()

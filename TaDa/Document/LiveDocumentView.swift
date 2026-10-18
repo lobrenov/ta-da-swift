@@ -60,6 +60,8 @@ struct BodyEditor: View {
             links: LinkMenuSource(index: model.index, vault: model.vault, attachments: model.attachments, recent: model.recentFiles, openPath: document.path),
             embedImage: model.embed,
             imageActions: model,
+            takesFocus: model.bodyFocus == document.path,
+            onTookFocus: { model.bodyFocus = nil },
             onLinkClick: openLink,
             onTagClick: { name in
                 guard let tag = Tag(name) else { return }

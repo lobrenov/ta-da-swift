@@ -75,7 +75,7 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
         panel.setFrameOrigin(CGPoint(x: panel.frame.minX, y: top - panel.frame.height))
     }
 
-    /// Writes the file; when `opening`, brings Ta Da forward and shows it there. A failure brings Ta Da forward to show
+    /// Writes the file; when `opening`, brings Ta Da forward and shows it there, caret in its body. A failure brings Ta Da forward to show
     /// its error.
     func create(_ draft: QuickEntryDraft, opening: Bool) {
         close()
@@ -87,6 +87,7 @@ final class QuickEntryPanel: NSObject, NSWindowDelegate {
                 window.deminiaturize(nil)
                 window.makeKeyAndOrderFront(nil)
             }
+            model.bodyFocus = path
             model.openLink(to: path)
         }
     }
