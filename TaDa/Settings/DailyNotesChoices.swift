@@ -24,9 +24,24 @@ extension AppModel {
             .sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }
     }
 
+    /// The saved template's path when no note is there any more, else nil.
+    func missingTemplate(_ path: String?) -> String? {
+        Self.missingTemplate(path, among: templateChoices.map(\.path))
+    }
+
+    nonisolated static func missingTemplate(_ path: String?, among paths: [String]) -> String? {
+        guard let path, !paths.contains(path) else { return nil }
+        return path
+    }
+
     /// A daily note's file name for today, e.g. `2026-10-02.md`.
     var dailyNoteExample: String { "\(today).md" }
 
     /// A week note's file name for today's week, e.g. `2026-W40.md`.
     var weekNoteExample: String { "\(today.isoWeek).md" }
+}
+
+nonisolated extension String {
+    /// A missing template's label in a picker: its title and "(missing)".
+    var missingTemplateLabel: String { "\(Item.title(ofPath: self)) (missing)" }
 }

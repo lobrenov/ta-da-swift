@@ -172,4 +172,12 @@ struct DailyNotesSettingsTests {
         #expect(AppModel.cleanedFolder(" / ") == "")
         #expect(AppModel.cleanedFolder("") == "")
     }
+
+    @Test func aTemplateIsMissingWhenItsNoteIsGone() {
+        let paths = ["Templates/Daily.md"]
+        #expect(AppModel.missingTemplate(nil, among: paths) == nil)
+        #expect(AppModel.missingTemplate("Templates/Daily.md", among: paths) == nil)
+        #expect(AppModel.missingTemplate("Templates/Old.md", among: paths) == "Templates/Old.md")
+        #expect("Templates/Old.md".missingTemplateLabel == "Old (missing)")
+    }
 }

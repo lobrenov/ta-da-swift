@@ -88,11 +88,16 @@ struct DailyNotesSettingsView: View {
 
     private func templateRow(_ template: Binding<String?>) -> some View {
         let notes = model.templateChoices
-        let title = template.wrappedValue.map { path in notes.first { $0.path == path }?.title ?? Item.title(ofPath: path) } ?? "None"
+        let missing = model.missingTemplate(template.wrappedValue)
+        let title = missing?.missingTemplateLabel
+            ?? template.wrappedValue.map { path in notes.first { $0.path == path }?.title ?? Item.title(ofPath: path) } ?? "None"
         return row("Template") {
             Menu {
                 Picker("Template", selection: template) {
                     Text("None").tag(String?.none)
+                    if let missing {
+                        Text(missing.missingTemplateLabel).tag(String?.some(missing))
+                    }
                     ForEach(notes) { Text($0.path.dropLast(3)).tag(String?.some($0.path)) }
                 }
                 .pickerStyle(.inline)
@@ -100,7 +105,7 @@ struct DailyNotesSettingsView: View {
             } label: {
                 HStack {
                     Text(title)
-                        .foregroundStyle(theme.color(template.wrappedValue == nil ? \.muted : \.strong))
+                        .foregroundStyle(theme.color(template.wrappedValue == nil || missing != nil ? \.muted : \.strong))
                         .lineLimit(1)
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")

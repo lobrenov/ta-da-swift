@@ -189,6 +189,9 @@ struct PhoneSettingsScreen: View {
     private func template(_ template: Binding<String?>) -> some View {
         Picker("Template", selection: template) {
             Text("None").tag(String?.none)
+            if let missing = model.missingTemplate(template.wrappedValue) {
+                Text(missing.missingTemplateLabel).foregroundStyle(theme.color(\.muted)).tag(String?.some(missing))
+            }
             ForEach(model.templateChoices) { Text($0.path.dropLast(3)).tag(String?.some($0.path)) }
         }
         .pickerStyle(.navigationLink)
@@ -247,7 +250,7 @@ private struct DailyFolderField: View {
     var body: some View {
         TextField("Vault folder", text: $draft)
             .multilineTextAlignment(.trailing)
-            .font(.system(size: 15, design: .monospaced))
+            .scaledFont(size: 15, design: .monospaced)
             .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
             .submitLabel(.done)
