@@ -6,6 +6,8 @@ build/
 .build/
 .swiftpm/
 
-# Rewritten by both Xcode (workspace member) and swift test; app pins live in TaDa.xcodeproj/project.xcworkspace
+# Rewritten by both Xcode (workspace member) and swift test; app pins live in TaDa.xcworkspace/xcshareddata/swiftpm/Package.resolved
 Packages/TaDaCore/Package.resolved
+# Pins for the .xcodeproj opened alone; the workspace's are the app's
+TaDa.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
