@@ -16,12 +16,12 @@ Work not yet built.
 - rightClickMenu formatting items (on selected text).
 - Lazy cell editors for large tables: a 100×6 table opens in about 0.4 s and a keystroke in a cell takes about 76 ms (debug build).
 - iPad: the canvas's iPad POC page, on the iPhone app's code, with events and reminders, and the Agenda.
-- iPhone: Remove Callout in the callout menu (TaDaMarkdown's `CalloutMenuRequest` has no remove), Create a New Folder in onboarding, and the domain's icon in list titles.
+- iPhone: Remove Callout in the callout menu (the editor's `CalloutMenuRequest` has no remove), Create a New Folder in onboarding, and the domain's icon in list titles.
 - iOS UI tests.
 - Notes on iPhone: Move to Folder and Convert.
 - Daily notes: custom name formats for daily and week notes (the patterns are fixed).
 - TestFlight for iPhone, with the paid Apple Developer Program: Personal Team builds expire after 7 days.
-- Alias display in TaDaMarkdown: `[[Target|Alias]]` shows the target name.
+- Alias display in the Live editor: `[[Target|Alias]]` shows the target name.
 - Renaming and deleting a tag across files.
 - Integrations: reminders as links that open Reminders, and completing a reminder from Ta Da (Ta Da only reads Calendar and Reminders).
 - Typed dates (`DatePhrase`) in Quick Entry's title and the iPhone date sheet, and in languages other than English.

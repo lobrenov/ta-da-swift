@@ -7,7 +7,4 @@
    <FileRef
       location = "group:Packages/TaDaCore">
    </FileRef>
-   <FileRef
-      location = "group:Packages/TaDaMarkdown">
-   </FileRef>
 </Workspace>
