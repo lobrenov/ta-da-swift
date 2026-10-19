@@ -61,7 +61,7 @@ The Ta Da milestones run on `feat/markdown-fork`; fork milestones run on `live` 
 
 ### M2 — Ta Da on the fork (Ta Da)
 - Remove `Packages/TaDaMarkdown` from the workspace, the project's local package references and the repo.
-- In Xcode: File ▸ Add Package Dependencies, `https://github.com/lobrenov/swift-markdown-engine-extended`, Exact `0.13.0-live.1`, product `MarkdownEngine` to the TaDa target only.
+- In Xcode: File ▸ Add Package Dependencies, `https://github.com/lobrenov/swift-markdown-engine-extended.git`, Exact `0.13.0-live.1`, product `MarkdownEngine` to the TaDa target only.
 - `LiveEditor.swift`: `import MarkdownEngine`.
 - Update `CLAUDE.md` (editor tests now run in the fork; the `TaDaMarkdown` conventions name `MarkdownEngine`; link to the fork's `FORK.md`), `docs/architecture.md`, `docs/backlog.md` and `docs/design/design-framework.md` where they name `TaDaMarkdown`. Record what `Package.resolved` now pulls in.
 - Check: macOS and iOS app builds; app + core tests (`-skip-testing:TaDaUITests`); design renders match the previous build's; the Live editor behaves the same in a manual pass over SampleVault (tables, callouts, slash menu, images, tags).

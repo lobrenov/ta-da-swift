@@ -1,11 +1,11 @@
-// The only file that imports TaDaMarkdown.
+// The only file that imports MarkdownEngine.
 import SwiftUI
 #if os(macOS)
 import AppKit
 #else
 import UIKit
 #endif
-import TaDaMarkdown
+import MarkdownEngine
 import TaDaCore
 import ImageIO
 import UniformTypeIdentifiers
