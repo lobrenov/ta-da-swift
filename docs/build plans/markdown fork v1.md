@@ -85,18 +85,18 @@ The first run of the merge workflow, in two steps.
 - Move into it: `Parser/` (less `MarkdownToken`'s `NSAttributedString.Key` extensions, which move to `Styling/`), the `InlineSyntax`/`BlockSyntax`/`ExtensionRegistry` half of `Extensions/MarkdownExtension.swift`, `TaskMarker`, callout parsing from `Callout.swift`, `MarkdownTable`, and the parsing half of `WikiLinkService` (target, heading, block, alias). Tag parsing comes out of `InlineParser` into its own file.
 - Mark what the editor uses `package`; keep upstream's public API unchanged (`MarkdownEngine` re-exports nothing new).
 - New test target `MarkdownEngineSyntaxTests`; parser tests move there.
-- Tag `0.14.0-live.3`; bump Ta Da's pin.
+- Tag `0.14.0-live.3`, then `0.14.0-live.4` (`MarkdownEngine` re-exports `MarkdownEngineSyntax`, which Ta Da's `MemberImportVisibility` needed); bump Ta Da's pin to `live.4`.
 - Check: the syntax target builds with `swift build --target MarkdownEngineSyntax` and has no `import AppKit|UIKit|SwiftUI` (a test greps its sources). All fork tests pass on macOS and iOS. Ta Da builds unchanged.
 
 ### M5 — The spec (fork)
 - `spec/` as in Decisions. Seed `spec/grammar` from Saga's `test/fixtures/markdown` and `parity-vault`, Ta Da's `TaDaForkTests`, `TagTests`, `MarkdownTableTests` and the DesignVault cases, and `spec/data` from Ta Da's `CheckboxSyntax`/`TaskMarker` and `CalloutType` and Saga's `kinds.ts`. Where Ta Da and Saga disagree, the fixture records the decision and `spec/README.md` lists it.
 - `MarkdownFacts` in `MarkdownEngineSyntax`: `MarkdownFacts.scan(_ body:, firstLineIndex:)` → summary, tasks, links, embeds, tags, callouts, headings, built on the block and inline parsers.
 - `SpecConformanceTests`: every `spec/grammar` case through `MarkdownFacts`; `spec/data` against the Swift tables; `spec/edits` against the list, auto-pair, task, callout and table functions that are pure today. Edit cases that need a text view are marked `swift: skip` with a reason.
-- Tag `0.14.0-live.4`.
+- Tag `0.14.0-live.5`.
 - Check: conformance tests pass; every skip has a reason; `spec/README.md` explains the fixture format well enough for a TS runner.
 
 ### M6 — TaDaCore on the syntax target (Ta Da)
-- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.4")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
+- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.5")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
 - `WikiLink(inner:)`, `InlineTags`, `CheckboxSyntax` and `CalloutType`'s markers call the syntax target; their duplicated grammar is removed. Public TaDaCore API is unchanged.
 - Check: core tests on macOS and iOS; app + core tests; `docs/file-format.md` unchanged (or updated with any decision M5 recorded).
 
