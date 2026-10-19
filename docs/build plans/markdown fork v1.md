@@ -18,7 +18,7 @@ Starting point, as checked on 2026-10-16:
 - Saga's golden data: `~/Projects/Saga/test/fixtures/{golden,markdown,parity-vault}`.
 
 ## Decisions
-- **Repo**: a GitHub fork, `lobrenov/swift-markdown-engine`. A fork of a public repo is public. Ta Da stays private; nothing app-specific goes into the fork. Local clone: `~/Projects/swift-markdown-engine`. The folder name must match the package identity for Xcode's local override to work.
+- **Repo**: a GitHub fork, `lobrenov/swift-markdown-engine-extended`. A fork of a public repo is public. Ta Da stays private; nothing app-specific goes into the fork. Local clone: `~/Projects/swift-markdown-engine-extended`. The folder name must match the package identity for Xcode's local override to work.
 - **Branches**: `main` mirrors upstream and is never committed to. `live` is the editor both apps pin, and the fork's default branch. Merge (never rebase) on `live`. Upstream contributions go on topic branches cut from `main`.
 - **Names**: the package, product and module go back to upstream's `MarkdownEngine`, so upstream merges apply cleanly. The Foundation-only target is `MarkdownEngineSyntax`. Upstream's code-block and LaTeX products, `Demo/`, `.github/` and the rest that `ORIGIN.md` says were removed stay in, for the same reason; Ta Da doesn't link them.
 - **Versions**: tags `<upstream version>-live.<n>` on `live` (`0.13.0-live.1`, then `0.14.0-live.1` after merging 0.14.0). Apps pin with `exact:`. A tag is never moved or deleted.
@@ -37,7 +37,7 @@ Starting point, as checked on 2026-10-16:
 
 ## GitHub steps (manual)
 Do these before M1. Steps marked *later* belong to the milestone named.
-1. Fork `nodes-app/swift-markdown-engine` to `lobrenov` (github.com/nodes-app/swift-markdown-engine ▸ Fork), keeping the default **Copy the `main` branch only**.
+1. Fork `nodes-app/swift-markdown-engine` to `lobrenov/swift-markdown-engine-extended` (github.com/nodes-app/swift-markdown-engine ▸ Fork), keeping the default **Copy the `main` branch only**.
 2. *After M1 pushes `live`:* Settings ▸ General ▸ Default branch → `live`.
 3. *After M1:* Settings ▸ Rules ▸ Rulesets ▸ New branch ruleset, "live": target `live`, enable **Restrict deletions** and **Block force pushes**. Same for `main`.
 4. *After M1:* New tag ruleset, "live tags": target pattern `*-live.*`, enable **Restrict updates** and **Restrict deletions**.
@@ -51,7 +51,7 @@ No step is needed in `lobrenov/ta-da-app` or `lobrenov/saga-swift`: the fork is 
 The Ta Da milestones run on `feat/markdown-fork`; fork milestones run on `live` (or a topic branch merged into `live`). Each ends with its check passing, then commits, is reviewed and fixed per the stage loop.
 
 ### M1 — Bootstrap the fork (fork repo)
-- Clone the fork to `~/Projects/swift-markdown-engine`, add `upstream`, `git fetch upstream --tags`, `git config rerere.enabled true`.
+- Clone the fork to `~/Projects/swift-markdown-engine-extended`, add `upstream`, `git fetch upstream --tags`, `git config rerere.enabled true`.
 - `git switch -c live d1421012`.
 - Copy Ta Da's `Packages/TaDaMarkdown/{Sources,Tests}` over upstream's `Sources/MarkdownEngine` and `Tests/MarkdownEngineTests`, renaming `TaDaMarkdown` → `MarkdownEngine` in paths, imports and `@testable import`. Keep upstream's `Package.swift` (with its code-block and LaTeX products) and add the fork's platform change (`.iOS("26.0")`). Keep upstream's removed files.
 - `ORIGIN.md` → `FORK.md`: the 23 changes, renumbered only if needed, plus the conflict rule for each and the known macOS 27 test failure. `Ta Da fork` markers → `Fork:`. Doc comments that name Ta Da say what the embedder does instead.
@@ -61,7 +61,7 @@ The Ta Da milestones run on `feat/markdown-fork`; fork milestones run on `live` 
 
 ### M2 — Ta Da on the fork (Ta Da)
 - Remove `Packages/TaDaMarkdown` from the workspace, the project's local package references and the repo.
-- In Xcode: File ▸ Add Package Dependencies, `https://github.com/lobrenov/swift-markdown-engine`, Exact `0.13.0-live.1`, product `MarkdownEngine` to the TaDa target only.
+- In Xcode: File ▸ Add Package Dependencies, `https://github.com/lobrenov/swift-markdown-engine-extended`, Exact `0.13.0-live.1`, product `MarkdownEngine` to the TaDa target only.
 - `LiveEditor.swift`: `import MarkdownEngine`.
 - Update `CLAUDE.md` (editor tests now run in the fork; the `TaDaMarkdown` conventions name `MarkdownEngine`; link to the fork's `FORK.md`), `docs/architecture.md`, `docs/backlog.md` and `docs/design/design-framework.md` where they name `TaDaMarkdown`. Record what `Package.resolved` now pulls in.
 - Check: macOS and iOS app builds; app + core tests (`-skip-testing:TaDaUITests`); design renders match the previous build's; the Live editor behaves the same in a manual pass over SampleVault (tables, callouts, slash menu, images, tags).
@@ -88,7 +88,7 @@ The first run of the merge workflow.
 - Check: conformance tests pass; every skip has a reason; `spec/README.md` explains the fixture format well enough for a TS runner.
 
 ### M6 — TaDaCore on the syntax target (Ta Da)
-- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine.git", exact: "0.14.0-live.3")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
+- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.3")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
 - `WikiLink(inner:)`, `InlineTags`, `CheckboxSyntax` and `CalloutType`'s markers call the syntax target; their duplicated grammar is removed. Public TaDaCore API is unchanged.
 - Check: core tests on macOS and iOS; app + core tests; `docs/file-format.md` unchanged (or updated with any decision M5 recorded).
 
@@ -108,7 +108,7 @@ The first run of the merge workflow.
 ### Where things live
 | What | Where |
 | --- | --- |
-| Editor, parser, syntax target, spec | `~/Projects/swift-markdown-engine`, branch `live` |
+| Editor, parser, syntax target, spec | `~/Projects/swift-markdown-engine-extended`, branch `live` |
 | Ta Da app, TaDaCore | `~/Projects/Ta Da` (pins a `-live.<n>` tag twice: Xcode project and `TaDaCore/Package.swift`) |
 | Saga-Swift app, SagaCore | `~/Projects/Saga-Swift` (pins its own tag) |
 | Saga (Tauri) | `~/Projects/Saga`, reads `spec/` as a submodule at a tag |
@@ -117,7 +117,7 @@ The first run of the merge workflow.
 Unchanged: work in the app repo, tests there.
 
 ### An editor or syntax change
-1. Drag `~/Projects/swift-markdown-engine` into `TaDa.xcworkspace`. Xcode uses the local folder instead of the pinned package while it's there. For CLI core tests, `swift package --package-path Packages/TaDaCore edit swift-markdown-engine --path ~/Projects/swift-markdown-engine` (undo with `unedit`).
+1. Drag `~/Projects/swift-markdown-engine-extended` into `TaDa.xcworkspace`. Xcode uses the local folder instead of the pinned package while it's there. For CLI core tests, `swift package --package-path Packages/TaDaCore edit swift-markdown-engine-extended --path ~/Projects/swift-markdown-engine-extended` (undo with `unedit`).
 2. Edit and test both. A grammar change starts as a `spec/` fixture; the fork's tests prove it.
 3. In the fork: commit on `live` (or a topic branch merged in), update `FORK.md` if it's a new difference from upstream, tag the next `-live.<n>`, push the branch and tag.
 4. In Ta Da: remove the local folder from the workspace, bump both pins to the tag, run app + core tests, commit.
