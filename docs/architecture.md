@@ -10,6 +10,8 @@ How the app is built. The file format and writing rules are in `docs/file-format
 
 The workspace `TaDa.xcworkspace` holds the project and TaDaCore; the test plan `TaDa.xctestplan` runs TaDaTests, TaDaCoreTests and TaDaUITests.
 
+`TaDa/Acknowledgements.txt` ships in the app bundle with the notices and licences of the linked packages (the editor fork, swift-markdown, swift-cmark, Yams and its libyaml), copied from their own files.
+
 ## Files
 
 ```
