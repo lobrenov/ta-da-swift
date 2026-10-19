@@ -67,28 +67,36 @@ The Ta Da milestones run on `feat/markdown-fork`; fork milestones run on `live` 
 - Check: macOS and iOS app builds; app + core tests (`-skip-testing:TaDaUITests`); design renders match the previous build's; the Live editor behaves the same in a manual pass over SampleVault (tables, callouts, slash menu, images, tags).
 
 ### M3 — Take upstream 0.14.0 (fork, then Ta Da)
-The first run of the merge workflow.
+The first run of the merge workflow, in two steps.
+
+**M3a — the merge.**
 - `git merge 0.14.0` on `live`. Resolve conflicts by the rules in `FORK.md`; note any new rule there.
 - Tag `0.14.0-live.1`. In Ta Da, bump the exact pin.
 - Check: fork tests on macOS and iOS; Ta Da's M2 checks. `FORK.md` lists what 0.14.0 changed that a fork change overrides.
+
+**M3b — completion keys.** 0.14.0 adds directive autocomplete (`onDirectiveCompletion`, `pendingDirectiveCompletion`), which works as the fork's slash, link, embed and tag queries (#10, #20, #24) do: the engine detects the trigger and routes ↑/↓/↵/esc, the embedder draws the list. The fork keeps its query reports and commits (`onSlashCommandChange`, `SlashCommandProxy`) and shares upstream's key path:
+- `completionOwner` picks the picker that owns the keys (query, then the `[[…]]` preview, then the directive picker); one router serves `doCommandBy`, ⌘↵ and the iOS key commands, through upstream's `onInlinePreviewKey`. `onSlashCommandKey` is removed. An open query or preview holds back the directive picker.
+- `FORK.md` (Completion keys) maps the fork's names to upstream's.
+- Tag `0.14.0-live.2`. In Ta Da, `LiveEditor` passes its menu keys as `onInlinePreviewKey`; bump the pin.
+- Check: fork tests on macOS and iOS; Ta Da's M2 checks.
 
 ### M4 — `MarkdownEngineSyntax` target (fork, then Ta Da)
 - New target and product `MarkdownEngineSyntax`, Foundation only, no dependencies. `MarkdownEngine` depends on it.
 - Move into it: `Parser/` (less `MarkdownToken`'s `NSAttributedString.Key` extensions, which move to `Styling/`), the `InlineSyntax`/`BlockSyntax`/`ExtensionRegistry` half of `Extensions/MarkdownExtension.swift`, `TaskMarker`, callout parsing from `Callout.swift`, `MarkdownTable`, and the parsing half of `WikiLinkService` (target, heading, block, alias). Tag parsing comes out of `InlineParser` into its own file.
 - Mark what the editor uses `package`; keep upstream's public API unchanged (`MarkdownEngine` re-exports nothing new).
 - New test target `MarkdownEngineSyntaxTests`; parser tests move there.
-- Tag `0.14.0-live.2`; bump Ta Da's pin.
+- Tag `0.14.0-live.3`; bump Ta Da's pin.
 - Check: the syntax target builds with `swift build --target MarkdownEngineSyntax` and has no `import AppKit|UIKit|SwiftUI` (a test greps its sources). All fork tests pass on macOS and iOS. Ta Da builds unchanged.
 
 ### M5 — The spec (fork)
 - `spec/` as in Decisions. Seed `spec/grammar` from Saga's `test/fixtures/markdown` and `parity-vault`, Ta Da's `TaDaForkTests`, `TagTests`, `MarkdownTableTests` and the DesignVault cases, and `spec/data` from Ta Da's `CheckboxSyntax`/`TaskMarker` and `CalloutType` and Saga's `kinds.ts`. Where Ta Da and Saga disagree, the fixture records the decision and `spec/README.md` lists it.
 - `MarkdownFacts` in `MarkdownEngineSyntax`: `MarkdownFacts.scan(_ body:, firstLineIndex:)` → summary, tasks, links, embeds, tags, callouts, headings, built on the block and inline parsers.
 - `SpecConformanceTests`: every `spec/grammar` case through `MarkdownFacts`; `spec/data` against the Swift tables; `spec/edits` against the list, auto-pair, task, callout and table functions that are pure today. Edit cases that need a text view are marked `swift: skip` with a reason.
-- Tag `0.14.0-live.3`.
+- Tag `0.14.0-live.4`.
 - Check: conformance tests pass; every skip has a reason; `spec/README.md` explains the fixture format well enough for a TS runner.
 
 ### M6 — TaDaCore on the syntax target (Ta Da)
-- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.3")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
+- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.4")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
 - `WikiLink(inner:)`, `InlineTags`, `CheckboxSyntax` and `CalloutType`'s markers call the syntax target; their duplicated grammar is removed. Public TaDaCore API is unchanged.
 - Check: core tests on macOS and iOS; app + core tests; `docs/file-format.md` unchanged (or updated with any decision M5 recorded).
 
@@ -146,3 +154,6 @@ For a single upstream fix between releases: `git cherry-pick -x <sha>` on `live`
 
 ### Claude sessions
 Editor and syntax work runs in a session in the fork's folder, with its `CLAUDE.md` (commands, conventions, `FORK.md` rules, this workflow). Ta Da sessions treat the editor as a dependency; when a Ta Da task needs an editor change, it's done in the fork first and the pin bumped after.
+
+## Follow-up Activities
+- **Upstream PR: one completion seam.** Open a draft PR against `nodes-app/swift-markdown-engine:main` (upstream asks for a draft with the design for an architectural change) proposing a general trigger seam: the engine detects a trigger, reports a context and routes keys, and the embedder commits through a request; directive names, the `[[…]]` preview and app triggers (slash, link, embed, tag) become sources of the same seam, with candidates from the engine or the embedder. If upstream takes it, the fork moves #10, #20 and #24 onto it and drops its own query reports.

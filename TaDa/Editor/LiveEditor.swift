@@ -79,9 +79,7 @@ struct LiveEditor: View {
                 }
             },
             onLinkClick: onLinkClick,
-            header: header,
-            onSlashCommandChange: showQueryMenu,
-            onSlashCommandKey: { key in
+            onInlinePreviewKey: { key in
                 switch key {
                 case .moveUp: slashMenu.handle(.up) || linkMenu.handle(.up) || tagMenu.handle(.up)
                 case .moveDown: slashMenu.handle(.down) || linkMenu.handle(.down) || tagMenu.handle(.down)
@@ -89,6 +87,8 @@ struct LiveEditor: View {
                 case .confirmAndOpen, .cancel: false
                 }
             },
+            header: header,
+            onSlashCommandChange: showQueryMenu,
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: showCheckboxMenu,
             onCalloutMenu: showCalloutMenu,
@@ -129,7 +129,7 @@ struct LiveEditor: View {
             onLinkClick: onLinkClick,
             header: header,
             onSlashCommandChange: showLinkChoices,
-            onSlashCommandKey: handleLinkKey,
+            onInlinePreviewKey: handleLinkKey,
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: {
                 checkboxMenu = MenuRequest($0, anchor: localRect($0.anchorRect))
