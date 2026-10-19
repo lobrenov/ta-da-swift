@@ -117,7 +117,7 @@ The first run of the merge workflow, in two steps.
 | What | Where |
 | --- | --- |
 | Editor, parser, syntax target, spec | `~/Projects/swift-markdown-engine-extended`, branch `live` |
-| Ta Da app, TaDaCore | `~/Projects/Ta Da` (pins a `-live.<n>` tag twice: Xcode project and `TaDaCore/Package.swift`) |
+| Ta Da app, TaDaCore | `~/Projects/Ta Da` (pins a `-live.<n>` tag in the Xcode project; from M6 also in `TaDaCore/Package.swift`) |
 | Saga-Swift app, SagaCore | `~/Projects/Saga-Swift` (pins its own tag) |
 | Saga (Tauri) | `~/Projects/Saga`, reads `spec/` as a submodule at a tag |
 
@@ -128,7 +128,7 @@ Unchanged: work in the app repo, tests there.
 1. Drag `~/Projects/swift-markdown-engine-extended` into `TaDa.xcworkspace`. Xcode uses the local folder instead of the pinned package while it's there. For CLI core tests, `swift package --package-path Packages/TaDaCore edit swift-markdown-engine-extended --path ~/Projects/swift-markdown-engine-extended` (undo with `unedit`).
 2. Edit and test both. A grammar change starts as a `spec/` fixture; the fork's tests prove it.
 3. In the fork: commit on `live` (or a topic branch merged in), update `FORK.md` if it's a new difference from upstream, tag the next `-live.<n>`, push the branch and tag.
-4. In Ta Da: remove the local folder from the workspace, bump both pins to the tag, run app + core tests, commit.
+4. In Ta Da: remove the local folder from the workspace (without committing the workspace or `Package.resolved` it changed), bump both pins to the tag, run app + core tests, commit.
 
 Two commits per change; the second is where an app chooses to take the new editor. Saga-Swift bumps whenever it's ready.
 
