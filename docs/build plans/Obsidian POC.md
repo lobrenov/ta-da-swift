@@ -3,15 +3,15 @@
 ## Context
 Ta Da as an Obsidian plugin, over the same vault as the Mac and iPhone apps. Two build options, compared at the end: **Level 1** puts Ta Da inside Obsidian's own layout; **Level 2** adds a Ta Da navigator in the left sidebar, as Notebook Navigator does. Design source: the canvas's **Obsidian POC** page at https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V (Level 1: `ObsL1Today`, `ObsL1Task`, `ObsL1Project`, `ObsL1Capture`; Level 2: `ObsL2Today`, `ObsL2Upcoming`, `ObsL2Phone`).
 
-Starting point, as checked on 2026-10-18:
+Starting point, as checked on 2026-10-18 and updated on 2026-10-19 after the vault structure plan (Build 28):
 - Obsidian 1.14.4. Plugins are TypeScript; custom Bases views exist since 1.10 (`registerBasesView`); Bases has Table, Cards, List, Map and Kanban, no calendar.
 - Obsidian's property editors (Properties panel, Bases table cells, `FileManager.processFrontMatter`) rewrite the whole frontmatter: comments go, flow lists become block lists, unneeded quotes go, number-like strings become numbers. Dates, `"[[links]]"`, empty keys and key order survive. Ta Da reads the result correctly.
-- Obsidian doesn't index dot-folders, so `.logbook/` is invisible to it: links to logged files show as unresolved. `.trash/` is also Obsidian's own trash folder.
+- The apps keep what they create in `Ta Da/` at the vault's top level: `Ta Da/tasks/`, `projects/`, `areas/`, `attachments/` and a visible `Ta Da/Logbook/<yyyy-MM>/`, so Obsidian indexes logged files and links to them resolve. A vault in the old layout (top-level `tasks/`, `projects/`, `areas/`, `attachments/`, hidden `.logbook/`) still reads, and the apps ask once to move it into `Ta Da/`. `.trash/` stays at the top level; it's also Obsidian's own trash folder.
 - TaskNotes (MIT) is the closest prior art. Configuring or forking it doesn't fit Ta Da's format; it's a reference for Bases views (`src/bases/`), an index over `metadataCache` (`TaskManager.ts`) and a per-file write queue (`VaultMutationService.ts`).
 
 ## Decisions (both options)
-- **Logbook** moves from `.logbook/` to a visible top-level `Logbook/` folder (any case), in the apps first (O0). Obsidian then indexes logged files and their links resolve.
-- **Logging stays with the Mac and iPhone apps.** The plugin never logs or unlogs. Setting a logged file's status in Obsidian is picked up by the app's next daily logging, as for any other app.
+- **Ta Da's folder**: the plugin creates files where the apps do (`Ta Da/tasks/`, `Ta Da/projects/`, `Ta Da/areas/`, `Ta Da/attachments/`) and reads both layouts as `docs/file-format.md` says (logged files in `Ta Da/Logbook/`, ignoring case; `Ta Da/` and the old top-level folders reserved from notes), except the old `.logbook/`, which Obsidian can't see. A vault is moved into `Ta Da/` by the apps before the plugin is used on it.
+- **Logging and moving the old layout stay with the Mac and iPhone apps.** The plugin never logs, unlogs or moves an old layout into `Ta Da/`. Setting a logged file's status in Obsidian is picked up by the app's next daily logging, as for any other app.
 - **Trash**: the plugin deletes tasks and notes only, one file at a time, into `.trash/` (`Vault.trash(file, false)`). Projects and areas, with their cascades, restore and Empty Trash, stay in the apps.
 - **Format port**: TaDaCore's reading, writing and query rules are ported to TypeScript, not compiled from Swift. Conformance fixtures keep the two in step: a Swift test exports DesignVault's parse results, query results (fixed `today`) and write cases (input text, operation, expected text) as JSON; the TypeScript tests read the same files.
 - **Writes** splice lines with the ported writers, never `processFrontMatter`. The open file goes through its `Editor` (one transaction, so undo and the cursor hold); other files through `Vault.process`, guarded on the text last read. Renames go through `FileManager.renameFile`, so Obsidian updates links; the name comes from the ported `FileNaming`.
@@ -23,17 +23,11 @@ Starting point, as checked on 2026-10-18:
 ## Shared milestones
 Each ends with its check passing, then a commit and a review.
 
-### O0 — Apps: `Logbook/` folder
-- `Storage/Logbook.swift`, `Vault` scan and `Item.isLogged`: logged files live in `Logbook/<yyyy-MM>/`; untyped files under `Logbook/` are ignored, as under `tasks/`.
-- Opening a folder that has `.logbook/` moves its files into `Logbook/`, numbering taken names, then removes the empty `.logbook/`.
-- `docs/file-format.md` (Identity, Logging), `docs/architecture.md`.
-- Check: `LogbookTests` and `VaultTests` updated and passing; app builds for macOS and iOS; SampleVault migrated and committed.
-
 ### O1 — Plugin scaffold and reading
 - `Obsidian/`: manifest, esbuild, Vitest, a dev command that copies `main.js` into a test vault's `.obsidian/plugins/ta-da/`.
-- Port: `Item`, `Status`, `LocalDate`, `WikiLink`, `Checkbox`, `Tag` (`Model/`); `FrontmatterSplitter`, `PropertyReader`, `BodyScanner`, `InlineTags`, `CheckboxSyntax` (`Parsing/`); `VaultIndex`, `Queries` (`Index/`).
+- Port: `Item` (with `isLogged`, `isNotePath` and `reservedFolders`), `Status`, `LocalDate`, `WikiLink`, `Checkbox`, `Tag` (`Model/`); the folder constants (`Vault.home` and the folders in it, the old layout's names); `FrontmatterSplitter`, `PropertyReader`, `BodyScanner`, `InlineTags`, `CheckboxSyntax` (`Parsing/`); `VaultIndex`, `Queries` (`Index/`).
 - `TaDaIndex`: built from raw text (`Vault.cachedRead`) on layout ready, patched on `metadataCache` `changed` and `Vault` `rename`/`delete`.
-- Swift: `ConformanceExportTests` writes `Fixtures/Conformance/read.json` and `queries.json` from DesignVault.
+- Swift: `ConformanceExportTests` writes `Fixtures/Conformance/read.json` and `queries.json` from DesignVault (the old layout) and from a small fixture in the new layout.
 - Check: Vitest conformance passes on both files; the plugin loads in Obsidian with SampleVault and logs nothing.
 
 ### O2 — Writing
@@ -58,7 +52,7 @@ Boards `ObsL1Today`, `ObsL1Task`, `ObsL1Project`, `ObsL1Capture`. Obsidian's fil
 
 ### A2 — Calendar, New task and commands
 - Right-sidebar view: month grid with due and deadline dots, and the next 7 days.
-- New task modal (`ObsL1Capture`): title with typed date, `+project` and `#tag`, chips, description; writes `tasks/<title>.md` through `NewFile`.
+- New task modal (`ObsL1Capture`): title with typed date, `+project` and `#tag`, chips, description; writes `Ta Da/tasks/<title>.md` through `NewFile`.
 - Commands: New task, Complete, Set status (one per status), Move to project or area, Open in Ta Da's calendar. A ribbon icon opens Today.
 - Check: by hand; the created file matches the Mac's Quick Entry output for the same input.
 
@@ -68,7 +62,7 @@ Boards `ObsL1Today`, `ObsL1Task`, `ObsL1Project`, `ObsL1Capture`. Obsidian's fil
 - Check: by hand on Obsidian for iPhone against the iCloud vault.
 
 ## Option B — Level 2: Ta Da navigator
-Boards `ObsL2Today`, `ObsL2Upcoming`, `ObsL2Phone`. O0–O3, then the navigator in place of A1–A2. Bases isn't needed: the list pane draws from `TaDaIndex`.
+Boards `ObsL2Today`, `ObsL2Upcoming`, `ObsL2Phone`. O1–O3, then the navigator in place of A1–A2. Bases isn't needed: the list pane draws from `TaDaIndex`.
 
 ### B1 — More of the core
 - Port `TagQueries`, `NoteQueries`, `Grouping` (`ListSection`, `TagFilter`), and `Trash` listing (read only).
@@ -95,7 +89,7 @@ Boards `ObsL2Today`, `ObsL2Upcoming`, `ObsL2Phone`. O0–O3, then the navigator 
 
 | | Level 1 | Level 2 |
 |---|---|---|
-| Milestones | O0–O3, A1–A3 (7) | O0–O3, B1–B4 (8) |
+| Milestones | O1–O3, A1–A3 (6) | O1–O3, B1–B4 (7) |
 | TaDaCore ported | Model, Parsing, Writing, `VaultIndex`, `Queries` (about 2,100 of TaDaCore’s 4,300 Swift lines) | Level 1's, plus `TagQueries`, `NoteQueries`, `Grouping`, Trash listing (about 2,500) |
 | New UI | Header, 2 Bases views, calendar panel, modal | Header, a two-pane navigator with 9 list kinds, Group and filter, month view, modal, phone layout |
 | Relative UI size (estimate) | 1× | about 2.5× |
