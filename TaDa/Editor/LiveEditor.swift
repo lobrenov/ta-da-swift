@@ -79,6 +79,7 @@ struct LiveEditor: View {
                 }
             },
             onLinkClick: onLinkClick,
+            // Keys for any open picker come here (a query, upstream's `[[…]]` preview); each menu ignores them unless it's open.
             onInlinePreviewKey: { key in
                 switch key {
                 case .moveUp: slashMenu.handle(.up) || linkMenu.handle(.up) || tagMenu.handle(.up)
@@ -246,8 +247,8 @@ struct LiveEditor: View {
             switch key {
             case .moveUp: tagHighlight = (tagHighlight + tagChoices.count - 1) % tagChoices.count
             case .moveDown: tagHighlight = (tagHighlight + 1) % tagChoices.count
-            case .confirm, .confirmAndOpen: insertTag(tagChoices[min(tagHighlight, tagChoices.count - 1)])
-            case .cancel: return false
+            case .confirm: insertTag(tagChoices[min(tagHighlight, tagChoices.count - 1)])
+            case .confirmAndOpen, .cancel: return false
             }
             return true
         }
@@ -255,8 +256,8 @@ struct LiveEditor: View {
         switch key {
         case .moveUp: linkHighlight = (linkHighlight + linkChoices.count - 1) % linkChoices.count
         case .moveDown: linkHighlight = (linkHighlight + 1) % linkChoices.count
-        case .confirm, .confirmAndOpen: insertLink(linkChoices[min(linkHighlight, linkChoices.count - 1)])
-        case .cancel: return false
+        case .confirm: insertLink(linkChoices[min(linkHighlight, linkChoices.count - 1)])
+        case .confirmAndOpen, .cancel: return false
         }
         return true
     }

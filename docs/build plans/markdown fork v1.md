@@ -85,18 +85,18 @@ The first run of the merge workflow, in two steps.
 - Move into it: `Parser/` (less `MarkdownToken`'s `NSAttributedString.Key` extensions, which move to `Styling/`), the `InlineSyntax`/`BlockSyntax`/`ExtensionRegistry` half of `Extensions/MarkdownExtension.swift`, `TaskMarker`, callout parsing from `Callout.swift`, `MarkdownTable`, and the parsing half of `WikiLinkService` (target, heading, block, alias). Tag parsing comes out of `InlineParser` into its own file.
 - Mark what the editor uses `package`; keep upstream's public API unchanged (`MarkdownEngine` re-exports nothing new).
 - New test target `MarkdownEngineSyntaxTests`; parser tests move there.
-- Tag `0.14.0-live.3`; bump Ta Da's pin.
+- Tag `0.14.0-live.3`, then `0.14.0-live.4` (`MarkdownEngine` re-exports `MarkdownEngineSyntax`, which Ta Da's `MemberImportVisibility` needed); bump Ta Da's pin to `live.4`.
 - Check: the syntax target builds with `swift build --target MarkdownEngineSyntax` and has no `import AppKit|UIKit|SwiftUI` (a test greps its sources). All fork tests pass on macOS and iOS. Ta Da builds unchanged.
 
 ### M5 — The spec (fork)
 - `spec/` as in Decisions. Seed `spec/grammar` from Saga's `test/fixtures/markdown` and `parity-vault`, Ta Da's `TaDaForkTests`, `TagTests`, `MarkdownTableTests` and the DesignVault cases, and `spec/data` from Ta Da's `CheckboxSyntax`/`TaskMarker` and `CalloutType` and Saga's `kinds.ts`. Where Ta Da and Saga disagree, the fixture records the decision and `spec/README.md` lists it.
 - `MarkdownFacts` in `MarkdownEngineSyntax`: `MarkdownFacts.scan(_ body:, firstLineIndex:)` → summary, tasks, links, embeds, tags, callouts, headings, built on the block and inline parsers.
 - `SpecConformanceTests`: every `spec/grammar` case through `MarkdownFacts`; `spec/data` against the Swift tables; `spec/edits` against the list, auto-pair, task, callout and table functions that are pure today. Edit cases that need a text view are marked `swift: skip` with a reason.
-- Tag `0.14.0-live.4`.
+- Tag `0.14.0-live.5`.
 - Check: conformance tests pass; every skip has a reason; `spec/README.md` explains the fixture format well enough for a TS runner.
 
 ### M6 — TaDaCore on the syntax target (Ta Da)
-- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.4")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
+- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.5")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
 - `WikiLink(inner:)`, `InlineTags`, `CheckboxSyntax` and `CalloutType`'s markers call the syntax target; their duplicated grammar is removed. Public TaDaCore API is unchanged.
 - Check: core tests on macOS and iOS; app + core tests; `docs/file-format.md` unchanged (or updated with any decision M5 recorded).
 
@@ -117,7 +117,7 @@ The first run of the merge workflow, in two steps.
 | What | Where |
 | --- | --- |
 | Editor, parser, syntax target, spec | `~/Projects/swift-markdown-engine-extended`, branch `live` |
-| Ta Da app, TaDaCore | `~/Projects/Ta Da` (pins a `-live.<n>` tag twice: Xcode project and `TaDaCore/Package.swift`) |
+| Ta Da app, TaDaCore | `~/Projects/Ta Da` (pins a `-live.<n>` tag in the Xcode project; from M6 also in `TaDaCore/Package.swift`) |
 | Saga-Swift app, SagaCore | `~/Projects/Saga-Swift` (pins its own tag) |
 | Saga (Tauri) | `~/Projects/Saga`, reads `spec/` as a submodule at a tag |
 
@@ -128,7 +128,7 @@ Unchanged: work in the app repo, tests there.
 1. Drag `~/Projects/swift-markdown-engine-extended` into `TaDa.xcworkspace`. Xcode uses the local folder instead of the pinned package while it's there. For CLI core tests, `swift package --package-path Packages/TaDaCore edit swift-markdown-engine-extended --path ~/Projects/swift-markdown-engine-extended` (undo with `unedit`).
 2. Edit and test both. A grammar change starts as a `spec/` fixture; the fork's tests prove it.
 3. In the fork: commit on `live` (or a topic branch merged in), update `FORK.md` if it's a new difference from upstream, tag the next `-live.<n>`, push the branch and tag.
-4. In Ta Da: remove the local folder from the workspace, bump both pins to the tag, run app + core tests, commit.
+4. In Ta Da: remove the local folder from the workspace (without committing the workspace or `Package.resolved` it changed), bump both pins to the tag, run app + core tests, commit.
 
 Two commits per change; the second is where an app chooses to take the new editor. Saga-Swift bumps whenever it's ready.
 
