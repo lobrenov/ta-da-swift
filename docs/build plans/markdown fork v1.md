@@ -96,7 +96,8 @@ The first run of the merge workflow, in two steps.
 - `spec/README.md` opens with the three layers, what each is for and where each stops (Decisions). `spec/conventions.md` and `spec/edits/README.md` are written from the app-independent parts of Ta Da's `docs/file-format.md` (Tags, Writing rules) and checked against Saga's behaviour.
 - `MarkdownFacts` in `MarkdownEngineSyntax`: `MarkdownFacts.scan(_ body:, firstLineIndex:)` → summary, tasks, links, embeds, tags, callouts, headings, built on the block and inline parsers.
 - `SpecConformanceTests`: every `spec/grammar` case through `MarkdownFacts`; `spec/data` against the Swift tables; `spec/edits` against the list, auto-pair, task, callout and table functions that are pure today. Edit cases that need a text view are marked `swift: skip` with a reason.
-- Tag `0.14.0-live.5`.
+- The parser reads what the grammar cases need, so no case is skipped: `~~~` and indented fences, indented code, setext headings, HTML blocks, pipe-less tables, autolinks (fork FORK.md #27). `[[#Heading]]` is a same-file link (empty target).
+- Tag `0.14.0-live.5`; bump Ta Da's pin.
 - Check: conformance tests pass; every skip has a reason; `spec/README.md` explains the fixture format well enough for a TS runner and states the layers' boundaries; `spec/` names no app.
 
 ### M6 — TaDaCore on the syntax target (Ta Da)
