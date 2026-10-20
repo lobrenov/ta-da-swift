@@ -1,4 +1,5 @@
 import Foundation
+import MarkdownEngineSyntax
 
 /// Attachments are image files that files embed with `![[name.png]]`. Ta Da saves them in `Ta Da/attachments/`; an embed
 /// resolves by filename, so they can live anywhere in the folder.
@@ -8,7 +9,8 @@ extension Vault {
     public static let legacyAttachmentFolder = "attachments"
     /// The old layout's top-level folders, lowercased: Ta Da made them before `Ta Da/`.
     public static let legacyFolders: Set<String> = ["tasks", "projects", "areas", "attachments"]
-    public static let imageExtensions: Set<String> = ["avif", "bmp", "gif", "heic", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"]
+    /// The spec's image extensions (`EmbedSyntax`), lowercase.
+    public static let imageExtensions = Set(EmbedSyntax.imageExtensions)
 
     /// Writes `data` as `Ta Da/attachments/<filename>`, numbering the name if it's taken there or in the old
     /// `attachments/`. Returns the new path.

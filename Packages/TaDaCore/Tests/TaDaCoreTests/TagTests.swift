@@ -42,3 +42,7 @@ import Testing
 func inlineTagEdgeCases(_ written: String, _ tags: [String]) {
     #expect(BodyScanner.scan(written).tags.map(\.name) == tags)
 }
+
+@Test func aTagNeedsACharacterThatIsNeitherADigitNorASlash() {
+    #expect(BodyScanner.scan("#2026/10 #2026/q4\n").tags.map(\.name) == ["2026/q4"])
+}

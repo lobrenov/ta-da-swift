@@ -56,9 +56,10 @@ Bring the project instruction files in line with how I actually work now.
 
 ## Body
 
+The body's syntax is the spec in the Live editor's package, at the tag Ta Da pins (`Packages/TaDaCore/Package.swift`): [`spec/`](https://github.com/lobrenov/swift-markdown-engine-extended/tree/0.14.0-live.6/spec) in swift-markdown-engine-extended. Its `README.md` says what each construct is (task markers, links, embeds, tags, callouts, tables) and its `edits/` how a change is written. TaDaCore reads it through the package's `MarkdownEngineSyntax`; its body scan still differs from the spec in three cases: `\[[A]]` and a `[[…]]` inside an autolink `<…>` count as links, and a `#` after `&nbsp;` starts a tag. Ta Da's choices:
+
 - **Description**: the whole body. Search also matches its first paragraph (the summary).
-- **Checkboxes**: a list item whose marker is followed by `[c]` and a space or tab (as in GFM, so a bare `- [ ]` is text), where `c` is one character from the [Alternative Checkboxes Reference Set](https://github.com/damiankorcz/Alternative-Checkboxes-Reference-Set). Items inside code blocks don't count, and any other character inside the brackets (e.g. `[y]`) stays plain text.
-- **Subtasks** are the checkboxes in these states, anywhere in the body and at any depth, counted as done/total:
+- **Subtasks** are the checkboxes (the spec's task markers; `[y]` is text) in these states, anywhere in the body and at any depth, outside code, counted as done/total:
 
   | Marker | State | Counts as |
   |---|---|---|
@@ -69,15 +70,16 @@ Bring the project instruction files in line with how I actually work now.
   | `[x]` `[X]` | Done | done |
   | `[-]` | Cancelled | left out of the total |
 
-  The other reference markers (`[?] [!] [*] ["] [l] [b] [i] [S] [I] [p] [c] [f] [k] [w] [u] [d]`) are icons only. They render as checkboxes but aren't subtasks.
-- **Links**: `[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]` and `[[folder/Title]]` resolve to the file with that title, case-insensitively: a task, project or area first, then a note, then a logged file. Body links are links only; they never set a parent.
-- **Embeds**: the same with a leading `!`, e.g. `![[front.jpg]]` or `![[front.jpg|300]]`. Embeds aren't links, so they aren't backlinks. An embed whose target ends in an image extension (`avif bmp gif heic jpeg jpg png svg tif tiff webp`, any case) shows that attachment.
-- **Tables**: GFM pipe tables. When Ta Da edits one it rewrites the table's lines only, with the columns padded to line up (`| a   | b |`), each column's alignment marker (`:---`, `:---:`, `---:`) kept and an indented table's indentation kept. A line break in a cell is `<br>`, and a `|` in a cell is `\|` (backslashes before a pipe are doubled).
+  The other markers (`[?] [!] [*] ["] [l] [b] [i] [S] [I] [p] [c] [f] [k] [w] [u] [d]`) are icons only: they render as checkboxes, aren't subtasks and ignore clicks.
+- **Links** (`[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]`, `[[Title#^block]]`, `[[folder/Title]]`) resolve to the file with that title, case-insensitively: a task, project or area first, then a note, then a logged file. A block reference is kept as a heading starting with `^`. A link within the file (`[[#heading]]`) links no file. Body links are links only; they never set a parent.
+- **Embeds** (a link with a leading `!`, e.g. `![[front.jpg]]` or `![[front.jpg|300]]`, where a number is the width) aren't links, so they aren't backlinks. An embed whose target ends in one of the spec's image extensions (`avif bmp gif heic jpeg jpg png svg tif tiff webp`, any case) shows that attachment.
+- **Callouts** (`> [!type]`, folded with `-` or open with `+`) take their type's look; an unknown type looks like a note.
+- **Tables**: Ta Da edits one as the spec's edits say: the table's lines only, columns padded, alignment markers and indentation kept, a line break in a cell as `<br>` and a `|` as `\|`.
 
 ## Tags
 
 - A file's tags are its `tags:` items and its inline `#tags`, merged; a tag carried twice counts once.
-- **Inline tags**: `#` at a line start or after whitespace, then letters, digits, `_`, `-` and `/`, with at least one character that isn't a digit. Any other character, a comma or space included, ends the tag. Code, HTML, link text, URLs and `[[…]]` links hold none, so `[[Note#Heading]]` and a heading's `# ` aren't tags.
+- **Inline tags** are the spec's (`spec/data/tags.json`): `#` where a tag can start (a paragraph's or line's start, emphasis content's start, or after whitespace), then letters, digits, `_`, `-` and `/`, with at least one character that's neither a digit nor `/` (so `#2026/10` isn't a tag). Any other character, a comma or space included, ends the tag. Code, HTML, link text, URLs and `[[…]]` links hold none, so `[[Note#Heading]]` and a heading's `# ` aren't tags.
 - **Identity**: tags match ignoring case, and show as first written in the folder. Empty segments and a trailing `/` are dropped (`home/` is `home`).
 - **Nesting**: `/` nests, so `home/garden` is a child of `home`. A parent shows its children's files too, and exists whether or not any file carries it alone.
 - An area's or project's tags don't apply to its tasks.

@@ -1,3 +1,5 @@
+import MarkdownEngineSyntax
+
 /// What Add Subtask (⌘L) does to the line the caret is on. The edit is minimal and undoes in one step.
 public enum SubtaskLine {
     public enum Edit: Equatable, Sendable {
@@ -21,7 +23,7 @@ public enum SubtaskLine {
         guard let box = CheckboxSyntax.box(in: bytes, after: markerEnd) else {
             return .convert(offset: markerEnd + 1, text: "[ ] ")
         }
-        guard let marker = Checkbox.State(marker: box.marker)?.markerAfterClick else { return .none }
+        guard let marker = TaskMarker.toggled(box.marker) else { return .none }
         return .setMarker(offset: box.offset, marker: marker)
     }
 }

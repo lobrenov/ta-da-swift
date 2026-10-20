@@ -76,3 +76,13 @@ import Testing
     #expect(Vault.retargetLinks(in: text, from: "Sell the Kombi", to: "Sell the car") == expected)
     #expect(BodyScanner.linkTargets(in: "[[A]] ![[b.png]] [[ C |c]]").map(\.link.target) == ["A", "C"])
 }
+
+@Test func wikiLinkReadsBlocksAsHeadingsAndSameFileLinksAsNone() throws {
+    #expect(try #require(WikiLink(inner: "Note#^b1|see")).heading == "^b1")
+    #expect(try #require(WikiLink(inner: "Note#")).heading == nil)
+    #expect(try #require(WikiLink(inner: "Note|")).alias == nil)
+    #expect(try #require(WikiLink(inner: "Note#^")).heading == nil)
+    #expect(try #require(WikiLink(inner: "Note#^b|")).heading == "^b")
+    #expect(try #require(WikiLink(inner: "Note#^b|")).alias == nil)
+    #expect(WikiLink(inner: "#Heading") == nil && WikiLink(inner: "#^b1") == nil && WikiLink(inner: " #h") == nil)
+}

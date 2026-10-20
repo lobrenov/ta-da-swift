@@ -1,3 +1,4 @@
+import MarkdownEngineSyntax
 import Testing
 @testable import TaDaCore
 
@@ -8,4 +9,8 @@ import Testing
     #expect(CalloutType(named: "recipe") == nil)
     #expect(CalloutType.allCases.count == 13)
     #expect(CalloutType.abstract.title == "Abstract")
+}
+
+@Test func calloutTypesAreTheSyntaxTargetsTypes() {
+    #expect(CalloutType.allCases.map(\.rawValue) == CalloutSyntax.types.map(\.id))
 }
