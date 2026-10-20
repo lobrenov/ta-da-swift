@@ -23,10 +23,16 @@ public struct WikiLink: Hashable, Sendable {
     /// Parses the text between `[[` and `]]` (`WikiLinkParts`). A block reference is a heading starting with `^`.
     /// Nil when there's no target: a link within the same file (`[[#heading]]`) links no file.
     public init?(inner: String) {
-        guard let parts = WikiLinkParts(inner: inner), !parts.target.isEmpty else { return nil }
-        target = parts.target
-        heading = parts.heading ?? parts.block.map { "^" + $0 }
-        alias = parts.alias
+        guard let parts = WikiLinkParts(inner: inner) else { return nil }
+        self.init(target: parts.target, heading: parts.heading, block: parts.block, alias: parts.alias)
+    }
+
+    /// Nil when `target` is empty.
+    init?(target: String, heading: String?, block: String?, alias: String?) {
+        guard !target.isEmpty else { return nil }
+        self.target = target
+        self.heading = heading ?? block.map { "^" + $0 }
+        self.alias = alias
     }
 
     /// Parses a whole `[[…]]` value, such as the `project` property. Surrounding whitespace is allowed.
@@ -34,16 +40,6 @@ public struct WikiLink: Hashable, Sendable {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard let match = trimmed.wholeMatch(of: Self.pattern) else { return nil }
         self.init(inner: String(match.1))
-    }
-
-    /// Every link and embed in a run of text, each in order.
-    public static func scan(_ text: String) -> (links: [WikiLink], embeds: [WikiLink]) {
-        var links: [WikiLink] = [], embeds: [WikiLink] = []
-        for match in text.matches(of: #/(!?)\[\[([^\[\]\n]+)\]\]/#) {
-            guard let link = WikiLink(inner: String(match.2)) else { continue }
-            if match.1.isEmpty { links.append(link) } else { embeds.append(link) }
-        }
-        return (links, embeds)
     }
 
     nonisolated(unsafe) static let pattern = #/\[\[([^\[\]\n]+)\]\]/#

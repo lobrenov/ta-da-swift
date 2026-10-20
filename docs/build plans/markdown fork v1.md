@@ -111,6 +111,7 @@ The first run of the merge workflow, in two steps.
 - `BodyScannerParityTests`: the gate in Decisions. Differences go back to the fork (new `-live.<n>`), into `spec/grammar`, or into `docs/file-format.md`.
 - Once it passes: remove swift-markdown from `Package.swift`, `LegacyBodyScanner` and the parity test's legacy half (the vault cases stay as `BodyScanner` golden tests), and `DependencyAssumptionTests`' swift-markdown cases. Remove the hard-break and alternative-checkbox workarounds.
 - Check: parity test green before removal; after removal, core, app and `LargeVaultTests` pass with scan time no worse; a re-index of SampleVault leaves `git diff SampleVault` empty.
+- As built: the fork's `live.7` gives each fact's link, embed and task box its range in the body (a table cell's mapped back to its source) and reads tables inside quotes. The parity gate passed with the spec's readings accepted: summaries drop code backticks, `~` and inline HTML; `\[[A]]`, a `[[…]]` in an autolink and a `#` after `&nbsp;` are no link or tag; a table cell's `[[A\|alias]]` now has a target range, so a rename rewrites it. Checkbox lines and columns count `\n` only, as the writers do. Golden tests: `BodyScannerGoldenTests` with `Fixtures/BodyScans.txt` and the generated vault's totals. The scan is about 9× faster in release.
 
 ### M8 — Saga-Swift on the fork (Saga-Swift repo, own session)
 - Replace `Packages/TaDaMarkdown` with the fork at the current tag; adapt `LiveEditor` to the newer API (menus, `onRightClickMenu`, slash and link queries as far as Saga wants them).

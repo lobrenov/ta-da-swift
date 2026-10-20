@@ -193,3 +193,20 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
     let body = "\\#escaped and &#35;entity and &num;named but #real\n\n- [ ] item \\#no #yes\n\nx\\\n#after-break \\#not"
     #expect(BodyScanner.scan(body).tags.map(\.name) == ["real", "yes", "after-break"])
 }
+
+@Test func aTableCellsAliasedLinkIsRetargeted() {
+    let body = "| Who |\n| --- |\n| [[Old\\|them]] ![[a.png\\|300]] |\n"
+    #expect(Vault.retargetLinks(in: body, from: "Old", to: "New") == "| Who |\n| --- |\n| [[New\\|them]] ![[a.png\\|300]] |\n")
+    #expect(BodyScanner.embedTargets(in: body).map { String(body[$0.range]) } == ["a.png"])
+}
+
+@Test func checkboxLinesCountNewlinesOnly() {
+    let body = "intro\u{2028}more\u{85}x\u{2029}y\n- [ ] one\n- [ ] two\n"
+    let scan = BodyScanner.scan(body, firstLineIndex: 4)
+    #expect(scan.checkboxes.map(\.lineIndex) == [5, 6] && scan.checkboxes.map(\.column) == [3, 3])
+    #expect(ChecklistEditor.click(scan.checkboxes[0], in: "---\na: b\n---\n\n" + body)?.contains("- [x] one") == true)
+}
+
+@Test func targetsSkipUnicodeSpaces() {
+    #expect(BodyScanner.linkTargets(in: "See [[\u{a0}y]]").map(\.link.target) == ["y"])
+}
