@@ -1,4 +1,5 @@
 import Foundation
+import MarkdownEngineSyntax
 
 /// An Obsidian-style link: `[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]` or `[[folder/Title]]`. An embed is the
 /// same with a leading `!`, e.g. `![[front.jpg]]`.
@@ -19,19 +20,13 @@ public struct WikiLink: Hashable, Sendable {
         return name
     }
 
-    /// Parses the text between `[[` and `]]`. Nil when there's no target (e.g. `[[#heading]]`).
+    /// Parses the text between `[[` and `]]` (`WikiLinkParts`). A block reference is a heading starting with `^`.
+    /// Nil when there's no target: a link within the same file (`[[#heading]]`) links no file.
     public init?(inner: String) {
-        var rest = Substring(inner)
-        if let bar = rest.firstIndex(of: "|") {
-            alias = String(rest[rest.index(after: bar)...])
-            rest = rest[..<bar]
-        }
-        if let hash = rest.firstIndex(of: "#") {
-            heading = String(rest[rest.index(after: hash)...])
-            rest = rest[..<hash]
-        }
-        target = rest.trimmingCharacters(in: .whitespaces)
-        if target.isEmpty { return nil }
+        guard let parts = WikiLinkParts(inner: inner), !parts.target.isEmpty else { return nil }
+        target = parts.target
+        heading = parts.heading ?? parts.block.map { "^" + $0 }
+        alias = parts.alias
     }
 
     /// Parses a whole `[[…]]` value, such as the `project` property. Surrounding whitespace is allowed.

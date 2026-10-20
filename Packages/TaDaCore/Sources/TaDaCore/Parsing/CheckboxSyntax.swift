@@ -1,3 +1,5 @@
+import MarkdownEngineSyntax
+
 /// Where a checkbox is in a line, for the scanner, Add Subtask and Source mode: a list marker (`-`, `*`, `+`,
 /// `1.` or `1)`), one to four spaces or tabs, then `[c]` with `c` from the reference set and a space or tab
 /// after it. Offsets count UTF-8 code units in `text`; the syntax is ASCII, so in a line they are UTF-16
@@ -21,14 +23,14 @@ public enum CheckboxSyntax {
         return i < text.count && isSpace(text[i]) ? i : nil
     }
 
-    /// The box after a list marker that ends at `markerEnd`: its marker and the marker's offset.
+    /// The box after a list marker that ends at `markerEnd` (`TaskMarker.box(inTextAfterListMarker:)`): its marker and
+    /// the marker's offset. What precedes the marker is ASCII, so its UTF-16 offset is its UTF-8 one.
     public static func box(in text: [UInt8], after markerEnd: Int) -> (marker: Character, offset: Int)? {
-        var i = markerEnd
-        while i < text.count, i - markerEnd < 4, isSpace(text[i]) { i += 1 }
-        guard i > markerEnd, i + 3 < text.count, text[i] == UInt8(ascii: "["), text[i + 2] == UInt8(ascii: "]"),
-              isSpace(text[i + 3]) else { return nil }
-        let marker = Character(Unicode.Scalar(text[i + 1]))
-        return Checkbox.State(marker: marker) == nil ? nil : (marker, i + 1)
+        guard markerEnd <= text.count else { return nil }
+        let lineEnd = text[markerEnd...].firstIndex { $0 == UInt8(ascii: "\n") || $0 == UInt8(ascii: "\r") } ?? text.count
+        guard let box = TaskMarker.box(inTextAfterListMarker: String(decoding: text[markerEnd..<lineEnd], as: UTF8.self))
+        else { return nil }
+        return (box.marker, markerEnd + box.offset)
     }
 
     private static func isSpace(_ byte: UInt8) -> Bool { byte == UInt8(ascii: " ") || byte == UInt8(ascii: "\t") }

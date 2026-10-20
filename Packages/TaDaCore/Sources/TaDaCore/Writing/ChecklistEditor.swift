@@ -1,3 +1,4 @@
+import MarkdownEngineSyntax
 /// Changes one checkbox by replacing only the character between its brackets.
 public enum ChecklistEditor {
     /// Nil when `marker` isn't in the reference set, or the text no longer has `box` where it was scanned.
@@ -20,6 +21,6 @@ public enum ChecklistEditor {
     /// A click completes an open box (`[x]`) and reopens a done or cancelled one (`[ ]`).
     /// Nil for icon-only boxes, which ignore clicks, and for stale boxes.
     public static func click(_ box: Checkbox, in text: String) -> String? {
-        box.state.markerAfterClick.flatMap { setMarker($0, of: box, in: text) }
+        TaskMarker.toggled(box.marker).flatMap { setMarker($0, of: box, in: text) }
     }
 }

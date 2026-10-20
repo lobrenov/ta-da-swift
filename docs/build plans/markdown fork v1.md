@@ -101,7 +101,7 @@ The first run of the merge workflow, in two steps.
 - Check: conformance tests pass; every skip has a reason; `spec/README.md` explains the fixture format well enough for a TS runner and states the layers' boundaries; `spec/` names no app.
 
 ### M6 — TaDaCore on the syntax target (Ta Da)
-- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.5")`, product `MarkdownEngineSyntax` on `TaDaCore`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
+- `Packages/TaDaCore/Package.swift`: `.package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.6")`, product `MarkdownEngineSyntax` on `TaDaCore`. The fork's `live.6` adds the API TaDaCore reads with: `TaskMarker.state(of:)`/`toggled`/`box(inTextAfterListMarker:)`, `CalloutSyntax`, `EmbedSyntax.imageExtensions`, `TagSyntax.isTagName`. The Xcode project's pin is bumped in the same commit (SwiftPM refuses two different exact pins).
 - `WikiLink(inner:)`, `InlineTags`, `CheckboxSyntax` and `CalloutType`'s markers call the syntax target; their duplicated grammar is removed. Public TaDaCore API is unchanged.
 - `docs/file-format.md`: Body and Tags reference the spec at the pinned tag and keep Ta Da's choices (Decisions); callouts, `#^block` and an image embed's `|size` are named; any decision M5 recorded is applied, in TaDaCore too; the tag rule's wording is corrected in `file-format.md` and `InlineTags`.
 - Check: core tests on macOS and iOS; app + core tests; `file-format.md` and the spec agree on every rule both state.
