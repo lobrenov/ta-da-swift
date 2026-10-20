@@ -9,16 +9,14 @@ let package = Package(
     ],
     dependencies: [
         // Pinned exactly: the app must never pick up a parser change silently.
-        .package(url: "https://github.com/swiftlang/swift-markdown.git", exact: "0.9.0"),
         .package(url: "https://github.com/jpsim/Yams.git", exact: "6.2.2"),
         // The grammar the Live editor reads with; the Xcode project pins the same tag.
-        .package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.6"),
+        .package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.7"),
     ],
     targets: [
         .target(
             name: "TaDaCore",
             dependencies: [
-                .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "Yams", package: "Yams"),
                 .product(name: "MarkdownEngineSyntax", package: "swift-markdown-engine-extended"),
             ]
@@ -30,7 +28,6 @@ let package = Package(
             dependencies: [
                 "TaDaCore",
                 "TaDaCoreTesting",
-                .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "Yams", package: "Yams"),
                 .product(name: "MarkdownEngineSyntax", package: "swift-markdown-engine-extended"),
             ],

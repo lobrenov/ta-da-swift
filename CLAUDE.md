@@ -21,7 +21,7 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - Always open `TaDa.xcworkspace`, not the `.xcodeproj`.
 
 ## Layout
-- `Packages/TaDaCore/`: all non-UI logic (model, parsing, surgical writes, index, queries, storage). Foundation + swift-markdown + Yams only, never SwiftUI/AppKit.
+- `Packages/TaDaCore/`: all non-UI logic (model, parsing, surgical writes, index, queries, storage). Foundation + MarkdownEngineSyntax + Yams only, never SwiftUI/AppKit.
 - `TaDa/`: SwiftUI app target. Folders are synchronised, so new files join the target automatically.
 - `SampleVault/`: dev vault, started from the design's data and edited freely in manual testing; commit its changes with the work. Point the app at it. `git diff SampleVault` audits what the app wrote since the last commit.
 - `Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/DesignVault/`: the design's data, frozen. The design-count, golden and render tests read it; don't edit it to match a test.

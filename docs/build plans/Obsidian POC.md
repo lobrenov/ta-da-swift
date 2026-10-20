@@ -25,7 +25,7 @@ Each ends with its check passing, then a commit and a review.
 
 ### O1 — Plugin scaffold and reading
 - `Obsidian/`: manifest, esbuild, Vitest, a dev command that copies `main.js` into a test vault's `.obsidian/plugins/ta-da/`.
-- Port: `Item` (with `isLogged`, `isNotePath` and `reservedFolders`), `Status`, `LocalDate`, `WikiLink`, `Checkbox`, `Tag` (`Model/`); the folder constants (`Vault.home` and the folders in it, the old layout's names); `FrontmatterSplitter`, `PropertyReader`, `BodyScanner`, `InlineTags`, `CheckboxSyntax` (`Parsing/`); `VaultIndex`, `Queries` (`Index/`).
+- Port: `Item` (with `isLogged`, `isNotePath` and `reservedFolders`), `Status`, `LocalDate`, `WikiLink`, `Checkbox`, `Tag` (`Model/`); the folder constants (`Vault.home` and the folders in it, the old layout's names); `FrontmatterSplitter`, `PropertyReader`, `BodyScanner`, `CheckboxSyntax` (`Parsing/`); `VaultIndex`, `Queries` (`Index/`).
 - `TaDaIndex`: built from raw text (`Vault.cachedRead`) on layout ready, patched on `metadataCache` `changed` and `Vault` `rename`/`delete`.
 - Swift: `ConformanceExportTests` writes `Fixtures/Conformance/read.json` and `queries.json` from DesignVault (the old layout) and from a small fixture in the new layout.
 - Check: Vitest conformance passes on both files; the plugin loads in Obsidian with SampleVault and logs nothing.

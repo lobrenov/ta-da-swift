@@ -1,6 +1,6 @@
 import MarkdownEngineSyntax
 
-/// Where a checkbox is in a line, for the scanner, Add Subtask and Source mode: a list marker (`-`, `*`, `+`,
+/// Where a checkbox is in a line, for Add Subtask and Source mode: a list marker (`-`, `*`, `+`,
 /// `1.` or `1)`), one to four spaces or tabs, then `[c]` with `c` from the reference set and a space or tab
 /// after it. Offsets count UTF-8 code units in `text`; the syntax is ASCII, so in a line they are UTF-16
 /// offsets too.

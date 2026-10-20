@@ -1,0 +1,198 @@
+## AreaVault/areas/Empty.md
+
+## AreaVault/areas/Personal.md
+summary: Home, health and money.
+
+## AreaVault/areas/Work.md
+
+## AreaVault/projects/Garden.md
+
+## AreaVault/projects/Lost.md
+
+## AreaVault/projects/Payroll.md
+
+## AreaVault/projects/Side quest.md
+
+## AreaVault/projects/Ta Da.md
+
+## AreaVault/tasks/Book a dentist.md
+
+## AreaVault/tasks/Both keys.md
+
+## AreaVault/tasks/Build the sidebar.md
+
+## AreaVault/tasks/Buy milk.md
+
+## AreaVault/tasks/Call Nowhere.md
+
+## AreaVault/tasks/Find the map.md
+
+## AreaVault/tasks/Pay rent.md
+
+## AreaVault/tasks/Plan the quest.md
+
+## AreaVault/tasks/Run payroll.md
+
+## AreaVault/tasks/Water the beds.md
+
+## DesignVault/Periodic Notes/Daily Notes/2026-10-01.md
+summary: Two tab bar options sketched; Other stays as the fifth tab.
+checkboxes: [/]4:3 [x]5:3
+
+## DesignVault/Periodic Notes/Daily Notes/2026-10-02.md
+summary: Standup ran long; the release moves to Tuesday.
+checkboxes: [x]6:3 [/]7:3 [ ]8:3
+
+## DesignVault/Periodic Notes/Weekly Notes/2026-W40.md
+checkboxes: [/]4:3 [x]5:3 [ ]6:3
+
+## DesignVault/notes/Not a task.md
+summary: This note has no Ta Da frontmatter, so Ta Da ignores it, even though it contains a checklist.
+checkboxes: [ ]2:3
+
+## DesignVault/projects/Atlas Billing.md
+
+## DesignVault/projects/End of year reviews.md
+
+## DesignVault/projects/Game Jam - Starfall.md
+
+## DesignVault/projects/Sell the Kombi.md
+
+## DesignVault/projects/Ta Da MVP.md
+summary: A Swift-native, markdown-powered task manager: one file per task or project, synced through iCloud Drive.
+
+## DesignVault/tasks/Agenda view for Upcoming.md
+summary: A date-segmented list that places each file on its dueDate and on its deadline.
+
+## DesignVault/tasks/Book a roadworthy for the Kombi.md
+summary: Needed before the car can be listed.
+
+## DesignVault/tasks/Build the sidebar domains.md
+summary: Loose tasks, Projects, Upcoming and Today, each a saved query over frontmatter.
+
+## DesignVault/tasks/Create a system testing plan.md
+summary: Cover each module in scope, with owners and entry and exit criteria.
+checkboxes: [ ]14:3 [ ]15:3 [ ]16:3 [ ]17:3
+
+## DesignVault/tasks/Frontmatter schema for tasks and projects.md
+summary: Agree the YAML keys every task and project file carries.
+
+## DesignVault/tasks/Import iTerm2 colour schemes as themes.md
+summary: Parse .itermcolors files and map them onto the theme tokens.
+
+## DesignVault/tasks/Live preview editor on swift-markdown-engine.md
+summary: Obsidian-style editing: raw markdown on the cursor line, rendered everywhere else.
+checkboxes: [x]15:3 [ ]16:3 [ ]17:3 [ ]18:3
+
+## DesignVault/tasks/Message Max about a coat and a jacket.md
+summary: Ask about a coat and a jacket in the same fabric as my pants.
+
+## DesignVault/tasks/Pick a test framework.md
+summary: Compare XCTest and Swift Testing for the core package.
+
+## DesignVault/tasks/Read and write files through iCloud Drive.md
+summary: Use NSFileCoordinator and NSMetadataQuery so every file stays plain markdown in iCloud Drive.
+checkboxes: [x]14:3 [x]15:3 [x]16:3 [ ]17:3 [ ]18:3
+
+## DesignVault/tasks/Resolve the cabin payback.md
+summary: Settle the split from the long weekend.
+checkboxes: [x]13:3 [ ]14:3
+
+## DesignVault/tasks/Shift my physio appointment.md
+summary: Waiting on the clinic to open bookings for next week.
+
+## DesignVault/tasks/Spike the swift-markdown parser.md
+summary: Check the AST covers task lists and source positions.
+
+## DesignVault/tasks/Submit timesheet.md
+summary: Hours for the week ending Friday 2 October.
+
+## DesignVault/tasks/Update 2DS before the next session.md
+summary: Get the 2DS ready before the group meets again.
+
+## DesignVault/tasks/Update Dan’s website for Starfall.md
+summary: Refresh the event page for Starfall.
+checkboxes: [x]15:3 [ ]16:3 [ ]17:3
+
+## DesignVault/tasks/Update my claude.md files.md
+summary: Bring the project instruction files in line with how I actually work now.
+checkboxes: [x]17:3 [x]18:3 [ ]19:3 [ ]20:3 [ ]21:3
+links: Ta Da MVP
+linkTargets: 255+9
+
+## NoteVault/.hidden/Secret.md
+summary: Hidden.
+
+## NoteVault/.logbook/2026-09/Logged.md
+
+## NoteVault/.trash/Trashed note.md
+summary: Trashed.
+
+## NoteVault/Loose idea.md
+summary: A thought with no frontmatter.
+checkboxes: [ ]2:3 [x]3:3
+
+## NoteVault/Meetings/2026/Standup.md
+summary: Nothing to report. #work
+tags: work
+
+## NoteVault/Meetings/Ark planning call.md
+summary: Agenda for [[Ship it]].
+checkboxes: [x]6:3 [ ]7:3 [ ]8:3
+links: Ship it
+linkTargets: 13+7
+
+## NoteVault/Reading list.md
+checkboxes: [ ]4:3 [-]5:3
+
+## NoteVault/Typed/Task elsewhere.md
+
+## NoteVault/Work/Clients/Brief.md
+summary: Notes on the brief.
+
+## NoteVault/attachments/Untyped in attachments.md
+summary: Not a note: it's in attachments/.
+
+## NoteVault/tasks/Ship it.md
+
+## NoteVault/tasks/Untyped in tasks.md
+summary: Not a note: it's in tasks/.
+
+## TagVault/.logbook/tasks/Old errand.md
+
+## TagVault/.trash/tasks/Trashed.md
+
+## TagVault/areas/Home.md
+summary: The house and garden.
+
+## TagVault/areas/Work.md
+
+## TagVault/projects/Clients.md
+summary: Billing for #Work/Clients.
+tags: Work/Clients
+
+## TagVault/projects/Garden.md
+
+## TagVault/tasks/Buy mulch.md
+summary: Get mulch too #errands #home/garden
+tags: errands, home/garden
+
+## TagVault/tasks/Call Dan.md
+summary: Ask #people/dan about the fence.
+tags: people/dan
+
+## TagVault/tasks/Message Max.md
+summary: About a coat and a jacket.
+
+## TagVault/tasks/Prune the lemon tree.md
+summary: Before the spring growth starts. #Errands
+tags: Errands
+
+## TagVault/tasks/Send the invoice.md
+
+## TagVault/tasks/Untagged task.md
+summary: No tags here, only #code and [[Garden#Plan]].
+links: Garden#Plan
+linkTargets: 33+6
+
+## TagVault/tasks/Water the beds.md
