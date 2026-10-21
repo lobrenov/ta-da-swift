@@ -20,4 +20,4 @@ The box maps the frontmatter statuses (a project's Ongoing too), and the same bo
 - Always 16px, 1.5px border, `radius-xs`. Never scale it up inside a row; 32px is for documentation only.
 - Clicking the box completes the task, or reopens a done or cancelled one. It is a real `<button>` with an `aria-label` that names the task ("Complete: Submit timesheet").
 - A done or cancelled task's title turns `muted` and is struck through.
-- Status colour lives on the box and a 6px dot in the meta line, never on the title text.
+- Status colour lives on the box and a 6px dot beside the status name, never on the title text.

@@ -25,4 +25,4 @@ Capsule controls 26px tall: `td-chip` shows and edits one frontmatter key, `td-t
 
 ## Meta chips
 
-- In `td-meta` (11.5px `muted`), a 10px semibold glyph 4px from its text: subtasks `checklist` `n/m`, `repeat` and the rule, due and deadline dates, and last the tag count, its `tag` glyph in `accent` (`td-ic-tag`); hovering lists the tags.
+- In `td-meta` (11.5px `muted`), a 10px semibold glyph 4px from its text: subtasks `checklist` `n/m`, and last the tag count, its `tag` glyph in `accent` (`td-ic-tag`); hovering lists the tags.
