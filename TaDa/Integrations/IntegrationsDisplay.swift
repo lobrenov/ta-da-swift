@@ -9,10 +9,7 @@ extension IntegrationsStore.Kind {
     /// What the ticks choose.
     var choiceNoun: String { self == .events ? "calendars" : "lists" }
     var toggleLabel: String { self == .events ? "Show events" : "Show reminders" }
-    var macHint: String {
-        self == .events ? "Calendar events in the Agenda"
-            : "Reminders with a due date, on that day in the Agenda; today's include overdue ones"
-    }
+    var macHint: String { self == .events ? "In the Agenda, read only" : "Those with a due date, read only" }
     var phoneHint: String { self == .events ? "In the Agenda" : "Those with a due date" }
 
     /// Where access is turned on: System Settings' Privacy & Security pane on the Mac, Ta Da's settings on iPhone.

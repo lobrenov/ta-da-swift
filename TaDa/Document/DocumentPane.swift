@@ -36,7 +36,7 @@ struct DocumentPane: View {
             EmptyState(systemImage: "doc.text", title: create.title, message: "Uses the template set in Settings ▸ Daily notes.",
                        button: ("Create \(create.file)", { Task { await model.openOrCreateNote(for: model.agendaSelection) } }))
         } else if model.selection == nil {
-            EmptyState(systemImage: "doc.text", title: "No task selected", message: "Pick a task to read and edit it here.")
+            EmptyState(systemImage: "doc.text", title: "No task selected")
         } else {
             Color.clear
         }

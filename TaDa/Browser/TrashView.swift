@@ -24,8 +24,7 @@ struct TrashView: View {
                         if let note = model.trashNote { toast(note) }
                     }
                     if isEmpty {
-                        EmptyState(systemImage: AppModel.Domain.trash.systemImage, title: "Trash is empty",
-                                   message: "Deleted tasks, projects, areas and images wait here.")
+                        EmptyState(systemImage: AppModel.Domain.trash.systemImage, title: "Trash is empty")
                             .padding(.top, 40)
                     } else {
                         let byFile = model.trashedAttachmentsByFile
@@ -66,7 +65,6 @@ struct TrashView: View {
             Text("/")
             Text(Vault.trashFolder).foregroundStyle(theme.color(\.fg))
             Spacer(minLength: 12)
-            Text("Files stay here until the trash is emptied").font(.system(size: 12))
         }
         .font(.system(size: 11.5, design: .monospaced))
         .foregroundStyle(theme.color(\.muted))
@@ -93,11 +91,6 @@ struct TrashView: View {
             .buttonStyle(ActionButtonStyle(kind: .outlinedStrong))
             .disabled(picked == 0)
             .help("Restore (⌘⌫)")
-            if !isEmpty {
-                Text(picked == 0 ? "Select files to restore them" : "Restored files return to their folders, with their project and area")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.color(\.muted))
-            }
         }
     }
 

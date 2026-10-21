@@ -36,8 +36,7 @@ struct TaskListView: View {
     }
 
     private var empty: EmptyState {
-        EmptyState(systemImage: AppModel.Domain.loose.systemImage, title: "No loose tasks",
-                   message: "Open tasks that don’t belong to a project show here.")
+        EmptyState(systemImage: AppModel.Domain.loose.systemImage, title: "No loose tasks")
     }
 }
 

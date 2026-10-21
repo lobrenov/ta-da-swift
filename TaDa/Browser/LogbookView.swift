@@ -30,7 +30,7 @@ struct LogbookView: View {
     private func note(_ kind: LogbookGroup.Kind) -> String? {
         switch kind {
         case .logsTonight: "Still in place · logs tonight"
-        case .waitsForOpenTasks: "Still in place · logs once its project's tasks are completed"
+        case .waitsForOpenTasks: nil
         case .logged: nil
         }
     }
@@ -43,16 +43,16 @@ struct LogbookView: View {
                     .disabled(!model.hasFilesToLog)
                     .help("Moves the completed files to \(Vault.logbookFolder)/")
             }
-            Text(waiting == 0 ? "Up to date · logs every night at midnight"
-                 : "\(waiting) completed, still in place · logs every night at midnight")
-                .font(.system(size: 11.5))
-                .foregroundStyle(theme.color(\.muted))
+            if waiting > 0 {
+                Text("\(waiting) completed, still in place")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(theme.color(\.muted))
+            }
         }
     }
 
     private var empty: EmptyState {
-        EmptyState(systemImage: AppModel.Domain.logbook.systemImage, title: "Nothing logged yet",
-                   message: "Completed tasks and projects move here every night, into `\(Vault.logbookFolder)/`.")
+        EmptyState(systemImage: AppModel.Domain.logbook.systemImage, title: "Nothing logged yet")
     }
 }
 

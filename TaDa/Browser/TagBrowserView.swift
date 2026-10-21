@@ -106,8 +106,6 @@ struct TagBrowserView: View {
         if projects > 0 { counts.append(projects == 1 ? "1 project" : "\(projects) projects") }
         counts.append(open == 1 ? "1 open task" : "\(open) open tasks")
         if !page.notes.isEmpty { counts.append(page.notes.count == 1 ? "1 note" : "\(page.notes.count) notes") }
-        if tag == nil { counts.insert("Areas, projects, tasks and notes with no tags", at: 0) }
-        if !page.children.isEmpty { counts.append("includes its child tags") }
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: tag == nil ? "tag.slash" : "tag")

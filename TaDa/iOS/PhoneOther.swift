@@ -177,7 +177,7 @@ struct PhoneSettingsScreen: View {
             } header: {
                 Text("Week notes")
             } footer: {
-                Text("File name GGGG-[W]WW, e.g. \(model.weekNoteExample). Each week opens with its note in the Agenda.")
+                Text("File name GGGG-[W]WW, e.g. \(model.weekNoteExample).")
             }
         }
     }
@@ -214,7 +214,7 @@ struct PhoneSettingsScreen: View {
         } footer: {
             Text(store.access == .denied
                  ? "Ta Da can’t show badges. Turn on Allow Notifications and Badges in Settings ▸ Apps ▸ Ta Da ▸ Notifications."
-                 : "The app icon counts the open tasks due or at their deadline today or earlier, as in today's Agenda.")
+                 : "Open tasks due or at their deadline today or earlier.")
         }
     }
 
@@ -341,7 +341,7 @@ struct PhoneTrashScreen: View {
         .background { theme.color(\.bg).ignoresSafeArea() }
         .overlay {
             if isEmpty, !search.isSearching {
-                ContentUnavailableView("Trash is empty", systemImage: "trash", description: Text("Deleted tasks, projects, areas and images wait here."))
+                ContentUnavailableView("Trash is empty", systemImage: "trash")
             }
         }
         // While search is open its field takes the navigation bar's row.

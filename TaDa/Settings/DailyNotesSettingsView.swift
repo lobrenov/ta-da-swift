@@ -8,7 +8,7 @@ struct DailyNotesSettingsView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        SettingsPage(title: "Daily notes", summary: "One note a day, and one a week, kept as plain markdown in your folder.") {
+        SettingsPage(title: "Daily notes") {
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(title: "Daily")
                 VStack(spacing: 0) {
@@ -47,9 +47,6 @@ struct DailyNotesSettingsView: View {
                     .opacity(model.weekNotes ? 1 : 0.45)
                 }
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
-                Text("Each week opens with its note in the Agenda.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.color(\.muted))
             }
         }
     }

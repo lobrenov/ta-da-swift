@@ -8,9 +8,7 @@ struct ThemeSettingsView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        SettingsPage(title: "Themes",
-                     summary: "Each theme set pairs a light and a dark iTerm2 scheme. Ta Da switches between them with your Mac’s appearance.",
-                     spacing: 18) {
+        SettingsPage(title: "Themes", spacing: 18) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
                     label("Appearance")

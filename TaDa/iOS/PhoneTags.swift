@@ -79,7 +79,7 @@ struct PhoneTagScreen: View {
         let completedFolded = !model.isFolded("Completed", in: foldKey)
         let shown = open + (completedFolded ? [] : page.completed)
 
-        return PhoneList(model: model, title: tag?.name ?? "Untagged", subtitle: subtitle(page, open: open.count, untagged: tag == nil),
+        return PhoneList(model: model, title: tag?.name ?? "Untagged", subtitle: subtitle(page, open: open.count),
                   icon: AnyView(Image(systemName: tag == nil ? "tag.slash" : "tag")
                       .scaledFont(size: 26)
                       .foregroundStyle(theme.color(tag == nil ? \.muted : \.accent))),
@@ -173,14 +173,13 @@ struct PhoneTagScreen: View {
     }
 
     /// "1 project · 4 open tasks", as the Mac's tag page counts.
-    private func subtitle(_ page: TagBrowser, open: Int, untagged: Bool) -> String {
+    private func subtitle(_ page: TagBrowser, open: Int) -> String {
         let areas = page.areasAndProjects.count { $0.properties.kind == .area }
         let projects = page.areasAndProjects.count - areas
         var counts: [String] = []
         if areas > 0 { counts.append(areas == 1 ? "1 area" : "\(areas) areas") }
         if projects > 0 { counts.append(projects == 1 ? "1 project" : "\(projects) projects") }
         counts.append(open == 1 ? "1 open task" : "\(open) open tasks")
-        if untagged { counts.insert("No tags", at: 0) }
         return counts.joined(separator: " · ")
     }
 

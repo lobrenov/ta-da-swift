@@ -343,7 +343,7 @@ struct SidebarView: View {
         .padding(.horizontal, 10)
         .frame(height: 30)
         .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
-        .help("Search titles, summaries and areas (⌥⌘F)")
+        .help("Search (⌥⌘F)")
     }
 
     /// The folder, and whether Ta Da is watching it for changes made by other apps.

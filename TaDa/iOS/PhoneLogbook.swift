@@ -34,21 +34,22 @@ struct PhoneLogbookScreen: View {
         .background { theme.color(\.bg).ignoresSafeArea() }
         .overlay {
             if groups.isEmpty {
-                ContentUnavailableView("Nothing logged yet", systemImage: AppModel.Domain.logbook.systemImage,
-                                       description: Text("Completed tasks and projects move here every night."))
+                ContentUnavailableView("Nothing logged yet", systemImage: AppModel.Domain.logbook.systemImage)
             }
         }
         .navigationTitle("Logbook")
         .navigationSubtitle("Completed files in \(Vault.logbookFolder)/")
         .background { TabBarHiddenOnTop() }
         .toolbar {
-            ToolbarItem(placement: .bottomBar) {
-                Text(waiting == 0 ? "Up to date · logs every night" : "\(waiting) completed today · logs every night")
-                    .scaledFont(size: 13)
-                    .foregroundStyle(theme.color(\.muted))
-                    .fixedSize()
+            if waiting > 0 {
+                ToolbarItem(placement: .bottomBar) {
+                    Text("\(waiting) completed today")
+                        .scaledFont(size: 13)
+                        .foregroundStyle(theme.color(\.muted))
+                        .fixedSize()
+                }
+                .sharedBackgroundVisibility(.hidden)
             }
-            .sharedBackgroundVisibility(.hidden)
             ToolbarSpacer(.flexible, placement: .bottomBar)
             ToolbarItem(placement: .bottomBar) {
                 Button("Log Now") {
@@ -67,7 +68,7 @@ struct PhoneLogbookScreen: View {
     private func note(_ kind: LogbookGroup.Kind) -> String? {
         switch kind {
         case .logsTonight: "Logs tonight"
-        case .waitsForOpenTasks: "Waits for its project"
+        case .waitsForOpenTasks: nil
         case .logged: nil
         }
     }

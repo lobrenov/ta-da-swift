@@ -10,7 +10,7 @@ struct NotificationsSettingsView: View {
     private var store: NotificationsStore { model.notifications }
 
     var body: some View {
-        SettingsPage(title: "Notifications", summary: "What Ta Da shows outside its window.", spacing: 18) {
+        SettingsPage(title: "Notifications", spacing: 18) {
             VStack(spacing: 0) {
                 switchRow
                 if store.access == .denied {
@@ -28,7 +28,7 @@ struct NotificationsSettingsView: View {
                 Text("Badges")
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.color(\.strong))
-                Text("The Dock icon counts the open tasks due or at their deadline today or earlier, as in today's Agenda")
+                Text("Open tasks due or at their deadline today or earlier")
                     .font(.system(size: 12))
                     .foregroundStyle(theme.color(\.muted))
             }

@@ -11,9 +11,7 @@ struct IntegrationsSettingsView: View {
     private var store: IntegrationsStore { model.integrations }
 
     var body: some View {
-        SettingsPage(title: "Integrations",
-                     summary: "Show events and reminders from this Mac in the Agenda. Ta Da only reads them.",
-                     spacing: 18) {
+        SettingsPage(title: "Integrations", spacing: 18) {
             VStack(spacing: 0) {
                 ForEach(IntegrationsStore.Kind.allCases, id: \.self) { kind in
                     if kind != .events { Hairline() }

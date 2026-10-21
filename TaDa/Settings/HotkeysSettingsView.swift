@@ -9,7 +9,7 @@ struct HotkeysSettingsView: View {
     private var isRecording: Bool { model.isRecordingHotkey }
 
     var body: some View {
-        SettingsPage(title: "Hotkeys", summary: "Ta Da’s keyboard shortcuts. Quick Entry’s works in any app while Ta Da is open.", spacing: 18) {
+        SettingsPage(title: "Hotkeys", spacing: 18) {
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(title: "Global")
                 VStack(spacing: 0) {
@@ -70,15 +70,10 @@ struct HotkeysSettingsView: View {
 
     private var quickEntryRow: some View {
         HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Quick Entry")
-                    .fontWeight(.semibold)
-                    .foregroundStyle(theme.color(\.strong))
-                Text("Opens a new task, project or area over any app.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.color(\.muted))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Quick Entry")
+                .fontWeight(.semibold)
+                .foregroundStyle(theme.color(\.strong))
+                .frame(maxWidth: .infinity, alignment: .leading)
             HotkeyRecorder(hotkey: $model.quickEntryHotkey, isRecording: $model.isRecordingHotkey, isTaken: model.quickEntryHotkeyTaken)
             iconButton("arrow.counterclockwise", help: "Restore ⌃Space", label: "Restore the default, Control Space",
                        disabled: model.quickEntryHotkey == .quickEntryDefault) {

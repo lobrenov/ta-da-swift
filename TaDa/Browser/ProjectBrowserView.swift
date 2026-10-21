@@ -22,7 +22,7 @@ struct ProjectBrowserView: View {
         } content: {
             TaskSections(model: model, sections: sections, grouping: grouping, foldKey: project.path, dates: .iconsOnly)
             if all.isEmpty {
-                Text("No tasks link to this project yet.")
+                Text("No tasks")
                     .foregroundStyle(theme.color(\.muted))
                     .padding(.horizontal, 10)
             } else if tasks.isEmpty {

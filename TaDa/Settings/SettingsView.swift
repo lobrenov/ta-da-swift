@@ -73,24 +73,19 @@ private struct SettingsWindow: View {
     }
 }
 
-/// A settings page: its title and line of explanation above its sections.
+/// A settings page: its title above its sections.
 struct SettingsPage<Content: View>: View {
     let title: String
-    let summary: String
     var spacing: CGFloat = 22
     @ViewBuilder let content: Content
     @Environment(\.theme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: spacing) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(theme.color(\.strong))
-                    .accessibilityAddTraits(.isHeader)
-                Text(summary)
-                    .foregroundStyle(theme.color(\.muted))
-            }
+            Text(title)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(theme.color(\.strong))
+                .accessibilityAddTraits(.isHeader)
             content
         }
         .padding(.horizontal, 36)

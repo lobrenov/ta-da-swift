@@ -186,8 +186,6 @@ private struct RenameImageDialog: View {
                     Text("Rename “\(text.name)”")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(theme.color(\.strong))
-                    Text("The file is renamed, and every embed of it follows.")
-                        .foregroundStyle(theme.color(\.fg))
                     Text(path)
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(theme.color(\.muted))
@@ -283,10 +281,7 @@ private struct DeleteImageDialog: View {
                 }
             }
             HStack(spacing: 10) {
-                Text("Restore in Trash brings it back to every embed.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.color(\.muted))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                Spacer()
                 Button("Cancel") { dismiss() }
                     .buttonStyle(ActionButtonStyle(height: 28))
                     .keyboardShortcut(.cancelAction)
@@ -471,9 +466,6 @@ private struct PhoneDeleteImageSheet: View {
                 .padding(.vertical, 8)
             }
             VStack(spacing: 8) {
-                Text("Restore in Trash brings it back to every embed.")
-                    .scaledFont(size: 13)
-                    .foregroundStyle(theme.color(\.muted))
                 Button {
                     dismiss()
                     Task { await model.trashAttachment(path) }

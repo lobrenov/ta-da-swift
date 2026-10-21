@@ -42,7 +42,7 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 
 ## Delete dialogs
 
-- **Delete image** (the embed menu's Delete): a 500px sheet with a 64px thumbnail, “Delete “name”?”, what happens to the embeds, and the path and size in mono `muted`. Under an EMBEDDED IN label, each file that embeds it: its icon, title, project or area, a This file badge for the open file and the embed count when it's more than one. Then “Restore in Trash brings it back to every embed.”, Cancel and Delete (`danger`). On iPhone, a sheet ending in Move to Trash.
+- **Delete image** (the embed menu's Delete): a 500px sheet with a 64px thumbnail, “Delete “name”?”, what happens to the embeds, and the path and size in mono `muted`. Under an EMBEDDED IN label, each file that embeds it: its icon, title, project or area, a This file badge for the open file and the embed count when it's more than one. Then Cancel and Delete (`danger`). On iPhone, a sheet ending in Move to Trash.
 - **Delete with attachments** (deleting files that embed images): a 540px sheet listing each file's images, under a header per file when there are several. Each row is a tick (a 16px rounded square; a 24px circle on iPhone), a thumbnail (34px; 44px on iPhone), the name and a note of the other files that embed it. An image another file still embeds starts unticked. A summary counts the files and ticked images; Cancel and Delete (`danger`), or Move to Trash in `deadline` on iPhone. Files without images ask with an alert, or not at all.
 
 ## rightClickMenu

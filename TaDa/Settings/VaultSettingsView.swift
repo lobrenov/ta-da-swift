@@ -10,7 +10,7 @@ struct VaultSettingsView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        SettingsPage(title: "Vault", summary: "Ta Da reads and writes plain markdown files in this folder.") {
+        SettingsPage(title: "Vault") {
             VStack(spacing: 0) {
                 row("Location") {
                     Image(systemName: "folder")
@@ -66,9 +66,9 @@ struct VaultSettingsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(title: "Folders in the vault")
                 VStack(spacing: 0) {
-                    folder(Vault.taskFolder + "/", "New tasks, one markdown file each")
-                    folder(Vault.projectFolder + "/", "New projects, one markdown file each")
-                    folder(Vault.areaFolder + "/", "New areas, one markdown file each")
+                    folder(Vault.taskFolder + "/", "New tasks")
+                    folder(Vault.projectFolder + "/", "New projects")
+                    folder(Vault.areaFolder + "/", "New areas")
                     if model.dailyFolder == model.weekFolder || !model.weekNotes {
                         folder(noteFolder(model.dailyFolder), model.weekNotes && model.dailyFolder == model.weekFolder
                                ? "Daily and week notes" : "Daily notes")

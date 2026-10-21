@@ -55,7 +55,6 @@ struct FolderBrowserView: View {
         let parent = Vault.folder(of: folder)
         var counts = [notes.count == 1 ? "1 note" : "\(notes.count) notes"]
         if !children.isEmpty { counts.append(children.count == 1 ? "1 folder" : "\(children.count) folders") }
-        if folder.isEmpty { counts.insert("Notes at the top of \(model.folderDisplayName)", at: 0) }
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: folder.isEmpty ? "tray" : "folder")

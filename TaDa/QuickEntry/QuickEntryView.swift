@@ -30,11 +30,6 @@ struct QuickEntryView: View {
                 let item = model.quickEntryItem
                 if draft.kind != .area { PropertyChipRow(model: model, item: item) }
                 TagChipRow(model: model, item: item)
-                if draft.kind == .area {
-                    Text("An area has only its name and tags: no status, parent or dates.")
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(theme.color(\.muted))
-                }
                 if canCreate { fileLine }
             }
             .padding(.horizontal, 18)

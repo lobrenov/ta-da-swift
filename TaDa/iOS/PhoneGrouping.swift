@@ -165,7 +165,7 @@ struct PhoneTagFilterSheet: View {
                 } header: {
                     Text("Tags in this view")
                 } footer: {
-                    Text("Shows files with any picked tag. \(shown) of \(items.count) shown.")
+                    Text("\(shown) of \(items.count) shown")
                 }
             }
             .scrollContentBackground(.hidden)

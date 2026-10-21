@@ -33,7 +33,7 @@ struct AreaBrowserView: View {
                 foldHeader("Tasks", count: open.count)
                 if !isFolded("Tasks") {
                     if open.isEmpty, !filter.isActive {
-                        Text("No tasks filed straight to \(area.title). Tasks in its projects stay on their project.")
+                        Text("No tasks")
                             .font(.system(size: 12.5))
                             .foregroundStyle(theme.color(\.muted))
                             .padding(.horizontal, 10)

@@ -21,15 +21,14 @@ struct PhoneTaskListScreen: View {
             : sections.filter { !model.isFolded($0, by: grouping, in: GroupedList.loose.foldKey) }.flatMap(\.tasks).map(\.path)
         let dates = TaskRow.Dates.labelled
 
-        PhoneList(model: model, title: "Loose tasks", subtitle: "No project or area · \(tasks(open))",
+        PhoneList(model: model, title: "Loose tasks", subtitle: tasks(open),
                   titleAccessory: AnyView(PhoneGroupMenu(model: model, list: .loose)),
                   pickable: pickable, add: newTask) {
             EmptyView()
         } content: {
             PhoneTagFilterBar(model: model, domain: .loose, items: all, shown: shownTasks.count)
             if all.isEmpty {
-                ContentUnavailableView("No loose tasks", systemImage: "tray",
-                                       description: Text("Open tasks that don’t belong to a project or an area show here."))
+                ContentUnavailableView("No loose tasks", systemImage: "tray")
                     .padding(.top, 60)
             } else if shownTasks.isEmpty, filter.isActive {
                 ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
@@ -83,15 +82,13 @@ struct PhoneTasksScreen: View {
                             .scaledFont(size: 22)
                             .foregroundStyle(theme.color(\.accent))
                             .frame(width: 24)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("Loose tasks")
-                                .scaledFont(size: 17, weight: .semibold)
-                                .foregroundStyle(theme.color(\.strong))
-                            Text("\(tasks(open)) with no project or area")
-                                .scaledFont(size: 13)
-                                .foregroundStyle(theme.color(\.muted))
-                        }
+                        Text("Loose tasks")
+                            .scaledFont(size: 17, weight: .semibold)
+                            .foregroundStyle(theme.color(\.strong))
                         Spacer(minLength: 8)
+                        if open > 0 {
+                            Text("\(open)").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
+                        }
                         Image(systemName: "chevron.right")
                             .scaledFont(size: 14, weight: .semibold)
                             .foregroundStyle(theme.color(\.muted))
@@ -246,7 +243,7 @@ struct PhoneProjectScreen: View {
                 PhoneTagFilterBar(model: model, domain: .project(path), items: all, shown: tasks.count)
                 PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: path, dates: .iconsOnly)
                 if all.isEmpty {
-                    Text("No tasks link to this project yet.")
+                    Text("No tasks")
                         .foregroundStyle(theme.color(\.muted))
                         .padding(16)
                 } else if tasks.isEmpty {
@@ -321,7 +318,7 @@ struct PhoneAreaScreen: View {
                     fold("Tasks", count: open.count)
                     if !isFolded("Tasks") {
                         if open.isEmpty, !filter.isActive {
-                            Text("No tasks filed straight to \(area.title). Tasks in its projects stay on their project.")
+                            Text("No tasks")
                                 .scaledFont(size: 15)
                                 .foregroundStyle(theme.color(\.muted))
                                 .padding(16)

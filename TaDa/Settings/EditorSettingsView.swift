@@ -7,35 +7,29 @@ struct EditorSettingsView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        SettingsPage(title: "Editor", summary: "How the editor helps as you type markdown.") {
+        SettingsPage(title: "Editor") {
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(title: "Autocomplete")
                 VStack(spacing: 0) {
-                    row("Brackets", "Typing an opening bracket adds its closer.",
-                        markers: ["( )", "[ ]", "{ }"], isOn: $model.autocomplete.brackets)
+                    row("Brackets", markers: ["( )", "[ ]", "{ }"], isOn: $model.autocomplete.brackets)
                     Hairline()
-                    row("Text formatting", "Bold, italic, strikethrough, highlight and inline code markers come in pairs.",
-                        markers: ["** **", "* *", "_ _", "~~ ~~", "== ==", "` `"], isOn: $model.autocomplete.formatting)
+                    row("Text formatting", markers: ["** **", "* *", "_ _", "~~ ~~", "== ==", "` `"], isOn: $model.autocomplete.formatting)
                     Hairline()
-                    row("Wikilinks and embeds", "Typing [[ adds ]], for links and ![[ embeds.",
-                        markers: ["[[ ]]", "![[ ]]"], isOn: $model.autocomplete.wikiLinks)
+                    row("Wikilinks and embeds", markers: ["[[ ]]", "![[ ]]"], isOn: $model.autocomplete.wikiLinks)
                     Hairline()
-                    row("Tags", "Typing # and a letter lists the tags in use.",
-                        markers: ["#"], isOn: $model.autocomplete.tags)
+                    row("Tags", markers: ["#"], isOn: $model.autocomplete.tags)
                 }
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
             }
         }
     }
 
-    private func row(_ title: String, _ summary: String, markers: [String], isOn: Binding<Bool>) -> some View {
+    private func row(_ title: String, markers: [String], isOn: Binding<Bool>) -> some View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.color(\.strong))
-                Text(summary)
-                    .foregroundStyle(theme.color(\.muted))
                 HStack(spacing: 6) {
                     ForEach(markers, id: \.self) { marker in
                         Text(marker)
