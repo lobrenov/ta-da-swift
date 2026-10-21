@@ -85,14 +85,14 @@ private struct PhoneAgendaDay: View {
                                 if parent.properties.kind == .area {
                                     PhoneAreaHeader(area: parent)
                                 } else {
-                                    PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
+                                    PhoneProjectHeader(model: model, project: parent)
                                 }
                             }
-                            ForEach(group.tasks) { PhoneTaskRow(model: model, item: $0, meta: .chips(.overdueDueAndDeadline)) }
+                            ForEach(group.tasks) { PhoneTaskRow(model: model, item: $0, meta: .row(.agenda)) }
                         }
                     } else {
                         PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey,
-                                          dates: .overdueDueAndDeadline, place: { model.index.parent(of: $0)?.title })
+                                          dates: .agenda, place: { model.index.parent(of: $0)?.title })
                     }
                 } else if note == nil, events.isEmpty, reminders.isEmpty {
                     Text("Nothing scheduled").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
@@ -154,8 +154,7 @@ private struct PhoneAgendaWeek: View {
                     .padding(.top, 18)
                     ForEach(entries) { entry in
                         PhoneTaskRow(model: model, item: entry.item,
-                                     meta: .agenda(entry, place: model.index.parent(of: entry.item)?.title ?? "Loose task",
-                                                   also: nil, dated: true))
+                                     meta: .agenda(entry, place: model.index.parent(of: entry.item)?.title ?? "Loose task"))
                     }
                 }
                 PickingBarClearance()

@@ -54,6 +54,8 @@ struct PhoneTagFilterBar: View {
     let items: [Item]
     /// How many of them the filter leaves.
     let shown: Int
+    /// A list whose Group menu leads the row.
+    var group: GroupedList? = nil
     @State private var isPicking = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
@@ -61,8 +63,9 @@ struct PhoneTagFilterBar: View {
     var body: some View {
         let filter = model.tagFilter(on: domain)
         Group {
-            if filter.isActive || items.contains(where: { !$0.tags.isEmpty }) {
+            if group != nil || filter.isActive || items.contains(where: { !$0.tags.isEmpty }) {
                 WrappingHStack(spacing: 8) {
+                    if let group { PhoneGroupMenu(model: model, list: group) }
                     Button { isPicking = true } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "line.3.horizontal.decrease")
@@ -224,10 +227,10 @@ struct PhoneTaskSections: View {
         ForEach(sections) { section in
             let folded = model.isFolded(section, by: grouping, in: foldKey)
             PhoneFoldHeader(model: model, title: section.title, count: section.tasks.count,
-                            group: section.foldName(grouping), in: foldKey, isFolded: folded)
+                            group: section.foldName(grouping), in: foldKey, isFolded: folded, quiet: section.isClosed)
             if !folded {
                 ForEach(section.tasks) { task in
-                    PhoneTaskRow(model: model, item: task, meta: place.map { .placedChips($0(task), dates) } ?? .chips(dates))
+                    PhoneTaskRow(model: model, item: task, meta: .row(dates, place: place?(task)))
                 }
             }
         }

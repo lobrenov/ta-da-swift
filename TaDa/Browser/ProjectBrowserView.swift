@@ -20,7 +20,7 @@ struct ProjectBrowserView: View {
                       spacing: 22) {
             header(model.index.progress(of: project), tasks: all, shown: tasks.count)
         } content: {
-            TaskSections(model: model, sections: sections, grouping: grouping, foldKey: project.path, dates: .iconsOnly)
+            TaskSections(model: model, sections: sections, grouping: grouping, foldKey: project.path, dates: .elsewhere)
             if all.isEmpty {
                 Text("No tasks")
                     .foregroundStyle(theme.color(\.muted))

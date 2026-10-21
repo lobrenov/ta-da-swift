@@ -3,18 +3,17 @@ import SwiftUI
 import TaDaCore
 
 struct TaskRow: View {
-    /// Which date a list shows. Today only flags an overdue due date and reads a deadline as days left; every other
-    /// list shows the date itself. `labelled` and `iconsOnly` differ only on the iPhone.
+    /// Which date a list shows. The Agenda only flags an overdue due date and reads a deadline as days left; every
+    /// other list shows the date itself.
     enum Dates {
-        case overdueDueAndDeadline
-        case labelled
-        case iconsOnly
+        case agenda
+        case elsewhere
     }
 
     let item: Item
     let selected: Bool
     let today: LocalDate
-    var dates = Dates.labelled
+    var dates = Dates.elsewhere
     /// The task's project or area, before the date, where the list's groups don't show it.
     var place: String? = nil
     let onToggle: () -> Void
@@ -31,7 +30,7 @@ struct TaskRow: View {
                     .layoutPriority(-1)
                     .accessibilityLabel("In \(place)")
             }
-            RowDate(item: item, today: today, inAgenda: dates == .overdueDueAndDeadline)
+            RowDate(item: item, today: today, inAgenda: dates == .agenda)
         }
     }
 }
@@ -40,6 +39,7 @@ struct TaskRow: View {
 /// to VoiceOver.
 struct RowGlyphs: View {
     let item: Item
+    var iconSize: CGFloat = 11.5
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -65,7 +65,7 @@ struct RowGlyphs: View {
     private func glyph(_ systemImage: String, _ spoken: String, tint: KeyPath<Theme, PlatformColor> = \.muted,
                        help: String? = nil) -> some View {
         Image(systemName: systemImage)
-            .font(.system(size: 11.5))
+            .rowFont(iconSize)
             .foregroundStyle(theme.color(tint))
             .help(help ?? spoken)
             .accessibilityLabel(spoken)
@@ -79,6 +79,10 @@ struct RowDate: View {
     let item: Item
     let today: LocalDate
     var inAgenda = false
+    /// An Agenda entry to show instead: its kind's date, even when the task is closed.
+    var entry: AgendaEntry? = nil
+    var textSize: CGFloat = 12
+    var iconSize: CGFloat = 12
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -87,10 +91,10 @@ struct RowDate: View {
             let text = inAgenda && kind == .deadline ? date.deadlineLabel(today: today) : date.relativeLabel(today: today).capitalizedFirst
             HStack(spacing: 4) {
                 Image(systemName: kind.systemImage)
-                    .font(.system(size: 12))
+                    .rowFont(iconSize)
                     .foregroundStyle(theme.color(kind.tint))
                 Text(text)
-                    .font(.system(size: 12))
+                    .rowFont(textSize)
                     .foregroundStyle(theme.color(overdue ? \.deadline : \.muted))
             }
             .lineLimit(1)
@@ -102,11 +106,23 @@ struct RowDate: View {
     }
 
     private var shown: (kind: AgendaEntry.Kind, date: LocalDate)? {
+        if let entry { return (entry.kind, entry.date) }
         let p = item.properties
         if p.status.isClosed { return nil }
         if let deadline = p.deadline { return (.deadline, deadline) }
         if let due = p.dueDate, !inAgenda || due < today { return (.due, due) }
         return nil
+    }
+}
+
+private extension View {
+    /// The system font at `size` points, scaling with Dynamic Type on the iPhone.
+    func rowFont(_ size: CGFloat) -> some View {
+        #if os(iOS)
+        scaledFont(size: size)
+        #else
+        font(.system(size: size))
+        #endif
     }
 }
 
@@ -257,23 +273,6 @@ struct Chip: View {
     }
 }
 
-/// A due date (calendar, due colour) or deadline (flag, deadline colour). Past dates turn the text red.
-struct DateChip: View {
-    let kind: AgendaEntry.Kind
-    let date: LocalDate
-    let today: LocalDate
-    var labelled = true
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        let day = date.relativeLabel(today: today)
-        Chip(systemImage: kind.systemImage, tint: kind.tint,
-             text: labelled ? "\(kind.label) \(day)" : day.capitalizedFirst)
-            .foregroundStyle(date < today ? theme.color(\.deadline) : theme.color(\.muted))
-            .accessibilityLabel("\(kind.label) \(day)\(date < today ? ", overdue" : "")")
-    }
-}
-
 /// The calendar or flag for a date's kind.
 struct KindIcon: View {
     let kind: AgendaEntry.Kind
@@ -297,6 +296,17 @@ extension AgendaEntry.Kind {
     /// The frontmatter key: `dueDate` or `deadline`.
     var key: String { self == .due ? "dueDate" : "deadline" }
     var date: KeyPath<Properties, LocalDate?> { self == .due ? \.dueDate : \.deadline }
+}
+
+extension ListSection {
+    /// A Completed, Done or Cancelled group.
+    var isClosed: Bool {
+        switch kind {
+        case .completed: true
+        case .status(let status): status.isClosed
+        case .date, .open: false
+        }
+    }
 }
 
 extension Theme {

@@ -19,7 +19,6 @@ struct PhoneTaskListScreen: View {
         let open = all.count { !$0.properties.status.isClosed }
         let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : sections.filter { !model.isFolded($0, by: grouping, in: GroupedList.loose.foldKey) }.flatMap(\.tasks).map(\.path)
-        let dates = TaskRow.Dates.labelled
 
         PhoneList(model: model, title: "Loose tasks", subtitle: tasks(open),
                   titleAccessory: AnyView(PhoneGroupMenu(model: model, list: .loose)),
@@ -40,15 +39,15 @@ struct PhoneTaskListScreen: View {
                         if parent.properties.kind == .area {
                             PhoneAreaHeader(area: parent, isFirst: group.id == groups.first?.id)
                         } else {
-                            PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
+                            PhoneProjectHeader(model: model, project: parent)
                         }
                     }
                     ForEach(group.tasks) { task in
-                        PhoneTaskRow(model: model, item: task, meta: .chips(dates))
+                        PhoneTaskRow(model: model, item: task)
                     }
                 }
             } else {
-                PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: GroupedList.loose.foldKey, dates: dates)
+                PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: GroupedList.loose.foldKey, dates: .elsewhere)
             }
         }
     }
@@ -140,10 +139,11 @@ struct PhoneProjectRows: View {
         ForEach(model.areas) { entry in
             PhoneAreaRow(model: model, area: entry.area)
                 .padding(.top, 14)
-            ForEach(entry.projects) { PhoneProjectRow(model: model, progress: $0, isCompact: true) }
+            ForEach(entry.projects) { PhoneProjectRow(model: model, progress: $0) }
         }
         if !completed.isEmpty {
-            PhoneFoldHeader(model: model, title: "Completed", count: completed.count, group: "Completed", in: "Projects")
+            PhoneFoldHeader(model: model, title: "Completed", count: completed.count, group: "Completed", in: "Projects",
+                            quiet: true)
             if !model.isFolded("Completed", in: "Projects") {
                 ForEach(completed) { PhoneProjectRow(model: model, progress: $0) }
             }
@@ -160,15 +160,18 @@ struct PhoneFoldHeader: View {
     let list: String
     /// Whether it's folded, for a group whose stored fold means something else, as an area's Completed does.
     let folded: Bool?
+    /// A closed group (Completed, Done, Cancelled): a smaller muted name.
+    let quiet: Bool
     @Environment(\.theme) private var theme
 
-    init(model: AppModel, title: String, count: Int, group: String, in list: String, isFolded: Bool? = nil) {
+    init(model: AppModel, title: String, count: Int, group: String, in list: String, isFolded: Bool? = nil, quiet: Bool = false) {
         self.model = model
         self.title = title
         self.count = count
         self.group = group
         self.list = list
         folded = isFolded
+        self.quiet = quiet
     }
 
     var body: some View {
@@ -180,9 +183,15 @@ struct PhoneFoldHeader: View {
                         .scaledFont(size: 12, weight: .bold)
                         .rotationEffect(.degrees(isFolded ? 0 : 90))
                         .foregroundStyle(theme.color(\.muted))
-                    Text(title).scaledFont(size: 17, weight: .semibold).foregroundStyle(theme.color(\.strong))
-                    Spacer()
-                    Text("\(count)").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
+                    if quiet {
+                        Text(title).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.muted))
+                        Spacer()
+                        Text("\(count)").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
+                    } else {
+                        Text(title).scaledFont(size: 20, weight: .bold).foregroundStyle(theme.color(\.strong))
+                        Text("\(count)").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
+                        Spacer()
+                    }
                 }
                 Hairline()
             }
@@ -213,10 +222,8 @@ struct PhoneProjectScreen: View {
             let sections = ListSection.sections(tasks, by: grouping, today: model.today)
             let shown = sections.filter { !model.isFolded($0, by: grouping, in: path) }.flatMap(\.tasks)
             let progress = model.index.progress(of: project)
-            let subtasks = project.subtasks
 
             PhoneList(model: model, title: project.title,
-                      titleAccessory: AnyView(PhoneGroupMenu(model: model, list: .project)),
                       fileButton: ("Project File", { nav.push(.file(path)) }),
                       pickable: shown.map(\.path), add: { await newTask(in: project) }) {
                 Button("Open Project File", systemImage: "doc") { nav.push(.file(path)) }
@@ -228,20 +235,11 @@ struct PhoneProjectScreen: View {
                     Task { await model.moveToTrash([path]) }
                 }
             } content: {
-                VStack(alignment: .leading, spacing: 12) {
-                    PhoneChips(model: model, item: project)
-                    let line = (subtasks.total > 0 ? ["Subtasks \(subtasks.done)/\(subtasks.total)"] : [])
-                        + (progress.isOngoing ? [] : ["\(progress.done) of \(progress.total) tasks done"])
-                    if !line.isEmpty {
-                        Text(line.joined(separator: " · "))
-                            .scaledFont(size: 13)
-                            .foregroundStyle(theme.color(\.muted))
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
-                PhoneTagFilterBar(model: model, domain: .project(path), items: all, shown: tasks.count)
-                PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: path, dates: .iconsOnly)
+                PhoneProjectLine(model: model, project: project, progress: progress)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
+                PhoneTagFilterBar(model: model, domain: .project(path), items: all, shown: tasks.count, group: .project)
+                PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: path, dates: .elsewhere)
                 if all.isEmpty {
                     Text("No tasks")
                         .foregroundStyle(theme.color(\.muted))
@@ -263,6 +261,76 @@ struct PhoneProjectScreen: View {
     }
 }
 
+/// A project's properties as one quiet line: its status, deadline and due date that are set, each a button opening its
+/// menu or sheet, then the subtasks and, unless the project is Ongoing, "n of m done".
+private struct PhoneProjectLine: View {
+    let model: AppModel
+    let project: Item
+    let progress: ProjectProgress
+    @Environment(PhoneNavigation.self) private var nav
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let p = project.properties
+        let subtasks = project.subtasks
+        WrappingHStack(spacing: 14) {
+            Menu {
+                Picker("Status", selection: Binding(get: { p.status }, set: { status in
+                    nav.play(.pick)
+                    Task { await model.setStatus(status, in: project.path) }
+                })) {
+                    ForEach(Status.choices(for: p.kind), id: \.self) { Text($0.rawValue).tag($0) }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Circle().fill(theme.statusColor(p.status)).frame(width: 8, height: 8)
+                    Text(p.status.rawValue)
+                }
+                .frame(minHeight: 44)
+                .contentShape(.rect)
+            }
+            .accessibilityLabel("Status")
+            .accessibilityValue(p.status.rawValue)
+            dateButton(.deadline, p.deadline)
+            dateButton(.due, p.dueDate)
+            if subtasks.total > 0 {
+                HStack(spacing: 5) {
+                    Image(systemName: "checklist").scaledFont(size: 13)
+                    Text("\(subtasks.done)/\(subtasks.total)")
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(subtasks.done) of \(subtasks.total) subtasks done")
+            }
+            if !progress.isOngoing {
+                Text("\(progress.done) of \(progress.total) done")
+            }
+        }
+        .scaledFont(size: 15)
+        .foregroundStyle(theme.color(\.muted))
+    }
+
+    @ViewBuilder private func dateButton(_ kind: AgendaEntry.Kind, _ date: LocalDate?) -> some View {
+        if let date {
+            let isDone = project.properties.status.isClosed
+            let isOverdue = !isDone && date < model.today
+            Button { nav.sheet = .date(kind, paths: [project.path]) } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: kind.systemImage)
+                        .scaledFont(size: 13, weight: .semibold)
+                        .foregroundStyle(theme.color(isDone ? \.muted : kind.tint))
+                    Text(date.relativeLabel(today: model.today).capitalizedFirst)
+                        .foregroundStyle(theme.color(isOverdue ? \.deadline : \.muted))
+                }
+                .frame(minHeight: 44)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(kind.name)
+            .accessibilityValue(date.formatted(.weekdayDayMonthYear) + (isOverdue ? ", overdue" : ""))
+        }
+    }
+}
+
 // MARK: An area's projects and tasks
 
 struct PhoneAreaScreen: View {
@@ -281,7 +349,7 @@ struct PhoneAreaScreen: View {
             let filed = filter.apply(allFiled)
             let open = filed.filter { !$0.properties.status.isClosed }
             let done = filed.filter { $0.properties.status.isClosed }
-            let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
+            let shown = open + (isFolded ? [] : done)
 
             PhoneList(model: model, title: area.title,
                       subtitle: "\(projects.count == 1 ? "1 project" : "\(projects.count) projects") · \(tasks(open.count))",
@@ -309,25 +377,23 @@ struct PhoneAreaScreen: View {
                     ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
                                            description: Text("Nothing here carries the picked tags.")).padding(.top, 40)
                 } else {
-                    if !projects.isEmpty {
-                        fold("Projects", count: projects.count)
-                        if !isFolded("Projects") {
-                            ForEach(projects) { PhoneProjectRow(model: model, progress: $0, showsDates: true) }
-                        }
+                    ForEach(projects) { PhoneProjectRow(model: model, progress: $0) }
+                    if !open.isEmpty {
+                        Color.clear.frame(height: projects.isEmpty ? 0 : 22)
+                        ForEach(open) { PhoneTaskRow(model: model, item: $0) }
                     }
-                    fold("Tasks", count: open.count)
-                    if !isFolded("Tasks") {
-                        if open.isEmpty, !filter.isActive {
-                            Text("No tasks")
-                                .scaledFont(size: 15)
-                                .foregroundStyle(theme.color(\.muted))
-                                .padding(16)
-                        }
-                        ForEach(open) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
+                    if projects.isEmpty, filed.isEmpty, !filter.isActive {
+                        Text("No tasks")
+                            .scaledFont(size: 15)
+                            .foregroundStyle(theme.color(\.muted))
+                            .padding(16)
                     }
-                    fold("Completed", count: done.count)
-                    if !isFolded("Completed") {
-                        ForEach(done) { PhoneTaskRow(model: model, item: $0, meta: .chips(.iconsOnly)) }
+                    if !done.isEmpty {
+                        PhoneFoldHeader(model: model, title: "Completed", count: done.count, group: "Completed", in: path,
+                                        isFolded: isFolded, quiet: true)
+                        if !isFolded {
+                            ForEach(done) { PhoneTaskRow(model: model, item: $0) }
+                        }
                     }
                 }
             }
@@ -343,13 +409,7 @@ struct PhoneAreaScreen: View {
     }
 
     /// Completed starts folded: a stored entry for it means it was opened.
-    private func isFolded(_ group: String) -> Bool {
-        model.isFolded(group, in: path) != (group == "Completed")
-    }
-
-    private func fold(_ title: String, count: Int) -> some View {
-        PhoneFoldHeader(model: model, title: title, count: count, group: title, in: path, isFolded: isFolded(title))
-    }
+    private var isFolded: Bool { !model.isFolded("Completed", in: path) }
 
     private func newTask(in area: Item) async {
         if let path = await model.newLinkedTask(in: area) { nav.push(.file(path)) }

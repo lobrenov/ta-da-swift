@@ -1,29 +1,28 @@
-// Rows in the iPhone's lists: a task with its checkbox and chips, a project with its ring, an area with its cube, a note
-// with its page, an area's and a project's heading in Today, and the menu a press and hold opens on any of them.
+// Rows in the iPhone's lists: a task on one line with its checkbox, glyphs and date, a project with its ring, an area with
+// its cube, a note with its page, an area's and a project's heading in Today, and the menu a press and hold opens on any
+// of them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
 
-/// What a task row shows under its title.
+/// What a task row shows besides its title.
 enum PhoneRowMeta {
-    /// Subtasks, repeat and dates, as the Mac's rows show them.
-    case chips(TaskRow.Dates)
-    /// Where the task lives, then its chips, where the list's groups don't show its project or area.
-    case placedChips(String?, TaskRow.Dates)
-    /// An Upcoming entry: its kind, where the task lives, and its other date.
-    case agenda(AgendaEntry, place: String, also: String?, dated: Bool)
-    /// A search match: where the task lives and when it's due; the title and summary highlight the words.
+    /// Glyphs, then where the task lives where the list's groups don't show its project or area, then one date.
+    case row(TaskRow.Dates, place: String? = nil)
+    /// An Agenda entry: where the task lives and the entry's date.
+    case agenda(AgendaEntry, place: String)
+    /// A search match: where the task lives under the title; the title and summary highlight the words.
     case search(words: [String], place: String)
 }
 
 struct PhoneTaskRow: View {
     let model: AppModel
     let item: Item
-    var meta = PhoneRowMeta.chips(.labelled)
+    var meta = PhoneRowMeta.row(.elsewhere)
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
-    init(model: AppModel, item: Item, meta: PhoneRowMeta = .chips(.labelled)) {
+    init(model: AppModel, item: Item, meta: PhoneRowMeta = .row(.elsewhere)) {
         self.model = model
         self.item = item
         self.meta = meta
@@ -35,28 +34,19 @@ struct PhoneTaskRow: View {
 
     var body: some View {
         let isPicked = nav.picked.contains(item.path)
+        let isSearch = if case .search = meta { true } else { false }
         VStack(spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: isSearch ? .top : .center, spacing: 12) {
                 StatusCheckbox(status: item.properties.status, title: item.title, size: 22) { toggle() }
                     .contentShape(.rect.inset(by: -10))
-                    .padding(.top, 1)
+                    .padding(.top, isSearch ? 1 : 0)
                 Button { open() } label: {
                     HStack(spacing: 8) {
-                        VStack(alignment: .leading, spacing: 3) {
-                            title
-                            metaLine
-                                .scaledFont(size: 13)
-                                .foregroundStyle(theme.color(\.muted))
-                                .lineLimit(1)
-                            if case let .search(words, _) = meta, let summary = item.summary,
-                               words.contains(where: { summary.localizedStandardContains($0) }) {
-                                Text(summary.highlighting(words, fill: theme.color(\.due).opacity(theme.isDark ? 0.3 : 0.25)))
-                                    .scaledFont(size: 15)
-                                    .foregroundStyle(theme.color(\.fg))
-                                    .lineLimit(2)
-                            }
+                        if case let .search(words, place) = meta {
+                            searchBody(words: words, place: place)
+                        } else {
+                            oneLine
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         if nav.isPicking {
                             Image(systemName: isPicked ? "checkmark.circle.fill" : "circle")
                                 .scaledFont(size: 22)
@@ -73,7 +63,8 @@ struct PhoneTaskRow: View {
                 .accessibilityAddTraits(isPicked ? .isSelected : [])
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.vertical, isSearch ? 10 : 0)
+            .scaledMinHeight(isSearch ? 0 : 46)
             PhoneRowSeparator()
         }
         .background {
@@ -88,71 +79,59 @@ struct PhoneTaskRow: View {
         .contextMenu { PhoneFileMenu(model: model, item: item) }
     }
 
-    private var title: some View {
+    /// The title, glyphs, place and one date on a line; the place gives way before the title does.
+    private var oneLine: some View {
         let done = item.properties.status.isClosed
-        let text: AttributedString = if case let .search(words, _) = meta {
-            item.title.highlighting(words, fill: theme.color(\.due).opacity(theme.isDark ? 0.3 : 0.25))
-        } else {
-            AttributedString(item.title)
+        let (dates, place, entry): (TaskRow.Dates, String?, AgendaEntry?) = switch meta {
+        case let .row(dates, place): (dates, place, nil)
+        case let .agenda(entry, place): (.agenda, place, entry)
+        case .search: (.elsewhere, nil, nil)
         }
-        return Text(text)
-            .scaledFont(size: 17)
-            .strikethrough(done)
-            .foregroundStyle(theme.color(done ? \.muted : \.fg))
-            .lineLimit(2)
-    }
-
-    @ViewBuilder private var metaLine: some View {
-        switch meta {
-        case let .chips(dates):
-            let chips = chips(dates: dates)
-            if !chips.isEmpty {
-                HStack(spacing: 12) {
-                    ForEach(chips.indices, id: \.self) { chips[$0] }
-                }
-            }
-        case let .placedChips(place, dates):
-            let chips = chips(dates: dates)
-            HStack(spacing: 12) {
-                if let place { Text(place).lineLimit(1) }
-                ForEach(chips.indices, id: \.self) { chips[$0] }
-            }
-        case let .agenda(entry, place, also, dated):
-            HStack(spacing: 10) {
-                HStack(spacing: 4) {
-                    KindIcon(kind: entry.kind)
-                    Text(entry.kind.label + (dated ? " \(entry.date.relativeLabel(today: model.today))" : ""))
-                }
+        return HStack(spacing: 8) {
+            Text(item.title)
+                .scaledFont(size: 17)
+                .strikethrough(done)
+                .foregroundStyle(theme.color(done ? \.muted : \.fg))
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .layoutPriority(1)
+            RowGlyphs(item: item, iconSize: 14)
+            Spacer(minLength: 8)
+            if let place {
                 Text(place)
-                if let also { Text(also) }
+                    .scaledFont(size: 15)
+                    .foregroundStyle(theme.color(\.muted))
+                    .lineLimit(1)
+                    .layoutPriority(-1)
+                    .accessibilityLabel("In \(place)")
             }
-        case let .search(_, place):
-            Text(place)
+            RowDate(item: item, today: model.today, inAgenda: dates == .agenda, entry: entry, textSize: 15, iconSize: 14)
         }
+        .foregroundStyle(theme.color(\.muted))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func chips(dates: TaskRow.Dates) -> [AnyView] {
-        let p = item.properties
-        let today = model.today
-        var chips: [AnyView] = []
-        let subtasks = item.subtasks
-        if subtasks.total > 0 {
-            chips.append(AnyView(Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
-                                      spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")))
-        }
-        if let rule = p.repeatRule {
-            chips.append(AnyView(Chip(systemImage: "repeat", text: rule, spoken: "Repeats \(rule)")))
-        }
-        if !p.status.isClosed {
-            if let due = p.dueDate, dates != .overdueDueAndDeadline || due < today {
-                chips.append(AnyView(DateChip(kind: .due, date: due, today: today, labelled: dates != .iconsOnly)))
+    private func searchBody(words: [String], place: String) -> some View {
+        let done = item.properties.status.isClosed
+        let fill = theme.color(\.due).opacity(theme.isDark ? 0.3 : 0.25)
+        return VStack(alignment: .leading, spacing: 3) {
+            Text(item.title.highlighting(words, fill: fill))
+                .scaledFont(size: 17)
+                .strikethrough(done)
+                .foregroundStyle(theme.color(done ? \.muted : \.fg))
+                .lineLimit(2)
+            Text(place)
+                .scaledFont(size: 13)
+                .foregroundStyle(theme.color(\.muted))
+                .lineLimit(1)
+            if let summary = item.summary, words.contains(where: { summary.localizedStandardContains($0) }) {
+                Text(summary.highlighting(words, fill: fill))
+                    .scaledFont(size: 15)
+                    .foregroundStyle(theme.color(\.fg))
+                    .lineLimit(2)
             }
-            if let deadline = p.deadline {
-                chips.append(AnyView(DateChip(kind: .deadline, date: deadline, today: today, labelled: dates != .iconsOnly)))
-            }
         }
-        if !item.tags.isEmpty { chips.append(AnyView(TagCountChip(tags: item.tags))) }
-        return chips
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func open() {
@@ -170,19 +149,18 @@ struct PhoneTaskRow: View {
     }
 }
 
-/// A project in the Projects tab or on an area's screen: its ring, title and progress, opening its tasks. Under an
-/// area in the Projects tab (`isCompact`) it shows its open tasks' count instead; on an area's screen (`showsDates`)
-/// its subtasks, due date and deadline follow its progress, as a task row shows them.
+/// A project in the Tasks tab or on an area's screen on one line: its ring, name, deadline and open-task count,
+/// opening its tasks.
 struct PhoneProjectRow: View {
     let model: AppModel
     let progress: ProjectProgress
-    var isCompact = false
-    var showsDates = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
         let project = progress.project
+        let p = project.properties
+        let open = model.index.tasks(in: project).count { !$0.properties.status.isClosed }
         VStack(spacing: 0) {
             Button { nav.push(.project(project.path)) } label: {
                 HStack(spacing: 12) {
@@ -190,28 +168,36 @@ struct PhoneProjectRow: View {
                         .scaleEffect(22 / 14)
                         .foregroundStyle(theme.color(\.accent))
                         .frame(width: 24)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(project.title)
-                            .scaledFont(size: 17)
-                            .foregroundStyle(theme.color(project.properties.status.isClosed ? \.muted : \.fg))
-                            .lineLimit(2)
-                        if !isCompact {
-                            meta(project)
-                                .scaledFont(size: 13)
-                                .foregroundStyle(theme.color(\.muted))
-                                .lineLimit(1)
-                        }
-                    }
+                    Text(project.title)
+                        .scaledFont(size: 17, weight: .semibold)
+                        .foregroundStyle(theme.color(p.status.isClosed ? \.muted : \.strong))
+                        .lineLimit(1)
                     Spacer(minLength: 8)
-                    if isCompact, progress.open > 0 {
-                        Text("\(progress.open)").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
+                    if let deadline = p.deadline, !p.status.isClosed {
+                        let overdue = deadline < model.today
+                        HStack(spacing: 4) {
+                            Image(systemName: AgendaEntry.Kind.deadline.systemImage)
+                                .scaledFont(size: 14)
+                                .foregroundStyle(theme.color(\.deadline))
+                            Text(deadline.relativeLabel(today: model.today).capitalizedFirst)
+                                .scaledFont(size: 15)
+                                .foregroundStyle(theme.color(overdue ? \.deadline : \.muted))
+                        }
+                        .lineLimit(1)
+                        .fixedSize()
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("Deadline \(deadline.relativeLabel(today: model.today))\(overdue ? ", overdue" : "")")
                     }
-                    Image(systemName: "chevron.right")
-                        .scaledFont(size: 14, weight: .semibold)
-                        .foregroundStyle(theme.color(\.muted))
+                    if open > 0 {
+                        Text("\(open)")
+                            .scaledFont(size: 15)
+                            .monospacedDigit()
+                            .foregroundStyle(theme.color(\.muted))
+                            .accessibilityLabel("^[\(open) open task](inflect: true)")
+                    }
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .scaledMinHeight(46)
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -219,30 +205,10 @@ struct PhoneProjectRow: View {
         }
         .contextMenu { PhoneFileMenu(model: model, item: project) }
     }
-
-    @ViewBuilder private func meta(_ project: Item) -> some View {
-        let p = project.properties
-        let summary = progress.isOngoing ? p.status.rawValue : "\(p.status.rawValue) · \(progress.done) of \(progress.total) done"
-        if showsDates {
-            let subtasks = project.subtasks
-            HStack(spacing: 12) {
-                Text(summary)
-                if subtasks.total > 0 {
-                    Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
-                         spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
-                }
-                if !p.status.isClosed {
-                    if let due = p.dueDate { DateChip(kind: .due, date: due, today: model.today, labelled: false) }
-                    if let deadline = p.deadline { DateChip(kind: .deadline, date: deadline, today: model.today, labelled: false) }
-                }
-            }
-        } else {
-            Text(summary + (p.deadline.map { " · Deadline \($0.relativeLabel(today: model.today))" } ?? ""))
-        }
-    }
 }
 
-/// An area in the Projects tab: its cube, title, and how many projects and tasks are filed in it, opening its screen.
+/// An area in the Tasks tab on one line: its cube, name, and how many projects and open tasks are filed in it,
+/// opening its screen.
 struct PhoneAreaRow: View {
     let model: AppModel
     let area: Item
@@ -256,23 +222,19 @@ struct PhoneAreaRow: View {
             Button { nav.push(.area(area.path)) } label: {
                 HStack(spacing: 12) {
                     AreaIcon(size: 24).frame(width: 24)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(area.title)
-                            .scaledFont(size: 17, weight: .semibold)
-                            .foregroundStyle(theme.color(\.strong))
-                            .lineLimit(2)
-                        Text("\(projects == 1 ? "1 project" : "\(projects) projects") · \(tasks(open))")
-                            .scaledFont(size: 13)
-                            .foregroundStyle(theme.color(\.muted))
-                            .lineLimit(1)
-                    }
+                    Text(area.title)
+                        .scaledFont(size: 17, weight: .semibold)
+                        .foregroundStyle(theme.color(\.strong))
+                        .lineLimit(1)
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .scaledFont(size: 14, weight: .semibold)
+                    Text("\(projects == 1 ? "1 project" : "\(projects) projects") · \(tasks(open))")
+                        .scaledFont(size: 15)
                         .foregroundStyle(theme.color(\.muted))
+                        .lineLimit(1)
+                        .layoutPriority(1)
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+                .scaledMinHeight(46)
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -319,7 +281,7 @@ struct PhoneNoteRow: View {
     }
 }
 
-/// An area's heading inside Today: its cube and title over a rule. Its own tasks follow, then its projects' groups.
+/// An area's heading inside a list: its cube and name over a rule. Its own tasks follow, then its projects' groups.
 struct PhoneAreaHeader: View {
     let area: Item
     var isFirst = false
@@ -328,8 +290,8 @@ struct PhoneAreaHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
-                AreaIcon(size: 16)
-                Text(area.title).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+                AreaIcon(size: 20)
+                Text(area.title).scaledFont(size: 20, weight: .bold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
             }
             Hairline()
         }
@@ -340,20 +302,36 @@ struct PhoneAreaHeader: View {
     }
 }
 
-/// A project's heading inside Today: its ring and title.
+/// A project's heading inside a list: its ring, name and area over a rule. Under its area's heading (`isUnderArea`)
+/// it is smaller and has no rule.
 struct PhoneProjectHeader: View {
+    let model: AppModel
     let project: Item
-    let progress: ProjectProgress
     @Environment(\.theme) private var theme
 
     var body: some View {
-        HStack(spacing: 8) {
-            ProgressRing(progress).foregroundStyle(theme.color(\.accent))
-            Text(project.title).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+        let progress = model.index.progress(of: project)
+        let isUnderArea = model.index.area(of: project) != nil
+        let area = project.properties.area?.title
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 8) {
+                ProgressRing(progress)
+                    .foregroundStyle(theme.color(\.accent))
+                    .scaleEffect(isUnderArea ? 1 : 20 / 14)
+                    .frame(width: isUnderArea ? 14 : 20, height: isUnderArea ? 14 : 20)
+                Text(project.title)
+                    .scaledFont(size: isUnderArea ? 17 : 20, weight: isUnderArea ? .semibold : .bold)
+                    .foregroundStyle(theme.color(\.strong))
+                    .lineLimit(1)
+                if let area, !isUnderArea {
+                    Text(area).scaledFont(size: 15).foregroundStyle(theme.color(\.muted)).lineLimit(1)
+                }
+            }
+            if !isUnderArea { Hairline() }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 20)
-        .padding(.bottom, 6)
+        .padding(.top, isUnderArea ? 14 : 22)
+        .padding(.bottom, isUnderArea ? 4 : 0)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
     }

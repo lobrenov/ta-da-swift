@@ -63,10 +63,10 @@ struct AgendaDayList: View {
                         if tasks.isEmpty {
                             Text("Nothing here carries the picked tags.").foregroundStyle(theme.color(\.muted)).padding(.horizontal, 10)
                         } else if grouping == .project {
-                            ProjectGroups(model: model, groups: groups, dates: .overdueDueAndDeadline)
+                            ProjectGroups(model: model, groups: groups, dates: .agenda)
                         } else {
                             TaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey,
-                                         dates: .overdueDueAndDeadline, place: { model.index.parent(of: $0)?.title })
+                                         dates: .agenda, place: { model.index.parent(of: $0)?.title })
                         }
                     }
                 }

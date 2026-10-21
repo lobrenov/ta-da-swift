@@ -28,9 +28,9 @@ struct TaskListView: View {
             }
         } content: {
             if grouping == .project {
-                ProjectGroups(model: model, groups: groups, dates: .labelled)
+                ProjectGroups(model: model, groups: groups, dates: .elsewhere)
             } else {
-                TaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: .labelled)
+                TaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: .elsewhere)
             }
         }
     }

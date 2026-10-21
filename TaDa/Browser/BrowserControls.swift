@@ -256,17 +256,6 @@ struct TaskSections: View {
     }
 }
 
-extension ListSection {
-    /// A Completed, Done or Cancelled group.
-    var isClosed: Bool {
-        switch kind {
-        case .completed: true
-        case .status(let status): status.isClosed
-        case .date, .open: false
-        }
-    }
-}
-
 /// What a filtered list shows when no file carries the picked tags.
 extension EmptyState {
     static let noTagMatch = EmptyState(systemImage: "line.3.horizontal.decrease", title: "No matches",
