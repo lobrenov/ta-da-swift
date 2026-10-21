@@ -236,7 +236,8 @@ struct TaskSections: View {
             VStack(alignment: .leading, spacing: 1) {
                 CountGroupHeader(title: section.title, count: section.tasks.count, isExpanded: Binding(
                     get: { !folded },
-                    set: { _ in model.toggleFolded(section, by: grouping, in: foldKey) }))
+                    set: { _ in model.toggleFolded(section, by: grouping, in: foldKey) }),
+                    quiet: section.isClosed)
                 ForEach(folded ? [] : section.tasks) { task in
                     TaskRow(item: task, selected: model.isSelected(task.path), today: model.today, dates: dates,
                             place: place?(task),
@@ -252,6 +253,17 @@ struct TaskSections: View {
     /// The rows on screen, top to bottom, for the arrow keys.
     static func shown(_ sections: [ListSection], by grouping: Grouping, in foldKey: String, model: AppModel) -> [String] {
         sections.filter { !model.isFolded($0, by: grouping, in: foldKey) }.flatMap(\.tasks).map(\.path)
+    }
+}
+
+extension ListSection {
+    /// A Completed, Done or Cancelled group.
+    var isClosed: Bool {
+        switch kind {
+        case .completed: true
+        case .status(let status): status.isClosed
+        case .date, .open: false
+        }
     }
 }
 

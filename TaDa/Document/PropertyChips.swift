@@ -61,6 +61,96 @@ extension PropertyChipRow where Trailing == EmptyView {
     }
 }
 
+/// A project's properties as one quiet line for its browser: the status, deadline and due date that are set, each a
+/// plain button opening its menu under itself, then the subtasks and, unless the project is Ongoing, "n of m done".
+struct ProjectPropertyLine: View {
+    let model: AppModel
+    let project: Item
+    let progress: ProjectProgress
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let subtasks = project.subtasks
+        WrappingHStack(spacing: 10) {
+            StatusLineButton(model: model, item: project)
+            LineDateButton(kind: .deadline, model: model, item: project)
+            LineDateButton(kind: .due, model: model, item: project)
+            if subtasks.total > 0 {
+                Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
+                     spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
+            }
+            if !progress.isOngoing {
+                Text("\(progress.done) of \(progress.total) done")
+            }
+        }
+        .font(.system(size: 12.5))
+        .foregroundStyle(theme.color(\.muted))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Properties")
+        .onDisappear { PropertyPicker.shared.close(path: project.path) }
+    }
+}
+
+/// The status's dot and name as a borderless button that opens the status menu under it.
+private struct StatusLineButton: View {
+    let model: AppModel
+    let item: Item
+    @State private var anchor = ScreenAnchor()
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let status = item.properties.status
+        let isOpen = PropertyPicker.shared.isOpen(item.path, "status")
+        Button { PropertyPicker.shared.pickStatus(of: item, model: model, anchor: anchor) } label: {
+            HStack(spacing: 6) {
+                Circle().fill(theme.statusColor(status)).frame(width: 7, height: 7)
+                Text(status.rawValue)
+            }
+            .foregroundStyle(theme.color(isOpen ? \.strong : \.muted))
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .background(ScreenAnchorReader(anchor: anchor))
+        .help("Status")
+        .accessibilityLabel("Status")
+        .accessibilityValue(status.rawValue)
+    }
+}
+
+/// A set date's icon in its kind's colour and the day, as a borderless button that opens its calendar under it.
+/// Nothing when the key is missing.
+private struct LineDateButton: View {
+    let kind: AgendaEntry.Kind
+    let model: AppModel
+    let item: Item
+    @State private var anchor = ScreenAnchor()
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        let p = item.properties
+        if let date = kind == .due ? p.dueDate : p.deadline {
+            let isDone = p.status.isClosed
+            let isOverdue = !isDone && date < model.today
+            let isOpen = PropertyPicker.shared.isOpen(item.path, kind.key)
+            Button { PropertyPicker.shared.pickDate(kind, of: [item], model: model, anchor: anchor) } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: kind.systemImage)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(theme.color(isDone ? \.muted : kind.tint))
+                    Text(date.relativeLabel(today: model.today).capitalizedFirst)
+                        .foregroundStyle(theme.color(isOpen ? \.strong : isOverdue ? \.deadline : \.muted))
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .background(ScreenAnchorReader(anchor: anchor))
+            .help(kind.name)
+            .accessibilityLabel(kind.name)
+            .accessibilityValue(date.formatted(.weekdayDayMonthYear) + (isOverdue ? ", overdue" : ""))
+        }
+    }
+}
+
 /// The status's dot and name, and a chevron.
 private struct StatusPropertyChip: View {
     let model: AppModel

@@ -167,7 +167,7 @@ struct TagBrowserView: View {
     private func foldHeader(_ title: String, count: Int) -> some View {
         CountGroupHeader(title: title, count: count, isExpanded: Binding(
             get: { !isFolded(title) },
-            set: { _ in model.toggleFolded(title, in: foldKey) }))
+            set: { _ in model.toggleFolded(title, in: foldKey) }), quiet: title == "Completed")
     }
 
     @ViewBuilder private func groupHeader(_ group: TaskGroup) -> some View {
@@ -177,7 +177,8 @@ struct TagBrowserView: View {
         case let parent? where model.index.area(of: parent) != nil:
             ProjectSubheader(project: parent, progress: model.index.progress(of: parent)).opensPage(of: parent, model)
         case let parent?:
-            ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent)).opensPage(of: parent, model)
+            ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent), area: parent.properties.area?.title)
+                .opensPage(of: parent, model)
                 .padding(.top, 8)
         case nil:
             VStack(alignment: .leading, spacing: 7) {

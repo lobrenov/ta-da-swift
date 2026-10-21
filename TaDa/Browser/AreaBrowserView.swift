@@ -1,5 +1,5 @@
-// An area beside the document pane: its header with the tag filter, its projects, the tasks filed straight to it and their completed
-// group, each foldable. Completed starts folded.
+// An area beside the document pane: its header with the tag filter, its projects one line each, the tasks filed straight
+// to it, then their Completed group, which starts folded.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -16,35 +16,36 @@ struct AreaBrowserView: View {
         let tasks = filter.apply(allTasks)
         let open = tasks.filter { !$0.properties.status.isClosed }
         let done = tasks.filter { $0.properties.status.isClosed }
-        let shown = (isFolded("Tasks") ? [] : open) + (isFolded("Completed") ? [] : done)
+        let shown = open + (isFolded ? [] : done)
 
-        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 18,
+        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 22,
                       empty: filter.isActive && projects.isEmpty && tasks.isEmpty ? .noTagMatch : nil) {
             header(projects: allProjects.count, tasks: allTasks.count { !$0.properties.status.isClosed },
                    files: allProjects + allTasks, shown: projects.count + tasks.count)
         } content: {
             if !projects.isEmpty {
                 VStack(alignment: .leading, spacing: 1) {
-                    foldHeader("Projects", count: projects.count)
-                    ForEach(isFolded("Projects") ? [] : projects) { projectRow($0) }
+                    ForEach(projects) { projectRow($0) }
                 }
             }
-            VStack(alignment: .leading, spacing: 1) {
-                foldHeader("Tasks", count: open.count)
-                if !isFolded("Tasks") {
-                    if open.isEmpty, !filter.isActive {
-                        Text("No tasks")
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(theme.color(\.muted))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 7)
-                    }
+            if !open.isEmpty {
+                VStack(alignment: .leading, spacing: 1) {
                     ForEach(open) { taskRow($0) }
                 }
             }
-            VStack(alignment: .leading, spacing: 1) {
-                foldHeader("Completed", count: done.count)
-                ForEach(isFolded("Completed") ? [] : done) { taskRow($0) }
+            if !done.isEmpty {
+                VStack(alignment: .leading, spacing: 1) {
+                    CountGroupHeader(title: "Completed", count: done.count, isExpanded: Binding(
+                        get: { !isFolded },
+                        set: { _ in model.toggleFolded("Completed", in: area.path) }), quiet: true)
+                    ForEach(isFolded ? [] : done) { taskRow($0) }
+                }
+            }
+            if projects.isEmpty, tasks.isEmpty, !filter.isActive {
+                Text("No tasks")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(theme.color(\.muted))
+                    .padding(.horizontal, 10)
             }
             NewLinkedTaskButton(model: model, title: "New task in \(area.title)").padding(.leading, 6)
         }
@@ -76,57 +77,47 @@ struct AreaBrowserView: View {
     }
 
     /// Completed starts folded: a stored entry for it means it was opened.
-    private func isFolded(_ group: String) -> Bool {
-        model.isFolded(group, in: area.path) != (group == "Completed")
-    }
+    private var isFolded: Bool { !model.isFolded("Completed", in: area.path) }
 
-    private func foldHeader(_ title: String, count: Int) -> some View {
-        CountGroupHeader(title: title, count: count, isExpanded: Binding(
-            get: { !isFolded(title) },
-            set: { _ in model.toggleFolded(title, in: area.path) }))
-    }
-
-    /// A project's ring, title and a line of its status and progress, then its subtasks, due date and deadline as a
-    /// task row shows them; clicking opens its page.
+    /// A project on one line: ring, name, deadline and open-task count; clicking opens its page.
     private func projectRow(_ progress: ProjectProgress) -> some View {
         let project = progress.project
         let p = project.properties
-        let subtasks = project.subtasks
+        let open = model.index.tasks(in: project).count { !$0.properties.status.isClosed }
         return Button { model.show(.project(project.path)) } label: {
             HStack(spacing: 10) {
                 ProgressRing(progress)
                     .foregroundStyle(theme.color(\.accent))
                     .scaleEffect(16 / 14)
                     .frame(width: 16, height: 16)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(project.title).font(.system(size: 13.5)).foregroundStyle(theme.color(\.fg))
-                    HStack(spacing: 12) {
-                        Text(progress.isOngoing ? p.status.rawValue : "\(p.status.rawValue) · \(progress.done) of \(progress.total) done")
-                        if subtasks.total > 0 {
-                            Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
-                                 spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
-                        }
-                        if !p.status.isClosed {
-                            if let due = p.dueDate {
-                                DateChip(kind: .due, date: due, today: model.today, labelled: false)
-                            }
-                            if let deadline = p.deadline {
-                                DateChip(kind: .deadline, date: deadline, today: model.today, labelled: false)
-                            }
-                        }
+                Text(project.title)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(theme.color(\.strong))
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                if let deadline = p.deadline, !p.status.isClosed {
+                    let overdue = deadline < model.today
+                    HStack(spacing: 4) {
+                        Image(systemName: AgendaEntry.Kind.deadline.systemImage)
+                            .foregroundStyle(theme.color(\.deadline))
+                        Text(deadline.relativeLabel(today: model.today).capitalizedFirst)
+                            .foregroundStyle(theme.color(overdue ? \.deadline : \.muted))
                     }
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(theme.color(\.muted))
+                    .font(.system(size: 12))
+                    .lineLimit(1)
+                    .fixedSize()
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Deadline \(deadline.relativeLabel(today: model.today))\(overdue ? ", overdue" : "")")
                 }
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .bold))
+                Text("\(open)")
+                    .font(.system(size: 12))
+                    .monospacedDigit()
                     .foregroundStyle(theme.color(\.muted))
-                    .accessibilityHidden(true)
+                    .frame(minWidth: 18, alignment: .trailing)
+                    .accessibilityLabel("^[\(open) open task](inflect: true)")
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 7)
+            .frame(height: 34)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
