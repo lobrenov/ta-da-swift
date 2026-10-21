@@ -132,17 +132,24 @@ extension View {
     }
 }
 
-/// A project's heading inside a list: its ring and title over a rule.
+/// A project's heading inside a list: its ring, name and area over a rule.
 struct ProjectGroupHeader: View {
     let project: Item
     let progress: ProjectProgress
+    var area: String? = nil
     @Environment(\.theme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
-                ProgressRing(progress).foregroundStyle(theme.color(\.accent))
-                Text(project.title).fontWeight(.semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+                ProgressRing(progress)
+                    .foregroundStyle(theme.color(\.accent))
+                    .scaleEffect(15 / 14)
+                    .frame(width: 15, height: 15)
+                Text(project.title).font(.system(size: 15, weight: .bold)).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+                if let area {
+                    Text(area).font(.system(size: 12)).foregroundStyle(theme.color(\.muted)).lineLimit(1)
+                }
             }
             .padding(.horizontal, 10)
             Hairline()
@@ -153,7 +160,7 @@ struct ProjectGroupHeader: View {
     }
 }
 
-/// An area's heading inside a list: its cube and title over a rule.
+/// An area's heading inside a list: its cube and name over a rule.
 struct AreaGroupHeader: View {
     let area: Item
     @Environment(\.theme) private var theme
@@ -162,7 +169,7 @@ struct AreaGroupHeader: View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
                 AreaIcon()
-                Text(area.title).fontWeight(.semibold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+                Text(area.title).font(.system(size: 15, weight: .bold)).foregroundStyle(theme.color(\.strong)).lineLimit(1)
             }
             .padding(.horizontal, 10)
             Hairline()
@@ -192,12 +199,14 @@ struct ProjectSubheader: View {
     }
 }
 
-/// A muted group name with a count on the right, over a rule ("Open 6"). With `isExpanded`, a chevron before the
+/// A group's name in bold with its count after it, over a rule ("Open 6"). With `isExpanded`, a chevron before the
 /// name points down when the group is open and right when it's folded, and clicking the header folds or opens it.
+/// `quiet` (a Completed group) is a smaller muted name with the count on the right.
 struct CountGroupHeader: View {
     let title: String
     let count: Int
     var isExpanded: Binding<Bool>? = nil
+    var quiet = false
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -218,19 +227,24 @@ struct CountGroupHeader: View {
     }
 
     private func label(expanded: Bool?) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: quiet ? 6 : 8) {
             if let expanded {
                 Image(systemName: expanded ? "chevron.down" : "chevron.right")
                     .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(theme.color(\.muted))
                     .frame(width: 12)
                     .accessibilityHidden(true)
             }
-            Text(title).fontWeight(.semibold)
-            Spacer()
-            Text("\(count)").fontWeight(.medium).monospacedDigit()
+            if quiet {
+                Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(theme.color(\.muted))
+                Spacer()
+                Text("\(count)").font(.system(size: 12, weight: .medium)).monospacedDigit().foregroundStyle(theme.color(\.muted))
+            } else {
+                Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(theme.color(\.strong))
+                Text("\(count)").font(.system(size: 12)).monospacedDigit().foregroundStyle(theme.color(\.muted))
+                Spacer()
+            }
         }
-        .font(.system(size: 12))
-        .foregroundStyle(theme.color(\.muted))
         .padding(.leading, expanded == nil ? 10 : 6)
         .padding(.trailing, 10)
         .contentShape(.rect)

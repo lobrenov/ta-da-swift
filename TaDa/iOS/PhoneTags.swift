@@ -127,7 +127,7 @@ struct PhoneTagScreen: View {
                 case let parent? where parent.properties.kind == .area:
                     PhoneAreaHeader(area: parent)
                 case let parent?:
-                    PhoneProjectHeader(project: parent, progress: model.index.progress(of: parent))
+                    PhoneProjectHeader(model: model, project: parent)
                 case nil:
                     looseHeader
                 }
@@ -135,7 +135,7 @@ struct PhoneTagScreen: View {
             }
             if !page.completed.isEmpty {
                 PhoneFoldHeader(model: model, title: "Completed", count: page.completed.count, group: "Completed",
-                                in: foldKey, isFolded: completedFolded)
+                                in: foldKey, isFolded: completedFolded, quiet: true)
                 if !completedFolded {
                     ForEach(page.completed) { PhoneTaskRow(model: model, item: $0) }
                 }

@@ -236,7 +236,8 @@ struct TaskSections: View {
             VStack(alignment: .leading, spacing: 1) {
                 CountGroupHeader(title: section.title, count: section.tasks.count, isExpanded: Binding(
                     get: { !folded },
-                    set: { _ in model.toggleFolded(section, by: grouping, in: foldKey) }))
+                    set: { _ in model.toggleFolded(section, by: grouping, in: foldKey) }),
+                    quiet: section.isClosed)
                 ForEach(folded ? [] : section.tasks) { task in
                     TaskRow(item: task, selected: model.isSelected(task.path), today: model.today, dates: dates,
                             place: place?(task),

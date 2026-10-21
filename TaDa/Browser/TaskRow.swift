@@ -1,52 +1,140 @@
-// One task in a browser list: status checkbox, title and a line of chips.
+// One task in a browser list: status checkbox, title, quiet glyphs and one date on a single line.
 import SwiftUI
 import TaDaCore
 
 struct TaskRow: View {
-    /// Which date chips a list shows. Today only flags an overdue due date; it lists everything due by today.
+    /// Which date a list shows. The Agenda only flags an overdue due date and reads a deadline as days left; every
+    /// other list shows the date itself.
     enum Dates {
-        case overdueDueAndDeadline
-        /// "Due" and "Deadline" words before each date.
-        case labelled
-        /// Icons only, as in a project's task list.
-        case iconsOnly
+        case agenda
+        case elsewhere
     }
 
     let item: Item
     let selected: Bool
     let today: LocalDate
-    var dates = Dates.labelled
-    /// The task's project or area, first on the meta line, where the list's groups don't show it.
+    var dates = Dates.elsewhere
+    /// The task's project or area, before the date, where the list's groups don't show it.
     var place: String? = nil
+    /// An Agenda week entry whose date the row shows.
+    var entry: AgendaEntry? = nil
     let onToggle: () -> Void
     let onSelect: () -> Void
 
-    private var p: Properties { item.properties }
-    private var isClosed: Bool { p.status.isClosed }
+    var body: some View {
+        SelectableRow(item: item, selected: selected, onToggle: onToggle, onSelect: onSelect) {
+            RowGlyphs(item: item)
+            Spacer(minLength: 8)
+            if let place {
+                Text(place)
+                    .font(.system(size: 12))
+                    .lineLimit(1)
+                    .layoutPriority(-1)
+                    .accessibilityLabel("In \(place)")
+            }
+            RowDate(item: item, today: today, inAgenda: dates == .agenda, entry: entry)
+        }
+    }
+}
+
+/// A task row's quiet glyphs, icon only: a note, subtasks, a repeat rule and tags. Each says its detail on hover and
+/// to VoiceOver.
+struct RowGlyphs: View {
+    let item: Item
+    var iconSize: CGFloat = 11.5
+    @Environment(\.theme) private var theme
 
     var body: some View {
-        SelectableRow(item: item, selected: selected, onToggle: onToggle, onSelect: onSelect) { chips }
+        let glyphs = glyphs
+        // The glyphs drop, keeping their spoken labels, when the row's title would otherwise truncate.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) {
+                ForEach(glyphs, id: \.systemImage) { glyph in
+                    Image(systemName: glyph.systemImage)
+                        .rowFont(iconSize)
+                        .foregroundStyle(theme.color(glyph.tint))
+                        .help(glyph.help ?? glyph.spoken)
+                        .accessibilityLabel(glyph.spoken)
+                }
+            }
+            .fixedSize()
+            Color.clear.frame(width: 0)
+                .accessibilityElement()
+                .accessibilityLabel(glyphs.map(\.spoken).joined(separator: ", "))
+        }
     }
 
-    @ViewBuilder private var chips: some View {
+    private var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?)] {
         let subtasks = item.subtasks
-        if let place { Text(place).lineLimit(1) }
+        var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?)] = []
+        if let summary = item.summary, !summary.isEmpty {
+            glyphs.append(("doc.text", "Has a note", \.muted, nil))
+        }
         if subtasks.total > 0 {
-            Chip(systemImage: "checklist", text: "\(subtasks.done)/\(subtasks.total)",
-                 spoken: "\(subtasks.done) of \(subtasks.total) subtasks done")
+            glyphs.append(("checklist", "\(subtasks.done) of \(subtasks.total) subtasks done", \.muted, nil))
         }
-        if let rule = p.repeatRule {
-            Chip(systemImage: "repeat", text: rule, spoken: "Repeats \(rule)")
+        if let rule = item.properties.repeatRule {
+            glyphs.append(("repeat", "Repeats \(rule)", \.muted, nil))
         }
-        if !isClosed {
-            if let due = p.dueDate, dates != .overdueDueAndDeadline || due < today {
-                DateChip(kind: .due, date: due, today: today, labelled: dates != .iconsOnly)
+        if !item.tags.isEmpty {
+            glyphs.append(("tag", item.tags.count == 1 ? "1 tag" : "\(item.tags.count) tags", \.accent,
+                           item.tags.map { "#\($0.tag.name)  \($0.inFrontmatter ? "tags:" : "in text")" }.joined(separator: "\n")))
+        }
+        return glyphs
+    }
+}
+
+/// A task row's one date, right-aligned: the deadline when set, else the due date, with its kind's icon. Closed tasks
+/// show none. In the Agenda a deadline reads "today", "N days left" or "N days late" and a due date shows only when
+/// overdue.
+struct RowDate: View {
+    let item: Item
+    let today: LocalDate
+    var inAgenda = false
+    /// An Agenda entry to show instead: its kind's date.
+    var entry: AgendaEntry? = nil
+    var textSize: CGFloat = 12
+    var iconSize: CGFloat = 12
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        if let (kind, date) = shown {
+            let overdue = date < today
+            let text = inAgenda && kind == .deadline ? date.deadlineLabel(today: today) : date.relativeLabel(today: today).capitalizedFirst
+            HStack(spacing: 4) {
+                Image(systemName: kind.systemImage)
+                    .rowFont(iconSize)
+                    .foregroundStyle(theme.color(kind.tint))
+                Text(text)
+                    .rowFont(textSize)
+                    .foregroundStyle(theme.color(overdue ? \.deadline : \.muted))
             }
-            if let deadline = p.deadline {
-                DateChip(kind: .deadline, date: deadline, today: today, labelled: dates != .iconsOnly)
-            }
+            .lineLimit(1)
+            .fixedSize()
+            .help("\(kind.label) \(date.relativeLabel(today: today))")
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(kind.label) \(date.relativeLabel(today: today))\(overdue ? ", overdue" : "")")
         }
-        TagCountChip(tags: item.tags)
+    }
+
+    private var shown: (kind: AgendaEntry.Kind, date: LocalDate)? {
+        let p = item.properties
+        if p.status.isClosed { return nil }
+        if let entry { return (entry.kind, entry.date) }
+        if let deadline = p.deadline { return (.deadline, deadline) }
+        if let due = p.dueDate, !inAgenda || due < today { return (.due, due) }
+        return nil
+    }
+}
+
+private extension View {
+    /// The system font at `size` points, scaling with Dynamic Type on the iPhone.
+    func rowFont(_ size: CGFloat) -> some View {
+        #if os(iOS)
+        scaledFont(size: size)
+        #else
+        font(.system(size: size))
+        #endif
     }
 }
 
@@ -63,27 +151,26 @@ struct TagCountChip: View {
     }
 }
 
-/// A task's row in a browser list: its status checkbox, then a button holding its title over a line of `meta`, which
-/// opens it. A selected row fills with `surface`.
-struct SelectableRow<Meta: View>: View {
+/// A task's row in a browser list, 32pt high: its status checkbox, then a button holding its title and `trailing`
+/// (glyphs and dates), which opens it. A selected row fills with `surface`.
+struct SelectableRow<Trailing: View>: View {
     let item: Item
     let selected: Bool
     let onToggle: () -> Void
     let onSelect: () -> Void
-    @ViewBuilder var meta: Meta
+    @ViewBuilder var trailing: Trailing
     @Environment(\.theme) private var theme
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(spacing: 10) {
             StatusCheckbox(status: item.properties.status, title: item.title, action: onToggle)
-                .padding(.top, 2)
             Button(action: onSelect) {
-                VStack(alignment: .leading, spacing: 3) {
-                    TaskTitle(item: item, selected: selected)
-                    HStack(spacing: 12) { meta }
-                        .font(.system(size: 11.5))
+                HStack(spacing: 8) {
+                    TaskTitle(item: item, selected: selected, lines: 1)
+                        .layoutPriority(1)
+                        .help(item.title)
+                    trailing
                         .foregroundStyle(theme.color(\.muted))
-                        .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(.rect)
@@ -92,7 +179,7 @@ struct SelectableRow<Meta: View>: View {
             .accessibilityAddTraits(selected ? .isSelected : [])
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 7)
+        .frame(height: 32)
         .background(selected ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
     }
 }
@@ -102,6 +189,7 @@ struct TaskTitle: View {
     let item: Item
     var selected = false
     var size: CGFloat = 13.5
+    var lines = 2
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -110,7 +198,8 @@ struct TaskTitle: View {
             .font(.system(size: size))
             .strikethrough(done)
             .foregroundStyle(theme.color(done ? \.muted : selected ? \.strong : \.fg))
-            .lineLimit(2)
+            .lineLimit(lines)
+            .truncationMode(.tail)
     }
 }
 
@@ -196,23 +285,6 @@ struct Chip: View {
     }
 }
 
-/// A due date (calendar, due colour) or deadline (flag, deadline colour). Past dates turn the text red.
-struct DateChip: View {
-    let kind: AgendaEntry.Kind
-    let date: LocalDate
-    let today: LocalDate
-    var labelled = true
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        let day = date.relativeLabel(today: today)
-        Chip(systemImage: kind.systemImage, tint: kind.tint,
-             text: labelled ? "\(kind.label) \(day)" : day.capitalizedFirst)
-            .foregroundStyle(date < today ? theme.color(\.deadline) : theme.color(\.muted))
-            .accessibilityLabel("\(kind.label) \(day)\(date < today ? ", overdue" : "")")
-    }
-}
-
 /// The calendar or flag for a date's kind.
 struct KindIcon: View {
     let kind: AgendaEntry.Kind
@@ -238,6 +310,17 @@ extension AgendaEntry.Kind {
     var date: KeyPath<Properties, LocalDate?> { self == .due ? \.dueDate : \.deadline }
 }
 
+extension ListSection {
+    /// A Completed, Done or Cancelled group.
+    var isClosed: Bool {
+        switch kind {
+        case .completed: true
+        case .status(let status): status.isClosed
+        case .date, .open: false
+        }
+    }
+}
+
 extension Theme {
     func statusColor(_ status: Status) -> Color {
         switch status {
@@ -255,6 +338,14 @@ extension LocalDate {
     func relativeLabel(today: LocalDate) -> String {
         if self == today { return "today" }
         return year == today.year ? formatted(.weekdayDayMonth) : formatted(.weekdayDayMonthYear)
+    }
+
+    /// A deadline's distance: "Today", "3 days left" or "1 day late".
+    func deadlineLabel(today: LocalDate) -> String {
+        let days = today.days(to: self)
+        if days == 0 { return "Today" }
+        let n = abs(days)
+        return "\(n) day\(n == 1 ? "" : "s") \(days > 0 ? "left" : "late")"
     }
 }
 

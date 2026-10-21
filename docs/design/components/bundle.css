@@ -17,14 +17,20 @@ body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font-f
 .td-checkbox:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Task row */
-.td-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; border-radius: var(--radius-md); }
+.td-row { display: flex; align-items: center; gap: 10px; box-sizing: border-box; height: 32px; padding: 0 10px; border-radius: var(--radius-md); }
 .td-row.is-selected { background: var(--surface); }
 .td-row.is-target { box-shadow: inset 0 0 0 2px var(--accent); }
-.td-row .td-checkbox { margin-top: 2px; }
-.td-row-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.td-row-title { font-size: 13.5px; color: var(--fg); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.td-row-body { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.td-row-title { font-size: 13.5px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .td-row.is-selected .td-row-title { color: var(--strong); }
 .td-row-title.is-done { color: var(--muted); text-decoration: line-through; }
+.td-row-glyphs { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; color: var(--muted); }
+.td-row-glyphs svg { width: 11.5px; height: 11.5px; }
+.td-row-place { margin-left: auto; flex-shrink: 2; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.td-row-date { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.td-row-place + .td-row-date { margin-left: 0; }
+.td-row-date svg { width: 12px; height: 12px; }
+.td-row-date.is-overdue { color: var(--deadline); }
 .td-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 11.5px; color: var(--muted); }
 .td-meta span { display: inline-flex; align-items: center; gap: 4px; }
 .td-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }

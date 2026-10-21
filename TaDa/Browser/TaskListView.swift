@@ -28,9 +28,9 @@ struct TaskListView: View {
             }
         } content: {
             if grouping == .project {
-                ProjectGroups(model: model, groups: groups, dates: .labelled)
+                ProjectGroups(model: model, groups: groups, dates: .elsewhere)
             } else {
-                TaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: .labelled)
+                TaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: .elsewhere)
             }
         }
     }
@@ -85,7 +85,8 @@ struct ProjectGroups: View {
             case .project where model.index.area(of: parent) != nil:
                 ProjectSubheader(project: parent, progress: model.index.progress(of: parent)).opensPage(of: parent, model)
             case .project:
-                ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent)).opensPage(of: parent, model)
+                ProjectGroupHeader(project: parent, progress: model.index.progress(of: parent), area: parent.properties.area?.title)
+                    .opensPage(of: parent, model)
             case .task, .note:
                 EmptyView()
             }
