@@ -29,11 +29,10 @@ struct PropertyChips: View {
     }
 }
 
-/// The chips alone, wrapping, with `trailing` after the last one: the project browser's header adds the subtasks.
-struct PropertyChipRow<Trailing: View>: View {
+/// The chips alone, wrapping.
+struct PropertyChipRow: View {
     let model: AppModel
     let item: Item
-    @ViewBuilder var trailing: Trailing
 
     var body: some View {
         WrappingHStack(spacing: 6) {
@@ -45,19 +44,12 @@ struct PropertyChipRow<Trailing: View>: View {
             }
             DatePropertyChip(kind: .due, model: model, item: item)
             DatePropertyChip(kind: .deadline, model: model, item: item)
-            trailing
         }
         .font(.system(size: 12.5))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Properties")
         .onChange(of: item.path) { PropertyPicker.shared.close() }
         .onDisappear { PropertyPicker.shared.close(path: item.path) }
-    }
-}
-
-extension PropertyChipRow where Trailing == EmptyView {
-    init(model: AppModel, item: Item) {
-        self.init(model: model, item: item) { EmptyView() }
     }
 }
 
@@ -88,6 +80,7 @@ struct ProjectPropertyLine: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Properties")
         .onDisappear { PropertyPicker.shared.close(path: project.path) }
+        .onChange(of: project.path) { PropertyPicker.shared.close() }
     }
 }
 

@@ -83,7 +83,6 @@ struct AreaBrowserView: View {
     private func projectRow(_ progress: ProjectProgress) -> some View {
         let project = progress.project
         let p = project.properties
-        let open = model.index.tasks(in: project).count { !$0.properties.status.isClosed }
         return Button { model.show(.project(project.path)) } label: {
             HStack(spacing: 10) {
                 ProgressRing(progress)
@@ -109,12 +108,13 @@ struct AreaBrowserView: View {
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("Deadline \(deadline.relativeLabel(today: model.today))\(overdue ? ", overdue" : "")")
                 }
-                Text("\(open)")
+                Text(progress.open > 0 ? "\(progress.open)" : "")
                     .font(.system(size: 12))
                     .monospacedDigit()
                     .foregroundStyle(theme.color(\.muted))
                     .frame(minWidth: 18, alignment: .trailing)
-                    .accessibilityLabel("^[\(open) open task](inflect: true)")
+                    .accessibilityLabel("^[\(progress.open) open task](inflect: true)")
+                    .accessibilityHidden(progress.open == 0)
             }
             .padding(.horizontal, 10)
             .frame(height: 34)

@@ -16,6 +16,8 @@ struct TaskRow: View {
     var dates = Dates.elsewhere
     /// The task's project or area, before the date, where the list's groups don't show it.
     var place: String? = nil
+    /// An Agenda week entry whose date the row shows.
+    var entry: AgendaEntry? = nil
     let onToggle: () -> Void
     let onSelect: () -> Void
 
@@ -30,7 +32,7 @@ struct TaskRow: View {
                     .layoutPriority(-1)
                     .accessibilityLabel("In \(place)")
             }
-            RowDate(item: item, today: today, inAgenda: dates == .agenda)
+            RowDate(item: item, today: today, inAgenda: dates == .agenda, entry: entry)
         }
     }
 }
@@ -43,32 +45,42 @@ struct RowGlyphs: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let subtasks = item.subtasks
-        HStack(spacing: 6) {
-            if let summary = item.summary, !summary.isEmpty {
-                glyph("doc.text", "Has a note")
+        let glyphs = glyphs
+        // The glyphs drop, keeping their spoken labels, when the row's title would otherwise truncate.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) {
+                ForEach(glyphs, id: \.systemImage) { glyph in
+                    Image(systemName: glyph.systemImage)
+                        .rowFont(iconSize)
+                        .foregroundStyle(theme.color(glyph.tint))
+                        .help(glyph.help ?? glyph.spoken)
+                        .accessibilityLabel(glyph.spoken)
+                }
             }
-            if subtasks.total > 0 {
-                glyph("checklist", "\(subtasks.done) of \(subtasks.total) subtasks done")
-            }
-            if let rule = item.properties.repeatRule {
-                glyph("repeat", "Repeats \(rule)")
-            }
-            if !item.tags.isEmpty {
-                glyph("tag", item.tags.count == 1 ? "1 tag" : "\(item.tags.count) tags", tint: \.accent,
-                      help: item.tags.map { "#\($0.tag.name)  \($0.inFrontmatter ? "tags:" : "in text")" }.joined(separator: "\n"))
-            }
+            .fixedSize()
+            Color.clear.frame(width: 0)
+                .accessibilityElement()
+                .accessibilityLabel(glyphs.map(\.spoken).joined(separator: ", "))
         }
-        .fixedSize()
     }
 
-    private func glyph(_ systemImage: String, _ spoken: String, tint: KeyPath<Theme, PlatformColor> = \.muted,
-                       help: String? = nil) -> some View {
-        Image(systemName: systemImage)
-            .rowFont(iconSize)
-            .foregroundStyle(theme.color(tint))
-            .help(help ?? spoken)
-            .accessibilityLabel(spoken)
+    private var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?)] {
+        let subtasks = item.subtasks
+        var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?)] = []
+        if let summary = item.summary, !summary.isEmpty {
+            glyphs.append(("doc.text", "Has a note", \.muted, nil))
+        }
+        if subtasks.total > 0 {
+            glyphs.append(("checklist", "\(subtasks.done) of \(subtasks.total) subtasks done", \.muted, nil))
+        }
+        if let rule = item.properties.repeatRule {
+            glyphs.append(("repeat", "Repeats \(rule)", \.muted, nil))
+        }
+        if !item.tags.isEmpty {
+            glyphs.append(("tag", item.tags.count == 1 ? "1 tag" : "\(item.tags.count) tags", \.accent,
+                           item.tags.map { "#\($0.tag.name)  \($0.inFrontmatter ? "tags:" : "in text")" }.joined(separator: "\n")))
+        }
+        return glyphs
     }
 }
 
@@ -79,7 +91,7 @@ struct RowDate: View {
     let item: Item
     let today: LocalDate
     var inAgenda = false
-    /// An Agenda entry to show instead: its kind's date, even when the task is closed.
+    /// An Agenda entry to show instead: its kind's date.
     var entry: AgendaEntry? = nil
     var textSize: CGFloat = 12
     var iconSize: CGFloat = 12
@@ -106,9 +118,9 @@ struct RowDate: View {
     }
 
     private var shown: (kind: AgendaEntry.Kind, date: LocalDate)? {
-        if let entry { return (entry.kind, entry.date) }
         let p = item.properties
         if p.status.isClosed { return nil }
+        if let entry { return (entry.kind, entry.date) }
         if let deadline = p.deadline { return (.deadline, deadline) }
         if let due = p.dueDate, !inAgenda || due < today { return (.due, due) }
         return nil

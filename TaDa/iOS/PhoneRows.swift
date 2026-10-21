@@ -160,7 +160,6 @@ struct PhoneProjectRow: View {
     var body: some View {
         let project = progress.project
         let p = project.properties
-        let open = model.index.tasks(in: project).count { !$0.properties.status.isClosed }
         VStack(spacing: 0) {
             Button { nav.push(.project(project.path)) } label: {
                 HStack(spacing: 12) {
@@ -188,12 +187,12 @@ struct PhoneProjectRow: View {
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("Deadline \(deadline.relativeLabel(today: model.today))\(overdue ? ", overdue" : "")")
                     }
-                    if open > 0 {
-                        Text("\(open)")
+                    if progress.open > 0 {
+                        Text("\(progress.open)")
                             .scaledFont(size: 15)
                             .monospacedDigit()
                             .foregroundStyle(theme.color(\.muted))
-                            .accessibilityLabel("^[\(open) open task](inflect: true)")
+                            .accessibilityLabel("^[\(progress.open) open task](inflect: true)")
                     }
                 }
                 .padding(.horizontal, 16)
