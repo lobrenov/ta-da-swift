@@ -26,3 +26,7 @@ Work not yet built.
 - Integrations: reminders as links that open Reminders, and completing a reminder from Ta Da (Ta Da only reads Calendar and Reminders).
 - Typed dates (`DatePhrase`) in Quick Entry's title and the iPhone date sheet, and in languages other than English.
 - Editor markdown as designed (Editor markdown in `docs/design/design-framework.md`; the canvas's Live editor · markdown row): the heading scale, code blocks, and the caret's line in mono on `code`.
+
+## Fork Features
+
+- Markdown-style links follow their file: `MarkdownFacts.markdownLinks` (from `0.14.0-live.8`) gives each relative `[text](path)` link and `![alt](path)` image, reference uses included, with its path and range, so a move or rename can rewrite them as it does wiki links and embeds (`docs/file-format.md` says they aren't rewritten).
