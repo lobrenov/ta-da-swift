@@ -47,7 +47,7 @@ struct AgendaWeekList: View {
                     }
                     .padding(.bottom, 4)
                     ForEach(entries) { entry in
-                        TaskRow(item: entry.item, selected: model.isSelected(entry.item.path), today: model.today,
+                        TaskRow(item: entry.item, selected: model.isSelected(entry.item.path), today: model.today, dates: .overdueDueAndDeadline,
                                 place: model.index.parent(of: entry.item)?.title,
                                 onToggle: { Task { await model.toggleCompletion(entry.item) } },
                                 onSelect: { model.click(entry.item.path) })
