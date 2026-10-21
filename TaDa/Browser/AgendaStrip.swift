@@ -71,7 +71,7 @@ struct AgendaStrip: View {
             .scrollTargetLayout()
         }
         .scrollTargetBehavior(.paging)
-        .scrollIndicators(.hidden)
+        .scrollIndicators(.never)
         .scrollPosition(id: Binding<Int?> {
             open ? AgendaPaging.monthKey(of: model.agendaSelection) : AgendaPaging.weekKey(of: model.agendaSelection)
         } set: { key in

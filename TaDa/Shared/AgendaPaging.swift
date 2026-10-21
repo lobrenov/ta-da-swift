@@ -1,5 +1,5 @@
-// The iPhone Agenda's paging: the scroll key of each page (a day or a week) and of each strip week, so swiping either
-// moves the selection and the selection moves both.
+// The Agenda's paging: the scroll key of each iPhone page (a day or a week) and of each strip week or month, so swiping
+// either moves the selection and the selection moves both.
 import CoreGraphics
 import TaDaCore
 
@@ -63,7 +63,7 @@ enum AgendaPaging {
         }
     }
 
-    /// The Mac strip's month pages: keys count months from the epoch, and each page is the month of a selection's anchor.
+    /// The strip's month pages: keys count months from the epoch, and each page is the month of a selection's anchor.
     static let monthReach = 24
 
     static func monthKey(of selection: AppModel.AgendaSelection) -> Int {
@@ -86,7 +86,7 @@ enum AgendaPaging {
         monthOpen ? selection.anchor : week(forKey: weekKey(of: selection)).firstDay
     }
 
-    /// What scrolling the Mac strip to month `key` selects: the selection moved by whole months.
+    /// What scrolling the strip to month `key` selects: the selection moved by whole months.
     static func selection(movingToMonth key: Int, from selection: AppModel.AgendaSelection) -> AppModel.AgendaSelection {
         self.selection(stepping: key - monthKey(of: selection), byMonth: true, from: selection)
     }
