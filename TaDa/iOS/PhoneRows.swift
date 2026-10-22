@@ -1,4 +1,4 @@
-// Rows in the iPhone's lists: a task on one line with its checkbox, glyphs and date, a project with its ring, an area with
+// Rows in the iPhone's lists: a task on one line with its checkbox, date and glyphs, a project with its ring, an area with
 // its cube, a note with its page, an area's and a project's heading in Today, and the menu a press and hold opens on any
 // of them.
 #if os(iOS)
@@ -7,7 +7,7 @@ import TaDaCore
 
 /// What a task row shows besides its title.
 enum PhoneRowMeta {
-    /// Glyphs, then where the task lives where the list's groups don't show its project or area, then one date.
+    /// One date, then glyphs, then where the task lives where the list's groups don't show its project or area.
     case row(TaskRow.Dates, place: String? = nil)
     /// An Agenda entry: where the task lives and the entry's date.
     case agenda(AgendaEntry, place: String)
@@ -79,7 +79,7 @@ struct PhoneTaskRow: View {
         .contextMenu { PhoneFileMenu(model: model, item: item) }
     }
 
-    /// The title, glyphs, place and one date on a line; the place gives way before the title does.
+    /// One date, the title, glyphs and place on a line; the place gives way before the title does.
     private var oneLine: some View {
         let done = item.properties.status.isClosed
         let (dates, place, entry): (TaskRow.Dates, String?, AgendaEntry?) = switch meta {
@@ -88,6 +88,7 @@ struct PhoneTaskRow: View {
         case .search: (.elsewhere, nil, nil)
         }
         return HStack(spacing: 8) {
+            RowDate(item: item, today: model.today, inAgenda: dates == .agenda, entry: entry, textSize: 15)
             Text(item.title)
                 .scaledFont(size: 17)
                 .strikethrough(done)
@@ -105,7 +106,6 @@ struct PhoneTaskRow: View {
                     .layoutPriority(-1)
                     .accessibilityLabel("In \(place)")
             }
-            RowDate(item: item, today: model.today, inAgenda: dates == .agenda, entry: entry, textSize: 15, iconSize: 14)
         }
         .foregroundStyle(theme.color(\.muted))
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -302,7 +302,7 @@ struct PhoneAreaHeader: View {
 }
 
 /// A project's heading inside a list: its ring, name and area over a rule. Under its area's heading (`isUnderArea`)
-/// it is smaller and has no rule.
+/// it has no rule.
 struct PhoneProjectHeader: View {
     let model: AppModel
     let project: Item
@@ -316,10 +316,10 @@ struct PhoneProjectHeader: View {
             HStack(spacing: 8) {
                 ProgressRing(progress)
                     .foregroundStyle(theme.color(\.accent))
-                    .scaleEffect(isUnderArea ? 1 : 20 / 14)
-                    .frame(width: isUnderArea ? 14 : 20, height: isUnderArea ? 14 : 20)
+                    .scaleEffect(20 / 14)
+                    .frame(width: 20, height: 20)
                 Text(project.title)
-                    .scaledFont(size: isUnderArea ? 17 : 20, weight: isUnderArea ? .semibold : .bold)
+                    .scaledFont(size: 20, weight: .bold)
                     .foregroundStyle(theme.color(\.strong))
                     .lineLimit(1)
                 if let area, !isUnderArea {

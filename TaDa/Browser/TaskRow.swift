@@ -1,4 +1,4 @@
-// One task in a browser list: status checkbox, title, quiet glyphs and one date on a single line.
+// One task in a browser list: status checkbox, one date, title and quiet glyphs on a single line.
 import SwiftUI
 import TaDaCore
 
@@ -23,6 +23,8 @@ struct TaskRow: View {
 
     var body: some View {
         SelectableRow(item: item, selected: selected, onToggle: onToggle, onSelect: onSelect) {
+            RowDate(item: item, today: today, inAgenda: dates == .agenda, entry: entry)
+        } trailing: {
             RowGlyphs(item: item)
             Spacer(minLength: 8)
             if let place {
@@ -32,7 +34,6 @@ struct TaskRow: View {
                     .layoutPriority(-1)
                     .accessibilityLabel("In \(place)")
             }
-            RowDate(item: item, today: today, inAgenda: dates == .agenda, entry: entry)
         }
     }
 }
@@ -84,9 +85,9 @@ struct RowGlyphs: View {
     }
 }
 
-/// A task row's one date, right-aligned: the deadline when set, else the due date, with its kind's icon. Closed tasks
-/// show none. In the Agenda a deadline reads "today", "N days left" or "N days late" and a due date shows only when
-/// overdue.
+/// A task row's one date as a pill before the title: the deadline when set, else the due date. It is tinted `accent`, or
+/// `deadline` when overdue (a deadline today included). Closed tasks show none. In the Agenda a deadline reads "Today",
+/// "N days left" or "N days late" and a due date shows only when overdue.
 struct RowDate: View {
     let item: Item
     let today: LocalDate
@@ -94,26 +95,24 @@ struct RowDate: View {
     /// An Agenda entry to show instead: its kind's date.
     var entry: AgendaEntry? = nil
     var textSize: CGFloat = 12
-    var iconSize: CGFloat = 12
     @Environment(\.theme) private var theme
 
     var body: some View {
         if let (kind, date) = shown {
-            let overdue = date < today
-            let text = inAgenda && kind == .deadline ? date.deadlineLabel(today: today) : date.relativeLabel(today: today).capitalizedFirst
-            HStack(spacing: 4) {
-                Image(systemName: kind.systemImage)
-                    .rowFont(iconSize)
-                    .foregroundStyle(theme.color(kind.tint))
-                Text(text)
-                    .rowFont(textSize)
-                    .foregroundStyle(theme.color(overdue ? \.deadline : \.muted))
-            }
-            .lineLimit(1)
-            .fixedSize()
-            .help("\(kind.label) \(date.relativeLabel(today: today))")
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(kind.label) \(date.relativeLabel(today: today))\(overdue ? ", overdue" : "")")
+            let overdue = date < today || (kind == .deadline && date == today)
+            let text = inAgenda && kind == .deadline ? date.deadlineLabel(today: today) : date.rowLabel(today: today)
+            let tint = theme.color(overdue ? \.deadline : \.accent)
+            Text(text)
+                .rowFont(textSize)
+                .foregroundStyle(overdue ? tint : theme.color(\.fg))
+                .lineLimit(1)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(tint.opacity(theme.isDark ? 0.22 : 0.14), in: .capsule)
+                .fixedSize()
+                .help("\(kind.label) \(date.relativeLabel(today: today))")
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(kind.label) \(date.relativeLabel(today: today))\(date < today ? ", overdue" : "")")
         }
     }
 
@@ -151,13 +150,14 @@ struct TagCountChip: View {
     }
 }
 
-/// A task's row in a browser list, 32pt high: its status checkbox, then a button holding its title and `trailing`
-/// (glyphs and dates), which opens it. A selected row fills with `surface`.
-struct SelectableRow<Trailing: View>: View {
+/// A task's row in a browser list, 32pt high: its status checkbox, then a button holding `leading` (the date), its title
+/// and `trailing` (glyphs and place), which opens it. A selected row fills with `surface`.
+struct SelectableRow<Leading: View, Trailing: View>: View {
     let item: Item
     let selected: Bool
     let onToggle: () -> Void
     let onSelect: () -> Void
+    @ViewBuilder var leading: Leading
     @ViewBuilder var trailing: Trailing
     @Environment(\.theme) private var theme
 
@@ -166,6 +166,7 @@ struct SelectableRow<Trailing: View>: View {
             StatusCheckbox(status: item.properties.status, title: item.title, action: onToggle)
             Button(action: onSelect) {
                 HStack(spacing: 8) {
+                    leading
                     TaskTitle(item: item, selected: selected, lines: 1)
                         .layoutPriority(1)
                         .help(item.title)
@@ -334,6 +335,15 @@ extension Theme {
 }
 
 extension LocalDate {
+    /// A task row's date, short: "Today", the weekday for the next six days ("Thu"), else "29 Oct" (with the year when
+    /// it isn't this year's).
+    func rowLabel(today: LocalDate) -> String {
+        let days = today.days(to: self)
+        if days == 0 { return "Today" }
+        if (1...6).contains(days) { return formatted(.shortWeekday) }
+        return year == today.year ? formatted(.dayMonth) : formatted(.dayMonthYear)
+    }
+
     /// "today", or "Tue 6 Oct" (with the year when it isn't this year's).
     func relativeLabel(today: LocalDate) -> String {
         if self == today { return "today" }

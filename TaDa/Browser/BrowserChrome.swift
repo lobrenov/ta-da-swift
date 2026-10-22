@@ -180,7 +180,7 @@ struct AreaGroupHeader: View {
     }
 }
 
-/// A project's heading under its area's: its ring and title, smaller and without a rule.
+/// A project's heading under its area's: its ring and title, without a rule.
 struct ProjectSubheader: View {
     let project: Item
     let progress: ProjectProgress
@@ -188,8 +188,11 @@ struct ProjectSubheader: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            ProgressRing(progress).foregroundStyle(theme.color(\.accent))
-            Text(project.title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(theme.color(\.fg)).lineLimit(1)
+            ProgressRing(progress)
+                .foregroundStyle(theme.color(\.accent))
+                .scaleEffect(15 / 14)
+                .frame(width: 15, height: 15)
+            Text(project.title).font(.system(size: 15, weight: .bold)).foregroundStyle(theme.color(\.strong)).lineLimit(1)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 3)
