@@ -197,7 +197,11 @@ extension Vault {
 
     /// `taDaAttachments()` with how each is used, as `AttachmentGroups` lists them. Walks the whole folder.
     @concurrent public func attachmentGroups(index: VaultIndex, trashed: [TrashedItem]) async -> AttachmentGroups {
-        let imagePaths = attachmentPaths()
+        await attachmentGroups(index: index, trashed: trashed, imagePaths: attachmentPaths())
+    }
+
+    /// `attachmentGroups(index:trashed:)` with `imagePaths` already read by `attachmentPaths()`, which saves one walk.
+    @concurrent public func attachmentGroups(index: VaultIndex, trashed: [TrashedItem], imagePaths: [String]) async -> AttachmentGroups {
         let uses = AttachmentUse.uses(of: taDaAttachments(imagePaths: imagePaths), index: index, trashed: trashed, imagePaths: imagePaths)
         return AttachmentGroups(uses, pendingFiles: pendingMarkdownPaths())
     }

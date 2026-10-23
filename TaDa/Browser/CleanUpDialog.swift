@@ -6,15 +6,15 @@ import TaDaCore
 
 struct CleanUpDialog: View {
     let model: AppModel
-    /// Rows the user ticked or unticked; the rest follow `startsTicked`.
+    /// The rows ticked when the dialog opened: all of them, or none while files are still downloading.
+    @State private var initial: Set<String>?
+    /// Rows the user ticked or unticked since.
     @State private var changes: [String: Bool] = [:]
     @Environment(\.theme) private var theme
     @Environment(\.dismiss) private var dismiss
 
     private var groups: AttachmentGroups { model.attachmentGroups }
-    private var startsTicked: Bool { groups.pendingFiles.isEmpty }
-
-    private func isTicked(_ use: AttachmentUse) -> Bool { changes[use.id] ?? startsTicked }
+    private func isTicked(_ use: AttachmentUse) -> Bool { changes[use.id] ?? (initial?.contains(use.id) == true) }
 
     private static let reasons: [(reason: CleanUpReason, title: String, tint: KeyPath<Theme, PlatformColor>)] = [
         (.loggedOnly, "Only in logged files", \.done),
@@ -74,6 +74,7 @@ struct CleanUpDialog: View {
         .font(.system(size: 13))
         .padding(EdgeInsets(top: 20, leading: 22, bottom: 18, trailing: 22))
         .frame(width: 560)
+        .onAppear { initial = groups.pendingFiles.isEmpty ? Set(groups.candidates.map(\.id)) : [] }
         .onChange(of: candidates.isEmpty) { _, isEmpty in if isEmpty { dismiss() } }
     }
 

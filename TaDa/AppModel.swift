@@ -551,7 +551,7 @@ import UIKit
         trash = await Self.run { vault.trashedItems() }
         trashedAttachments = await Self.run { vault.trashedAttachments() }
         attachments = await Self.run { vault.attachmentPaths() }
-        await reloadAttachmentGroups(vault)
+        await reloadAttachmentGroups(vault, imagePaths: attachments)
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         oldLayoutFolders = await Self.run { vault.oldLayoutFolders().map(\.from) }
         moveDeclined = Self.moveDeclined(folder, in: defaults)
@@ -627,7 +627,7 @@ import UIKit
                 trashSelection.formIntersection(trash.map(\.id) + trashedAttachments.map(\.id))
                 let attachments = await Self.run { vault.attachmentPaths() }
                 if attachments != self.attachments { self.attachments = attachments }
-                await reloadAttachmentGroups(vault)
+                await reloadAttachmentGroups(vault, imagePaths: attachments)
                 attachmentSelection.formIntersection((attachmentGroups.candidates + attachmentGroups.inUse).map(\.id))
                 let old = await Self.run { vault.oldLayoutFolders().map(\.from) }
                 if old != oldLayoutFolders { oldLayoutFolders = old }
@@ -1293,7 +1293,7 @@ import UIKit
             await edit(file) { Vault.retargetEmbeds(in: $0, from: path, to: newPath, paths: paths) }
         }
         attachmentSelection = Set(attachmentSelection.map { $0 == path ? newPath : $0 })
-        await reloadAttachmentGroups(vault)
+        await refresh()
     }
 
     /// Moves an image to `.trash/attachments/`. The files that embed it keep their `![[ ]]`, which shows as missing
@@ -1309,8 +1309,8 @@ import UIKit
     }
 
     /// Reads `Ta Da/attachments/` and how the index and trash use each image, off the main actor.
-    private func reloadAttachmentGroups(_ vault: Vault) async {
-        let groups = await vault.attachmentGroups(index: index, trashed: trash)
+    private func reloadAttachmentGroups(_ vault: Vault, imagePaths: [String]) async {
+        let groups = await vault.attachmentGroups(index: index, trashed: trash, imagePaths: imagePaths)
         guard self.vault?.root == vault.root else { return }
         let current = attachmentGroups
         if groups.candidates != current.candidates || groups.inUse != current.inUse || groups.pendingFiles != current.pendingFiles {
@@ -1323,15 +1323,26 @@ import UIKit
         (attachmentGroups.candidates + attachmentGroups.inUse).first { $0.id == path }
     }
 
-    /// Moves images to `.trash/attachments/` in one go, then notes how many. The files that embed them keep their
-    /// `![[ ]]`, which shows as missing until they're restored.
+    /// Moves images to `.trash/attachments/` one at a time, then notes how many moved and reports those that couldn't.
+    /// The files that embed them keep their `![[ ]]`, which shows as missing until they're restored.
     func trashAttachments(_ paths: [String]) async {
         guard let vault, !paths.isEmpty else { return }
-        do {
-            _ = try await Self.run { try vault.moveAttachmentsToTrash(paths) }
-            attachmentNote = "\(paths.count) \(paths.count == 1 ? "attachment" : "attachments") moved to Trash."
-        } catch {
-            errorMessage = Self.couldNot("move the images to the trash", error)
+        let (moved, failed) = await Self.run {
+            var moved = 0, failed: [(path: String, error: String)] = []
+            for path in paths {
+                do {
+                    _ = try vault.moveAttachmentsToTrash([path])
+                    moved += 1
+                } catch {
+                    failed.append((path, error.localizedDescription))
+                }
+            }
+            return (moved, failed)
+        }
+        if moved > 0 { attachmentNote = "\(moved) \(moved == 1 ? "attachment" : "attachments") moved to Trash." }
+        if !failed.isEmpty {
+            let names = failed.map { "“\(Item.title(ofPath: $0.path))”" }.formatted(.list(type: .and))
+            errorMessage = "Ta Da couldn’t move \(names) to the trash. (\(failed[0].error))"
         }
         await refresh()
     }

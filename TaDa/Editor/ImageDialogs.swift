@@ -289,7 +289,7 @@ private struct DeleteImageDialog: View {
                     .keyboardShortcut(.cancelAction)
                 Button("Delete") {
                     dismiss()
-                    Task { await model.trashAttachment(path) }
+                    Task { await model.domain == .attachments ? model.trashAttachments([path]) : model.trashAttachment(path) }
                 }
                 .buttonStyle(ActionButtonStyle(kind: .danger, height: 28))
                 .keyboardShortcut(.defaultAction)
@@ -342,11 +342,12 @@ private struct DeleteImagesDialog: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        let uses = paths.compactMap { model.attachmentUse(at: $0) }
+        let uses = self.paths.compactMap { model.attachmentUse(at: $0) }
+        let paths = uses.map(\.id)
         let files = Set(uses.flatMap(\.live).map(\.path)).count
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Move \(paths.count) images to Trash?")
+                Text("Move \(paths.count == 1 ? "1 image" : "\(paths.count) images") to Trash?")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(theme.color(\.strong))
                 Text("\(files == 1 ? "1 open file embeds" : "\(files) open files embed") some of them; their embeds show as missing until you restore the images.")
