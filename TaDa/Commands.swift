@@ -1,5 +1,5 @@
 // Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; File ▸ Convert to for the open or
-// picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–5 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
+// picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–5 switch domains (View ▸ Attachments has no shortcut); ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on, ⌘P move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu;
 // Format ▸ ⌘B/⌘I/⇧⌘H/⇧⌘S bold, italic, highlight, strikethrough in the Live editor.
@@ -54,6 +54,7 @@ struct AppCommands: Commands {
             show(.loose, key: "2")
             show(.trash, key: "3")
             show(.logbook, key: "4")
+            Button(AppModel.Domain.attachments.title) { model.show(.attachments) }
             Divider()
             Button(model.isSourceMode ? "Show Live Preview" : "Show Source") { model.isSourceMode.toggle() }
                 .keyboardShortcut("e")

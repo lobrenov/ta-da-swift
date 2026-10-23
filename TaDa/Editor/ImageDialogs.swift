@@ -1,6 +1,6 @@
 // The image dialogs the embed menu opens through `model.imageDialog`. Rename changes the image's name (its extension
 // stays) and every `![[ ]]` that shows it. Delete lists the files that embed the image and moves it to Trash; their
-// embeds show as missing until it's restored. Both are sheets.
+// embeds show as missing until it's restored; from Attachments, a dialog does the same for several. All are sheets.
 import SwiftUI
 import ImageIO
 import TaDaCore
@@ -152,6 +152,7 @@ private struct ImageDialogPresenter: ViewModifier {
                 switch dialog {
                 case .rename(let path): RenameImageDialog(model: model, path: path)
                 case .delete(let path): DeleteImageDialog(model: model, path: path)
+                case .deleteSeveral(let paths): DeleteImagesDialog(model: model, paths: paths)
                 }
             }
             .presentationBackground(model.theme.color(model.theme.isDark ? \.side : \.bg))
@@ -159,6 +160,7 @@ private struct ImageDialogPresenter: ViewModifier {
             switch dialog {
             case .rename(let path): PhoneRenameImageSheet(model: model, path: path)
             case .delete(let path): PhoneDeleteImageSheet(model: model, path: path)
+            case .deleteSeveral: EmptyView()
             }
             #endif
         }
@@ -330,6 +332,68 @@ private struct DeleteImageDialog: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 44)
+    }
+}
+/// The Mac's delete sheet for several images from Attachments: the images, which files embed each, and Move to Trash.
+private struct DeleteImagesDialog: View {
+    let model: AppModel
+    let paths: [String]
+    @Environment(\.theme) private var theme
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        let uses = paths.compactMap { model.attachmentUse(at: $0) }
+        let files = Set(uses.flatMap(\.live).map(\.path)).count
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Move \(paths.count) images to Trash?")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(theme.color(\.strong))
+                Text("\(files == 1 ? "1 open file embeds" : "\(files) open files embed") some of them; their embeds show as missing until you restore the images.")
+                    .foregroundStyle(theme.color(\.fg))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Array(uses.enumerated()), id: \.element.id) { offset, use in
+                        if offset > 0 { Hairline() }
+                        HStack(spacing: 12) {
+                            ImageThumbnail(url: use.attachment.isDownloaded ? model.vault?.url(for: use.id) : nil, side: 34, cornerRadius: 5)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(use.attachment.name).foregroundStyle(theme.color(\.strong))
+                                AttachmentWhereText(line: use.whereLine, linkTint: use.isInUse ? \.link : \.fg)
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(theme.color(\.muted))
+                            }
+                            .lineLimit(1)
+                            Spacer(minLength: 8)
+                            Text(use.attachment.sizeText).font(.system(size: 11.5)).foregroundStyle(theme.color(\.muted))
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(height: 50)
+                    }
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(maxHeight: min(CGFloat(uses.count) * 51, 300))
+            .background(theme.color(theme.isDark ? \.bg : \.side), in: .rect(cornerRadius: 9))
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(theme.color(\.border)))
+            HStack(spacing: 10) {
+                Spacer()
+                Button("Cancel") { dismiss() }
+                    .buttonStyle(ActionButtonStyle(height: 28))
+                    .keyboardShortcut(.cancelAction)
+                Button("Move \(paths.count) to Trash") {
+                    dismiss()
+                    Task { await model.trashAttachments(paths) }
+                }
+                .buttonStyle(ActionButtonStyle(kind: .danger, height: 28))
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .font(.system(size: 13))
+        .padding(EdgeInsets(top: 20, leading: 22, bottom: 18, trailing: 22))
+        .frame(width: 500)
     }
 }
 #else

@@ -7,7 +7,7 @@ import UIKit
 
 @Observable final class AppModel {
     enum Domain: Hashable {
-        case agenda, loose, logbook, trash
+        case agenda, loose, logbook, attachments, trash
         /// A project, by vault-relative path.
         case project(String)
         /// An area, by vault-relative path.
@@ -48,6 +48,8 @@ import UIKit
             multiSelection = []
             trashSelection = []
             trashNote = nil
+            attachmentSelection = []
+            attachmentNote = nil
             switch domain {
             case .tag: sidebarMode = .tags
             case .folder: sidebarMode = .notes
@@ -126,10 +128,13 @@ import UIKit
     enum ImageDialog: Identifiable, Equatable {
         case rename(String)
         case delete(String)
+        /// Several images picked in Attachments, some embedded by a live file.
+        case deleteSeveral([String])
 
         var path: String {
             switch self {
             case .rename(let path), .delete(let path): path
+            case .deleteSeveral(let paths): paths.first ?? ""
             }
         }
         var id: String { "\(self)" }
@@ -138,6 +143,12 @@ import UIKit
     var trashSelection: Set<String> = []
     /// What the last restore did, shown in Trash.
     var trashNote: String?
+    /// The images in `Ta Da/attachments/` with how files use them, for the Attachments list and its sidebar size.
+    private(set) var attachmentGroups = AttachmentGroups([])
+    /// The images picked in the Attachments list, by path.
+    var attachmentSelection: Set<String> = []
+    /// What the last Clean Up or Move to Trash did, shown under the Attachments list.
+    var attachmentNote: String?
     /// The file whose file menu is open; its row is ringed.
     var menuTarget: String?
     /// ⌘P's request for the project or area menu, ⌘S's and ⌘D's for a date's calendar, or ⌘T's for tagMenu. The view
@@ -385,7 +396,7 @@ import UIKit
         case .project(let path): index[path].map { index.tasks(in: $0) } ?? []
         case .area(let path): index[path].map { index.projects(in: $0) + index.tasks(in: $0) } ?? []
         case .folder(let path): index.notes(in: path)
-        case .logbook, .trash, .tag: []
+        case .logbook, .attachments, .trash, .tag: []
         }
     }
 
@@ -540,6 +551,7 @@ import UIKit
         trash = await Self.run { vault.trashedItems() }
         trashedAttachments = await Self.run { vault.trashedAttachments() }
         attachments = await Self.run { vault.attachmentPaths() }
+        await reloadAttachmentGroups(vault)
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         oldLayoutFolders = await Self.run { vault.oldLayoutFolders().map(\.from) }
         moveDeclined = Self.moveDeclined(folder, in: defaults)
@@ -615,6 +627,8 @@ import UIKit
                 trashSelection.formIntersection(trash.map(\.id) + trashedAttachments.map(\.id))
                 let attachments = await Self.run { vault.attachmentPaths() }
                 if attachments != self.attachments { self.attachments = attachments }
+                await reloadAttachmentGroups(vault)
+                attachmentSelection.formIntersection((attachmentGroups.candidates + attachmentGroups.inUse).map(\.id))
                 let old = await Self.run { vault.oldLayoutFolders().map(\.from) }
                 if old != oldLayoutFolders { oldLayoutFolders = old }
                 multiSelection = multiSelection.filter { index[$0] != nil }
@@ -800,6 +814,9 @@ import UIKit
         if domain == .trash {
             trashSelection = [path]
             selectionAnchor = path
+        } else if domain == .attachments {
+            attachmentSelection = [path]
+            selectionAnchor = path
         } else {
             selection = path
         }
@@ -816,13 +833,14 @@ import UIKit
 
     /// Whether a row shows as selected: the open file, or one of the picked tasks or trashed files.
     func isSelected(_ path: String) -> Bool {
-        selection == path || multiSelection.contains(path) || trashSelection.contains(path)
+        selection == path || multiSelection.contains(path) || trashSelection.contains(path) || attachmentSelection.contains(path)
     }
 
     /// The rows a click starts from: the picked trashed files in Trash, else the picked tasks or the open one.
     /// The menu bar's Reveal in Finder shows them.
     var picked: Set<String> {
         if domain == .trash { return trashSelection }
+        if domain == .attachments { return attachmentSelection }
         return multiSelection.isEmpty ? Set([selection].compactMap { $0 }) : multiSelection
     }
 
@@ -831,6 +849,8 @@ import UIKit
     private func pick(_ paths: Set<String>) {
         if domain == .trash {
             trashSelection = paths
+        } else if domain == .attachments {
+            attachmentSelection = paths
         } else if paths.count == 1, let path = paths.first {
             selection = path
         } else {
@@ -1272,6 +1292,8 @@ import UIKit
         for file in files.sorted() {
             await edit(file) { Vault.retargetEmbeds(in: $0, from: path, to: newPath, paths: paths) }
         }
+        attachmentSelection = Set(attachmentSelection.map { $0 == path ? newPath : $0 })
+        await reloadAttachmentGroups(vault)
     }
 
     /// Moves an image to `.trash/attachments/`. The files that embed it keep their `![[ ]]`, which shows as missing
@@ -1284,6 +1306,56 @@ import UIKit
             errorMessage = Self.couldNot("move “\(Item.title(ofPath: path))” to the trash", error)
         }
         await refresh()
+    }
+
+    /// Reads `Ta Da/attachments/` and how the index and trash use each image, off the main actor.
+    private func reloadAttachmentGroups(_ vault: Vault) async {
+        let groups = await vault.attachmentGroups(index: index, trashed: trash)
+        guard self.vault?.root == vault.root else { return }
+        let current = attachmentGroups
+        if groups.candidates != current.candidates || groups.inUse != current.inUse || groups.pendingFiles != current.pendingFiles {
+            attachmentGroups = groups
+        }
+    }
+
+    /// How files use the image at `path`.
+    func attachmentUse(at path: String) -> AttachmentUse? {
+        (attachmentGroups.candidates + attachmentGroups.inUse).first { $0.id == path }
+    }
+
+    /// Moves images to `.trash/attachments/` in one go, then notes how many. The files that embed them keep their
+    /// `![[ ]]`, which shows as missing until they're restored.
+    func trashAttachments(_ paths: [String]) async {
+        guard let vault, !paths.isEmpty else { return }
+        do {
+            _ = try await Self.run { try vault.moveAttachmentsToTrash(paths) }
+            attachmentNote = "\(paths.count) \(paths.count == 1 ? "attachment" : "attachments") moved to Trash."
+        } catch {
+            errorMessage = Self.couldNot("move the images to the trash", error)
+        }
+        await refresh()
+    }
+
+    /// Moves the images picked in Attachments to Trash; asks first when a live file embeds one.
+    func moveAttachmentsToTrash(_ paths: Set<String>) async {
+        let paths = paths.sorted()
+        if paths.contains(where: { attachmentUse(at: $0)?.isInUse == true }) {
+            imageDialog = paths.count == 1 ? .delete(paths[0]) : .deleteSeveral(paths)
+        } else {
+            await trashAttachments(paths)
+        }
+    }
+
+    /// Asks iCloud Drive to download an image that isn't on this Mac yet. It joins the list once it arrives.
+    func downloadAttachment(_ path: String) async {
+        guard let url = vault?.url(for: path) else { return }
+        await Self.run { try? FileManager.default.startDownloadingUbiquitousItem(at: url) }
+    }
+
+    /// ⌘A in Attachments: picks every image.
+    func selectAllAttachments() {
+        guard domain == .attachments else { return }
+        attachmentSelection = Set((attachmentGroups.candidates + attachmentGroups.inUse).map(\.id))
     }
 
     // MARK: Trash
@@ -1453,6 +1525,12 @@ import UIKit
             guard command, !trashSelection.isEmpty else { return false }
             let paths = trashSelection
             Task { await restore(paths) }
+            return true
+        }
+        if domain == .attachments, !isSearching {
+            guard !attachmentSelection.isEmpty else { return false }
+            let paths = attachmentSelection
+            Task { await moveAttachmentsToTrash(paths) }
             return true
         }
         let paths = selection.map { [$0] } ?? Array(multiSelection)

@@ -57,7 +57,7 @@ struct LogbookView: View {
 }
 
 /// A group's name over a rule, with a muted note on the right.
-private struct GroupTitle: View {
+struct GroupTitle: View {
     let title: String
     let note: String?
     @Environment(\.theme) private var theme

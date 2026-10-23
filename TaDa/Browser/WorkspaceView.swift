@@ -52,6 +52,8 @@ struct WorkspaceView: View {
             TrashView(model: model)
         case .logbook:
             split { LogbookView(model: model) }
+        case .attachments:
+            split { AttachmentsBrowser(model: model) } detail: { AttachmentDetail(model: model) }
         case let .project(path):
             if let project = model.index[path] {
                 if model.selection == path {
@@ -86,6 +88,10 @@ struct WorkspaceView: View {
 
     /// A browser column and the document pane, with a rule between them that drags to resize the column.
     private func split(@ViewBuilder browser: () -> some View) -> some View {
+        split(browser: browser) { DocumentPane(model: model) }
+    }
+
+    private func split(@ViewBuilder browser: () -> some View, @ViewBuilder detail: () -> some View) -> some View {
         SplitLayout(browserWidth: model.browserWidth.map { CGFloat($0) }) {
             browser()
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -99,7 +105,7 @@ struct WorkspaceView: View {
                             .onChanged { model.browserWidth = Double(SplitLayout.clamp(round($0.location.x), in: splitWidth)) })
                 }
                 .zIndex(1)
-            DocumentPane(model: model)
+            detail()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .coordinateSpace(.named(SplitLayout.space))

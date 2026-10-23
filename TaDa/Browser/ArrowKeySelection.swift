@@ -134,6 +134,12 @@ final class ListKeyView: NSView {
         model.selection = nil
         model.clearMultiSelection()
         model.trashSelection = []
+        model.attachmentSelection = []
+    }
+
+    /// ⌘A in Attachments picks every image.
+    override func selectAll(_ sender: Any?) {
+        if model.domain == .attachments { model.selectAllAttachments() } else { super.selectAll(sender) }
     }
 
     private func delete(_ flags: NSEvent.ModifierFlags) -> Bool {
