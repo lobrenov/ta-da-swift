@@ -19,8 +19,8 @@ extension View {
     }
 
     /// While rows are picked: Select All, the count and Done at the top, and the action bar instead of the tab bar.
-    func pickingBars(model: AppModel) -> some View {
-        modifier(PickingBars(model: model))
+    func pickingBars(model: AppModel, actions: AnyView? = nil) -> some View {
+        modifier(PickingBars(model: model, customActions: actions))
     }
 }
 
@@ -147,8 +147,25 @@ struct PickingBarClearance: View {
     }
 }
 
+/// A glass capsule floating where the action bar sits, holding `content`.
+struct PhoneBottomBar<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .scaledMinHeight(PickingBar.height)
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+            .glassEffect(.regular.interactive(), in: .capsule)
+            .padding(.horizontal, PickingBar.inset)
+            .padding(.bottom, PickingBar.bottom)
+            .ignoresSafeArea(.container, edges: .bottom)
+    }
+}
+
 private struct PickingBars: ViewModifier {
     let model: AppModel
+    /// The bar's content when it isn't the file actions.
+    var customActions: AnyView?
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -173,13 +190,7 @@ private struct PickingBars: ViewModifier {
             }
             .overlay(alignment: .bottom) {
                 if nav.isPicking {
-                    actions
-                        .scaledMinHeight(PickingBar.height)
-                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-                        .glassEffect(.regular.interactive(), in: .capsule)
-                        .padding(.horizontal, PickingBar.inset)
-                        .padding(.bottom, PickingBar.bottom)
-                        .ignoresSafeArea(.container, edges: .bottom)
+                    PhoneBottomBar { customActions ?? AnyView(actions) }
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }

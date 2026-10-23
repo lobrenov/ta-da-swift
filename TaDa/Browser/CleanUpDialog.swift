@@ -6,36 +6,22 @@ import TaDaCore
 
 struct CleanUpDialog: View {
     let model: AppModel
-    /// The rows ticked when the dialog opened: all of them, or none while files are still downloading.
-    @State private var initial: Set<String>?
-    /// Rows the user ticked or unticked since.
-    @State private var changes: [String: Bool] = [:]
+    @State private var ticks = CleanUpTicks()
     @Environment(\.theme) private var theme
     @Environment(\.dismiss) private var dismiss
 
     private var groups: AttachmentGroups { model.attachmentGroups }
-    private func isTicked(_ use: AttachmentUse) -> Bool { changes[use.id] ?? (initial?.contains(use.id) == true) }
-
-    private static let reasons: [(reason: CleanUpReason, title: String, tint: KeyPath<Theme, PlatformColor>)] = [
-        (.loggedOnly, "Only in logged files", \.done),
-        (.trashedOnly, "Only in trashed files", \.muted),
-        (.loggedAndTrashed, "Only in logged and trashed files", \.due),
-        (.unused, "Not embedded anywhere", \.deadline),
-    ]
 
     var body: some View {
         let candidates = groups.candidates
-        let ticked = candidates.filter(isTicked)
-        let sections = Self.reasons.compactMap { entry -> (title: String, tint: KeyPath<Theme, PlatformColor>, uses: [AttachmentUse])? in
-            let uses = candidates.filter { $0.cleanUpReason == entry.reason }
-            return uses.isEmpty ? nil : (entry.title, entry.tint, uses)
-        }
+        let ticked = ticks.ticked(in: candidates)
+        let sections = CleanUpSection.sections(of: candidates)
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Move \(candidates.count == 1 ? "1 unused attachment" : "\(candidates.count) unused attachments") to Trash?")
+                Text(CleanUpText.title(count: candidates.count))
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(theme.color(\.strong))
-                Text("No open task, project, area or note embeds these. Logged and trashed files that do will show them as missing until they’re restored from Trash.")
+                Text(CleanUpText.explanation)
                     .foregroundStyle(theme.color(\.fg))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -44,7 +30,7 @@ struct CleanUpDialog: View {
                 VStack(spacing: 0) {
                     ForEach(Array(sections.enumerated()), id: \.offset) { offset, entry in
                         if offset > 0 { Hairline() }
-                        section(entry.title, tint: entry.tint, uses: entry.uses)
+                        section(entry)
                     }
                 }
             }
@@ -53,8 +39,7 @@ struct CleanUpDialog: View {
             .background(theme.color(theme.isDark ? \.bg : \.side), in: .rect(cornerRadius: 9))
             .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(theme.color(\.border)))
             HStack(spacing: 10) {
-                Text("\(ticked.count) of \(candidates.count == 1 ? "1 attachment" : "\(candidates.count) attachments") · "
-                     + Attachment.sizeText(Attachment.totalSize(of: ticked.map(\.attachment))))
+                Text(CleanUpText.summary(ticked: ticked, of: candidates.count))
                     .font(.system(size: 12))
                     .foregroundStyle(theme.color(\.muted))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -74,7 +59,7 @@ struct CleanUpDialog: View {
         .font(.system(size: 13))
         .padding(EdgeInsets(top: 20, leading: 22, bottom: 18, trailing: 22))
         .frame(width: 560)
-        .onAppear { initial = groups.pendingFiles.isEmpty ? Set(groups.candidates.map(\.id)) : [] }
+        .onAppear { ticks.start(groups) }
         .onChange(of: candidates.isEmpty) { _, isEmpty in if isEmpty { dismiss() } }
     }
 
@@ -83,7 +68,7 @@ struct CleanUpDialog: View {
             Image(systemName: "icloud.and.arrow.down")
                 .foregroundStyle(theme.color(\.due))
                 .accessibilityHidden(true)
-            Text("\(count == 1 ? "1 file is" : "\(count) files are") still downloading from iCloud Drive. An image they embed may look unused, so nothing is ticked.")
+            Text(CleanUpText.pending(count: count))
                 .foregroundStyle(theme.color(\.fg))
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -94,27 +79,27 @@ struct CleanUpDialog: View {
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(theme.color(\.due)))
     }
 
-    private func section(_ title: String, tint: KeyPath<Theme, PlatformColor>, uses: [AttachmentUse]) -> some View {
+    private func section(_ section: CleanUpSection) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Circle().fill(theme.color(tint)).frame(width: 7, height: 7)
-                Text(title).fontWeight(.semibold).foregroundStyle(theme.color(\.strong))
+                Circle().fill(theme.color(section.tint)).frame(width: 7, height: 7)
+                Text(section.title).fontWeight(.semibold).foregroundStyle(theme.color(\.strong))
                 Spacer()
-                Text("\(uses.count)").font(.system(size: 11.5, weight: .medium)).foregroundStyle(theme.color(\.muted))
+                Text("\(section.uses.count)").font(.system(size: 11.5, weight: .medium)).foregroundStyle(theme.color(\.muted))
             }
             .font(.system(size: 12.5))
             .padding(.horizontal, 12)
             .frame(height: 30)
             .accessibilityAddTraits(.isHeader)
-            ForEach(uses) { row($0) }
+            ForEach(section.uses) { row($0) }
         }
     }
 
     private func row(_ use: AttachmentUse) -> some View {
         let image = use.attachment
-        let isOn = isTicked(use)
+        let isOn = ticks.isTicked(use)
         return Button {
-            changes[use.id] = !isOn
+            ticks.toggle(use)
         } label: {
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 4)

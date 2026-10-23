@@ -3,7 +3,6 @@
 // detail pane shows the picked image with the files that embed it, or the picked images stacked. Clean Up… opens its dialog.
 #if os(macOS)
 import SwiftUI
-import ImageIO
 import TaDaCore
 
 struct AttachmentsBrowser: View {
@@ -20,10 +19,10 @@ struct AttachmentsBrowser: View {
         } content: {
             if !groups.candidates.isEmpty {
                 group("Not in open files", uses: groups.candidates,
-                      note: "\(count(groups.candidates.count)) · \(Attachment.sizeText(groups.candidatesSize))")
+                      note: "\(Attachment.countText(groups.candidates.count)) · \(Attachment.sizeText(groups.candidatesSize))")
             }
             if !groups.inUse.isEmpty {
-                group("In open files", uses: groups.inUse, note: count(groups.inUse.count))
+                group("In open files", uses: groups.inUse, note: Attachment.countText(groups.inUse.count))
             }
             if let note = model.attachmentNote { toast(note) }
         }
@@ -49,7 +48,7 @@ struct AttachmentsBrowser: View {
                 .disabled(groups.candidates.isEmpty)
             }
             if total > 0 {
-                Text("\(count(total)) · \(Attachment.sizeText(groups.totalSize)) · "
+                Text("\(Attachment.countText(total)) · \(Attachment.sizeText(groups.totalSize)) · "
                      + (groups.candidates.isEmpty ? "every one is in an open file" : "\(groups.candidates.count) not in any open file"))
                     .font(.system(size: 11.5))
                     .foregroundStyle(theme.color(\.muted))
@@ -77,7 +76,6 @@ struct AttachmentsBrowser: View {
             .accessibilityAddTraits(.updatesFrequently)
     }
 
-    private func count(_ n: Int) -> String { n == 1 ? "1 image" : "\(n) images" }
 }
 
 /// A row: thumbnail, filename (with a cloud when iCloud Drive hasn't downloaded it), where it's embedded and its size.
@@ -125,21 +123,6 @@ private struct AttachmentRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isPicked ? .isSelected : [])
-    }
-}
-
-/// A where-line with the file titles tinted.
-struct AttachmentWhereText: View {
-    let line: AttachmentWhere
-    let linkTint: KeyPath<Theme, PlatformColor>
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        if line.titles.isEmpty {
-            Text(line.prefix)
-        } else {
-            Text("\(line.prefix)\(Text(line.titles).foregroundStyle(theme.color(linkTint)))\(line.suffix)")
-        }
     }
 }
 
@@ -198,7 +181,7 @@ private struct SingleAttachment: View {
                         .font(.system(size: 19, weight: .bold))
                         .foregroundStyle(theme.color(\.strong))
                         .textSelection(.enabled)
-                    Text(meta(image))
+                    Text(image.metaText(dimensions: dimensions))
                         .font(.system(size: 11.5))
                         .foregroundStyle(theme.color(\.muted))
                 }
@@ -254,19 +237,13 @@ private struct SingleAttachment: View {
             }
     }
 
-    /// "PNG · 2.1 MB · 1920 × 1440 · Added Mon 28 Sep"
-    private func meta(_ image: Attachment) -> String {
-        [image.typeText, image.sizeText, dimensions, image.addedText.map { "Added \($0)" }, image.isDownloaded ? nil : "Not downloaded"]
-            .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
-    }
-
     private enum EmbedState { case live, logged, trashed }
 
     /// A file that embeds the image: the title, and where the file is.
     private func embedRow(_ item: Item, state: EmbedState, trashedID: String? = nil) -> some View {
         let place = switch state {
-        case .live: livePlace(item)
-        case .logged: "Logbook" + (item.properties.completedDate.map { " · " + $0.date().formatted(.dateTime.month(.abbreviated).year()) } ?? "")
+        case .live: AttachmentUse.livePlace(item)
+        case .logged: AttachmentUse.loggedPlace(item)
         case .trashed: "Trash"
         }
         return Button {
@@ -299,48 +276,6 @@ private struct SingleAttachment: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-    }
-
-    /// A task's project or area, or Loose task; a project's area; a note's folder.
-    private func livePlace(_ item: Item) -> String {
-        let p = item.properties
-        return switch p.kind {
-        case .task: p.project?.title ?? p.area?.title ?? "Loose task"
-        case .project: p.area?.title ?? "Project"
-        case .area: "Area"
-        case .note: Vault.folder(of: item.path).split(separator: "/").last.map(String.init) ?? "Notes"
-        }
-    }
-}
-
-/// An image shown whole in a rounded box; an icon while it isn't there to read.
-private struct AttachmentPreview: View {
-    let url: URL?
-    @State private var decoded: CGImage?
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        Color.clear
-            .frame(height: 270)
-            .frame(maxWidth: .infinity)
-            .overlay {
-                if let decoded {
-                    Image(decorative: decoded, scale: 1).resizable().scaledToFit()
-                } else {
-                    Image(systemName: "photo")
-                        .font(.system(size: 40, weight: .light))
-                        .foregroundStyle(theme.color(\.muted))
-                        .opacity(url == nil ? 0.25 : 1)
-                }
-            }
-            .background(theme.color(\.code))
-            .clipShape(.rect(cornerRadius: 10))
-            .accessibilityHidden(true)
-            .task(id: url) {
-                decoded = nil
-                guard let url else { return }
-                decoded = await ThumbnailCache.load(url, pixels: 1600)
-            }
     }
 }
 
@@ -388,17 +323,6 @@ private struct SeveralAttachments: View {
             .padding(EdgeInsets(top: 28, leading: 40, bottom: 40, trailing: 40))
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-}
-
-/// An image's pixel size, read from its header.
-nonisolated enum ImageMetadata {
-    @concurrent static func pixelSize(of url: URL) async -> (width: Int, height: Int)? {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-              let width = properties[kCGImagePropertyPixelWidth] as? Int,
-              let height = properties[kCGImagePropertyPixelHeight] as? Int else { return nil }
-        return (width, height)
     }
 }
 
