@@ -110,8 +110,7 @@ The body's syntax is the spec in the Live editor's package, at the tag Ta Da pin
 - **Listing**: Attachments lists the images directly in `Ta Da/attachments/`, iCloud placeholders included (their size is the one the placeholder records). Images elsewhere, and the old `attachments/`, aren't listed.
 - **In use**: an image is in use when a live file embeds it: a task, project, area or note outside the Logbook and `.trash/`. An embed counts for the image it resolves to, so a same-named image elsewhere that wins resolution doesn't make this one in use.
 - **Clean-up reasons**: an image not in use can be cleaned up, for one of four reasons: only logged files embed it, only trashed files, both, or nothing.
-- **Clean Up** moves the ticked images to `.trash/attachments/` (as Deleting an attachment does) without rewriting any embed; logged and trashed files show them as missing until they're restored. It lists every image not in use, ticked at open.
-- **Files still downloading**: while markdown files in the folder, `.trash/` or the old `.logbook/` are iCloud Drive placeholders, an image they embed can look unused, so Clean Up starts every image unticked and says so.
+- **Clean Up** moves the ticked images not in use to `.trash/attachments/` (as Deleting an attachment does) without rewriting any embed; logged and trashed files show them as missing until they're restored. While markdown files in the folder, `.trash/` or the old `.logbook/` are iCloud Drive placeholders, an image they embed can look unused.
 - **Renaming an attachment** keeps its folder and extension (the same extension typed in the new name is dropped); the name can't be another image's filename anywhere in the folder. Every embed in a file's body that resolved to it is rewritten to the new filename (to the new path where it was written as a path); anything after `|` stays, and embeds in code are left alone.
 
 ## Behaviour rules
