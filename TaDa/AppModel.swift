@@ -149,6 +149,12 @@ import UIKit
     var attachmentSelection: Set<String> = []
     /// What the last Clean Up or Move to Trash did, shown under the Attachments list.
     var attachmentNote: String?
+    /// The last image rename, which an open image screen follows.
+    private(set) var renamedAttachment: AttachmentRename?
+    struct AttachmentRename: Equatable {
+        let from: String
+        let to: String
+    }
     /// The file whose file menu is open; its row is ringed.
     var menuTarget: String?
     /// ⌘P's request for the project or area menu, ⌘S's and ⌘D's for a date's calendar, or ⌘T's for tagMenu. The view
@@ -1288,6 +1294,7 @@ import UIKit
             errorMessage = Self.couldNot("rename “\(oldName)”", error)
             return
         }
+        renamedAttachment = AttachmentRename(from: path, to: newPath)
         attachments = attachments.map { $0 == path ? newPath : $0 }
         for file in files.sorted() {
             await edit(file) { Vault.retargetEmbeds(in: $0, from: path, to: newPath, paths: paths) }
@@ -1347,10 +1354,11 @@ import UIKit
         await refresh()
     }
 
-    /// Moves the images picked in Attachments to Trash; asks first when a live file embeds one.
+    /// Moves the images picked in Attachments to Trash; asks first when a live file embeds one, or when how files use
+    /// one isn't known yet (just renamed).
     func moveAttachmentsToTrash(_ paths: Set<String>) async {
         let paths = paths.sorted()
-        if paths.contains(where: { attachmentUse(at: $0)?.isInUse == true }) {
+        if paths.contains(where: { attachmentUse(at: $0)?.isInUse != false }) {
             imageDialog = paths.count == 1 ? .delete(paths[0]) : .deleteSeveral(paths)
         } else {
             await trashAttachments(paths)

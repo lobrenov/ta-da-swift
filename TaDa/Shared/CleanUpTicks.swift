@@ -9,8 +9,9 @@ struct CleanUpTicks {
     private var initial: Set<String>?
     private var changes: [String: Bool] = [:]
 
-    /// Fixes the starting ticks from `groups`.
+    /// Fixes the starting ticks from `groups`, once.
     mutating func start(_ groups: AttachmentGroups) {
+        guard initial == nil else { return }
         initial = groups.pendingFiles.isEmpty ? Set(groups.candidates.map(\.id)) : []
     }
 

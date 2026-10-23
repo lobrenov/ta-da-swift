@@ -49,6 +49,19 @@ struct AttachmentsModelTests {
         #expect(model.attachmentGroups.inUse.count == 1, "nothing moved")
     }
 
+    @Test func movingAnImageWhoseUseIsUnknownAsksFirst() async {
+        let model = await folder.model()
+        model.show(.attachments)
+        await model.moveAttachmentsToTrash(["Ta Da/attachments/missing.png"])
+        #expect(model.imageDialog == .delete("Ta Da/attachments/missing.png"))
+    }
+
+    @Test func renamingPublishesTheRename() async {
+        let model = await folder.model()
+        await model.renameAttachment("Ta Da/attachments/front.jpg", to: "Front")
+        #expect(model.renamedAttachment == .init(from: "Ta Da/attachments/front.jpg", to: "Ta Da/attachments/Front.jpg"))
+    }
+
     @Test func renamingAnImageKeepsItPicked() async {
         let model = await folder.model()
         model.show(.attachments)

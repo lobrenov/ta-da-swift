@@ -241,6 +241,9 @@ struct PhoneAttachmentScreen: View {
     let model: AppModel
     let path: String
     @State private var dimensions: String?
+    @State private var downloadFailed = false
+    /// Bumped by Try Again to restart the download.
+    @State private var downloadAttempt = 0
     @State private var search = LinkMenuSearch()
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
@@ -253,7 +256,8 @@ struct PhoneAttachmentScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .background { TabBarHiddenOnTop() }
         .toolbar { actions }
-        .onChange(of: model.attachments) { old, new in followRename(from: old, to: new) }
+        .onChange(of: model.renamedAttachment) { _, rename in followRename(rename) }
+        .onChange(of: model.attachments) { _, new in if !new.contains(path), model.renamedAttachment?.from != path { nav.dropAttachment(path) } }
     }
 
     private func content(_ use: AttachmentUse) -> some View {
@@ -280,8 +284,9 @@ struct PhoneAttachmentScreen: View {
                 PickingBarClearance()
             }
         }
-        .task(id: "\(image.path) \(image.isDownloaded)") {
+        .task(id: "\(image.path) \(image.isDownloaded) \(downloadAttempt)") {
             dimensions = nil
+            downloadFailed = false
             if image.isDownloaded {
                 guard let url, let size = await ImageMetadata.pixelSize(of: url) else { return }
                 dimensions = "\(size.width) × \(size.height)"
@@ -303,12 +308,21 @@ struct PhoneAttachmentScreen: View {
                 return
             }
         }
+        downloadFailed = true
     }
 
     private var downloading: some View {
         VStack(spacing: 10) {
-            ProgressView()
-            Text("Downloading from iCloud Drive…").scaledFont(size: 15)
+            if downloadFailed {
+                Image(systemName: "icloud.slash").scaledFont(size: 26)
+                Text("Couldn’t download from iCloud Drive").scaledFont(size: 15)
+                Button("Try Again") { downloadAttempt += 1 }
+                    .buttonStyle(.glassProminent)
+                    .tint(theme.color(\.accent))
+            } else {
+                ProgressView()
+                Text("Downloading from iCloud Drive…").scaledFont(size: 15)
+            }
         }
         .foregroundStyle(theme.color(\.strong))
     }
@@ -388,6 +402,7 @@ struct PhoneAttachmentScreen: View {
         ToolbarSpacer(.flexible, placement: .bottomBar)
         ToolbarItem(placement: .bottomBar) {
             Button("Rename") { model.imageDialog = .rename(path) }
+                .disabled(use == nil)
         }
         ToolbarSpacer(.flexible, placement: .bottomBar)
         ToolbarItem(placement: .bottomBar) {
@@ -398,19 +413,14 @@ struct PhoneAttachmentScreen: View {
                 Label("Move to Trash", systemImage: "trash").labelStyle(.titleAndIcon)
             }
             .tint(theme.color(\.deadline))
+            .disabled(use == nil)
         }
     }
 
-    /// Follows a rename (one image gone from this folder, one new) by pointing the screen at the new path; the screen
-    /// closes when the image is gone.
-    private func followRename(from old: [String], to new: [String]) {
-        guard !new.contains(path) else { return }
-        let added = Set(new).subtracting(old)
-        if added.count == 1, let renamed = added.first, Vault.folder(of: renamed) == Vault.folder(of: path) {
-            nav.replace(.attachment(path), with: .attachment(renamed))
-        } else {
-            nav.pop()
-        }
+    /// Points the screen at the new path when this image is renamed.
+    private func followRename(_ rename: AppModel.AttachmentRename?) {
+        guard let rename, rename.from == path else { return }
+        nav.replace(.attachment(rename.from), with: .attachment(rename.to))
     }
 }
 

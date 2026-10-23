@@ -201,6 +201,11 @@ enum PhoneTabReselect: Equatable {
         stacks = stacks.mapValues { routes in routes.map { $0 == route ? replacement : $0 } }
     }
 
+    /// Takes the screens for the image at `path` out of every tab, as after it moves to Trash.
+    func dropAttachment(_ path: String) {
+        stacks = stacks.mapValues { routes in routes.filter { $0 != .attachment(path) } }
+    }
+
     /// Takes the screens for files that are gone out of every tab, as after a delete.
     func dropScreens(where isGone: (String) -> Bool) {
         stacks = stacks.mapValues { routes in routes.filter { $0.path.map { !isGone($0) } ?? true } }
