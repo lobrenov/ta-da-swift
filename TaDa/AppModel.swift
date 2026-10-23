@@ -151,6 +151,9 @@ import UIKit
     var attachmentNote: String?
     /// The last image rename, which an open image screen follows.
     private(set) var renamedAttachment: AttachmentRename?
+    /// Bumped when an image is renamed, so a refresh pass that walked the folder before the rename doesn't put the old
+    /// paths back or trim the selection against them.
+    private var attachmentEpoch = 0
     struct AttachmentRename: Equatable {
         let from: String
         let to: String
@@ -619,6 +622,7 @@ import UIKit
             defer { refreshing = nil }
             repeat {
                 refreshAgain = false
+                let epoch = attachmentEpoch
                 #if os(iOS)
                 await Self.run { vault.downloadPlaceholders() }
                 #endif
@@ -632,8 +636,10 @@ import UIKit
                 trashedAttachments = await Self.run { vault.trashedAttachments() }
                 trashSelection.formIntersection(trash.map(\.id) + trashedAttachments.map(\.id))
                 let attachments = await Self.run { vault.attachmentPaths() }
+                guard epoch == attachmentEpoch else { continue }
                 if attachments != self.attachments { self.attachments = attachments }
                 await reloadAttachmentGroups(vault, imagePaths: attachments)
+                guard epoch == attachmentEpoch else { continue }
                 attachmentSelection.formIntersection((attachmentGroups.candidates + attachmentGroups.inUse).map(\.id))
                 let old = await Self.run { vault.oldLayoutFolders().map(\.from) }
                 if old != oldLayoutFolders { oldLayoutFolders = old }
@@ -1295,11 +1301,12 @@ import UIKit
             return
         }
         renamedAttachment = AttachmentRename(from: path, to: newPath)
+        attachmentEpoch += 1
+        attachmentSelection = Set(attachmentSelection.map { $0 == path ? newPath : $0 })
         attachments = attachments.map { $0 == path ? newPath : $0 }
         for file in files.sorted() {
             await edit(file) { Vault.retargetEmbeds(in: $0, from: path, to: newPath, paths: paths) }
         }
-        attachmentSelection = Set(attachmentSelection.map { $0 == path ? newPath : $0 })
         await refresh()
     }
 
