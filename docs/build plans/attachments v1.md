@@ -12,6 +12,7 @@ Starting point, as checked on 2026-10-23 (Build 31):
 - **Scope**: the images directly in `Ta Da/attachments/`, iCloud placeholders included. Images elsewhere, and the old layout's `attachments/`, aren't listed.
 - **In use**: an image is in use when a live file embeds it: a task, project, area or note outside the Logbook and `.trash/`. An embed counts when it resolves to that image (`Vault.attachmentPath(for:in:)` over every image path), so a same-named image elsewhere that wins resolution doesn't make it in use.
 - **Clean-up candidates**: every image not in use, with its reason: only logged files embed it, only trashed files, both, or nothing.
+- **Files waiting to download**: while markdown files are still to download from iCloud Drive (`AttachmentGroups.pendingFiles`), Clean Up says so and starts every image unticked (UI in A2/A3).
 - **List**: two groups, "Not in open files" (with count and total size) then "In open files", each sorted by name (Finder order: numeric, ignoring case). A row is the thumbnail, the filename, where it's embedded ("In Photograph the Kombi and 1 logged file", "In the Logbook: Replace the tyres", "In Trash: …", "Not embedded anywhere · added Fri 2 Oct") and its size.
 - **iCloud**: an image iCloud Drive hasn't downloaded shows a cloud badge and a faded thumbnail; its size comes from the placeholder. Opening it asks iCloud Drive to download it (Download on the Mac's preview).
 - **Count**: the sidebar row and Other's row show the folder's total size (`ByteCountFormatter`, `.file`), not a file count.

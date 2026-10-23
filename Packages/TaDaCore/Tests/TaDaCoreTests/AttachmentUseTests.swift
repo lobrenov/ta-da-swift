@@ -11,8 +11,8 @@ private func uses(_ files: [String: String], images: [String], in folder: URL) a
     let vault = Vault(root: folder)
     for (path, text) in files { try writeFile(text, path, in: folder) }
     for path in images { try writeFile("x", path, in: folder) }
-    let groups = vault.attachmentGroups(index: await vault.loadIndex(), trashed: vault.trashedItems())
-    return (groups, Dictionary(uniqueKeysWithValues: (groups.candidates + groups.inUse).map { ($0.attachment.name, $0) }))
+    let groups = await vault.attachmentGroups(index: await vault.loadIndex(), trashed: vault.trashedItems())
+    return (groups, Dictionary((groups.candidates + groups.inUse).map { ($0.attachment.name, $0) }, uniquingKeysWith: { first, _ in first }))
 }
 
 @Test func attachmentsAreGroupedAndSortedByFilenameInFinderOrder() async throws {
@@ -76,7 +76,7 @@ private func uses(_ files: [String: String], images: [String], in folder: URL) a
         let vault = Vault(root: folder)
         try writeFile(note(embedding: "A/dup.png"), "Ta Da/tasks/Live.md", in: folder)
         for path in ["Ta Da/attachments/dup.png", "Ta Da/attachments/other.png", "A/dup.png"] { try writeFile("x", path, in: folder) }
-        let groups = vault.attachmentGroups(index: await vault.loadIndex(), trashed: [])
+        let groups = await vault.attachmentGroups(index: await vault.loadIndex(), trashed: [])
         #expect(groups.candidates.map(\.attachment.path) == ["Ta Da/attachments/dup.png", "Ta Da/attachments/other.png"])
         #expect(groups.inUse.isEmpty)
     }
@@ -119,8 +119,43 @@ private func uses(_ files: [String: String], images: [String], in folder: URL) a
         try writeFile(String(repeating: "x", count: 10), "Ta Da/attachments/used.png", in: folder)
         try writeFile(String(repeating: "x", count: 5), "Ta Da/attachments/spare.png", in: folder)
         try writeFile("not a plist", "Ta Da/attachments/.NoSize.png.icloud", in: folder)
-        let groups = vault.attachmentGroups(index: await vault.loadIndex(), trashed: [])
+        let groups = await vault.attachmentGroups(index: await vault.loadIndex(), trashed: [])
         #expect(groups.inUseSize == 10 && groups.candidatesSize == 5 && groups.totalSize == 15)
         #expect(Attachment.totalSize(of: []) == 0)
+    }
+}
+
+@Test func theFoldersSpellingOnDiskIsKeptSoItsImagesStillResolve() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(note(embedding: "a.png"), "Ta Da/tasks/Live.md", in: folder)
+        try writeFile("x", "Ta Da/Attachments/a.png", in: folder)
+        let groups = await vault.attachmentGroups(index: await vault.loadIndex(), trashed: [])
+        #expect(groups.inUse.map(\.attachment.path) == ["Ta Da/Attachments/a.png"])
+        #expect(groups.candidates.isEmpty)
+    }
+}
+
+@Test func markdownFilesStillToDownloadAreReported() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("x", "Ta Da/attachments/a.png", in: folder)
+        for path in ["Ta Da/tasks/.Waiting.md.icloud", ".trash/.Binned.md.icloud", "Ta Da/Logbook/2026-09/.Old.md.icloud",
+                     ".other/.Hidden.md.icloud", "Ta Da/attachments/.b.png.icloud"] {
+            try writeFile("x", path, in: folder)
+        }
+        let groups = await vault.attachmentGroups(index: await vault.loadIndex(), trashed: [])
+        #expect(groups.pendingFiles == [".trash/Binned.md", "Ta Da/Logbook/2026-09/Old.md", "Ta Da/tasks/Waiting.md"])
+    }
+}
+
+@Test func anImageAndItsPlaceholderAreListedOnceAsDownloaded() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("xyz", "Ta Da/attachments/a.png", in: folder)
+        try writeFile("x", "Ta Da/attachments/.a.png.icloud", in: folder)
+        let found = vault.taDaAttachments()
+        #expect(found.map(\.path) == ["Ta Da/attachments/a.png"])
+        #expect(found.first?.isDownloaded == true && found.first?.size == 3)
     }
 }

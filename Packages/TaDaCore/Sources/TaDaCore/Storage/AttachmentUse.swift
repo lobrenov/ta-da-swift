@@ -14,6 +14,13 @@ public struct Attachment: Hashable, Sendable, Identifiable {
     public var id: String { path }
     public var name: String { String(path.split(separator: "/").last ?? "") }
 
+    public init(path: String, size: Int64? = nil, added: Date? = nil, isDownloaded: Bool = true) {
+        self.path = path
+        self.size = size
+        self.added = added
+        self.isDownloaded = isDownloaded
+    }
+
     /// The bytes `attachments` take, counting an unknown size as 0.
     public static func totalSize(of attachments: [Attachment]) -> Int64 {
         attachments.reduce(0) { $0 + ($1.size ?? 0) }
@@ -50,6 +57,13 @@ public struct AttachmentUse: Hashable, Sendable, Identifiable {
 
     public var id: String { attachment.path }
 
+    public init(attachment: Attachment, live: [Item] = [], logged: [Item] = [], trashed: [TrashedItem] = []) {
+        self.attachment = attachment
+        self.live = live
+        self.logged = logged
+        self.trashed = trashed
+    }
+
     /// Whether a live file embeds it.
     public var isInUse: Bool { !live.isEmpty }
 
@@ -68,15 +82,33 @@ public struct AttachmentUse: Hashable, Sendable, Identifiable {
     /// `Vault.attachmentPaths()`), as `Vault.attachmentPath(for:in:)` finds it.
     public static func uses(of attachments: [Attachment], index: VaultIndex, trashed: [TrashedItem],
                             imagePaths: [String]) -> [AttachmentUse] {
-        var trashedByImage: [String: [TrashedItem]] = [:]
-        for entry in trashed.sorted(by: { VaultIndex.byTitle($0.item, $1.item) }) {
-            let images = Set(entry.item.embeds.compactMap { Vault.attachmentPath(for: $0, in: imagePaths) })
-            for image in images { trashedByImage[image, default: []].append(entry) }
+        var pathsByName: [String: [String]] = [:]
+        for path in imagePaths { pathsByName[String(path.split(separator: "/").last ?? "").lowercased(), default: []].append(path) }
+        // Lowercased embed target → the image it resolves to. Only images with the embed's filename can match.
+        var resolved: [String: String?] = [:]
+        func images(embedded embeds: [WikiLink]) -> Set<String> {
+            Set(embeds.compactMap { embed in
+                let key = embed.target.lowercased()
+                if let known = resolved[key] { return known }
+                let image = embed.attachmentName.flatMap { pathsByName[$0.lowercased()] }.flatMap { Vault.attachmentPath(for: embed, in: $0) }
+                resolved[key] = image
+                return image
+            })
+        }
+        var live: [String: [Item]] = [:], logged: [String: [Item]] = [:], trashedBy: [String: [TrashedItem]] = [:]
+        for item in index.items.values {
+            for image in images(embedded: item.embeds) {
+                if item.isLogged { logged[image, default: []].append(item) } else { live[image, default: []].append(item) }
+            }
+        }
+        for entry in trashed {
+            for image in images(embedded: entry.item.embeds) { trashedBy[image, default: []].append(entry) }
         }
         return attachments.map { attachment in
-            let embedders = index.embedders(ofAttachment: attachment.path, among: imagePaths).map(\.item)
-            return AttachmentUse(attachment: attachment, live: embedders.filter { !$0.isLogged },
-                                 logged: embedders.filter(\.isLogged), trashed: trashedByImage[attachment.path] ?? [])
+            AttachmentUse(attachment: attachment,
+                          live: (live[attachment.path] ?? []).sorted(by: VaultIndex.byTitle),
+                          logged: (logged[attachment.path] ?? []).sorted(by: VaultIndex.byTitle),
+                          trashed: (trashedBy[attachment.path] ?? []).sorted { VaultIndex.byTitle($0.item, $1.item) })
         }
     }
 }
@@ -87,8 +119,12 @@ public struct AttachmentGroups: Sendable {
     public var candidates: [AttachmentUse]
     /// Images a live file embeds ("In open files").
     public var inUse: [AttachmentUse]
+    /// Markdown files iCloud Drive hasn't downloaded yet, including those in `.trash/`. Images they embed show as
+    /// not embedded until they arrive.
+    public var pendingFiles: [String]
 
-    public init(_ uses: [AttachmentUse]) {
+    public init(_ uses: [AttachmentUse], pendingFiles: [String] = []) {
+        self.pendingFiles = pendingFiles
         let sorted = uses.sorted { Attachment.byName($0.attachment, $1.attachment) }
         candidates = sorted.filter { !$0.isInUse }
         inUse = sorted.filter(\.isInUse)
@@ -101,22 +137,34 @@ public struct AttachmentGroups: Sendable {
 
 extension Vault {
     /// The images directly in `Ta Da/attachments/`, in no set order, including iCloud Drive placeholders under their
-    /// real names. A placeholder's size is read from its property list.
+    /// real names. A placeholder's size is read from its property list. Walks the whole folder; call it off the main
+    /// actor.
     public func taDaAttachments() -> [Attachment] {
+        taDaAttachments(imagePaths: attachmentPaths())
+    }
+
+    /// `taDaAttachments()` with each path spelled as in `imagePaths` (from `attachmentPaths()`), which is the folder's
+    /// spelling on disk.
+    func taDaAttachments(imagePaths: [String]) -> [Attachment] {
         let keys: [URLResourceKey] = [.isRegularFileKey, .fileSizeKey, .addedToDirectoryDateKey, .creationDateKey, .contentModificationDateKey]
         let folder = url(for: Self.attachmentFolder)
         let urls = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: keys)) ?? []
-        return urls.compactMap { url in
+        let spelled = Dictionary(imagePaths.map { ($0.lowercased(), $0) }, uniquingKeysWith: { first, _ in first })
+        var found: [String: Attachment] = [:]
+        for url in urls {
             let name = url.lastPathComponent
             let placeholder = Self.placeholderOriginal(name)
             let original = placeholder ?? name
             guard placeholder != nil || !name.hasPrefix("."), Self.isImage(original),
-                  let values = try? url.resourceValues(forKeys: Set(keys)), values.isRegularFile == true else { return nil }
+                  let values = try? url.resourceValues(forKeys: Set(keys)), values.isRegularFile == true else { continue }
             let size = placeholder == nil ? values.fileSize.map(Int64.init) : Self.placeholderSize(at: url)
-            return Attachment(path: Self.attachmentFolder + "/" + original, size: size,
-                              added: values.addedToDirectoryDate ?? values.creationDate ?? values.contentModificationDate,
-                              isDownloaded: placeholder == nil)
+            let path = Self.attachmentFolder + "/" + original
+            let attachment = Attachment(path: spelled[path.lowercased()] ?? path, size: size,
+                                        added: values.addedToDirectoryDate ?? values.creationDate ?? values.contentModificationDate,
+                                        isDownloaded: placeholder == nil)
+            if found[attachment.path]?.isDownloaded != true { found[attachment.path] = attachment }
         }
+        return Array(found.values)
     }
 
     /// The size an iCloud Drive placeholder records (`NSURLFileSizeKey`); nil when it doesn't.
@@ -127,8 +175,30 @@ extension Vault {
         return size.int64Value
     }
 
-    /// `taDaAttachments()` with how each is used, as `AttachmentGroups` lists them.
-    public func attachmentGroups(index: VaultIndex, trashed: [TrashedItem]) -> AttachmentGroups {
-        AttachmentGroups(AttachmentUse.uses(of: taDaAttachments(), index: index, trashed: trashed, imagePaths: attachmentPaths()))
+    /// Markdown files iCloud Drive hasn't downloaded yet, by the path they'll have, in the folder, `.trash/` and the
+    /// old `.logbook/`.
+    func pendingMarkdownPaths() -> [String] {
+        guard let files = FileManager.default.enumerator(
+            at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsPackageDescendants]
+        ) else { return [] }
+        let rootComponents = root.pathComponents.count
+        var paths: [String] = []
+        for case let url as URL in files where url.lastPathComponent.hasPrefix(".") {
+            let components = url.standardizedFileURL.pathComponents.dropFirst(rootComponents)
+            if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
+                if ![Self.trashFolder, Self.legacyLogbookFolder].contains(components.joined(separator: "/")) { files.skipDescendants() }
+                continue
+            }
+            guard let original = Self.placeholderOriginal(url.lastPathComponent), original.lowercased().hasSuffix(".md") else { continue }
+            paths.append((components.dropLast() + [original]).joined(separator: "/"))
+        }
+        return paths.sorted()
+    }
+
+    /// `taDaAttachments()` with how each is used, as `AttachmentGroups` lists them. Walks the whole folder.
+    @concurrent public func attachmentGroups(index: VaultIndex, trashed: [TrashedItem]) async -> AttachmentGroups {
+        let imagePaths = attachmentPaths()
+        let uses = AttachmentUse.uses(of: taDaAttachments(imagePaths: imagePaths), index: index, trashed: trashed, imagePaths: imagePaths)
+        return AttachmentGroups(uses, pendingFiles: pendingMarkdownPaths())
     }
 }
