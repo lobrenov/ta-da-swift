@@ -88,6 +88,7 @@ extension AppModel.Domain {
         case .agenda: "Agenda"
         case .loose: "Loose tasks"
         case .logbook: "Logbook"
+        case .attachments: "Attachments"
         case .trash: "Trash"
         case .project(let path), .area(let path): Item.title(ofPath: path)
         case .tag(let path): path.flatMap(Tag.init)?.leaf ?? "Untagged"
@@ -101,6 +102,7 @@ extension AppModel.Domain {
         case .agenda: "calendar"
         case .loose: "tray"
         case .logbook: "book.closed"
+        case .attachments: "photo"
         case .trash: "trash"
         case .project: "circle.dotted"
         case .area: "cube"
@@ -117,7 +119,7 @@ extension AppModel.Domain {
         case .trash: \.muted
         case .area: \.doing
         case .tag(let path): path == nil ? \.muted : \.accent
-        case .folder: \.link
+        case .attachments, .folder: \.link
         }
     }
 }

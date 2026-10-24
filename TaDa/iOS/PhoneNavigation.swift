@@ -23,6 +23,10 @@ enum PhoneRoute: Hashable {
     /// Settings ▸ Integrations: Calendar and Reminders.
     case integrations
     case logbook
+    /// The images in `Ta Da/attachments/`.
+    case attachments
+    /// One image, by path.
+    case attachment(String)
     case trash
     /// A tag's page, by path; nil for Untagged.
     case tag(String?)
@@ -33,7 +37,7 @@ enum PhoneRoute: Hashable {
     var path: String? {
         switch self {
         case let .file(path), let .project(path), let .area(path): path
-        case .loose, .settings, .integrations, .logbook, .trash, .tag, .folder: nil
+        case .loose, .settings, .integrations, .logbook, .attachments, .attachment, .trash, .tag, .folder: nil
         }
     }
 }
@@ -195,6 +199,11 @@ enum PhoneTabReselect: Equatable {
     /// Points every tab's screens for `route` at `replacement`, as after a rename.
     func replace(_ route: PhoneRoute, with replacement: PhoneRoute) {
         stacks = stacks.mapValues { routes in routes.map { $0 == route ? replacement : $0 } }
+    }
+
+    /// Takes the screens for the image at `path` out of every tab, as after it moves to Trash.
+    func dropAttachment(_ path: String) {
+        stacks = stacks.mapValues { routes in routes.filter { $0 != .attachment(path) } }
     }
 
     /// Takes the screens for files that are gone out of every tab, as after a delete.

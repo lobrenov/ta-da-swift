@@ -1,4 +1,4 @@
-// Sidebar: search, Agenda, Logbook, Trash with its count, then the Tasks | Tags | Notes switch. Tasks lists
+// Sidebar: search, Agenda, Logbook, Attachments with its size, Trash with its count, then the Tasks | Tags | Notes switch. Tasks lists
 // Loose tasks, active projects without an area, then each area with its active projects under it; Tags lists Untagged
 // and the tag tree; Notes lists Loose (the top level) and the folder tree. Then the folder line, Settings and the New
 // buttons. Task rows drop onto Today, Loose tasks, the
@@ -45,6 +45,7 @@ struct SidebarView: View {
                         .taskDrop(model, onto: .agenda)
                     row(.logbook, count: nil)
                         .padding(.top, 8)
+                    row(.attachments, count: nil, text: ByteCountFormatter.string(fromByteCount: model.attachmentGroups.totalSize, countStyle: .file))
                     row(.trash, count: model.trashCount)
 
                     SidebarModeSwitch(mode: $model.sidebarMode)
@@ -274,8 +275,8 @@ struct SidebarView: View {
         .padding(.leading, CGFloat(depth) * 16)
     }
 
-    private func row(_ domain: AppModel.Domain, count: Int?, title: String? = nil) -> some View {
-        SidebarRow(selected: model.domain == domain && !model.isSearching, height: 32, count: count) {
+    private func row(_ domain: AppModel.Domain, count: Int?, text: String? = nil, title: String? = nil) -> some View {
+        SidebarRow(selected: model.domain == domain && !model.isSearching, height: 32, count: count, text: text) {
             model.show(domain)
             picked()
         } icon: {
@@ -459,6 +460,8 @@ struct SidebarRow<Icon: View, Label: View>: View {
     let selected: Bool
     let height: CGFloat
     let count: Int?
+    /// Trailing text in place of a count.
+    var text: String? = nil
     let action: () -> Void
     @ViewBuilder let icon: Icon
     @ViewBuilder let label: Label
@@ -474,6 +477,11 @@ struct SidebarRow<Icon: View, Label: View>: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if let count, count > 0 {
                     Text("\(count)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(theme.color(\.muted))
+                        .monospacedDigit()
+                } else if let text {
+                    Text(text)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(theme.color(\.muted))
                         .monospacedDigit()

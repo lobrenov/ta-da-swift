@@ -8,6 +8,7 @@ Work not yet built.
 - `.itermcolors` import into a theme.
 - Developer ID signing and notarisation, or TestFlight for Mac, if Ta Da joins the paid Apple Developer Program: testers would no longer unblock each beta build (`docs/beta-builds.md`).
 - Per-file iCloud sync state.
+- Attachments: check on a device that an undownloaded iCloud image shows its placeholder size and added date, and that Clean Up's unticked-while-downloading rule holds against a real sync.
 - JetBrains Mono as the mono font.
 - A better design for a project's linked-tasks table (its columns have fixed widths).
 - Tables on iPhone: the live grid (iPhone keeps the rendered image and revealed source).

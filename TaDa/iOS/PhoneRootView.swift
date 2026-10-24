@@ -113,6 +113,8 @@ struct PhoneRootView: View {
                     case let .settings(section): PhoneSettingsScreen(model: model, section: section)
                     case .integrations: PhoneIntegrationsScreen(store: model.integrations)
                     case .logbook: PhoneLogbookScreen(model: model)
+                    case .attachments: PhoneAttachmentsScreen(model: model)
+                    case let .attachment(path): PhoneAttachmentScreen(model: model, path: path)
                     case .trash: PhoneTrashScreen(model: model)
                     case let .tag(path): PhoneTagScreen(model: model, path: path)
                     case let .folder(path): PhoneFolderScreen(model: model, path: path)

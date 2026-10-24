@@ -18,6 +18,10 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     var pickable: [String] = []
     var add: (() async -> Void)? = nil
     var addLabel = "New Task"
+    /// The picking bar's content instead of the file actions, as the Attachments list's Move to Trash.
+    var pickingActions: AnyView? = nil
+    /// What typing in search shows instead of the files that match.
+    var searchResults: ((String) -> AnyView)? = nil
     @ViewBuilder var menu: MenuItems
     @ViewBuilder var content: Content
     @State private var search = ListSearch()
@@ -37,7 +41,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                         removal: .opacity.animation(.linear(duration: 0.05))))
                 }
                 if search.isSearching {
-                    PhoneSearchResults(model: model, query: search.query)
+                    if let searchResults { searchResults(search.query) } else { PhoneSearchResults(model: model, query: search.query) }
                 } else {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         content
@@ -90,7 +94,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                 }
             }
         }
-        .pickingBars(model: model)
+        .pickingBars(model: model, actions: pickingActions)
         .navigationBarBackButtonHidden(search.isOpen || nav.isPicking)
         .onAppear {
             isOnScreen = true

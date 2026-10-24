@@ -74,6 +74,21 @@ struct LargeVaultTests {
         }
     }
 
+    @Test func attachmentGroupsListQuicklyWithEveryFileEmbeddingImages() async throws {
+        try await withTemporaryFolder { folder in
+            try GeneratedVault.write(to: folder, today: Self.today)
+            let vault = Vault(root: folder)
+            for number in 0..<300 { try writeFile("x", "Ta Da/attachments/Image \(number).png", in: folder) }
+            for number in 0..<500 {
+                try writeFile("---\ntype: task\n---\n![[Image \(number % 300).png]] ![[Image \((number * 7) % 300).png]]\n", "Ta Da/tasks/Embeds \(number).md", in: folder)
+            }
+            let index = await vault.loadIndex()
+            let (groups, groupTime) = await time("attachment groups") { await vault.attachmentGroups(index: index, trashed: []) }
+            #expect(groups.candidates.isEmpty && groups.inUse.count == 300)
+            #expect(groupTime < 1)
+        }
+    }
+
     /// Writes the vault for trying it in the app:
     /// `TADA_GENERATE_VAULT=/path/to/folder swift test --package-path Packages/TaDaCore --filter writeGeneratedVault`
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TADA_GENERATE_VAULT"] != nil))
