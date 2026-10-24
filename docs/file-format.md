@@ -56,7 +56,7 @@ Bring the project instruction files in line with how I actually work now.
 
 ## Body
 
-The body's syntax is the spec in the Live editor's package, at the tag Ta Da pins (`Packages/TaDaCore/Package.swift`): [`spec/`](https://github.com/lobrenov/swift-markdown-engine-extended/tree/0.15.0-live.1/spec) in swift-markdown-engine-extended. Its `README.md` says what each construct is (task markers, links, embeds, tags, callouts, tables) and its `edits/` how a change is written. TaDaCore reads it through the package's `MarkdownEngineSyntax` (`MarkdownFacts`). Ta Da's choices:
+The body's syntax is the spec in the Live editor's package, at the tag Ta Da pins (`Packages/TaDaCore/Package.swift`): [`spec/`](https://github.com/lobrenov/swift-markdown-engine-extended/tree/0.15.0-live.3/spec) in swift-markdown-engine-extended. Its `README.md` says what each construct is (task markers, links, embeds, tags, callouts, tables) and its `edits/` how a change is written. TaDaCore reads it through the package's `MarkdownEngineSyntax` (`MarkdownFacts`). Ta Da's choices:
 
 - **Description**: the whole body. Search also matches its first paragraph (the summary).
 - **Subtasks** are the checkboxes (the spec's task markers; `[y]` is text) in these states, anywhere in the body and at any depth, outside code, counted as done/total:
