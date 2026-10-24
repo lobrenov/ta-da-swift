@@ -1,0 +1,746 @@
+{
+  "today" : "2026-10-02",
+  "vaults" : [
+    {
+      "activeProjects" : [
+        {
+          "done" : 0,
+          "path" : "projects/Atlas Billing.md",
+          "total" : 1
+        },
+        {
+          "done" : 0,
+          "path" : "projects/End of year reviews.md",
+          "total" : 0
+        },
+        {
+          "done" : 0,
+          "path" : "projects/Game Jam - Starfall.md",
+          "total" : 1
+        },
+        {
+          "done" : 0,
+          "path" : "projects/Sell the Kombi.md",
+          "total" : 1
+        },
+        {
+          "done" : 2,
+          "path" : "projects/Ta Da MVP.md",
+          "total" : 8
+        }
+      ],
+      "agendaWeek" : [
+        {
+          "date" : "2026-09-28",
+          "kind" : "due",
+          "path" : "tasks/Frontmatter schema for tasks and projects.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "due",
+          "path" : "tasks/Message Max about a coat and a jacket.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "due",
+          "path" : "tasks/Shift my physio appointment.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "due",
+          "path" : "tasks/Submit timesheet.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "due",
+          "path" : "tasks/Update Dan’s website for Starfall.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "due",
+          "path" : "tasks/Update my claude.md files.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "deadline",
+          "path" : "tasks/Create a system testing plan.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "deadline",
+          "path" : "tasks/Resolve the cabin payback.md"
+        },
+        {
+          "date" : "2026-10-03",
+          "kind" : "due",
+          "path" : "tasks/Update 2DS before the next session.md"
+        }
+      ],
+      "areaProjects" : [
+
+      ],
+      "areas" : [
+
+      ],
+      "dayMarks" : [
+        {
+          "date" : "2026-10-01",
+          "hasOpenBoxes" : true,
+          "hasOpenTasks" : false
+        },
+        {
+          "date" : "2026-10-02",
+          "hasOpenBoxes" : true,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-03",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-05",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-06",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-07",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-08",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-09",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-14",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-16",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-30",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        }
+      ],
+      "liveTasks" : [
+        "tasks/Agenda view for Upcoming.md",
+        "tasks/Book a roadworthy for the Kombi.md",
+        "tasks/Build the sidebar domains.md",
+        "tasks/Create a system testing plan.md",
+        "tasks/Frontmatter schema for tasks and projects.md",
+        "tasks/Import iTerm2 colour schemes as themes.md",
+        "tasks/Live preview editor on swift-markdown-engine.md",
+        "tasks/Message Max about a coat and a jacket.md",
+        "tasks/Pick a test framework.md",
+        "tasks/Read and write files through iCloud Drive.md",
+        "tasks/Resolve the cabin payback.md",
+        "tasks/Shift my physio appointment.md",
+        "tasks/Spike the swift-markdown parser.md",
+        "tasks/Submit timesheet.md",
+        "tasks/Update 2DS before the next session.md",
+        "tasks/Update Dan’s website for Starfall.md",
+        "tasks/Update my claude.md files.md"
+      ],
+      "logged" : [
+
+      ],
+      "loose" : [
+        "tasks/Message Max about a coat and a jacket.md",
+        "tasks/Resolve the cabin payback.md",
+        "tasks/Shift my physio appointment.md",
+        "tasks/Submit timesheet.md",
+        "tasks/Update 2DS before the next session.md",
+        "tasks/Update my claude.md files.md"
+      ],
+      "looseProjects" : [
+        {
+          "done" : 0,
+          "path" : "projects/Atlas Billing.md",
+          "total" : 1
+        },
+        {
+          "done" : 0,
+          "path" : "projects/End of year reviews.md",
+          "total" : 0
+        },
+        {
+          "done" : 0,
+          "path" : "projects/Game Jam - Starfall.md",
+          "total" : 1
+        },
+        {
+          "done" : 0,
+          "path" : "projects/Sell the Kombi.md",
+          "total" : 1
+        },
+        {
+          "done" : 2,
+          "path" : "projects/Ta Da MVP.md",
+          "total" : 8
+        }
+      ],
+      "name" : "DesignVault",
+      "notes" : [
+        "Periodic Notes/Daily Notes/2026-10-01.md",
+        "Periodic Notes/Daily Notes/2026-10-02.md",
+        "Periodic Notes/Weekly Notes/2026-W40.md",
+        "notes/Not a task.md"
+      ],
+      "overdue" : [
+
+      ],
+      "parents" : {
+        "notes/Not a task.md" : null,
+        "Periodic Notes/Daily Notes/2026-10-01.md" : null,
+        "Periodic Notes/Daily Notes/2026-10-02.md" : null,
+        "Periodic Notes/Weekly Notes/2026-W40.md" : null,
+        "projects/Atlas Billing.md" : null,
+        "projects/End of year reviews.md" : null,
+        "projects/Game Jam - Starfall.md" : null,
+        "projects/Sell the Kombi.md" : null,
+        "projects/Ta Da MVP.md" : null,
+        "tasks/Agenda view for Upcoming.md" : "projects/Ta Da MVP.md",
+        "tasks/Book a roadworthy for the Kombi.md" : "projects/Sell the Kombi.md",
+        "tasks/Build the sidebar domains.md" : "projects/Ta Da MVP.md",
+        "tasks/Create a system testing plan.md" : "projects/Atlas Billing.md",
+        "tasks/Frontmatter schema for tasks and projects.md" : "projects/Ta Da MVP.md",
+        "tasks/Import iTerm2 colour schemes as themes.md" : "projects/Ta Da MVP.md",
+        "tasks/Live preview editor on swift-markdown-engine.md" : "projects/Ta Da MVP.md",
+        "tasks/Message Max about a coat and a jacket.md" : null,
+        "tasks/Pick a test framework.md" : "projects/Ta Da MVP.md",
+        "tasks/Read and write files through iCloud Drive.md" : "projects/Ta Da MVP.md",
+        "tasks/Resolve the cabin payback.md" : null,
+        "tasks/Shift my physio appointment.md" : null,
+        "tasks/Spike the swift-markdown parser.md" : "projects/Ta Da MVP.md",
+        "tasks/Submit timesheet.md" : null,
+        "tasks/Update 2DS before the next session.md" : null,
+        "tasks/Update Dan’s website for Starfall.md" : "projects/Game Jam - Starfall.md",
+        "tasks/Update my claude.md files.md" : null
+      },
+      "projects" : [
+        "projects/Atlas Billing.md",
+        "projects/End of year reviews.md",
+        "projects/Game Jam - Starfall.md",
+        "projects/Sell the Kombi.md",
+        "projects/Ta Da MVP.md"
+      ],
+      "today" : [
+        "tasks/Create a system testing plan.md",
+        "tasks/Message Max about a coat and a jacket.md",
+        "tasks/Resolve the cabin payback.md",
+        "tasks/Shift my physio appointment.md",
+        "tasks/Submit timesheet.md",
+        "tasks/Update Dan’s website for Starfall.md",
+        "tasks/Update my claude.md files.md"
+      ],
+      "upcoming" : [
+        {
+          "date" : "2026-10-03",
+          "kind" : "due",
+          "path" : "tasks/Update 2DS before the next session.md"
+        },
+        {
+          "date" : "2026-10-05",
+          "kind" : "due",
+          "path" : "tasks/Book a roadworthy for the Kombi.md"
+        },
+        {
+          "date" : "2026-10-05",
+          "kind" : "due",
+          "path" : "tasks/Read and write files through iCloud Drive.md"
+        },
+        {
+          "date" : "2026-10-06",
+          "kind" : "deadline",
+          "path" : "tasks/Update my claude.md files.md"
+        },
+        {
+          "date" : "2026-10-07",
+          "kind" : "due",
+          "path" : "tasks/Build the sidebar domains.md"
+        },
+        {
+          "date" : "2026-10-08",
+          "kind" : "deadline",
+          "path" : "tasks/Update Dan’s website for Starfall.md"
+        },
+        {
+          "date" : "2026-10-09",
+          "kind" : "due",
+          "path" : "tasks/Live preview editor on swift-markdown-engine.md"
+        },
+        {
+          "date" : "2026-10-14",
+          "kind" : "due",
+          "path" : "tasks/Agenda view for Upcoming.md"
+        },
+        {
+          "date" : "2026-10-16",
+          "kind" : "deadline",
+          "path" : "tasks/Live preview editor on swift-markdown-engine.md"
+        },
+        {
+          "date" : "2026-10-30",
+          "kind" : "deadline",
+          "path" : "tasks/Import iTerm2 colour schemes as themes.md"
+        }
+      ],
+      "warnings" : {
+        "projects/Atlas Billing.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Work"
+          }
+        ],
+        "projects/Game Jam - Starfall.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Game Jams"
+          }
+        ],
+        "projects/Sell the Kombi.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Personal"
+          }
+        ],
+        "projects/Ta Da MVP.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Agenda view for Upcoming.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Book a roadworthy for the Kombi.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Build the sidebar domains.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Create a system testing plan.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Work"
+          }
+        ],
+        "tasks/Frontmatter schema for tasks and projects.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Import iTerm2 colour schemes as themes.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Live preview editor on swift-markdown-engine.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Message Max about a coat and a jacket.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Pick a test framework.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Read and write files through iCloud Drive.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Resolve the cabin payback.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Shift my physio appointment.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Spike the swift-markdown parser.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Personal"
+          }
+        ],
+        "tasks/Submit timesheet.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Work"
+          }
+        ],
+        "tasks/Update 2DS before the next session.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "TTRPGs"
+          }
+        ],
+        "tasks/Update Dan’s website for Starfall.md" : [
+          {
+            "case" : "areaIgnored",
+            "value" : "Game Jams"
+          }
+        ],
+        "tasks/Update my claude.md files.md" : [
+          {
+            "case" : "unresolvedArea",
+            "value" : "Personal"
+          }
+        ]
+      }
+    },
+    {
+      "activeProjects" : [
+        {
+          "done" : 2,
+          "path" : "Ta Da/projects/Garden.md",
+          "total" : 3
+        },
+        {
+          "done" : 0,
+          "path" : "Ta Da/projects/Résumé.md",
+          "total" : 1
+        },
+        {
+          "done" : 0,
+          "path" : "Ta Da/projects/Taxes.md",
+          "total" : 0
+        }
+      ],
+      "agendaWeek" : [
+        {
+          "date" : "2026-09-30",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Call plumber.md"
+        },
+        {
+          "date" : "2026-10-01",
+          "kind" : "due",
+          "path" : ".trash/Trashed task.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/a.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Sub/A.md"
+        },
+        {
+          "date" : "2026-10-02",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Buy seed.md"
+        },
+        {
+          "date" : "2026-10-03",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Cafe.md"
+        },
+        {
+          "date" : "2026-10-03",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Café.md"
+        },
+        {
+          "date" : "2026-10-03",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Ünïcode 日本.md"
+        },
+        {
+          "date" : "2026-10-04",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Windows task.md"
+        }
+      ],
+      "areaProjects" : [
+        {
+          "area" : "Ta Da/areas/Home.md",
+          "projects" : [
+            {
+              "done" : 2,
+              "path" : "Ta Da/projects/Garden.md",
+              "total" : 3
+            }
+          ]
+        }
+      ],
+      "areas" : [
+        "Ta Da/areas/Home.md"
+      ],
+      "dayMarks" : [
+        {
+          "date" : "2026-10-01",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-02",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-03",
+          "hasOpenBoxes" : true,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-04",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-05",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-06",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-09",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        }
+      ],
+      "liveTasks" : [
+        ".trash/Trashed task.md",
+        "Ta Da/tasks/Bad project.md",
+        "Ta Da/tasks/Broken yaml.md",
+        "Ta Da/tasks/Buy seed.md",
+        "Ta Da/tasks/Cafe.md",
+        "Ta Da/tasks/Café.md",
+        "Ta Da/tasks/Call plumber.md",
+        "Ta Da/tasks/Dup.md",
+        "Ta Da/tasks/Fix tap.md",
+        "Ta Da/tasks/No status.md",
+        "Ta Da/tasks/Odd status.md",
+        "Ta Da/tasks/Prep resume.md",
+        "Ta Da/tasks/Sub/A.md",
+        "Ta Da/tasks/Unexpected.md",
+        "Ta Da/tasks/Water plants.md",
+        "Ta Da/tasks/Windows task.md",
+        "Ta Da/tasks/a.md",
+        "Ta Da/tasks/Ünïcode 日本.md"
+      ],
+      "logged" : [
+        "Ta Da/Logbook/2026-09/Dup.md",
+        "Ta Da/Logbook/2026-09/Old chore.md"
+      ],
+      "loose" : [
+        "Ta Da/tasks/a.md",
+        "Ta Da/tasks/Sub/A.md",
+        "Ta Da/tasks/Bad project.md",
+        "Ta Da/tasks/Broken yaml.md",
+        "Ta Da/tasks/Cafe.md",
+        "Ta Da/tasks/Café.md",
+        "Ta Da/tasks/Call plumber.md",
+        "Ta Da/tasks/Dup.md",
+        "Ta Da/tasks/No status.md",
+        "Ta Da/tasks/Odd status.md",
+        ".trash/Trashed task.md",
+        "Ta Da/tasks/Unexpected.md",
+        "Ta Da/tasks/Ünïcode 日本.md",
+        "Ta Da/tasks/Windows task.md"
+      ],
+      "looseProjects" : [
+        {
+          "done" : 0,
+          "path" : "Ta Da/projects/Résumé.md",
+          "total" : 1
+        },
+        {
+          "done" : 0,
+          "path" : "Ta Da/projects/Taxes.md",
+          "total" : 0
+        }
+      ],
+      "name" : "HomeVault",
+      "notes" : [
+        ".trash/Trashed note.md",
+        "Inbox.md",
+        "Notes/Dup.md",
+        "Periodic Notes/Daily Notes/2026-10-03.md"
+      ],
+      "overdue" : [
+        ".trash/Trashed task.md",
+        "Ta Da/tasks/Call plumber.md"
+      ],
+      "parents" : {
+        ".trash/Trashed note.md" : null,
+        ".trash/Trashed task.md" : null,
+        "Inbox.md" : null,
+        "Notes/Dup.md" : null,
+        "Periodic Notes/Daily Notes/2026-10-03.md" : null,
+        "Ta Da/areas/Home.md" : null,
+        "Ta Da/Logbook/2026-09/Dup.md" : null,
+        "Ta Da/Logbook/2026-09/Old chore.md" : "Ta Da/projects/Garden.md",
+        "Ta Da/projects/Garden.md" : "Ta Da/areas/Home.md",
+        "Ta Da/projects/Résumé.md" : null,
+        "Ta Da/projects/Taxes.md" : null,
+        "Ta Da/tasks/a.md" : null,
+        "Ta Da/tasks/Bad project.md" : null,
+        "Ta Da/tasks/Broken yaml.md" : null,
+        "Ta Da/tasks/Buy seed.md" : "Ta Da/projects/Garden.md",
+        "Ta Da/tasks/Cafe.md" : null,
+        "Ta Da/tasks/Café.md" : null,
+        "Ta Da/tasks/Call plumber.md" : null,
+        "Ta Da/tasks/Dup.md" : null,
+        "Ta Da/tasks/Fix tap.md" : "Ta Da/areas/Home.md",
+        "Ta Da/tasks/No status.md" : null,
+        "Ta Da/tasks/Odd status.md" : null,
+        "Ta Da/tasks/Prep resume.md" : "Ta Da/projects/Résumé.md",
+        "Ta Da/tasks/Sub/A.md" : null,
+        "Ta Da/tasks/Unexpected.md" : null,
+        "Ta Da/tasks/Ünïcode 日本.md" : null,
+        "Ta Da/tasks/Water plants.md" : "Ta Da/projects/Garden.md",
+        "Ta Da/tasks/Windows task.md" : null
+      },
+      "projects" : [
+        "Ta Da/projects/Garden.md",
+        "Ta Da/projects/Résumé.md",
+        "Ta Da/projects/Taxes.md"
+      ],
+      "today" : [
+        "Ta Da/tasks/Call plumber.md",
+        ".trash/Trashed task.md",
+        "Ta Da/tasks/a.md",
+        "Ta Da/tasks/Sub/A.md",
+        "Ta Da/tasks/Buy seed.md",
+        "Ta Da/tasks/Water plants.md"
+      ],
+      "upcoming" : [
+        {
+          "date" : "2026-10-03",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Cafe.md"
+        },
+        {
+          "date" : "2026-10-03",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Café.md"
+        },
+        {
+          "date" : "2026-10-03",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Ünïcode 日本.md"
+        },
+        {
+          "date" : "2026-10-04",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Windows task.md"
+        },
+        {
+          "date" : "2026-10-05",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Fix tap.md"
+        },
+        {
+          "date" : "2026-10-06",
+          "kind" : "due",
+          "path" : "Ta Da/tasks/Dup.md"
+        },
+        {
+          "date" : "2026-10-06",
+          "kind" : "deadline",
+          "path" : "Ta Da/tasks/Buy seed.md"
+        },
+        {
+          "date" : "2026-10-09",
+          "kind" : "deadline",
+          "path" : "Ta Da/tasks/Fix tap.md"
+        }
+      ],
+      "warnings" : {
+        "Ta Da/tasks/Bad project.md" : [
+          {
+            "case" : "invalidProject",
+            "value" : "Garden"
+          }
+        ],
+        "Ta Da/tasks/Broken yaml.md" : [
+          {
+            "case" : "invalidYAML",
+            "line" : 4,
+            "problem" : "did not find expected ',' or ']'"
+          }
+        ],
+        "Ta Da/tasks/No status.md" : [
+          {
+            "case" : "missingStatus"
+          }
+        ],
+        "Ta Da/tasks/Odd status.md" : [
+          {
+            "case" : "unknownStatus",
+            "value" : "Someday"
+          },
+          {
+            "case" : "invalidDate",
+            "key" : "dueDate",
+            "value" : "soon"
+          },
+          {
+            "case" : "unresolvedProject",
+            "value" : "Nowhere"
+          }
+        ],
+        "Ta Da/tasks/Unexpected.md" : [
+          {
+            "case" : "unexpectedValue",
+            "key" : "repeat"
+          },
+          {
+            "case" : "unexpectedValue",
+            "key" : "tags"
+          }
+        ]
+      }
+    }
+  ]
+}

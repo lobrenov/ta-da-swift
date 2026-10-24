@@ -11,3 +11,6 @@ Packages/TaDaCore/Package.resolved
 # Pins for the .xcodeproj opened alone; the workspace's are the app's
 TaDa.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
+
+# Obsidian settings for SampleVault
+SampleVault/.obsidian/

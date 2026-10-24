@@ -1,0 +1,2838 @@
+{
+  "today" : "2026-10-02",
+  "vaults" : [
+    {
+      "files" : [
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 4,
+                "marker" : "/",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 5,
+                "marker" : "x",
+                "state" : "done"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-10-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : "Periodic Notes/Daily Notes/2026-10-01.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 2
+            },
+            "summary" : "Two tab bar options sketched; Other stays as the fifth tab.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "2026-10-01",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Periodic Notes/Daily Notes/2026-10-01.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 6,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 7,
+                "marker" : "/",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 8,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-10-02",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : "Periodic Notes/Daily Notes/2026-10-02.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 3
+            },
+            "summary" : "Standup ran long; the release moves to Tuesday.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "2026-10-02",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 4,
+                "marker" : "/",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 5,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-28",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : "Periodic Notes/Weekly Notes/2026-W40.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 3
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "2026-W40",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Periodic Notes/Weekly Notes/2026-W40.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 2,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : "notes/Not a task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 1
+            },
+            "summary" : "This note has no Ta Da frontmatter, so Ta Da ignores it, even though it contains a checklist.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Not a task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "notes/Not a task.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Work"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "projects/Atlas Billing.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Atlas Billing",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "projects/Atlas Billing.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "projects/End of year reviews.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "End of year reviews",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "projects/End of year reviews.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Game Jams"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "projects/Game Jam - Starfall.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Game Jam - Starfall",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "projects/Game Jam - Starfall.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Personal"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "projects/Sell the Kombi.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Sell the Kombi",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "projects/Sell the Kombi.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Personal"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-14",
+            "deadline" : "2026-12-18",
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "projects/Ta Da MVP.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "A Swift-native, markdown-powered task manager: one file per task or project, synced through iCloud Drive.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Ta Da MVP",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "projects/Ta Da MVP.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-20",
+            "deadline" : null,
+            "dueDate" : "2026-10-14",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Agenda view for Upcoming.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "A date-segmented list that places each file on its dueDate and on its deadline.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Agenda view for Upcoming",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Agenda view for Upcoming.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-26",
+            "deadline" : null,
+            "dueDate" : "2026-10-05",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Book a roadworthy for the Kombi.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Sell the Kombi"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Needed before the car can be listed.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Book a roadworthy for the Kombi",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Book a roadworthy for the Kombi.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-18",
+            "deadline" : null,
+            "dueDate" : "2026-10-07",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Build the sidebar domains.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Loose tasks, Projects, Upcoming and Today, each a saved query over frontmatter.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Build the sidebar domains",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Build the sidebar domains.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 14,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 15,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 16,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 17,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-24",
+            "deadline" : "2026-10-02",
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Create a system testing plan.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Atlas Billing"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 4
+            },
+            "summary" : "Cover each module in scope, with owners and entry and exit criteria.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Create a system testing plan",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Work"
+              }
+            ]
+          },
+          "path" : "tasks/Create a system testing plan.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-09-27",
+            "createdDate" : "2026-09-14",
+            "deadline" : null,
+            "dueDate" : "2026-09-28",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Frontmatter schema for tasks and projects.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Agree the YAML keys every task and project file carries.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Frontmatter schema for tasks and projects",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Frontmatter schema for tasks and projects.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-22",
+            "deadline" : "2026-10-30",
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Import iTerm2 colour schemes as themes.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Parse .itermcolors files and map them onto the theme tokens.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Import iTerm2 colour schemes as themes",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Import iTerm2 colour schemes as themes.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 15,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 16,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 17,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 18,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-20",
+            "deadline" : "2026-10-16",
+            "dueDate" : "2026-10-09",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Live preview editor on swift-markdown-engine.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Blocked",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 4
+            },
+            "summary" : "Obsidian-style editing: raw markdown on the cursor line, rendered everywhere else.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Live preview editor on swift-markdown-engine",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Live preview editor on swift-markdown-engine.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Personal"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-10-01",
+            "deadline" : null,
+            "dueDate" : "2026-10-02",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Message Max about a coat and a jacket.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Ask about a coat and a jacket in the same fabric as my pants.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Message Max about a coat and a jacket",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "tasks/Message Max about a coat and a jacket.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-22",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Pick a test framework.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Compare XCTest and Swift Testing for the core package.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Pick a test framework",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Pick a test framework.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 14,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 15,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 16,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 17,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 18,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-16",
+            "deadline" : null,
+            "dueDate" : "2026-10-05",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Read and write files through iCloud Drive.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 3,
+              "total" : 5
+            },
+            "summary" : "Use NSFileCoordinator and NSMetadataQuery so every file stays plain markdown in iCloud Drive.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Read and write files through iCloud Drive",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Read and write files through iCloud Drive.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Personal"
+            },
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 13,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 14,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-29",
+            "deadline" : "2026-10-02",
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Resolve the cabin payback.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 2
+            },
+            "summary" : "Settle the split from the long weekend.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Resolve the cabin payback",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "tasks/Resolve the cabin payback.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Personal"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-30",
+            "deadline" : null,
+            "dueDate" : "2026-10-02",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Shift my physio appointment.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Blocked",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Waiting on the clinic to open bookings for next week.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Shift my physio appointment",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "tasks/Shift my physio appointment.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-09-22",
+            "createdDate" : "2026-09-14",
+            "deadline" : null,
+            "dueDate" : "2026-09-23",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Spike the swift-markdown parser.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Check the AST covers task lists and source positions.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Spike the swift-markdown parser",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Personal"
+              }
+            ]
+          },
+          "path" : "tasks/Spike the swift-markdown parser.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Work"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-25",
+            "deadline" : null,
+            "dueDate" : "2026-10-02",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Submit timesheet.md",
+            "project" : null,
+            "repeat" : "Weekly · Fri",
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Hours for the week ending Friday 2 October.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Submit timesheet",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "tasks/Submit timesheet.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "TTRPGs"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-27",
+            "deadline" : null,
+            "dueDate" : "2026-10-03",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Update 2DS before the next session.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Get the 2DS ready before the group meets again.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Update 2DS before the next session",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "tasks/Update 2DS before the next session.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 15,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 16,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 17,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-21",
+            "deadline" : "2026-10-08",
+            "dueDate" : "2026-10-02",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "tasks/Update Dan’s website for Starfall.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Game Jam - Starfall"
+            },
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 3
+            },
+            "summary" : "Refresh the event page for Starfall.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Update Dan’s website for Starfall",
+            "warnings" : [
+              {
+                "case" : "areaIgnored",
+                "value" : "Game Jams"
+              }
+            ]
+          },
+          "path" : "tasks/Update Dan’s website for Starfall.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Personal"
+            },
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 17,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 18,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 19,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 20,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 21,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-28",
+            "deadline" : "2026-10-06",
+            "dueDate" : "2026-10-02",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Ta Da MVP"
+              }
+            ],
+            "path" : "tasks/Update my claude.md files.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 2,
+              "total" : 5
+            },
+            "summary" : "Bring the project instruction files in line with how I actually work now.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Update my claude.md files",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "tasks/Update my claude.md files.md"
+        }
+      ],
+      "name" : "DesignVault"
+    },
+    {
+      "files" : [
+        {
+          "item" : null,
+          "path" : ".hidden/Secret.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : ".trash/Trashed note.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "A trashed note.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Trashed note",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Trashed note.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-01",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Trashed task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Trashed task.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Trashed task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Trashed task.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-10",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "bench.png"
+              }
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Garden"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Taxes"
+              }
+            ],
+            "path" : "Inbox.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "A note about [[Garden]] and [[Taxes]].",
+            "tags" : [
+              "ideas",
+              "Home/Garden"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : true,
+                "inFrontmatter" : true,
+                "tag" : "ideas"
+              },
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "Home/Garden"
+              },
+              {
+                "inBody" : true,
+                "inFrontmatter" : false,
+                "tag" : "wood"
+              }
+            ],
+            "title" : "Inbox",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Inbox.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : "Notes/Dup.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "A note titled Dup.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Dup",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Notes/Dup.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 4,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 5,
+                "marker" : "x",
+                "state" : "done"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-10-03",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : "Periodic Notes/Daily Notes/2026-10-03.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 2
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "2026-10-03",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Periodic Notes/Daily Notes/2026-10-03.md"
+        },
+        {
+          "item" : null,
+          "path" : "TASKS/x.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-09-20",
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : true,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/Logbook/2026-09/Dup.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Logged.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Dup",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/Logbook/2026-09/Dup.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-09-28",
+            "createdDate" : "2026-09-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : true,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/Logbook/2026-09/Old chore.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Garden"
+            },
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Done and logged.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old chore",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/Logbook/2026-09/Old chore.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-08-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "area",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/areas/Home.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Everything about the house and garden.",
+            "tags" : [
+              "home"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "home"
+              }
+            ],
+            "title" : "Home",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/areas/Home.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Home"
+            },
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 10,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 11,
+                "marker" : "x",
+                "state" : "done"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-01",
+            "deadline" : null,
+            "dueDate" : "2026-10-20",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/projects/Garden.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 2
+            },
+            "summary" : "Get the beds ready for spring.",
+            "tags" : [
+              "home/garden"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "home/garden"
+              }
+            ],
+            "title" : "Garden",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/projects/Garden.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/projects/Résumé.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "NFC file name.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Résumé",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/projects/Résumé.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-07-15",
+            "deadline" : "2026-10-31",
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/projects/Taxes.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Ongoing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Yearly return and receipts.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Taxes",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/projects/Taxes.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Bad project.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Project not a link.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Bad project",
+            "warnings" : [
+              {
+                "case" : "invalidProject",
+                "value" : "Garden"
+              }
+            ]
+          },
+          "path" : "Ta Da/tasks/Bad project.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Broken yaml.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 1
+            },
+            "summary" : "Broken frontmatter. #yaml",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+              {
+                "inBody" : true,
+                "inFrontmatter" : false,
+                "tag" : "yaml"
+              }
+            ],
+            "title" : "Broken yaml",
+            "warnings" : [
+              {
+                "case" : "invalidYAML",
+                "line" : 4,
+                "problem" : "did not find expected ',' or ']'"
+              }
+            ]
+          },
+          "path" : "Ta Da/tasks/Broken yaml.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 16,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 17,
+                "marker" : "/",
+                "state" : "open"
+              },
+              {
+                "column" : 5,
+                "lineIndex" : 18,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 19,
+                "marker" : ">",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 20,
+                "marker" : "<",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 21,
+                "marker" : "X",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 22,
+                "marker" : "-",
+                "state" : "cancelled"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 23,
+                "marker" : "?",
+                "state" : "icon"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-25",
+            "deadline" : "2026-10-06",
+            "dueDate" : "2026-10-02",
+            "embeds" : [
+              {
+                "alias" : "300",
+                "heading" : null,
+                "target" : "seed packet.jpg"
+              }
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+              {
+                "alias" : "the tap",
+                "heading" : null,
+                "target" : "Fix tap"
+              },
+              {
+                "alias" : null,
+                "heading" : "Plan",
+                "target" : "Garden"
+              }
+            ],
+            "path" : "Ta Da/tasks/Buy seed.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Garden"
+            },
+            "repeat" : "Weekly · Fri",
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 2,
+              "total" : 6
+            },
+            "summary" : "Pick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].",
+            "tags" : [
+              "shopping"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "shopping"
+              },
+              {
+                "inBody" : true,
+                "inFrontmatter" : false,
+                "tag" : "garden"
+              }
+            ],
+            "title" : "Buy seed",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Buy seed.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-03",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Cafe.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "plain",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Cafe",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Cafe.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-03",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Café.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "accent",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Café",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Café.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-20",
+            "deadline" : null,
+            "dueDate" : "2026-09-30",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Call plumber.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Blocked",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Ring before 9. #phone #2026/10",
+            "tags" : [
+              "calls",
+              "Phone"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "calls"
+              },
+              {
+                "inBody" : true,
+                "inFrontmatter" : true,
+                "tag" : "Phone"
+              }
+            ],
+            "title" : "Call plumber",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Call plumber.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-06",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Dup.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Live.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Dup",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Dup.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Home"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-30",
+            "deadline" : "2026-10-09",
+            "dueDate" : "2026-10-05",
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Fix tap.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+              "plumbing",
+              "urgent"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "plumbing"
+              },
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "urgent"
+              }
+            ],
+            "title" : "Fix tap",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Fix tap.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-30",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/No status.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "No status.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "No status",
+            "warnings" : [
+              {
+                "case" : "missingStatus"
+              }
+            ]
+          },
+          "path" : "Ta Da/tasks/No status.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-29",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Odd status.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Nowhere"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Check the warnings.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Odd status",
+            "warnings" : [
+              {
+                "case" : "unknownStatus",
+                "value" : "Someday"
+              },
+              {
+                "case" : "invalidDate",
+                "key" : "dueDate",
+                "value" : "soon"
+              }
+            ]
+          },
+          "path" : "Ta Da/tasks/Odd status.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-30",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Prep resume.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Résumé"
+            },
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "NFD link to an NFC project. #Café",
+            "tags" : [
+              "Café"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : true,
+                "inFrontmatter" : true,
+                "tag" : "Café"
+              }
+            ],
+            "title" : "Prep resume",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Prep resume.md"
+        },
+        {
+          "item" : null,
+          "path" : "Ta Da/tasks/Stray.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-02",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Sub/A.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "upper",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "A",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Sub/A.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Unexpected.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Lists and mappings.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Unexpected",
+            "warnings" : [
+              {
+                "case" : "unexpectedValue",
+                "key" : "repeat"
+              },
+              {
+                "case" : "unexpectedValue",
+                "key" : "tags"
+              }
+            ]
+          },
+          "path" : "Ta Da/tasks/Unexpected.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 8,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 9,
+                "marker" : "x",
+                "state" : "done"
+              }
+            ],
+            "completedDate" : "2026-10-02",
+            "createdDate" : "2026-09-28",
+            "deadline" : null,
+            "dueDate" : "2026-10-05",
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Water plants.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Garden"
+            },
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 2,
+              "total" : 2
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Water plants",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Water plants.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 7,
+                "marker" : " ",
+                "state" : "open"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 8,
+                "marker" : "x",
+                "state" : "done"
+              },
+              {
+                "column" : 3,
+                "lineIndex" : 9,
+                "marker" : "-",
+                "state" : "cancelled"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-04",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Windows task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 2
+            },
+            "summary" : "CRLF body line.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Windows task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Windows task.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-02",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/a.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "lower",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "a",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/a.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-03",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Ünïcode 日本.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "non-ascii",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Ünïcode 日本",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Ünïcode 日本.md"
+        }
+      ],
+      "name" : "HomeVault"
+    }
+  ]
+}

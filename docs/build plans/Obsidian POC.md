@@ -13,25 +13,25 @@ Starting point, as checked on 2026-10-18 and updated on 2026-10-19 after the vau
 - **Ta Da's folder**: the plugin creates files where the apps do (`Ta Da/tasks/`, `Ta Da/projects/`, `Ta Da/areas/`, `Ta Da/attachments/`) and reads both layouts as `docs/file-format.md` says (logged files in `Ta Da/Logbook/`, ignoring case; `Ta Da/` and the old top-level folders reserved from notes), except the old `.logbook/`, which Obsidian can't see. A vault is moved into `Ta Da/` by the apps before the plugin is used on it.
 - **Logging and moving the old layout stay with the Mac and iPhone apps.** The plugin never logs, unlogs or moves an old layout into `Ta Da/`. Setting a logged file's status in Obsidian is picked up by the app's next daily logging, as for any other app.
 - **Trash**: the plugin deletes tasks and notes only, one file at a time, into `.trash/` (`Vault.trash(file, false)`). Projects and areas, with their cascades, restore and Empty Trash, stay in the apps.
-- **Format port**: TaDaCore's reading, writing and query rules are ported to TypeScript, not compiled from Swift. Conformance fixtures keep the two in step: a Swift test exports DesignVault's parse results, query results (fixed `today`) and write cases (input text, operation, expected text) as JSON; the TypeScript tests read the same files.
+- **Format port**: TaDaCore's reading, writing and query rules are ported to TypeScript, not compiled from Swift. Conformance fixtures keep the two in step: a Swift test exports DesignVault's parse results, query results (fixed `today`) and write cases (input text, operation, expected text) as JSON into `Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/Conformance/`; the TypeScript tests read them there through the relative path `../Ta Da/Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/Conformance/`.
 - **Writes** splice lines with the ported writers, never `processFrontMatter`. The open file goes through its `Editor` (one transaction, so undo and the cursor hold); other files through `Vault.process`, guarded on the text last read. Renames go through `FileManager.renameFile`, so Obsidian updates links; the name comes from the ported `FileNaming`.
 - **Ta Da header** on task, project and area files: status, parent, dates, repeat and tags as chips with their menus, in Live Preview and Reading view. It hides Obsidian's Properties block on those files by default; a Properties button shows it.
 - **Look** follows the Obsidian theme through its CSS variables (status colours from `--color-*`, accent from `--interactive-accent`). Ta Da's row, checkbox and chip shapes are kept.
-- **Code** lives in `Obsidian/` at the repo root: plugin id `ta-da`, name Ta Da, built from obsidianmd/obsidian-sample-plugin with esbuild, plain DOM, `isDesktopOnly: false`, `minAppVersion` 1.14.0. Tests use Vitest.
+- **Code** lives in its own repo, `ta-da-obsidian`, cloned beside this one (`~/Projects/ta-da-obsidian`): plugin id `ta-da`, name Ta Da, built from obsidianmd/obsidian-sample-plugin with esbuild, plain DOM, `isDesktopOnly: false`, `minAppVersion` 1.14.0. Tests use Vitest.
 - **Distribution**: installed by hand (or BRAT) for the POC, written to the community store's rules from the start (no default hotkeys, sentence-case UI text, no `innerHTML` with file content, README with a licence).
 
 ## Shared milestones
 Each ends with its check passing, then a commit and a review.
 
 ### O1 — Plugin scaffold and reading
-- `Obsidian/`: manifest, esbuild, Vitest, a dev command that copies `main.js` into a test vault's `.obsidian/plugins/ta-da/`.
-- Port: `Item` (with `isLogged`, `isNotePath` and `reservedFolders`), `Status`, `LocalDate`, `WikiLink`, `Checkbox`, `Tag` (`Model/`); the folder constants (`Vault.home` and the folders in it, the old layout's names); `FrontmatterSplitter`, `PropertyReader`, `BodyScanner`, `CheckboxSyntax` (`Parsing/`); `VaultIndex`, `Queries` (`Index/`).
+- `ta-da-obsidian`: manifest, esbuild, Vitest, a dev command that copies `main.js` into a test vault's `.obsidian/plugins/ta-da/`.
+- Port: `Item` (with `isLogged`, `isNotePath` and `reservedFolders`), `Status`, `LocalDate`, `WikiLink`, `Checkbox`, `Tag` (`Model/`); the folder constants (`Vault.home` and the folders in it, the old layout's names); `FrontmatterSplitter`, `PropertyReader`, `BodyScanner` (`Parsing/`), and the part of the fork's `MarkdownFacts` they read; `VaultIndex`, `Queries`, and `DailyNotes` as far as day marks need (`Index/`).
 - `TaDaIndex`: built from raw text (`Vault.cachedRead`) on layout ready, patched on `metadataCache` `changed` and `Vault` `rename`/`delete`.
 - Swift: `ConformanceExportTests` writes `Fixtures/Conformance/read.json` and `queries.json` from DesignVault (the old layout) and from a small fixture in the new layout.
 - Check: Vitest conformance passes on both files; the plugin loads in Obsidian with SampleVault and logs nothing.
 
 ### O2 — Writing
-- Port: `Lines`, `FrontmatterEditor`, `ChecklistEditor`, `TagEditor`, `Completion`, `Parent`, `FileNaming`, `NewFile`, `DatePhrase`.
+- Port: `CheckboxSyntax`, `Lines`, `FrontmatterEditor`, `ChecklistEditor`, `TagEditor`, `Completion`, `Parent`, `FileNaming`, `NewFile`, `DatePhrase`.
 - `Writer`: the editor path and the `Vault.process` path, one queue per file.
 - Swift: `Fixtures/Conformance/writes.json`.
 - Check: Vitest write cases match byte for byte (LF and CRLF); a status change in Obsidian shows as a one-line `git diff SampleVault`.
@@ -58,7 +58,7 @@ Boards `ObsL1Today`, `ObsL1Task`, `ObsL1Project`, `ObsL1Capture`. Obsidian's fil
 
 ### A3 — iPhone and docs
 - Obsidian on iPhone: Bases views, header and modal work; nothing uses Node or Electron.
-- `docs/architecture.md` (an Obsidian section), `CLAUDE.md` (layout and commands), `docs/backlog.md`; archive this plan.
+- Here: `docs/architecture.md` (an Obsidian section), `CLAUDE.md` (the plugin repo and its commands), `docs/backlog.md`; archive this plan. In `ta-da-obsidian`: `CLAUDE.md` and README.
 - Check: by hand on Obsidian for iPhone against the iCloud vault.
 
 ## Option B — Level 2: Ta Da navigator

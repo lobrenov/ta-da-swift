@@ -35,6 +35,117 @@ summary: Home, health and money.
 
 ## AreaVault/tasks/Water the beds.md
 
+## Conformance/HomeVault/.hidden/Secret.md
+summary: Not a note: it sits in a hidden folder. #secret
+tags: secret
+
+## Conformance/HomeVault/.trash/Trashed note.md
+summary: A trashed note.
+
+## Conformance/HomeVault/.trash/Trashed task.md
+summary: Trashed task.
+
+## Conformance/HomeVault/Inbox.md
+summary: A note about [[Garden]] and [[Taxes]].
+links: Garden, Taxes
+embeds: bench.png
+tags: ideas, wood
+linkTargets: 15+6 30+5
+embedTargets: 75+9
+
+## Conformance/HomeVault/Notes/Dup.md
+summary: A note titled Dup.
+
+## Conformance/HomeVault/Periodic Notes/Daily Notes/2026-10-03.md
+checkboxes: [ ]4:3 [x]5:3
+
+## Conformance/HomeVault/TASKS/x.md
+summary: Upper-case reserved folder. #reserved
+tags: reserved
+
+## Conformance/HomeVault/Ta Da/Logbook/2026-09/Dup.md
+summary: Logged.
+
+## Conformance/HomeVault/Ta Da/Logbook/2026-09/Old chore.md
+summary: Done and logged.
+
+## Conformance/HomeVault/Ta Da/areas/Home.md
+summary: Everything about the house and garden.
+
+## Conformance/HomeVault/Ta Da/projects/Garden.md
+summary: Get the beds ready for spring.
+checkboxes: [ ]10:3 [x]11:3
+
+## Conformance/HomeVault/Ta Da/projects/Résumé.md
+summary: NFC file name.
+
+## Conformance/HomeVault/Ta Da/projects/Taxes.md
+summary: Yearly return and receipts.
+
+## Conformance/HomeVault/Ta Da/tasks/Bad project.md
+summary: Project not a link.
+
+## Conformance/HomeVault/Ta Da/tasks/Broken yaml.md
+summary: Broken frontmatter. #yaml
+checkboxes: [ ]6:3
+tags: yaml
+
+## Conformance/HomeVault/Ta Da/tasks/Buy seed.md
+summary: Pick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].
+checkboxes: [ ]16:3 [/]17:3 [x]18:5 [>]19:3 [<]20:3 [X]21:3 [-]22:3 [?]23:3
+links: Fix tap|the tap, Garden#Plan
+embeds: seed packet.jpg|300
+tags: garden
+linkTargets: 38+7 62+6
+embedTargets: 81+15
+
+## Conformance/HomeVault/Ta Da/tasks/Cafe.md
+summary: plain
+
+## Conformance/HomeVault/Ta Da/tasks/Café.md
+summary: accent
+
+## Conformance/HomeVault/Ta Da/tasks/Call plumber.md
+summary: Ring before 9. #phone #2026/10
+tags: phone
+
+## Conformance/HomeVault/Ta Da/tasks/Dup.md
+summary: Live.
+
+## Conformance/HomeVault/Ta Da/tasks/Fix tap.md
+
+## Conformance/HomeVault/Ta Da/tasks/No status.md
+summary: No status.
+
+## Conformance/HomeVault/Ta Da/tasks/Odd status.md
+summary: Check the warnings.
+
+## Conformance/HomeVault/Ta Da/tasks/Prep resume.md
+summary: NFD link to an NFC project. #Café
+tags: Café
+
+## Conformance/HomeVault/Ta Da/tasks/Stray.md
+summary: No frontmatter in a Ta Da folder.
+
+## Conformance/HomeVault/Ta Da/tasks/Sub/A.md
+summary: upper
+
+## Conformance/HomeVault/Ta Da/tasks/Unexpected.md
+summary: Lists and mappings.
+
+## Conformance/HomeVault/Ta Da/tasks/Water plants.md
+checkboxes: [x]8:3 [x]9:3
+
+## Conformance/HomeVault/Ta Da/tasks/Windows task.md
+summary: CRLF body line.
+checkboxes: [ ]7:3 [x]8:3 [-]9:3
+
+## Conformance/HomeVault/Ta Da/tasks/a.md
+summary: lower
+
+## Conformance/HomeVault/Ta Da/tasks/Ünïcode 日本.md
+summary: non-ascii
+
 ## DesignVault/Periodic Notes/Daily Notes/2026-10-01.md
 summary: Two tab bar options sketched; Other stays as the fifth tab.
 checkboxes: [/]4:3 [x]5:3
