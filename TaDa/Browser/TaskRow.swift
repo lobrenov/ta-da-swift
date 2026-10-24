@@ -68,7 +68,7 @@ struct RowGlyphs: View {
     private var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?)] {
         let subtasks = item.subtasks
         var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?)] = []
-        if let summary = item.summary, !summary.isEmpty {
+        if item.hasNote {
             glyphs.append(("doc.text", "Has a note", \.muted, nil))
         }
         if subtasks.total > 0 {

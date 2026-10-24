@@ -13,6 +13,8 @@ public struct Item: Hashable, Sendable, Identifiable {
     public var properties: Properties
     /// The body's first paragraph as plain text.
     public var summary: String?
+    /// Whether the body has a non-blank line that isn't a checkbox's.
+    public var hasNote: Bool
     public var checkboxes: [Checkbox]
     /// Links in the body. They never set project membership.
     public var links: [WikiLink]
@@ -70,6 +72,10 @@ public struct Item: Hashable, Sendable, Identifiable {
         title = Self.title(ofPath: path)
         properties = read.properties
         summary = body.summary
+        let boxLines = Set(body.checkboxes.map(\.lineIndex))
+        hasNote = split.body.split(separator: "\n", omittingEmptySubsequences: false).enumerated().contains { offset, line in
+            !boxLines.contains(split.bodyFirstLineIndex + offset) && !line.allSatisfy(\.isWhitespace)
+        }
         checkboxes = body.checkboxes
         links = body.links
         embeds = body.embeds

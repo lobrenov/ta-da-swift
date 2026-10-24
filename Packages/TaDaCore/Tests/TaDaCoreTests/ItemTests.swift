@@ -32,6 +32,19 @@ import Testing
     #expect(item.warnings.isEmpty)
 }
 
+@Test(arguments: [
+    ("Some text.\n", true),
+    ("- One\n- Two\n", true),
+    ("## Heading\n", true),
+    ("- [ ] A\n- [x] B\n", false),
+    ("\n\n", false),
+    ("", false),
+])
+func itemHasNoteWhenTheBodyHasMoreThanCheckboxes(body: String, hasNote: Bool) throws {
+    let item = try #require(Item(parsing: "---\r\ntype: task\r\n---\r\n" + body, path: "T.md"))
+    #expect(item.hasNote == hasNote)
+}
+
 @Test func itemCheckboxLinesAreFileLinesWithCRLF() throws {
     let text = "---\r\ntype: task\r\nstatus: Done\r\n---\r\n- [x] A\r\n- [ ] B\r\n"
     let item = try #require(Item(parsing: text, path: "T.md"))
