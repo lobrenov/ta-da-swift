@@ -37,6 +37,8 @@ struct LiveEditor: View {
     var onTagClick: ((String) -> Void)? = nil
 
     @State private var slashCommand = SlashCommandProxy()
+    /// Whether the editor has the keyboard; setting it gives or drops it.
+    @State private var focused = false
     #if os(macOS)
     @State private var slashMenu = SlashMenuController()
     @State private var checkboxMenu = CheckboxMenuController()
@@ -66,6 +68,7 @@ struct LiveEditor: View {
             fontName: NSFont.systemFont(ofSize: 14).fontName,
             fontSize: 14,
             documentId: documentID,
+            isFocused: $focused,
             onPasteImage: embedImage.map { embed in
                 { pasteboard in
                     if let url = PasteboardImageReader.imageFileURL(from: pasteboard),
@@ -99,17 +102,12 @@ struct LiveEditor: View {
         )
         .focusedValue(\.editor, slashCommand)
         .onAppear { slashCommand.triggers = triggers }
-        .task(id: takesFocus) {
+        .onChange(of: takesFocus, initial: true) {
             guard takesFocus else { return }
-            for _ in 0..<20 {
-                if let textView = slashCommand.textView, let window = textView.window {
-                    window.makeFirstResponder(textView)
-                    textView.setSelectedRange(NSRange(location: 0, length: 0))
-                    break
-                }
-                guard (try? await Task.sleep(for: .milliseconds(50))) != nil else { return }
-            }
-            onTookFocus()
+            if focused { tookFocus() } else { focused = true }
+        }
+        .onChange(of: focused) {
+            if focused, takesFocus { tookFocus() }
         }
         .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .onDisappear {
@@ -127,6 +125,7 @@ struct LiveEditor: View {
             fontName: UIFont.systemFont(ofSize: 17).fontName,
             fontSize: 17,
             documentId: documentID,
+            isFocused: $focused,
             onLinkClick: onLinkClick,
             header: header,
             onSlashCommandChange: showLinkChoices,
@@ -148,7 +147,8 @@ struct LiveEditor: View {
                 if let tagChoices {
                     PhoneTagList(choices: tagChoices, highlight: tagHighlight, theme: theme, pick: insertTag)
                 }
-                EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks, haptics: haptics)
+                EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks, haptics: haptics,
+                                  hideKeyboard: { focused = false })
             }),
             onPasteImage: embedImage.map { embed in
                 { pasteboard in
@@ -196,6 +196,14 @@ struct LiveEditor: View {
         }
         #endif
     }
+
+    #if os(macOS)
+    /// The caret to the body's start, then `onTookFocus`.
+    private func tookFocus() {
+        slashCommand.textView?.setSelectedRange(NSRange(location: 0, length: 0))
+        onTookFocus()
+    }
+    #endif
 
     /// The queries typing opens: `/` on the Mac, and with `links`, `[[`, `![[` and (by Autocomplete) `#`.
     private var triggers: Set<SlashCommandState.Trigger> {
@@ -700,6 +708,7 @@ private struct EditorKeyboardBar: View {
     /// Settings ▸ Editor's Wikilinks switch.
     let closesWikiLinks: Bool
     let haptics: Bool
+    let hideKeyboard: () -> Void
     @State private var hides = 0
 
     var body: some View {
@@ -733,7 +742,7 @@ private struct EditorKeyboardBar: View {
             Divider().frame(height: 24)
             button("Hide Keyboard", "keyboard.chevron.compact.down") {
                 hides += 1
-                proxy.textView?.resignFirstResponder()
+                hideKeyboard()
             }
             .padding(.horizontal, 4)
         }
