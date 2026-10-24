@@ -1,12 +1,13 @@
 ---
 type: task
-status: Blocked
+status: Doing
 contexts:
   - "@mac"
 project: "[[Ta Da MVP]]"
 createdDate: 2026-09-20
 dueDate: 2026-10-09
 deadline: 2026-10-16
+completedDate:
 ---
 Obsidian-style editing: raw markdown on the cursor line, rendered everywhere else.
 

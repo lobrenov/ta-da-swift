@@ -39,6 +39,18 @@ summary: Home, health and money.
 summary: Not a note: it sits in a hidden folder. #secret
 tags: secret
 
+## Conformance/HomeVault/.trash/Old area task.md
+
+## Conformance/HomeVault/.trash/Old area.md
+
+## Conformance/HomeVault/.trash/Old project task.md
+
+## Conformance/HomeVault/.trash/Old project.md
+
+## Conformance/HomeVault/.trash/Trashed Garden task.md
+
+## Conformance/HomeVault/.trash/Trashed Home task.md
+
 ## Conformance/HomeVault/.trash/Trashed note.md
 summary: A trashed note.
 
@@ -56,6 +68,10 @@ embedTargets: 75+9
 ## Conformance/HomeVault/Notes/Dup.md
 summary: A note titled Dup.
 
+## Conformance/HomeVault/Notes/Work/Meetings/Standup.md
+summary: Daily standup notes. #work/admin
+tags: work/admin
+
 ## Conformance/HomeVault/Periodic Notes/Daily Notes/2026-10-03.md
 checkboxes: [ ]4:3 [x]5:3
 
@@ -72,9 +88,15 @@ summary: Done and logged.
 ## Conformance/HomeVault/Ta Da/areas/Home.md
 summary: Everything about the house and garden.
 
+## Conformance/HomeVault/Ta Da/areas/Work.md
+summary: Job.
+
 ## Conformance/HomeVault/Ta Da/projects/Garden.md
 summary: Get the beds ready for spring.
 checkboxes: [ ]10:3 [x]11:3
+
+## Conformance/HomeVault/Ta Da/projects/Office.md
+summary: Admin chores.
 
 ## Conformance/HomeVault/Ta Da/projects/Résumé.md
 summary: NFC file name.
@@ -109,8 +131,15 @@ summary: accent
 summary: Ring before 9. #phone #2026/10
 tags: phone
 
+## Conformance/HomeVault/Ta Da/tasks/Done work.md
+summary: Finished.
+
 ## Conformance/HomeVault/Ta Da/tasks/Dup.md
 summary: Live.
+
+## Conformance/HomeVault/Ta Da/tasks/Expense report.md
+summary: File it. #work/admin/tax
+tags: work/admin/tax
 
 ## Conformance/HomeVault/Ta Da/tasks/Fix tap.md
 

@@ -1409,6 +1409,278 @@
         },
         {
           "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Old area"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-09-01",
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Old area task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old area task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Old area task.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-01-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "area",
+            "links" : [
+
+            ],
+            "path" : ".trash/Old area.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old area",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Old area.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Old project task.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Old project"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old project task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Old project task.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Old area"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : ".trash/Old project.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old project",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Old project.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Trashed Garden task.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Garden"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Trashed Garden task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Trashed Garden task.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Home"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Trashed Home task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Trashed Home task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Trashed Home task.md"
+        },
+        {
+          "item" : {
             "area" : null,
             "checkboxes" : [
 
@@ -1607,6 +1879,57 @@
           "item" : {
             "area" : null,
             "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-15",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : "Notes/Work/Meetings/Standup.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Daily standup notes. #work/admin",
+            "tags" : [
+              "work/meetings"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "work/meetings"
+              },
+              {
+                "inBody" : true,
+                "inFrontmatter" : false,
+                "tag" : "work/admin"
+              }
+            ],
+            "title" : "Standup",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Notes/Work/Meetings/Standup.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
               {
                 "column" : 3,
                 "lineIndex" : 4,
@@ -1796,6 +2119,52 @@
         },
         {
           "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-08-02",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "area",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/areas/Work.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Job.",
+            "tags" : [
+              "work"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "work"
+              }
+            ],
+            "title" : "Work",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/areas/Work.md"
+        },
+        {
+          "item" : {
             "area" : {
               "alias" : null,
               "heading" : null,
@@ -1854,6 +2223,56 @@
             ]
           },
           "path" : "Ta Da/projects/Garden.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Work"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-05",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/projects/Office.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Admin chores.",
+            "tags" : [
+              "work/admin"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "work/admin"
+              }
+            ],
+            "title" : "Office",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/projects/Office.md"
         },
         {
           "item" : {
@@ -2292,6 +2711,56 @@
         },
         {
           "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Work"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-10-01",
+            "createdDate" : "2026-09-12",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Done work.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Finished.",
+            "tags" : [
+              "work"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "work"
+              }
+            ],
+            "title" : "Done work",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Done work.md"
+        },
+        {
+          "item" : {
             "area" : null,
             "checkboxes" : [
 
@@ -2331,6 +2800,67 @@
             ]
           },
           "path" : "Ta Da/tasks/Dup.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-30",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Expense report.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Office"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "File it. #work/admin/tax",
+            "tags" : [
+              "work/admin",
+              "Work/Reports"
+            ],
+            "tagUses" : [
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "work/admin"
+              },
+              {
+                "inBody" : false,
+                "inFrontmatter" : true,
+                "tag" : "Work/Reports"
+              },
+              {
+                "inBody" : true,
+                "inFrontmatter" : false,
+                "tag" : "work/admin/tax"
+              }
+            ],
+            "title" : "Expense report",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Expense report.md"
         },
         {
           "item" : {

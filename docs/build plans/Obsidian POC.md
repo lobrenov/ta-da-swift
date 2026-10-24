@@ -32,7 +32,8 @@ Each ends with its check passing, then a commit and a review.
 
 ### O2 — Writing
 - Port: `CheckboxSyntax`, `Lines`, `FrontmatterEditor`, `ChecklistEditor`, `TagEditor`, `Completion`, `Parent`, `FileNaming`, `NewFile`, `DatePhrase`.
-- `Writer`: the editor path and the `Vault.process` path, one queue per file.
+- `Writer`: the editor path and the `Vault.process` path, one queue per file. Each write updates `TaDaIndex` at once.
+- Commands: Set status (one per status; Ongoing on projects only; not offered for the file's current status).
 - Swift: `Fixtures/Conformance/writes.json`.
 - Check: Vitest write cases match byte for byte (LF and CRLF); a status change in Obsidian shows as a one-line `git diff SampleVault`.
 
@@ -53,7 +54,8 @@ Boards `ObsL1Today`, `ObsL1Task`, `ObsL1Project`, `ObsL1Capture`. Obsidian's fil
 ### A2 — Calendar, New task and commands
 - Right-sidebar view: month grid with due and deadline dots, and the next 7 days.
 - New task modal (`ObsL1Capture`): title with typed date, `+project` and `#tag`, chips, description; writes `Ta Da/tasks/<title>.md` through `NewFile`.
-- Commands: New task, Complete, Set status (one per status), Move to project or area, Open in Ta Da's calendar. A ribbon icon opens Today.
+- Commands: New task, Complete, Move to project or area, Open in Ta Da's calendar. A ribbon icon opens Today.
+- Status changes as in the apps (`AppModel.setStatus`): closing a project with open tasks asks first; reopening a task reopens its Done or Cancelled project.
 - Check: by hand; the created file matches the Mac's Quick Entry output for the same input.
 
 ### A3 — iPhone and docs
@@ -98,4 +100,4 @@ Boards `ObsL2Today`, `ObsL2Upcoming`, `ObsL2Phone`. O1–O3, then the navigator 
 | Feels like | Obsidian with Ta Da views | The Ta Da app inside Obsidian |
 | Main risks | Bases API changes; Bases can't read bodies, so views lean on `TaDaIndex` anyway | Size; keeping the navigator, file explorer and active file in step; phone drawer layout |
 
-Shared risks: the header widget replaces Obsidian's Properties widget through CodeMirror, with no official API for it; two implementations of the format to keep in step (the conformance fixtures are the guard); Obsidian's link updater may rewrite frontmatter wholesale on rename, which Ta Da accepts.
+Shared risks: Obsidian's editor saves with LF, so editing a CRLF file in Obsidian converts it, as any edit there does; the header widget replaces Obsidian's Properties widget through CodeMirror, with no official API for it; two implementations of the format to keep in step (the conformance fixtures are the guard); Obsidian's link updater may rewrite frontmatter wholesale on rename, which Ta Da accepts.

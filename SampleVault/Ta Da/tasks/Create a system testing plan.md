@@ -1,11 +1,12 @@
 ---
 type: task
-status: Not Started
+status: Doing
 contexts:
   - "@computer"
 project: "[[Atlas Billing]]"
 createdDate: 2026-09-24
 deadline: 2026-10-02
+completedDate:
 ---
 Cover each module in scope, with owners and entry and exit criteria.
 

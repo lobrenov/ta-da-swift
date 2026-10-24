@@ -139,6 +139,39 @@
           "hasOpenTasks" : true
         }
       ],
+      "folderTree" : [
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "name" : "notes",
+          "path" : "notes"
+        },
+        {
+          "children" : [
+            {
+              "children" : [
+
+              ],
+              "count" : 2,
+              "name" : "Daily Notes",
+              "path" : "Periodic Notes/Daily Notes"
+            },
+            {
+              "children" : [
+
+              ],
+              "count" : 1,
+              "name" : "Weekly Notes",
+              "path" : "Periodic Notes/Weekly Notes"
+            }
+          ],
+          "count" : 3,
+          "name" : "Periodic Notes",
+          "path" : "Periodic Notes"
+        }
+      ],
       "liveTasks" : [
         "tasks/Agenda view for Upcoming.md",
         "tasks/Book a roadworthy for the Kombi.md",
@@ -203,6 +236,24 @@
         "Periodic Notes/Weekly Notes/2026-W40.md",
         "notes/Not a task.md"
       ],
+      "notesIn" : {
+        "" : [
+
+        ],
+        "notes" : [
+          "notes/Not a task.md"
+        ],
+        "Periodic Notes" : [
+
+        ],
+        "Periodic Notes/Daily Notes" : [
+          "Periodic Notes/Daily Notes/2026-10-01.md",
+          "Periodic Notes/Daily Notes/2026-10-02.md"
+        ],
+        "Periodic Notes/Weekly Notes" : [
+          "Periodic Notes/Weekly Notes/2026-W40.md"
+        ]
+      },
       "overdue" : [
 
       ],
@@ -241,12 +292,335 @@
         "projects/Sell the Kombi.md",
         "projects/Ta Da MVP.md"
       ],
+      "sections" : {
+        "loose" : {
+          "Date" : [
+            {
+              "kind" : {
+                "case" : "date",
+                "value" : "Today"
+              },
+              "tasks" : [
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Shift my physio appointment.md",
+                "tasks/Submit timesheet.md",
+                "tasks/Update my claude.md files.md"
+              ],
+              "title" : "Today"
+            },
+            {
+              "kind" : {
+                "case" : "date",
+                "value" : "Upcoming"
+              },
+              "tasks" : [
+                "tasks/Update 2DS before the next session.md"
+              ],
+              "title" : "Upcoming"
+            }
+          ],
+          "Open" : [
+            {
+              "kind" : {
+                "case" : "open",
+                "value" : null
+              },
+              "tasks" : [
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Shift my physio appointment.md",
+                "tasks/Submit timesheet.md",
+                "tasks/Update 2DS before the next session.md",
+                "tasks/Update my claude.md files.md"
+              ],
+              "title" : "Open"
+            }
+          ],
+          "Project" : [
+            {
+              "kind" : {
+                "case" : "open",
+                "value" : null
+              },
+              "tasks" : [
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Shift my physio appointment.md",
+                "tasks/Submit timesheet.md",
+                "tasks/Update 2DS before the next session.md",
+                "tasks/Update my claude.md files.md"
+              ],
+              "title" : "Open"
+            }
+          ],
+          "Status" : [
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Doing"
+              },
+              "tasks" : [
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Update my claude.md files.md"
+              ],
+              "title" : "Doing"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Blocked"
+              },
+              "tasks" : [
+                "tasks/Shift my physio appointment.md"
+              ],
+              "title" : "Blocked"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Not Started"
+              },
+              "tasks" : [
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Submit timesheet.md",
+                "tasks/Update 2DS before the next session.md"
+              ],
+              "title" : "Not Started"
+            }
+          ]
+        },
+        "today" : {
+          "Date" : [
+            {
+              "kind" : {
+                "case" : "date",
+                "value" : "Today"
+              },
+              "tasks" : [
+                "tasks/Create a system testing plan.md",
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Shift my physio appointment.md",
+                "tasks/Submit timesheet.md",
+                "tasks/Update Dan’s website for Starfall.md",
+                "tasks/Update my claude.md files.md"
+              ],
+              "title" : "Today"
+            }
+          ],
+          "Open" : [
+            {
+              "kind" : {
+                "case" : "open",
+                "value" : null
+              },
+              "tasks" : [
+                "tasks/Create a system testing plan.md",
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Shift my physio appointment.md",
+                "tasks/Submit timesheet.md",
+                "tasks/Update Dan’s website for Starfall.md",
+                "tasks/Update my claude.md files.md"
+              ],
+              "title" : "Open"
+            }
+          ],
+          "Project" : [
+            {
+              "kind" : {
+                "case" : "open",
+                "value" : null
+              },
+              "tasks" : [
+                "tasks/Create a system testing plan.md",
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Shift my physio appointment.md",
+                "tasks/Submit timesheet.md",
+                "tasks/Update Dan’s website for Starfall.md",
+                "tasks/Update my claude.md files.md"
+              ],
+              "title" : "Open"
+            }
+          ],
+          "Status" : [
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Doing"
+              },
+              "tasks" : [
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Update Dan’s website for Starfall.md",
+                "tasks/Update my claude.md files.md"
+              ],
+              "title" : "Doing"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Blocked"
+              },
+              "tasks" : [
+                "tasks/Shift my physio appointment.md"
+              ],
+              "title" : "Blocked"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Not Started"
+              },
+              "tasks" : [
+                "tasks/Create a system testing plan.md",
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Submit timesheet.md"
+              ],
+              "title" : "Not Started"
+            }
+          ]
+        }
+      },
+      "tagBrowsers" : {
+        "" : {
+          "areasAndProjects" : [
+            "projects/Atlas Billing.md",
+            "projects/End of year reviews.md",
+            "projects/Game Jam - Starfall.md",
+            "projects/Sell the Kombi.md",
+            "projects/Ta Da MVP.md"
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+            "tasks/Frontmatter schema for tasks and projects.md",
+            "tasks/Spike the swift-markdown parser.md"
+          ],
+          "groups" : [
+            {
+              "parent" : "projects/Atlas Billing.md",
+              "tasks" : [
+                "tasks/Create a system testing plan.md"
+              ]
+            },
+            {
+              "parent" : "projects/Game Jam - Starfall.md",
+              "tasks" : [
+                "tasks/Update Dan’s website for Starfall.md"
+              ]
+            },
+            {
+              "parent" : "projects/Sell the Kombi.md",
+              "tasks" : [
+                "tasks/Book a roadworthy for the Kombi.md"
+              ]
+            },
+            {
+              "parent" : "projects/Ta Da MVP.md",
+              "tasks" : [
+                "tasks/Agenda view for Upcoming.md",
+                "tasks/Build the sidebar domains.md",
+                "tasks/Import iTerm2 colour schemes as themes.md",
+                "tasks/Live preview editor on swift-markdown-engine.md",
+                "tasks/Pick a test framework.md",
+                "tasks/Read and write files through iCloud Drive.md"
+              ]
+            },
+            {
+              "parent" : null,
+              "tasks" : [
+                "tasks/Message Max about a coat and a jacket.md",
+                "tasks/Resolve the cabin payback.md",
+                "tasks/Shift my physio appointment.md",
+                "tasks/Submit timesheet.md",
+                "tasks/Update 2DS before the next session.md",
+                "tasks/Update my claude.md files.md"
+              ]
+            }
+          ],
+          "notes" : [
+            "Periodic Notes/Daily Notes/2026-10-01.md",
+            "Periodic Notes/Daily Notes/2026-10-02.md",
+            "Periodic Notes/Weekly Notes/2026-W40.md",
+            "notes/Not a task.md"
+          ]
+        }
+      },
+      "tagFilterTags" : [
+
+      ],
+      "tagged" : {
+
+      },
+      "tagSuggestions" : {
+        "" : [
+
+        ],
+        "c" : [
+
+        ],
+        "ca" : [
+
+        ],
+        "work/" : [
+
+        ]
+      },
+      "tagTree" : [
+
+      ],
       "today" : [
         "tasks/Create a system testing plan.md",
         "tasks/Message Max about a coat and a jacket.md",
         "tasks/Resolve the cabin payback.md",
         "tasks/Shift my physio appointment.md",
         "tasks/Submit timesheet.md",
+        "tasks/Update Dan’s website for Starfall.md",
+        "tasks/Update my claude.md files.md"
+      ],
+      "trash" : [
+
+      ],
+      "trashContentsOf" : {
+
+      },
+      "trashContentsOfTrashed" : {
+
+      },
+      "trashTasksOf" : {
+
+      },
+      "trashTasksOfTrashed" : {
+
+      },
+      "untagged" : [
+        "Periodic Notes/Daily Notes/2026-10-01.md",
+        "Periodic Notes/Daily Notes/2026-10-02.md",
+        "Periodic Notes/Weekly Notes/2026-W40.md",
+        "projects/Atlas Billing.md",
+        "tasks/Agenda view for Upcoming.md",
+        "tasks/Book a roadworthy for the Kombi.md",
+        "tasks/Build the sidebar domains.md",
+        "tasks/Create a system testing plan.md",
+        "projects/End of year reviews.md",
+        "tasks/Frontmatter schema for tasks and projects.md",
+        "tasks/Import iTerm2 colour schemes as themes.md",
+        "tasks/Live preview editor on swift-markdown-engine.md",
+        "projects/Game Jam - Starfall.md",
+        "tasks/Message Max about a coat and a jacket.md",
+        "notes/Not a task.md",
+        "tasks/Pick a test framework.md",
+        "tasks/Read and write files through iCloud Drive.md",
+        "tasks/Resolve the cabin payback.md",
+        "projects/Sell the Kombi.md",
+        "tasks/Shift my physio appointment.md",
+        "tasks/Spike the swift-markdown parser.md",
+        "tasks/Submit timesheet.md",
+        "projects/Ta Da MVP.md",
+        "tasks/Update 2DS before the next session.md",
         "tasks/Update Dan’s website for Starfall.md",
         "tasks/Update my claude.md files.md"
       ],
@@ -440,6 +814,11 @@
         },
         {
           "done" : 0,
+          "path" : "Ta Da/projects/Office.md",
+          "total" : 1
+        },
+        {
+          "done" : 0,
           "path" : "Ta Da/projects/Résumé.md",
           "total" : 1
         },
@@ -454,11 +833,6 @@
           "date" : "2026-09-30",
           "kind" : "due",
           "path" : "Ta Da/tasks/Call plumber.md"
-        },
-        {
-          "date" : "2026-10-01",
-          "kind" : "due",
-          "path" : ".trash/Trashed task.md"
         },
         {
           "date" : "2026-10-02",
@@ -506,17 +880,23 @@
               "total" : 3
             }
           ]
+        },
+        {
+          "area" : "Ta Da/areas/Work.md",
+          "projects" : [
+            {
+              "done" : 0,
+              "path" : "Ta Da/projects/Office.md",
+              "total" : 1
+            }
+          ]
         }
       ],
       "areas" : [
-        "Ta Da/areas/Home.md"
+        "Ta Da/areas/Home.md",
+        "Ta Da/areas/Work.md"
       ],
       "dayMarks" : [
-        {
-          "date" : "2026-10-01",
-          "hasOpenBoxes" : false,
-          "hasOpenTasks" : true
-        },
         {
           "date" : "2026-10-02",
           "hasOpenBoxes" : false,
@@ -548,15 +928,55 @@
           "hasOpenTasks" : true
         }
       ],
+      "folderTree" : [
+        {
+          "children" : [
+            {
+              "children" : [
+                {
+                  "children" : [
+
+                  ],
+                  "count" : 1,
+                  "name" : "Meetings",
+                  "path" : "Notes/Work/Meetings"
+                }
+              ],
+              "count" : 1,
+              "name" : "Work",
+              "path" : "Notes/Work"
+            }
+          ],
+          "count" : 2,
+          "name" : "Notes",
+          "path" : "Notes"
+        },
+        {
+          "children" : [
+            {
+              "children" : [
+
+              ],
+              "count" : 1,
+              "name" : "Daily Notes",
+              "path" : "Periodic Notes/Daily Notes"
+            }
+          ],
+          "count" : 1,
+          "name" : "Periodic Notes",
+          "path" : "Periodic Notes"
+        }
+      ],
       "liveTasks" : [
-        ".trash/Trashed task.md",
         "Ta Da/tasks/Bad project.md",
         "Ta Da/tasks/Broken yaml.md",
         "Ta Da/tasks/Buy seed.md",
         "Ta Da/tasks/Cafe.md",
         "Ta Da/tasks/Café.md",
         "Ta Da/tasks/Call plumber.md",
+        "Ta Da/tasks/Done work.md",
         "Ta Da/tasks/Dup.md",
+        "Ta Da/tasks/Expense report.md",
         "Ta Da/tasks/Fix tap.md",
         "Ta Da/tasks/No status.md",
         "Ta Da/tasks/Odd status.md",
@@ -583,7 +1003,6 @@
         "Ta Da/tasks/Dup.md",
         "Ta Da/tasks/No status.md",
         "Ta Da/tasks/Odd status.md",
-        ".trash/Trashed task.md",
         "Ta Da/tasks/Unexpected.md",
         "Ta Da/tasks/Ünïcode 日本.md",
         "Ta Da/tasks/Windows task.md"
@@ -602,25 +1021,45 @@
       ],
       "name" : "HomeVault",
       "notes" : [
-        ".trash/Trashed note.md",
         "Inbox.md",
         "Notes/Dup.md",
+        "Notes/Work/Meetings/Standup.md",
         "Periodic Notes/Daily Notes/2026-10-03.md"
       ],
+      "notesIn" : {
+        "" : [
+          "Inbox.md"
+        ],
+        "Notes" : [
+          "Notes/Dup.md"
+        ],
+        "Notes/Work" : [
+
+        ],
+        "Notes/Work/Meetings" : [
+          "Notes/Work/Meetings/Standup.md"
+        ],
+        "Periodic Notes" : [
+
+        ],
+        "Periodic Notes/Daily Notes" : [
+          "Periodic Notes/Daily Notes/2026-10-03.md"
+        ]
+      },
       "overdue" : [
-        ".trash/Trashed task.md",
         "Ta Da/tasks/Call plumber.md"
       ],
       "parents" : {
-        ".trash/Trashed note.md" : null,
-        ".trash/Trashed task.md" : null,
         "Inbox.md" : null,
         "Notes/Dup.md" : null,
+        "Notes/Work/Meetings/Standup.md" : null,
         "Periodic Notes/Daily Notes/2026-10-03.md" : null,
         "Ta Da/areas/Home.md" : null,
+        "Ta Da/areas/Work.md" : null,
         "Ta Da/Logbook/2026-09/Dup.md" : null,
         "Ta Da/Logbook/2026-09/Old chore.md" : "Ta Da/projects/Garden.md",
         "Ta Da/projects/Garden.md" : "Ta Da/areas/Home.md",
+        "Ta Da/projects/Office.md" : "Ta Da/areas/Work.md",
         "Ta Da/projects/Résumé.md" : null,
         "Ta Da/projects/Taxes.md" : null,
         "Ta Da/tasks/a.md" : null,
@@ -630,7 +1069,9 @@
         "Ta Da/tasks/Cafe.md" : null,
         "Ta Da/tasks/Café.md" : null,
         "Ta Da/tasks/Call plumber.md" : null,
+        "Ta Da/tasks/Done work.md" : "Ta Da/areas/Work.md",
         "Ta Da/tasks/Dup.md" : null,
+        "Ta Da/tasks/Expense report.md" : "Ta Da/projects/Office.md",
         "Ta Da/tasks/Fix tap.md" : "Ta Da/areas/Home.md",
         "Ta Da/tasks/No status.md" : null,
         "Ta Da/tasks/Odd status.md" : null,
@@ -643,16 +1084,1603 @@
       },
       "projects" : [
         "Ta Da/projects/Garden.md",
+        "Ta Da/projects/Office.md",
         "Ta Da/projects/Résumé.md",
         "Ta Da/projects/Taxes.md"
       ],
+      "sections" : {
+        "loose" : {
+          "Date" : [
+            {
+              "kind" : {
+                "case" : "date",
+                "value" : "Today"
+              },
+              "tasks" : [
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Call plumber.md"
+              ],
+              "title" : "Today"
+            },
+            {
+              "kind" : {
+                "case" : "date",
+                "value" : "Upcoming"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Cafe.md",
+                "Ta Da/tasks/Café.md",
+                "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/Ünïcode 日本.md",
+                "Ta Da/tasks/Windows task.md"
+              ],
+              "title" : "Upcoming"
+            },
+            {
+              "kind" : {
+                "case" : "date",
+                "value" : "Someday"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Bad project.md",
+                "Ta Da/tasks/Broken yaml.md",
+                "Ta Da/tasks/No status.md",
+                "Ta Da/tasks/Odd status.md",
+                "Ta Da/tasks/Unexpected.md"
+              ],
+              "title" : "Someday"
+            }
+          ],
+          "Open" : [
+            {
+              "kind" : {
+                "case" : "open",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Bad project.md",
+                "Ta Da/tasks/Broken yaml.md",
+                "Ta Da/tasks/Cafe.md",
+                "Ta Da/tasks/Café.md",
+                "Ta Da/tasks/Call plumber.md",
+                "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/No status.md",
+                "Ta Da/tasks/Odd status.md",
+                "Ta Da/tasks/Unexpected.md",
+                "Ta Da/tasks/Ünïcode 日本.md",
+                "Ta Da/tasks/Windows task.md"
+              ],
+              "title" : "Open"
+            }
+          ],
+          "Project" : [
+            {
+              "kind" : {
+                "case" : "open",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Bad project.md",
+                "Ta Da/tasks/Broken yaml.md",
+                "Ta Da/tasks/Cafe.md",
+                "Ta Da/tasks/Café.md",
+                "Ta Da/tasks/Call plumber.md",
+                "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/No status.md",
+                "Ta Da/tasks/Odd status.md",
+                "Ta Da/tasks/Unexpected.md",
+                "Ta Da/tasks/Ünïcode 日本.md",
+                "Ta Da/tasks/Windows task.md"
+              ],
+              "title" : "Open"
+            }
+          ],
+          "Status" : [
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Doing"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Bad project.md",
+                "Ta Da/tasks/Unexpected.md",
+                "Ta Da/tasks/Windows task.md"
+              ],
+              "title" : "Doing"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Blocked"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md"
+              ],
+              "title" : "Blocked"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Not Started"
+              },
+              "tasks" : [
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Broken yaml.md",
+                "Ta Da/tasks/Cafe.md",
+                "Ta Da/tasks/Café.md",
+                "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/No status.md",
+                "Ta Da/tasks/Odd status.md",
+                "Ta Da/tasks/Ünïcode 日本.md"
+              ],
+              "title" : "Not Started"
+            }
+          ]
+        },
+        "today" : {
+          "Date" : [
+            {
+              "kind" : {
+                "case" : "date",
+                "value" : "Today"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md",
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Buy seed.md"
+              ],
+              "title" : "Today"
+            },
+            {
+              "kind" : {
+                "case" : "completed",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/Water plants.md"
+              ],
+              "title" : "Completed"
+            }
+          ],
+          "Open" : [
+            {
+              "kind" : {
+                "case" : "open",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md",
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Buy seed.md"
+              ],
+              "title" : "Open"
+            },
+            {
+              "kind" : {
+                "case" : "completed",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/Water plants.md"
+              ],
+              "title" : "Completed"
+            }
+          ],
+          "Project" : [
+            {
+              "kind" : {
+                "case" : "open",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md",
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Buy seed.md"
+              ],
+              "title" : "Open"
+            },
+            {
+              "kind" : {
+                "case" : "completed",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/Water plants.md"
+              ],
+              "title" : "Completed"
+            }
+          ],
+          "Status" : [
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Doing"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Buy seed.md"
+              ],
+              "title" : "Doing"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Blocked"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md"
+              ],
+              "title" : "Blocked"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Not Started"
+              },
+              "tasks" : [
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md"
+              ],
+              "title" : "Not Started"
+            },
+            {
+              "kind" : {
+                "case" : "status",
+                "value" : "Done"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Water plants.md"
+              ],
+              "title" : "Done"
+            }
+          ]
+        }
+      },
+      "tagBrowsers" : {
+        "" : {
+          "areasAndProjects" : [
+            "Ta Da/projects/Résumé.md",
+            "Ta Da/projects/Taxes.md"
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+            "Ta Da/tasks/Water plants.md"
+          ],
+          "groups" : [
+            {
+              "parent" : null,
+              "tasks" : [
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Bad project.md",
+                "Ta Da/tasks/Cafe.md",
+                "Ta Da/tasks/Café.md",
+                "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/No status.md",
+                "Ta Da/tasks/Odd status.md",
+                "Ta Da/tasks/Unexpected.md",
+                "Ta Da/tasks/Ünïcode 日本.md",
+                "Ta Da/tasks/Windows task.md"
+              ]
+            }
+          ],
+          "notes" : [
+            "Periodic Notes/Daily Notes/2026-10-03.md",
+            "Notes/Dup.md"
+          ]
+        },
+        "café" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/projects/Résumé.md",
+              "tasks" : [
+                "Ta Da/tasks/Prep resume.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "calls" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : null,
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "garden" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Home.md",
+              "tasks" : [
+
+              ]
+            },
+            {
+              "parent" : "Ta Da/projects/Garden.md",
+              "tasks" : [
+                "Ta Da/tasks/Buy seed.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "home" : {
+          "areasAndProjects" : [
+            "Ta Da/areas/Home.md",
+            "Ta Da/projects/Garden.md"
+          ],
+          "children" : [
+            {
+              "children" : [
+
+              ],
+              "count" : 2,
+              "path" : "home/garden",
+              "tag" : "Home/Garden"
+            }
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+
+          ],
+          "notes" : [
+            "Inbox.md"
+          ]
+        },
+        "home/garden" : {
+          "areasAndProjects" : [
+            "Ta Da/projects/Garden.md"
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+
+          ],
+          "notes" : [
+            "Inbox.md"
+          ]
+        },
+        "ideas" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+
+          ],
+          "notes" : [
+            "Inbox.md"
+          ]
+        },
+        "phone" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : null,
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "plumbing" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Home.md",
+              "tasks" : [
+                "Ta Da/tasks/Fix tap.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "shopping" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Home.md",
+              "tasks" : [
+
+              ]
+            },
+            {
+              "parent" : "Ta Da/projects/Garden.md",
+              "tasks" : [
+                "Ta Da/tasks/Buy seed.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "urgent" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Home.md",
+              "tasks" : [
+                "Ta Da/tasks/Fix tap.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "wood" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+
+          ],
+          "notes" : [
+            "Inbox.md"
+          ]
+        },
+        "work" : {
+          "areasAndProjects" : [
+            "Ta Da/areas/Work.md",
+            "Ta Da/projects/Office.md"
+          ],
+          "children" : [
+            {
+              "children" : [
+                {
+                  "children" : [
+
+                  ],
+                  "count" : 1,
+                  "path" : "work/admin/tax",
+                  "tag" : "work/admin/tax"
+                }
+              ],
+              "count" : 3,
+              "path" : "work/admin",
+              "tag" : "work/admin"
+            },
+            {
+              "children" : [
+
+              ],
+              "count" : 1,
+              "path" : "work/meetings",
+              "tag" : "work/meetings"
+            },
+            {
+              "children" : [
+
+              ],
+              "count" : 1,
+              "path" : "work/reports",
+              "tag" : "Work/Reports"
+            }
+          ],
+          "completed" : [
+            "Ta Da/tasks/Done work.md"
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Work.md",
+              "tasks" : [
+
+              ]
+            },
+            {
+              "parent" : "Ta Da/projects/Office.md",
+              "tasks" : [
+                "Ta Da/tasks/Expense report.md"
+              ]
+            }
+          ],
+          "notes" : [
+            "Notes/Work/Meetings/Standup.md"
+          ]
+        },
+        "work/admin" : {
+          "areasAndProjects" : [
+            "Ta Da/projects/Office.md"
+          ],
+          "children" : [
+            {
+              "children" : [
+
+              ],
+              "count" : 1,
+              "path" : "work/admin/tax",
+              "tag" : "work/admin/tax"
+            }
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Work.md",
+              "tasks" : [
+
+              ]
+            },
+            {
+              "parent" : "Ta Da/projects/Office.md",
+              "tasks" : [
+                "Ta Da/tasks/Expense report.md"
+              ]
+            }
+          ],
+          "notes" : [
+            "Notes/Work/Meetings/Standup.md"
+          ]
+        },
+        "work/admin/tax" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Work.md",
+              "tasks" : [
+
+              ]
+            },
+            {
+              "parent" : "Ta Da/projects/Office.md",
+              "tasks" : [
+                "Ta Da/tasks/Expense report.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "work/meetings" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+
+          ],
+          "notes" : [
+            "Notes/Work/Meetings/Standup.md"
+          ]
+        },
+        "work/reports" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Work.md",
+              "tasks" : [
+
+              ]
+            },
+            {
+              "parent" : "Ta Da/projects/Office.md",
+              "tasks" : [
+                "Ta Da/tasks/Expense report.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        },
+        "yaml" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+
+          ],
+          "groups" : [
+            {
+              "parent" : null,
+              "tasks" : [
+                "Ta Da/tasks/Broken yaml.md"
+              ]
+            }
+          ],
+          "notes" : [
+
+          ]
+        }
+      },
+      "tagFilterTags" : [
+        {
+          "count" : 1,
+          "tag" : "Café"
+        },
+        {
+          "count" : 1,
+          "tag" : "calls"
+        },
+        {
+          "count" : 1,
+          "tag" : "garden"
+        },
+        {
+          "count" : 1,
+          "tag" : "Phone"
+        },
+        {
+          "count" : 1,
+          "tag" : "plumbing"
+        },
+        {
+          "count" : 1,
+          "tag" : "shopping"
+        },
+        {
+          "count" : 1,
+          "tag" : "urgent"
+        },
+        {
+          "count" : 2,
+          "tag" : "work"
+        },
+        {
+          "count" : 1,
+          "tag" : "work/admin"
+        },
+        {
+          "count" : 1,
+          "tag" : "work/admin/tax"
+        },
+        {
+          "count" : 1,
+          "tag" : "Work/Reports"
+        },
+        {
+          "count" : 1,
+          "tag" : "yaml"
+        }
+      ],
+      "tagged" : {
+        "café" : [
+          "Ta Da/tasks/Prep resume.md"
+        ],
+        "calls" : [
+          "Ta Da/tasks/Call plumber.md"
+        ],
+        "garden" : [
+          "Ta Da/tasks/Buy seed.md"
+        ],
+        "home" : [
+          "Ta Da/projects/Garden.md",
+          "Ta Da/areas/Home.md",
+          "Inbox.md"
+        ],
+        "home/garden" : [
+          "Ta Da/projects/Garden.md",
+          "Inbox.md"
+        ],
+        "ideas" : [
+          "Inbox.md"
+        ],
+        "phone" : [
+          "Ta Da/tasks/Call plumber.md"
+        ],
+        "plumbing" : [
+          "Ta Da/tasks/Fix tap.md"
+        ],
+        "shopping" : [
+          "Ta Da/tasks/Buy seed.md"
+        ],
+        "urgent" : [
+          "Ta Da/tasks/Fix tap.md"
+        ],
+        "wood" : [
+          "Inbox.md"
+        ],
+        "work" : [
+          "Ta Da/tasks/Done work.md",
+          "Ta Da/tasks/Expense report.md",
+          "Ta Da/projects/Office.md",
+          "Notes/Work/Meetings/Standup.md",
+          "Ta Da/areas/Work.md"
+        ],
+        "work/admin" : [
+          "Ta Da/tasks/Expense report.md",
+          "Ta Da/projects/Office.md",
+          "Notes/Work/Meetings/Standup.md"
+        ],
+        "work/admin/tax" : [
+          "Ta Da/tasks/Expense report.md"
+        ],
+        "work/meetings" : [
+          "Notes/Work/Meetings/Standup.md"
+        ],
+        "work/reports" : [
+          "Ta Da/tasks/Expense report.md"
+        ],
+        "yaml" : [
+          "Ta Da/tasks/Broken yaml.md"
+        ]
+      },
+      "tagSuggestions" : {
+        "" : [
+          {
+            "children" : [
+
+            ],
+            "count" : 5,
+            "path" : "work",
+            "tag" : "work"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 3,
+            "path" : "home",
+            "tag" : "home"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 3,
+            "path" : "work/admin",
+            "tag" : "work/admin"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 2,
+            "path" : "home/garden",
+            "tag" : "Home/Garden"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "café",
+            "tag" : "Café"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "calls",
+            "tag" : "calls"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "garden",
+            "tag" : "garden"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "ideas",
+            "tag" : "ideas"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "phone",
+            "tag" : "Phone"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "plumbing",
+            "tag" : "plumbing"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "shopping",
+            "tag" : "shopping"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "urgent",
+            "tag" : "urgent"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "wood",
+            "tag" : "wood"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "work/admin/tax",
+            "tag" : "work/admin/tax"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "work/meetings",
+            "tag" : "work/meetings"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "work/reports",
+            "tag" : "Work/Reports"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "yaml",
+            "tag" : "yaml"
+          }
+        ],
+        "c" : [
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "café",
+            "tag" : "Café"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "calls",
+            "tag" : "calls"
+          }
+        ],
+        "ca" : [
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "café",
+            "tag" : "Café"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "calls",
+            "tag" : "calls"
+          }
+        ],
+        "work/" : [
+          {
+            "children" : [
+
+            ],
+            "count" : 3,
+            "path" : "work/admin",
+            "tag" : "work/admin"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "work/admin/tax",
+            "tag" : "work/admin/tax"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "work/meetings",
+            "tag" : "work/meetings"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "work/reports",
+            "tag" : "Work/Reports"
+          }
+        ]
+      },
+      "tagTree" : [
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "café",
+          "tag" : "Café"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "calls",
+          "tag" : "calls"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "garden",
+          "tag" : "garden"
+        },
+        {
+          "children" : [
+            {
+              "children" : [
+
+              ],
+              "count" : 2,
+              "path" : "home/garden",
+              "tag" : "Home/Garden"
+            }
+          ],
+          "count" : 3,
+          "path" : "home",
+          "tag" : "home"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "ideas",
+          "tag" : "ideas"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "phone",
+          "tag" : "Phone"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "plumbing",
+          "tag" : "plumbing"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "shopping",
+          "tag" : "shopping"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "urgent",
+          "tag" : "urgent"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "wood",
+          "tag" : "wood"
+        },
+        {
+          "children" : [
+            {
+              "children" : [
+                {
+                  "children" : [
+
+                  ],
+                  "count" : 1,
+                  "path" : "work/admin/tax",
+                  "tag" : "work/admin/tax"
+                }
+              ],
+              "count" : 3,
+              "path" : "work/admin",
+              "tag" : "work/admin"
+            },
+            {
+              "children" : [
+
+              ],
+              "count" : 1,
+              "path" : "work/meetings",
+              "tag" : "work/meetings"
+            },
+            {
+              "children" : [
+
+              ],
+              "count" : 1,
+              "path" : "work/reports",
+              "tag" : "Work/Reports"
+            }
+          ],
+          "count" : 5,
+          "path" : "work",
+          "tag" : "work"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "yaml",
+          "tag" : "yaml"
+        }
+      ],
       "today" : [
         "Ta Da/tasks/Call plumber.md",
-        ".trash/Trashed task.md",
         "Ta Da/tasks/a.md",
         "Ta Da/tasks/Sub/A.md",
         "Ta Da/tasks/Buy seed.md",
         "Ta Da/tasks/Water plants.md"
+      ],
+      "trash" : [
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Old area"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-09-01",
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Old area task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old area task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Old area task.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-01-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "area",
+            "links" : [
+
+            ],
+            "path" : ".trash/Old area.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old area",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Old area.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Old project task.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Old project"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old project task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Old project task.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Old area"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : ".trash/Old project.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old project",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Old project.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Trashed Garden task.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Garden"
+            },
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Trashed Garden task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Trashed Garden task.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Home"
+            },
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Trashed Home task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Trashed Home task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Trashed Home task.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : ".trash/Trashed note.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "A trashed note.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Trashed note",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Trashed note.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : "2026-10-01",
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : ".trash/Trashed task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Trashed task.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Trashed task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : ".trash/Trashed task.md"
+        }
+      ],
+      "trashContentsOf" : {
+        "Ta Da/areas/Home.md" : {
+          "projects" : [
+
+          ],
+          "tasks" : [
+            ".trash/Trashed Home task.md"
+          ]
+        }
+      },
+      "trashContentsOfTrashed" : {
+        ".trash/Old area.md" : {
+          "projects" : [
+            ".trash/Old project.md"
+          ],
+          "tasks" : [
+            ".trash/Old area task.md",
+            ".trash/Old project task.md"
+          ]
+        }
+      },
+      "trashTasksOf" : {
+        "Ta Da/projects/Garden.md" : [
+          ".trash/Trashed Garden task.md"
+        ]
+      },
+      "trashTasksOfTrashed" : {
+        ".trash/Old project.md" : [
+          ".trash/Old project task.md"
+        ]
+      },
+      "untagged" : [
+        "Periodic Notes/Daily Notes/2026-10-03.md",
+        "Ta Da/tasks/a.md",
+        "Ta Da/tasks/Sub/A.md",
+        "Ta Da/tasks/Bad project.md",
+        "Ta Da/tasks/Cafe.md",
+        "Ta Da/tasks/Café.md",
+        "Notes/Dup.md",
+        "Ta Da/tasks/Dup.md",
+        "Ta Da/tasks/No status.md",
+        "Ta Da/tasks/Odd status.md",
+        "Ta Da/projects/Résumé.md",
+        "Ta Da/projects/Taxes.md",
+        "Ta Da/tasks/Unexpected.md",
+        "Ta Da/tasks/Ünïcode 日本.md",
+        "Ta Da/tasks/Water plants.md",
+        "Ta Da/tasks/Windows task.md"
       ],
       "upcoming" : [
         {
