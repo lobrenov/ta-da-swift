@@ -1,5 +1,5 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on an area,
-// project, task or note. Rows add it with `.fileMenu(model, path:)`. A note's menu (also its page's Note ▾) has Task…,
+// project, task or note. Rows add it with `.fileMenu(model, path:)`. A task's or project's menu starts with its status boxes. A note's menu (also its page's Note ▾) has Task…,
 // Project… and Area… to convert it, Tags… and Move to Folder… (a row's), Reveal in Finder and Move to Trash. Move, Schedule, Set Deadline…, Tags… (one file),
 // Reveal in Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Tags…,
 // Reveal in Finder and Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
@@ -229,15 +229,19 @@ final class FileMenu {
 
     /// Opens the menu for `path` (or `actions`, when given) with its top-left corner at `point` (screen coordinates) in
     /// `window`.
+    /// A task's or project's own menu has its status boxes at the top.
     func show(for path: String, actions: [FileMenuAction]? = nil, at point: CGPoint, in window: NSWindow, model: AppModel) {
-        show(actions ?? FileMenuAction.actions(for: path, model: model, at: point, in: window), at: point, in: window, theme: model.theme)
+        show(actions ?? FileMenuAction.actions(for: path, model: model, at: point, in: window),
+             statuses: actions == nil ? FileMenuStatuses(for: path, model: model) : nil,
+             at: point, in: window, theme: model.theme)
         self.model = model
         model.menuTarget = path
     }
 
-    /// Opens a menu of `actions` with its top-left corner at `point` (screen coordinates) in `window`. `onClose` runs
-    /// when it closes.
-    func show(_ actions: [FileMenuAction], at point: CGPoint, in window: NSWindow, theme: Theme, onClose: (() -> Void)? = nil) {
+    /// Opens a menu of `actions`, under `statuses` when given, with its top-left corner at `point` (screen
+    /// coordinates) in `window`. `onClose` runs when it closes.
+    func show(_ actions: [FileMenuAction], statuses: FileMenuStatuses? = nil, at point: CGPoint, in window: NSWindow,
+              theme: Theme, onClose: (() -> Void)? = nil) {
         hide()
         self.onClose = onClose
         var sections: [PopupMenuSection<FileMenuAction>] = []
@@ -249,7 +253,7 @@ final class FileMenu {
             }
         }
         menu.show(sections, highlight: nil, theme: theme, below: CGRect(origin: point, size: .zero),
-                  inset: 0, gap: 0, in: window) { [weak self] action in
+                  inset: 0, gap: 0, in: window, header: statuses.map { (FileMenuStatuses.height, AnyView($0)) }) { [weak self] action in
             self?.hide()
             action.run()
         }
@@ -262,6 +266,63 @@ final class FileMenu {
         let onClose = onClose
         self.onClose = nil
         onClose?()
+    }
+}
+
+/// The status boxes at the top of a task's or project's file menu. A click sets the status of every file the menu acts
+/// on; Ongoing shows when they're all projects, and the current status is tinted when they all share it.
+struct FileMenuStatuses: View {
+    static let height: CGFloat = 30
+
+    let choices: [Status]
+    let current: Status?
+    let pick: (Status) -> Void
+    @State private var hovered: Status?
+    @Environment(\.theme) private var theme
+
+    init?(for path: String, model: AppModel) {
+        guard !path.hasPrefix(Vault.trashFolder + "/"), let kind = model.index[path]?.properties.kind,
+              kind == .task || kind == .project else { return nil }
+        let paths = model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
+        let items = paths.compactMap { model.index[$0] }.filter { $0.properties.kind == .task || $0.properties.kind == .project }
+        let statuses = Set(items.map(\.properties.status))
+        choices = Status.choices(for: items.allSatisfy { $0.properties.kind == .project } ? .project : .task)
+        current = statuses.count == 1 ? statuses.first : nil
+        pick = { status in
+            FileMenu.shared.hide()
+            Task {
+                for item in items where item.properties.status != status { await model.setStatus(status, in: item.path) }
+            }
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(choices, id: \.self) { status in
+                if status != choices.first { Spacer(minLength: 4) }
+                let (marker, tint) = StatusCheckbox.box(for: status, theme: theme)
+                InlineCheckboxView(marker: marker, tint: tint, background: theme.bg)
+                    .frame(width: 16, height: 16)
+                    .frame(width: 28, height: 28)
+                    .background(fill(status), in: .rect(cornerRadius: 6))
+                    .contentShape(.rect)
+                    .onHover { inside in
+                        if inside { hovered = status } else if hovered == status { hovered = nil }
+                    }
+                    .onTapGesture { pick(status) }
+                    .help(status.rawValue)
+                    .accessibilityElement()
+                    .accessibilityLabel(status.rawValue)
+                    .accessibilityAddTraits(status == current ? [.isButton, .isSelected] : .isButton)
+                    .accessibilityAction { pick(status) }
+            }
+        }
+    }
+
+    /// The current status in an `accent` tint, the hovered one in `surface`.
+    private func fill(_ status: Status) -> Color {
+        if status == current { return theme.color(\.accent).opacity(theme.isDark ? 0.22 : 0.14) }
+        return status == hovered ? theme.color(\.surface) : .clear
     }
 }
 

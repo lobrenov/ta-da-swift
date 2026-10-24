@@ -207,9 +207,12 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
 
     /// Shows `sections` below `anchor` (screen coordinates), `inset` points left of it and `gap` below, or above
     /// it when there's no room below. Refreshes the menu when it's already open.
+    /// `header` is drawn above the list, `height` tall, with a divider under it.
     func show(_ sections: [PopupMenuSection<Item>], highlight: Int?, theme: Theme, below anchor: CGRect,
-              inset: CGFloat, gap: CGFloat, in parent: NSWindow, pick: @escaping (Item) -> Void) {
+              inset: CGFloat, gap: CGFloat, in parent: NSWindow, header: (height: CGFloat, view: AnyView)? = nil,
+              pick: @escaping (Item) -> Void) {
         let opening = !panel.isOpen
+        model.header = header
         model.sections = sections.filter { !$0.items.isEmpty }
         model.highlight = highlight
         model.theme = theme
@@ -298,6 +301,7 @@ private final class PopupMenuModel<Item: PopupMenuItem> {
     var highlight: Int?
     var theme = Theme.all[0]
     var searchPrompt: String?
+    var header: (height: CGFloat, view: AnyView)?
     var query = ""
     /// Bumped on each show, to scroll the highlight into view.
     var revision = 0
@@ -326,11 +330,12 @@ private final class PopupMenuModel<Item: PopupMenuItem> {
         return min(heights.reduce(0, +) + CGFloat(heights.count - 1), style.maxListHeight)
     }
 
-    /// The search field, the list, the padding all round and the footer.
+    /// The search field, the header and its divider, the list, the padding all round and the footer.
     var size: CGSize {
         let search = searchPrompt == nil ? 0 : PopupMenuStyle.searchHeight
+        let header = header.map { $0.height + PopupMenuStyle.dividerHeight } ?? 0
         let footer = style.confirmLabel == nil ? 0 : PopupMenuStyle.footerHeight
-        return CGSize(width: style.width, height: search + listHeight + style.padding * 2 + footer)
+        return CGSize(width: style.width, height: search + header + listHeight + style.padding * 2 + footer)
     }
 }
 
@@ -349,6 +354,14 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
                     model.query = query
                     model.onSearch(query)
                 }, theme: theme, revision: model.revision)
+            }
+            if let header = model.header {
+                header.view
+                    .frame(height: header.height)
+                Hairline()
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .accessibilityHidden(true)
             }
             ScrollViewReader { scroller in
                 ScrollView { list }
