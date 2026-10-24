@@ -34,3 +34,4 @@ Fork milestones run on `live` in `~/Projects/swift-markdown-engine-extended`, pe
 - `LiveEditor`: a focus binding passed as `isFocused`, set on `takesFocus` (caret to the start, then `onTookFocus`); the retry loop goes. On iPhone, Hide Keyboard sets it to `false`.
 - `docs/architecture.md` (Editors) where it describes focus.
 - Check: macOS and iOS builds; app + core tests (`-skip-testing:TaDaUITests`); by hand on the Mac: a new task's editor takes focus, a rewrite and a proofread over a note with tags, tasks and a callout leave those as written, switching files mid-rewrite and ⌘Z mid-rewrite don't crash; on iPhone: opening a new task shows the keyboard and Hide Keyboard drops it.
+- As built: `takesFocus` is set only by Quick Entry's ⌘↵, on the Mac, so the iPhone's check is Hide Keyboard alone. F1 leaves tags as written only with `configuration.tags` set, since the parser reads none without it.
