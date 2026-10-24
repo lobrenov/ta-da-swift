@@ -1,6 +1,6 @@
 ---
 type: task
-status: Doing
+status: Not Started
 area: "[[Personal]]"
 contexts: ["@computer"]
 project:
