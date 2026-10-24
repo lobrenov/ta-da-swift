@@ -11,7 +11,7 @@ let package = Package(
         // Pinned exactly: the app must never pick up a parser change silently.
         .package(url: "https://github.com/jpsim/Yams.git", exact: "6.2.2"),
         // The grammar the Live editor reads with; the Xcode project pins the same tag.
-        .package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.14.0-live.10"),
+        .package(url: "https://github.com/lobrenov/swift-markdown-engine-extended.git", exact: "0.15.0-live.1"),
     ],
     targets: [
         .target(
