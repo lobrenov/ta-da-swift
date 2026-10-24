@@ -1,13 +1,13 @@
 ---
 type: task
-status: Doing
+status: Done
 contexts:
   - "@mac"
 project: "[[Ta Da MVP]]"
 createdDate: 2026-09-20
 dueDate: 2026-10-09
 deadline: 2026-10-16
-completedDate:
+completedDate: 2026-10-25
 ---
 Obsidian-style editing: raw markdown on the cursor line, rendered everywhere else.
 

@@ -1,11 +1,11 @@
 ---
 type: task
-status: Not Started
+status: Done
 area: "[[Personal]]"
 contexts: ["@computer"]
 project:
 createdDate: 2026-09-28
-completedDate:
+completedDate: 2026-10-25
 dueDate: 2026-10-02
 deadline: 2026-10-06
 repeat:

@@ -1,6 +1,6 @@
 ---
 type: project
-status: Done
+status: Doing
 area: "[[Personal]]"
-completedDate: 2026-10-11
+completedDate:
 ---

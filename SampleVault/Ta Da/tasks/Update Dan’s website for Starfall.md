@@ -1,13 +1,13 @@
 ---
 type: task
-status: Done
+status: Not Started
 contexts:
   - "@computer"
 project: "[[Game Jam - Starfall]]"
 createdDate: 2026-09-21
 dueDate: 2026-10-02
 deadline: 2026-10-08
-completedDate: 2026-10-11
+completedDate:
 ---
 Refresh the event page for Starfall.
 

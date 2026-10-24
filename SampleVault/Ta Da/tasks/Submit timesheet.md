@@ -1,6 +1,6 @@
 ---
 type: task
-status: Not Started
+status: Doing
 area: "[[Work]]"
 contexts:
   - "@computer"

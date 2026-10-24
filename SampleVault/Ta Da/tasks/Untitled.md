@@ -1,8 +1,8 @@
 ---
 type: task
-status: Doing
+status: Done
 createdDate: 2026-10-03
 dueDate: 2026-10-03
-completedDate:
+completedDate: 2026-10-25
 ---
 

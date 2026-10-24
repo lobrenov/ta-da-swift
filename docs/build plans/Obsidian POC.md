@@ -11,7 +11,7 @@ Starting point, as checked on 2026-10-18 and updated on 2026-10-19 after the vau
 
 ## Decisions
 - **Ta Da's folder**: the plugin creates files where the apps do (`Ta Da/tasks/`, `Ta Da/projects/`, `Ta Da/areas/`, `Ta Da/attachments/`) and reads both layouts as `docs/file-format.md` says (logged files in `Ta Da/Logbook/`, ignoring case; `Ta Da/` and the old top-level folders reserved from notes), except the old `.logbook/`, which Obsidian can't see. A vault is moved into `Ta Da/` by the apps before the plugin is used on it.
-- **Logging and moving the old layout stay with the Mac and iPhone apps.** The plugin never logs, unlogs or moves an old layout into `Ta Da/`. Setting a logged file's status in Obsidian is picked up by the app's next daily logging, as for any other app.
+- **Logging and moving the old layout stay with the Mac and iPhone apps.** The plugin never logs or moves an old layout into `Ta Da/`. Reopening a logged file moves it back, as the apps do (`AppModel.reopenParent`).
 - **Trash**: the plugin deletes tasks and notes only, one file at a time, into `.trash/` (`Vault.trash(file, false)`). Projects and areas, with their cascades, restore and Empty Trash, stay in the apps.
 - **Format port**: TaDaCore's reading, writing and query rules are ported to TypeScript, not compiled from Swift. Conformance fixtures keep the two in step: a Swift test exports DesignVault's parse results, query results (fixed `today`) and write cases (input text, operation, expected text) as JSON into `Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/Conformance/`; the TypeScript tests read them there through the relative path `../Ta Da/Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/Conformance/`.
 - **Writes** splice lines with the ported writers, never `processFrontMatter`. The open file goes through its `Editor` (one transaction, so undo and the cursor hold); other files through `Vault.process`, guarded on the text last read. Renames go through `FileManager.renameFile`, so Obsidian updates links; the name comes from the ported `FileNaming`.
@@ -59,7 +59,7 @@ Each ends with its check passing, then a commit and a review.
 - Calendar events and reminders are left out: Obsidian has no source a plugin can read for them.
 - New task modal (`ObsL2Capture`), as the Mac's Quick Entry (`QuickEntryDraft`): type switch, title, the header's chips and Tags row; writes the new file through `NewFile`, in the shown project, area or tag, or due on the Agenda's selected day.
 - Commands: New task, Complete, Move to project or area. A ribbon icon opens the navigator.
-- Status changes as in the apps (`AppModel.setStatus`): closing a project with open tasks asks first; reopening a task reopens its Done or Cancelled project.
+- Status changes as in the apps (`AppModel.setStatus`): closing a project with open tasks asks first; reopening a task reopens its Done or Cancelled project; reopening a logged file moves it, and its logged project, out of the Logbook.
 - Check: by hand; the created file matches the Mac's Quick Entry output for the same input.
 
 ### B4 — iPhone and docs
