@@ -16,7 +16,7 @@ The design system for Ta Da, a Swift-native task manager where every task and pr
 
 ## Colour
 
-Fifteen semantic tokens, defined for seventeen bundled schemes: fifteen iTerm2 schemes (values from iterm2colorschemes.com) and Things Light and Things Dark, from the obsidian-things Obsidian theme and the Obsidian defaults it keeps, with border, code and muted derived by the token rules. The schemes pair into nine theme sets, each a light and a dark scheme: Ayu (Ayu Light, Ayu Mirage), Tomorrow (Tomorrow, Tomorrow Night), Solarized (Light, Dark), Dracula (Dracula for both), Nord (Nord Light, Nord), Gruvbox (Light, Dark), TokyoNight (TokyoNight Day, TokyoNight), Catppuccin (Latte, Mocha) and Things (Light, Dark). Ta Da shows the set's light or dark scheme with the macOS appearance, or always one of them when the appearance is set to Light or Dark. Tomorrow is the default set.
+Fifteen semantic tokens, defined for six bundled iTerm2 schemes (values from iterm2colorschemes.com), with border, code and muted derived by the token rules. The schemes pair into three theme sets, each a light and a dark scheme: Ayu (Ayu Light, Ayu Mirage), TokyoNight (TokyoNight Day, TokyoNight) and Catppuccin (Latte, Mocha). Ta Da shows the set's light or dark scheme with the macOS appearance, or always one of them when the appearance is set to Light or Dark. Ayu is the default set.
 
 | Token | Role | iTerm2 source |
 | --- | --- | --- |
@@ -36,7 +36,7 @@ Fifteen semantic tokens, defined for seventeen bundled schemes: fifteen iTerm2 s
 | `blocked` | Blocked status | Red → Yellow, 50% |
 | `link` | [[wikilinks]], project values | Ansi 5 Magenta |
 
-Importing a new `.itermcolors` file fills these by the same mapping. When a scheme's Ansi 8 is too dim, `muted` is lifted until it passes 4.5:1 on `bg`; `fg` is lifted to 5.5:1 the same way (Solarized Light, Solarized Dark, TokyoNight Day).
+Importing a new `.itermcolors` file fills these by the same mapping. When a scheme's Ansi 8 is too dim, `muted` is lifted until it passes 4.5:1 on `bg`; `fg` is lifted to 5.5:1 the same way (TokyoNight Day).
 
 Contrast rules: text uses only `fg`, `strong` and `muted`. `due`, `deadline`, `done`, `doing`, `blocked` are for icons, dots, borders and fills; on light themes several fall below 4.5:1 as text. `accent` and `deadline` fills carry `bg`-coloured labels at 600 weight or more.
 
@@ -138,7 +138,7 @@ Plain CSS classes in `components/bundle.css`, prefixed `td-`, built on these tok
 
 | Design | Swift |
 | --- | --- |
-| Colour tokens and themes | `Theme` (`TaDa/Theme/Theme.swift`), one `PlatformColor` (`NSColor` or `UIColor`) property per token, read from the `\.theme` environment value. The seventeen schemes are `Theme.all` and the nine sets `ThemeSet.all` in `TaDa/Theme/BundledThemes.swift`, with the same values and order as `tokens.json`. `AppModel` picks the scheme from the set, the `Appearance` setting and the system appearance; `themed(by:)` (`TaDa/Theme/Themed.swift`) applies it to a window. |
+| Colour tokens and themes | `Theme` (`TaDa/Theme/Theme.swift`), one `PlatformColor` (`NSColor` or `UIColor`) property per token, read from the `\.theme` environment value. The six schemes are `Theme.all` and the three sets `ThemeSet.all` in `TaDa/Theme/BundledThemes.swift`, with the same values and order as `tokens.json`. `AppModel` picks the scheme from the set, the `Appearance` setting and the system appearance; `themed(by:)` (`TaDa/Theme/Themed.swift`) applies it to a window. |
 | Type, spacing, radius, size | Literal values in each view (`.font(.system(size: 13.5))`, `cornerRadius: 7`); there are no Swift constants for them. |
 | Checkbox | `InlineCheckbox` in `TaDa/Editor/InlineCheckbox.swift` draws every box from the design's paths, and `Theme.checkboxTint` there gives each marker's tint. `StatusCheckbox` in `TaDa/Browser/TaskRow.swift` uses them for task rows, `CheckboxMenu` for its rows and `TaskCheckboxStyle` in `TaDa/Editor/LiveEditor.swift` for the editor. |
 | TaskRow | `TaskRow`, `RowGlyphs`, `RowDate`, `TaskTitle` and `StatusLabel` in `TaDa/Browser/TaskRow.swift`; `TaskRow.Dates` (`.agenda`, `.elsewhere`) picks the date rule. `SelectableRow` there draws the one-line row (checkbox, title button with the date, title and glyphs, `is-selected`) for `TaskRow` beside a document; on iPhone `PhoneTaskRow` in `TaDa/iOS/PhoneRows.swift` draws `RowDate` and `RowGlyphs`; `LocalDate.rowLabel` in `TaskRow.swift` words the date. `BrowserColumn` in `TaDa/Browser/BrowserChrome.swift` lays out each list beside the document. Selection (click, shift- and ⌘-click, `is-selected`) is shared by every list through `model.click(_:)` and `model.isSelected(_:)` in `TaDa/Browser/ArrowKeySelection.swift` and `TaDa/AppModel.swift`. |

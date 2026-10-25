@@ -1,4 +1,4 @@
-// The seventeen bundled schemes and the nine theme sets that pair them, from the Theme tokens artboard.
+// The six bundled schemes and the three theme sets that pair them, from the Theme tokens artboard.
 import SwiftUI
 
 nonisolated extension Theme {
@@ -11,42 +11,6 @@ nonisolated extension Theme {
               bg: 0x1f2430, side: 0x191e27, surface: 0x3b3f47, border: 0x30353f, code: 0x282c37,
               fg: 0xcccac2, strong: 0xe3e2dd, muted: 0x8e8e8d, accent: 0x6dcbfa, due: 0xfacc6e,
               deadline: 0xed8274, done: 0x87d96c, doing: 0x90e1c6, blocked: 0xf3a771, link: 0xdabafa),
-        Theme(name: "Tomorrow", isDark: false,
-              bg: 0xffffff, side: 0xf6f6f6, surface: 0xd6d6d6, border: 0xededed, code: 0xf6f6f6,
-              fg: 0x4d4d4c, strong: 0x2a2a2a, muted: 0x747473, accent: 0x4271ae, due: 0xb78f00,
-              deadline: 0xc82829, done: 0x718c00, doing: 0x3e999f, blocked: 0xd97014, link: 0x8959a8),
-        Theme(name: "Tomorrow Night", isDark: true,
-              bg: 0x1d1f21, side: 0x18191b, surface: 0x373b41, border: 0x2e3032, code: 0x252729,
-              fg: 0xc5c8c6, strong: 0xdfe1e0, muted: 0x858887, accent: 0x81a2be, due: 0xf0c674,
-              deadline: 0xcc6666, done: 0xb5bd68, doing: 0x8abeb7, blocked: 0xde966d, link: 0xb294bb),
-        Theme(name: "Solarized Light", isDark: false,
-              bg: 0xfdf6e3, side: 0xf4eddb, surface: 0xeee8d5, border: 0xece8d7, code: 0xf4efdd,
-              fg: 0x53656b, strong: 0x2e383b, muted: 0x617175, accent: 0x268bd2, due: 0xb18600,
-              deadline: 0xdc322f, done: 0x829600, doing: 0x299e95, blocked: 0xc95e18, link: 0xd33682),
-        Theme(name: "Solarized Dark", isDark: true,
-              bg: 0x002b36, side: 0x00232c, surface: 0x073642, border: 0x0f3741, code: 0x07313b,
-              fg: 0x92a1a3, strong: 0xc3cbcc, muted: 0x809396, accent: 0x268bd2, due: 0xb58900,
-              deadline: 0xdc322f, done: 0x859900, doing: 0x2aa198, blocked: 0xc95e18, link: 0xd33682),
-        Theme(name: "Dracula", isDark: true,
-              bg: 0x282a36, side: 0x21222c, surface: 0x44475a, border: 0x3d3f49, code: 0x32343f,
-              fg: 0xf8f8f2, strong: 0xfbfbf8, muted: 0x949598, accent: 0xbd93f9, due: 0xf1fa8c,
-              deadline: 0xff5555, done: 0x50fa7b, doing: 0x8be9fd, blocked: 0xf8a770, link: 0xff79c6),
-        Theme(name: "Nord Light", isDark: false,
-              bg: 0xe5e9f0, side: 0xdde1e8, surface: 0xd8dee9, border: 0xd5d9e1, code: 0xdde1e8,
-              fg: 0x414858, strong: 0x242830, muted: 0x4c566a, accent: 0x6c87a2, due: 0x9a814f,
-              deadline: 0xbf616a, done: 0x758a63, doing: 0x608c98, blocked: 0xaf765e, link: 0x9b7a95),
-        Theme(name: "Nord", isDark: true,
-              bg: 0x2e3440, side: 0x262b34, surface: 0x494f5b, border: 0x3f4551, code: 0x363c48,
-              fg: 0xd8dee9, strong: 0xeaedf3, muted: 0x9ba1ac, accent: 0x81a1c1, due: 0xebcb8b,
-              deadline: 0xbf616a, done: 0xa3be8c, doing: 0x88c0d0, blocked: 0xd5967a, link: 0xb48ead),
-        Theme(name: "Gruvbox Light", isDark: false,
-              bg: 0xfbf1c7, side: 0xf2e9c0, surface: 0xdcd3b0, border: 0xe8deb8, code: 0xf1e8c0,
-              fg: 0x3c3836, strong: 0x211f1e, muted: 0x716c5f, accent: 0x458588, due: 0xb57614,
-              deadline: 0xcc241d, done: 0x79740e, doing: 0x427b58, blocked: 0xd25e1f, link: 0xb16286),
-        Theme(name: "Gruvbox Dark", isDark: true,
-              bg: 0x282828, side: 0x212121, surface: 0x47453e, border: 0x3c3a36, code: 0x32312f,
-              fg: 0xebdbb2, strong: 0xf4ebd5, muted: 0x999078, accent: 0x458588, due: 0xd79921,
-              deadline: 0xfb4934, done: 0x98971a, doing: 0x689d6a, blocked: 0xd25e1f, link: 0xb16286),
         Theme(name: "TokyoNight Day", isDark: false,
               bg: 0xe1e2e7, side: 0xd9dadf, surface: 0x99a7df, border: 0xcfd4e0, code: 0xd8dbe4,
               fg: 0x2f53a4, strong: 0x1a2e5a, muted: 0x4161ab, accent: 0x2e7de9, due: 0x8c6c3e,
@@ -63,29 +27,15 @@ nonisolated extension Theme {
               bg: 0x1e1e2e, side: 0x191926, surface: 0x3a3b4e, border: 0x303042, code: 0x272738,
               fg: 0xcdd6f4, strong: 0xe4e8f9, muted: 0x8489a1, accent: 0x89b4fa, due: 0xf9e2af,
               deadline: 0xf38ba8, done: 0xa6e3a1, doing: 0x94e2d5, blocked: 0xf6b6ac, link: 0xf5c2e7),
-        Theme(name: "Things Light", isDark: false,
-              bg: 0xffffff, side: 0xf5f6f8, surface: 0xededed, border: 0xebebec, code: 0xf5f5f5,
-              fg: 0x373a3e, strong: 0x000000, muted: 0x727679, accent: 0x0062c1, due: 0xfdd31b,
-              deadline: 0xf83366, done: 0x08b94e, doing: 0x54ada4, blocked: 0xec7500, link: 0x1f67cf),
-        Theme(name: "Things Dark", isDark: true,
-              bg: 0x262626, side: 0x1a1a1a, surface: 0x323232, border: 0x383838, code: 0x2f2f2f,
-              fg: 0xdadada, strong: 0xffffff, muted: 0x8a919b, accent: 0x4d94f7, due: 0xfdd31b,
-              deadline: 0xf83366, done: 0x44cf6e, doing: 0x54ada4, blocked: 0xe9973f, link: 0x72a8ff),
     ]
 }
 
 nonisolated extension ThemeSet {
     static let all: [ThemeSet] = [
         ThemeSet(name: "Ayu", light: "Ayu Light", dark: "Ayu Mirage"),
-        ThemeSet(name: "Tomorrow", light: "Tomorrow", dark: "Tomorrow Night"),
-        ThemeSet(name: "Solarized", light: "Solarized Light", dark: "Solarized Dark"),
-        ThemeSet(name: "Dracula", light: "Dracula", dark: "Dracula"),
-        ThemeSet(name: "Nord", light: "Nord Light", dark: "Nord"),
-        ThemeSet(name: "Gruvbox", light: "Gruvbox Light", dark: "Gruvbox Dark"),
         ThemeSet(name: "TokyoNight", light: "TokyoNight Day", dark: "TokyoNight"),
         ThemeSet(name: "Catppuccin", light: "Catppuccin Latte", dark: "Catppuccin Mocha"),
-        ThemeSet(name: "Things", light: "Things Light", dark: "Things Dark"),
     ]
     /// The set a new install starts with.
-    static let standard = all[1]
+    static let standard = all[0]
 }

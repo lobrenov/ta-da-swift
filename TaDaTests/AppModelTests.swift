@@ -61,11 +61,11 @@ struct AppModelTests {
     @Test func theFolderAndThemeSurviveARelaunch() async {
         let first = AppModel(defaults: folder.defaults)
         await first.choose(folder.url)
-        first.choose(ThemeSet.named("Nord")!)
+        first.choose(ThemeSet.named("Catppuccin")!)
         first.appearance = .light
 
         let second = AppModel(defaults: folder.defaults)
-        #expect(second.themeSet.name == "Nord" && second.appearance == .light && second.theme.name == "Nord Light")
+        #expect(second.themeSet.name == "Catppuccin" && second.appearance == .light && second.theme.name == "Catppuccin Latte")
         await second.start()
         #expect(second.state == .ready)
         #expect(second.vault?.root.resolvingSymlinksInPath() == folder.url.resolvingSymlinksInPath())
@@ -164,24 +164,24 @@ struct AppModelTests {
         #expect(!AppModel(defaults: folder.defaults).autocomplete.tags)
     }
 
-    @Test func unknownThemeNamesFallBackToTomorrow() {
+    @Test func unknownThemeNamesFallBackToAyu() {
         folder.defaults.set("Monokai", forKey: "themeSet")
         folder.defaults.set("Monokai Light", forKey: "lightScheme")
         folder.defaults.set(true, forKey: "usesSchemePerAppearance")
         folder.defaults.set("Light", forKey: "appearance")
         let model = AppModel(defaults: folder.defaults)
-        #expect(model.themeSet.name == "Tomorrow" && model.theme.name == "Tomorrow")
+        #expect(model.themeSet.name == "Ayu" && model.theme.name == "Ayu Light")
     }
 
     @Test func theSchemeFollowsTheAppearance() {
         let model = AppModel(defaults: folder.defaults)
-        model.choose(ThemeSet.named("Gruvbox")!)
+        model.choose(ThemeSet.named("TokyoNight")!)
         model.systemIsDark = false
-        #expect(model.theme.name == "Gruvbox Light")
+        #expect(model.theme.name == "TokyoNight Day")
         model.systemIsDark = true
-        #expect(model.theme.name == "Gruvbox Dark")
+        #expect(model.theme.name == "TokyoNight")
         model.appearance = .light
-        #expect(model.theme.name == "Gruvbox Light", "a fixed appearance ignores the Mac's")
+        #expect(model.theme.name == "TokyoNight Day", "a fixed appearance ignores the Mac's")
     }
 
     @Test func aWindowTakesItsSchemesAppearanceAndTheModelFollowsTheMacs() async throws {
@@ -214,11 +214,11 @@ struct AppModelTests {
         model.appearance = .dark
         model.usesSchemePerAppearance = true
         #expect(model.lightScheme.name == "Ayu Light" && model.darkScheme.name == "Ayu Mirage")
-        model.darkScheme = Theme.named("Dracula")!
-        #expect(model.theme.name == "Dracula")
-        #expect(AppModel(defaults: folder.defaults).theme.name == "Dracula", "survives a relaunch")
-        model.choose(ThemeSet.named("Nord")!)
-        #expect(!model.usesSchemePerAppearance && model.theme.name == "Nord")
+        model.darkScheme = Theme.named("Catppuccin Mocha")!
+        #expect(model.theme.name == "Catppuccin Mocha")
+        #expect(AppModel(defaults: folder.defaults).theme.name == "Catppuccin Mocha", "survives a relaunch")
+        model.choose(ThemeSet.named("TokyoNight")!)
+        #expect(!model.usesSchemePerAppearance && model.theme.name == "TokyoNight")
     }
 
     @Test func aNewLinkedTaskIsNotStartedAndLeavesTheProjectPageOpen() async throws {
