@@ -123,7 +123,7 @@ struct OpenDocumentTests {
         #expect(try folder.read("Ta Da/tasks/Task.md") == Self.task.replacingOccurrences(of: "[[Ta Da MVP]]", with: "[[Ta Da 1.0]]"))
         #expect(try folder.read("Ta Da/tasks/Other.md").contains("project: \"[[Ta Da 1.0]]\"\n"))
         let project = try #require(model.index["Ta Da/projects/Ta Da 1.0.md"])
-        #expect(model.index.tasks(in: project).map(\.title) == ["Other", "Task"])
+        #expect(model.index.tasks(in: project).map(\.title) == ["Task", "Other"])
     }
 
     @Test func aTaskThatCantBeRelinkedDoesntUndoTheRename() async throws {

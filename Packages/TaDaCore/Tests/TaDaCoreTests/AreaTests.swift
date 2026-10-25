@@ -26,9 +26,9 @@ private extension VaultIndex {
 @Test func areasListTheirFiles() async {
     let index = await load()
     let personal = index.titled("Personal")
-    #expect(index.tasks(in: personal).map(\.title) == ["Book a dentist", "Pay rent"])
+    #expect(index.tasks(in: personal).map(\.title) == ["Pay rent", "Book a dentist"])
     #expect(index.projects(in: personal).map(\.title) == ["Garden", "Ta Da"])
-    #expect(index.allTasks(in: personal).map(\.title) == ["Book a dentist", "Pay rent", "Water the beds", "Both keys", "Build the sidebar"])
+    #expect(index.allTasks(in: personal).map(\.title) == ["Pay rent", "Book a dentist", "Water the beds", "Both keys", "Build the sidebar"])
     #expect(index.tasks(in: index.titled("Work")).isEmpty, "Both keys names Work but its project wins")
 }
 

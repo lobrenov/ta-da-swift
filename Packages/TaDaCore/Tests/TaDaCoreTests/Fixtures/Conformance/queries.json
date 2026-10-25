@@ -199,8 +199,8 @@
         "Ta Da/tasks/Resolve the cabin payback.md",
         "Ta Da/tasks/Shift my physio appointment.md",
         "Ta Da/tasks/Submit timesheet.md",
-        "Ta Da/tasks/Update 2DS before the next session.md",
-        "Ta Da/tasks/Update my claude.md files.md"
+        "Ta Da/tasks/Update my claude.md files.md",
+        "Ta Da/tasks/Update 2DS before the next session.md"
       ],
       "looseProjects" : [
         {
@@ -331,8 +331,8 @@
                 "Ta Da/tasks/Resolve the cabin payback.md",
                 "Ta Da/tasks/Shift my physio appointment.md",
                 "Ta Da/tasks/Submit timesheet.md",
-                "Ta Da/tasks/Update 2DS before the next session.md",
-                "Ta Da/tasks/Update my claude.md files.md"
+                "Ta Da/tasks/Update my claude.md files.md",
+                "Ta Da/tasks/Update 2DS before the next session.md"
               ],
               "title" : "Open"
             }
@@ -348,8 +348,8 @@
                 "Ta Da/tasks/Resolve the cabin payback.md",
                 "Ta Da/tasks/Shift my physio appointment.md",
                 "Ta Da/tasks/Submit timesheet.md",
-                "Ta Da/tasks/Update 2DS before the next session.md",
-                "Ta Da/tasks/Update my claude.md files.md"
+                "Ta Da/tasks/Update my claude.md files.md",
+                "Ta Da/tasks/Update 2DS before the next session.md"
               ],
               "title" : "Open"
             }
@@ -993,19 +993,19 @@
         "Ta Da/logbook/2026-09/Old chore.md"
       ],
       "loose" : [
+        "Ta Da/tasks/Call plumber.md",
         "Ta Da/tasks/a.md",
         "Ta Da/tasks/Sub/A.md",
-        "Ta Da/tasks/Bad project.md",
-        "Ta Da/tasks/Broken yaml.md",
         "Ta Da/tasks/Cafe.md",
         "Ta Da/tasks/Café.md",
-        "Ta Da/tasks/Call plumber.md",
+        "Ta Da/tasks/Ünïcode 日本.md",
+        "Ta Da/tasks/Windows task.md",
         "Ta Da/tasks/Dup.md",
+        "Ta Da/tasks/Bad project.md",
+        "Ta Da/tasks/Broken yaml.md",
         "Ta Da/tasks/No status.md",
         "Ta Da/tasks/Odd status.md",
-        "Ta Da/tasks/Unexpected.md",
-        "Ta Da/tasks/Ünïcode 日本.md",
-        "Ta Da/tasks/Windows task.md"
+        "Ta Da/tasks/Unexpected.md"
       ],
       "looseProjects" : [
         {
@@ -1097,9 +1097,9 @@
                 "value" : "Today"
               },
               "tasks" : [
+                "Ta Da/tasks/Call plumber.md",
                 "Ta Da/tasks/a.md",
-                "Ta Da/tasks/Sub/A.md",
-                "Ta Da/tasks/Call plumber.md"
+                "Ta Da/tasks/Sub/A.md"
               ],
               "title" : "Today"
             },
@@ -1111,9 +1111,9 @@
               "tasks" : [
                 "Ta Da/tasks/Cafe.md",
                 "Ta Da/tasks/Café.md",
-                "Ta Da/tasks/Dup.md",
                 "Ta Da/tasks/Ünïcode 日本.md",
-                "Ta Da/tasks/Windows task.md"
+                "Ta Da/tasks/Windows task.md",
+                "Ta Da/tasks/Dup.md"
               ],
               "title" : "Upcoming"
             },
@@ -1139,19 +1139,19 @@
                 "value" : null
               },
               "tasks" : [
+                "Ta Da/tasks/Call plumber.md",
                 "Ta Da/tasks/a.md",
                 "Ta Da/tasks/Sub/A.md",
-                "Ta Da/tasks/Bad project.md",
-                "Ta Da/tasks/Broken yaml.md",
                 "Ta Da/tasks/Cafe.md",
                 "Ta Da/tasks/Café.md",
-                "Ta Da/tasks/Call plumber.md",
+                "Ta Da/tasks/Ünïcode 日本.md",
+                "Ta Da/tasks/Windows task.md",
                 "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/Bad project.md",
+                "Ta Da/tasks/Broken yaml.md",
                 "Ta Da/tasks/No status.md",
                 "Ta Da/tasks/Odd status.md",
-                "Ta Da/tasks/Unexpected.md",
-                "Ta Da/tasks/Ünïcode 日本.md",
-                "Ta Da/tasks/Windows task.md"
+                "Ta Da/tasks/Unexpected.md"
               ],
               "title" : "Open"
             }
@@ -1163,19 +1163,19 @@
                 "value" : null
               },
               "tasks" : [
+                "Ta Da/tasks/Call plumber.md",
                 "Ta Da/tasks/a.md",
                 "Ta Da/tasks/Sub/A.md",
-                "Ta Da/tasks/Bad project.md",
-                "Ta Da/tasks/Broken yaml.md",
                 "Ta Da/tasks/Cafe.md",
                 "Ta Da/tasks/Café.md",
-                "Ta Da/tasks/Call plumber.md",
+                "Ta Da/tasks/Ünïcode 日本.md",
+                "Ta Da/tasks/Windows task.md",
                 "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/Bad project.md",
+                "Ta Da/tasks/Broken yaml.md",
                 "Ta Da/tasks/No status.md",
                 "Ta Da/tasks/Odd status.md",
-                "Ta Da/tasks/Unexpected.md",
-                "Ta Da/tasks/Ünïcode 日本.md",
-                "Ta Da/tasks/Windows task.md"
+                "Ta Da/tasks/Unexpected.md"
               ],
               "title" : "Open"
             }
@@ -1187,9 +1187,9 @@
                 "value" : "Doing"
               },
               "tasks" : [
+                "Ta Da/tasks/Windows task.md",
                 "Ta Da/tasks/Bad project.md",
-                "Ta Da/tasks/Unexpected.md",
-                "Ta Da/tasks/Windows task.md"
+                "Ta Da/tasks/Unexpected.md"
               ],
               "title" : "Doing"
             },
@@ -1211,13 +1211,13 @@
               "tasks" : [
                 "Ta Da/tasks/a.md",
                 "Ta Da/tasks/Sub/A.md",
-                "Ta Da/tasks/Broken yaml.md",
                 "Ta Da/tasks/Cafe.md",
                 "Ta Da/tasks/Café.md",
+                "Ta Da/tasks/Ünïcode 日本.md",
                 "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/Broken yaml.md",
                 "Ta Da/tasks/No status.md",
-                "Ta Da/tasks/Odd status.md",
-                "Ta Da/tasks/Ünïcode 日本.md"
+                "Ta Da/tasks/Odd status.md"
               ],
               "title" : "Not Started"
             }

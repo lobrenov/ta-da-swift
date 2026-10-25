@@ -133,9 +133,9 @@ extension VaultIndex {
             .sorted(by: Self.byAgendaOrder)
     }
 
-    /// Open tasks without a parent that resolves, sorted by title.
+    /// Open tasks without a parent that resolves, sorted by their earliest date, then title.
     public func loose() -> [Item] {
-        tasks.filter { isLoose($0) }.sorted(by: Self.byTitle)
+        tasks.filter { isLoose($0) }.sorted(by: Self.byDate)
     }
 
     /// Whether a task is in Loose tasks: open, with no project or area that resolves.
@@ -224,7 +224,8 @@ extension VaultIndex {
         return byTitle(a.item, b.item)
     }
 
-    private static func byDate(_ a: Item, _ b: Item) -> Bool {
+    /// By the earlier of `dueDate` and `deadline`, undated last, then by title.
+    public static func byDate(_ a: Item, _ b: Item) -> Bool {
         func earliest(_ item: Item) -> LocalDate? { [item.properties.dueDate, item.properties.deadline].compactMap { $0 }.min() }
         switch (earliest(a), earliest(b)) {
         case let (x?, y?) where x != y: return x < y

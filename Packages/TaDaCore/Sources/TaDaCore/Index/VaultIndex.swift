@@ -106,9 +106,10 @@ public struct VaultIndex: Sendable {
         }
     }
 
-    /// Tasks filed straight under this project or area, sorted by title; logged ones only when `includingLogged`.
+    /// Tasks filed straight under this project or area, sorted by their earliest date, then title; logged ones only when
+    /// `includingLogged`.
     public func tasks(in parent: Item, includingLogged: Bool = false) -> [Item] {
-        filed(under: parent).filter { $0.properties.kind == .task && (includingLogged || !$0.isLogged) }
+        filed(under: parent).filter { $0.properties.kind == .task && (includingLogged || !$0.isLogged) }.sorted(by: Self.byDate)
     }
 
     /// Projects whose `area` resolves to this area, sorted by title; logged ones only when `includingLogged`.
@@ -116,12 +117,12 @@ public struct VaultIndex: Sendable {
         filed(under: area).filter { $0.properties.kind == .project && (includingLogged || !$0.isLogged) }
     }
 
-    /// A project's tasks that aren't Done or Cancelled, sorted by title.
+    /// A project's tasks that aren't Done or Cancelled, sorted by their earliest date, then title.
     public func openTasks(in project: Item) -> [Item] {
         tasks(in: project).filter { !$0.properties.status.isClosed }
     }
 
-    /// An area's own tasks, then its projects' tasks, each sorted by title.
+    /// An area's own tasks, then its projects' tasks, each sorted by their earliest date, then title.
     public func allTasks(in area: Item) -> [Item] {
         tasks(in: area) + projects(in: area).flatMap { tasks(in: $0) }
     }

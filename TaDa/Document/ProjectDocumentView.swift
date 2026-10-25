@@ -40,7 +40,7 @@ struct ProjectDocumentView: View {
     }
 }
 
-/// Every task whose `project` links here: open ones first, by status, then done ones. Clicking a row opens the task;
+/// Every task whose `project` links here: open ones first, by status, then done ones, each status by date. Clicking a row opens the task;
 /// its status and dates open their menus, and its title renames it in place. New linked task adds a row here.
 private struct LinkedTasksTable: View {
     let model: AppModel

@@ -41,7 +41,12 @@ private let index = VaultIndex(items)
 }
 
 @Test func looseTasksHaveNoResolvableProject() {
-    #expect(index.loose().map(\.title) == ["Deadline today", "Overdue deadline", "Same day", "Undated"])
+    #expect(index.loose().map(\.title) == ["Overdue deadline", "Deadline today", "Same day", "Undated"])
+}
+
+@Test func filedTasksSortByEarliestDateThenTitle() {
+    #expect(index.tasks(in: items[0]).map(\.title) == ["Overdue due", "Done earlier", "Done today"])
+    #expect(index.tasks(in: items[1]).map(\.title) == ["Due today", "Tomorrow"])
 }
 
 @Test func activeProjectsCountAllTheirTasks() {
@@ -103,7 +108,7 @@ private let index = VaultIndex(items)
     #expect(index.upcoming(after: today).first?.item.title == "Update 2DS before the next session")
     #expect(index.loose().map(\.title) == [
         "Message Max about a coat and a jacket", "Resolve the cabin payback", "Shift my physio appointment",
-        "Submit timesheet", "Update 2DS before the next session", "Update my claude.md files",
+        "Submit timesheet", "Update my claude.md files", "Update 2DS before the next session",
     ])
     // The design has no area files, so its areas don't resolve.
     for item in index.items.values {
