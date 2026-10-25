@@ -3,7 +3,7 @@
 Beta testers get a `.dmg` that holds the app, an Applications shortcut and `Read Me First.txt`. The app is signed with the Apple Development certificate of a free Apple Developer account, with no provisioning profile, so builds don't expire. It isn't notarised: Developer ID signing and notarisation need the paid Apple Developer Program. The signature keeps the same identity from build to build, so testers keep their chosen folder across updates.
 
 ## Building
-1. Bump the build number in Xcode: TaDa project › TaDa target › General › Identity › Build. Bump Version for larger releases.
+1. Bump the build number in Xcode: TaDa project › TaDa target › General › Identity › Build. Bump Version as `docs/versioning.md` says.
 2. Run:
    ```bash
    scripts/make-beta-dmg.sh

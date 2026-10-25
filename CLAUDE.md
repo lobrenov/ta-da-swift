@@ -9,6 +9,7 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - Architecture (layers, files, runtime, window, editors, shortcuts): `docs/architecture.md`. Schema: `docs/file-format.md` (the source of truth; update it with any format change).
 - Obsidian plugin: its own repo, `~/Projects/ta-da-obsidian`, a TypeScript port of TaDaCore kept in step by the conformance fixtures (Obsidian in `docs/architecture.md`).
 - Backlog: `docs/backlog.md`. Finished build plans are in `docs/archive/build plans/`, listed in its `completed plans.md`. To complete or archive a plan, move it there and add its line to `completed plans.md`.
+- Versioning (app and Obsidian plugin): `docs/versioning.md`.
 
 ## Commands
 - Core tests: `swift test --package-path Packages/TaDaCore`. On iOS, from `Packages/TaDaCore`: `xcodebuild -scheme TaDaCore -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test`.
