@@ -72,9 +72,11 @@ private struct CheckboxMenuRow: View {
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(theme.color(\.accent))
             }
-            Text(verbatim: item.marker.map { "[\($0)]" } ?? "⌥⌘E")
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(theme.color(\.muted))
+            if let marker = item.marker {
+                Text(verbatim: "[\(marker)]")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(theme.color(\.muted))
+            }
         }
     }
 }

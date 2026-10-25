@@ -1,7 +1,7 @@
 // Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; ⌘O the quick switcher; File ▸ Convert to for the open or
 // picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
-// the caret is on, ⌥⌘E extract the caret's subtask to a task, ⌘P move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu;
+// the caret is on, Extract to Task for the caret's subtask, ⌘P move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu;
 // Format ▸ ⌘B/⌘I/⇧⌘H/⇧⌘S bold, italic, highlight, strikethrough in the Live editor.
 #if os(macOS)
 import SwiftUI
@@ -89,7 +89,6 @@ struct AppCommands: Commands {
             Button("Extract to Task") {
                 if let textView = editor?.textView { ExtractTask.perform(in: textView, at: textView.selectedRange().location, model: model) }
             }
-            .keyboardShortcut("e", modifiers: [.command, .option])
             .disabled(editor == nil)
             Button("Move…") { model.showMoveMenu() }
                 .keyboardShortcut("p")

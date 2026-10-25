@@ -1,5 +1,5 @@
 // Quick Entry's content: the type switch, the title, the property chips and Tags row on the model's draft, the file it
-// will write, and the keys and buttons in the footer. ⌘P, ⌘S and ⌘D open the chips' menus, as in the main window.
+// will write, and the keys and buttons in the footer. ⌘P, ⌘S, ⌘D and ⌘T open the chips' menus, as in the main window.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -54,6 +54,8 @@ struct QuickEntryView: View {
                     Button("Deadline") { openMenu(.date(.deadline)) }
                         .keyboardShortcut("d")
                 }
+                Button("Tags") { openMenu(.tags) }
+                    .keyboardShortcut("t")
             }
             .hidden()
         }
@@ -142,7 +144,8 @@ struct QuickEntryView: View {
 
     private var footer: some View {
         HStack(spacing: 14) {
-            let hints = draft.kind == .area ? [("esc", "Close")] : [("⌘P", "Move"), ("⌘S", "Due"), ("⌘D", "Deadline")]
+            let hints = draft.kind == .area ? [("⌘T", "Tags"), ("esc", "Close")]
+                : [("⌘P", "Move"), ("⌘S", "Due"), ("⌘D", "Deadline"), ("⌘T", "Tags")]
             ForEach(hints, id: \.0) { hint in
                 MenuKeyHint(key: hint.0, label: hint.1, theme: theme)
             }
@@ -166,7 +169,7 @@ struct QuickEntryView: View {
         .overlay(alignment: .top) { Hairline() }
     }
 
-    /// Opens a chip's menu, as the main window's ⌘P, ⌘S and ⌘D do.
+    /// Opens a chip's menu, as the main window's ⌘P, ⌘S, ⌘D and ⌘T do.
     private func openMenu(_ menu: AppModel.PropertyMenuRequest.Menu) {
         let path = AppModel.quickEntryDraftPath
         model.propertyMenuRequest = AppModel.PropertyMenuRequest(menu: menu, paths: [path], anchor: path, onChip: true)

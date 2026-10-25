@@ -44,7 +44,7 @@ struct HotkeysSettingsView: View {
                                        ("Add or complete a subtask", ["⌘L"]), ("Indent", ["⇥"]), ("Outdent", ["⇧⇥"])]
 
     static let quickEntryKeys: [KeyRow] = [("Create the file", ["↵"]), ("Create and open the file", ["⌘↵"]), ("Move", ["⌘P"]),
-                                           ("Due date", ["⌘S"]), ("Deadline", ["⌘D"]), ("Close", ["esc"])]
+                                           ("Due date", ["⌘S"]), ("Deadline", ["⌘D"]), ("Tags", ["⌘T"]), ("Close", ["esc"])]
 
     private func keyList(_ title: String, _ rows: [KeyRow]) -> some View {
         VStack(alignment: .leading, spacing: 8) {

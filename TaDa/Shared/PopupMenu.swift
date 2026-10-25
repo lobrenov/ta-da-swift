@@ -440,7 +440,7 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
                 }
             }
             .onTapGesture { model.pick(item) }
-            .id(index)
+            .id(RowID(index: index))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(item.title)
             .accessibilityValue(item.accessibilityValue)
@@ -454,7 +454,7 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
         if highlight == 0, model.sections.first?.label != nil {
             scroller.scrollTo(LabelID(section: 0), anchor: .top)
         } else {
-            scroller.scrollTo(highlight, anchor: anchor)
+            scroller.scrollTo(RowID(index: highlight), anchor: anchor)
         }
     }
 }
@@ -500,6 +500,11 @@ struct PopupField: View {
 
 private struct LabelID: Hashable {
     let section: Int
+}
+
+/// A row's place in all the items, apart from the `ForEach` offsets in each section.
+private struct RowID: Hashable {
+    let index: Int
 }
 
 extension View {
