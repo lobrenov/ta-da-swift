@@ -63,9 +63,16 @@ Each ends with its check passing, then a commit and a review.
 - Check: by hand; the created file matches the Mac's Quick Entry output for the same input.
 
 ### B4 — iPhone and docs
-- In Obsidian's drawer, the navigator's one-pane mode, and a bottom bar for Agenda, Projects and Files (`ObsL2Phone`).
+- In Obsidian's drawer, the navigator's one-pane mode, a top bar with back, Search and New task, and a bottom bar for Agenda and Projects (`ObsL2Phone`); Obsidian's drawer switcher opens Files.
 - Here: `docs/architecture.md` (an Obsidian section), `CLAUDE.md` (the plugin repo and its commands), `docs/backlog.md`; archive this plan. In `ta-da-obsidian`: `CLAUDE.md` and README.
 - Check: by hand on Obsidian for iPhone against the iCloud vault; nothing uses Node or Electron.
+
+### B5 — Agenda, Tasks and Tags views
+- Three views in place of the one navigator, each its own sidebar tab and drawer entry: Ta Da: Agenda (one pane: the strip and a day's or week's list), Ta Da: Tasks (two panes: search, Loose tasks, Logbook, Trash, areas and projects, and the list), Ta Da: Tags (two panes: search, the tag tree, and a tag's page, notes included). Each has its own icon, command, ribbon icon and Open on startup setting.
+- No Notes domain and no Tasks | Tags | Notes switch; Obsidian's file explorer covers notes. Search in Tasks and Tags finds tasks, projects and areas.
+- Each view has New task in its header, filled from what it shows, and follows the open file.
+- On a phone: Obsidian's drawer switcher picks the view; Tasks and Tags keep one pane with back to their own list; the Ta Da top and bottom bars go.
+- Check: by hand on desktop and iPhone; the boards `ObsL2Today` and `ObsL2Phone` are updated to the three views.
 
 ## Risks
 The navigator's size; keeping the navigator, file explorer and active file in step; the phone drawer layout. Obsidian's editor saves with LF, so editing a CRLF file in Obsidian converts it, as any edit there does; the header widget replaces Obsidian's Properties widget through CodeMirror, with no official API for it; two implementations of the format to keep in step (the conformance fixtures are the guard); Obsidian's link updater may rewrite frontmatter wholesale on rename, which Ta Da accepts.

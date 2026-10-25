@@ -214,3 +214,13 @@ On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a check
 | ⌫ or ⌘⌫ | Move the selected file, or the picked tasks, to the trash, while the list has the keyboard |
 | ⌫ in Attachments | Move the picked images to Trash (asking first when a live file embeds one) |
 | ⌘⌫ / ⌥⌘⌫ in Trash | Restore / delete forever the picked files |
+
+## Obsidian
+
+The Obsidian plugin (id `ta-da`) is its own repo, `ta-da-obsidian`, cloned beside this one (`~/Projects/ta-da-obsidian`). Its `src/core/` is a TypeScript port of TaDaCore's model, parsing, writing, index and queries, and of the editor fork's `MarkdownEngineSyntax`; it is kept in step by the conformance fixtures: `ConformanceExportTests` writes DesignVault's and `HomeVault`'s parse and query results and the write cases to `Packages/TaDaCore/Tests/TaDaCoreTests/Fixtures/Conformance/`, and the plugin's tests read them there.
+
+It reads the vault's markdown into its own `VaultIndex`, both layouts as `docs/file-format.md` says, except the old `.logbook/`, and reads `.trash/` for its Trash list. It writes by splicing lines, as the apps do: the open file through Obsidian's editor, other files through `Vault.process`, renames through `FileManager.renameFile`. It creates files in `Ta Da/` and daily and week notes in the folders its own settings name, and applies the apps' status rules, moving a reopened logged file out of the Logbook.
+
+On a phone, the navigator in Obsidian's drawer shows one pane at a time, with a top bar (back, Search, New task) and a bottom bar for Agenda and Projects.
+
+It doesn't log, move an old layout into `Ta Da/`, or show Calendar events and reminders, and its Trash is read only. Its layout, commands and rules are in its `CLAUDE.md`; what it does for users is in its `README.md`.
