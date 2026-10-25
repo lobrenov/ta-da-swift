@@ -25,7 +25,7 @@ struct FileMenuTests {
 
     @Test func everyFileCanBeRevealedInFinderWithoutAShortcut() async {
         let model = await folder.model()
-        #expect(titles("Ta Da/tasks/One.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Reveal in Finder", "Delete"])
+        #expect(titles("Ta Da/tasks/One.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Convert to Project…", "Reveal in Finder", "Delete"])
         #expect(titles("Ta Da/projects/Ta Da MVP.md", model) == ["Move", "Schedule", "Set Deadline…", "Tags…", "Reveal in Finder", "Delete"])
 
         let paths = ["Ta Da/tasks/One.md", "Ta Da/tasks/Two.md", "Ta Da/tasks/Three.md"]

@@ -89,8 +89,42 @@ private func exists(_ path: String, in folder: URL) -> Bool {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
         try writeFile("---\ntype: task\nstatus: Doing\n---\n", "Ta Da/tasks/T.md", in: folder)
-        let result = try vault.convert("Ta Da/tasks/T.md", to: .project, index: await vault.loadIndex(), today: today)
+        let result = try vault.convert("Ta Da/tasks/T.md", to: .area, index: await vault.loadIndex(), today: today)
         #expect(result.path == "Ta Da/tasks/T.md" && exists("Ta Da/tasks/T.md", in: folder))
+    }
+}
+
+@Test func aTaskBecomesAProjectAndItsSubtasksItsTasks() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("---\ntype: task\nstatus: Doing\nproject: \"[[Old]]\"\ncreatedDate: 2026-10-01\n---\nIntro\n- [x] Draft\n  - [ ] Check\n```\n- [ ] Code\n```\n- [/] Send\n",
+                      "Ta Da/tasks/Launch.md", in: folder)
+        try writeFile("---\ntype: task\nstatus: Not Started\n---\n", "Ta Da/tasks/Send.md", in: folder)
+        try writeFile("See [[Launch]].\n", "Links.md", in: folder)
+        let result = try vault.convert("Ta Da/tasks/Launch.md", to: .project, status: .doing, parent: .area("Work"),
+                                       index: await vault.loadIndex(), today: today)
+        #expect(result.path == "Ta Da/projects/Launch.md")
+        #expect(try vault.extractSubtasks(ofProject: result.path, today: today) == ["Ta Da/tasks/Draft.md", "Ta Da/tasks/Send 2.md"])
+        let project = try read(result.path, in: folder)
+        #expect(project
+            == "---\narea: \"[[Work]]\"\ntype: project\nstatus: Doing\nproject:\ncreatedDate: 2026-10-01\n---\nIntro\n```\n- [ ] Code\n```\n")
+        #expect(try read("Ta Da/tasks/Draft.md", in: folder)
+            == "---\ntype: task\nstatus: Done\nproject: \"[[Launch]]\"\ncreatedDate: 2026-10-12\ncompletedDate: 2026-10-12\n---\n- [ ] Check\n")
+        #expect(try read("Ta Da/tasks/Send 2.md", in: folder)
+            == "---\ntype: task\nstatus: Doing\nproject: \"[[Launch]]\"\ncreatedDate: 2026-10-12\n---\n")
+        #expect(try read("Links.md", in: folder) == "See [[Launch]].\n")
+    }
+}
+
+@Test func aTaskKeepsItsSubtasksUnlessAsked() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("---\ntype: task\nstatus: Doing\n---\n- [ ] Step\n", "Ta Da/tasks/T.md", in: folder)
+        let result = try vault.convert("Ta Da/tasks/T.md", to: .project, index: await vault.loadIndex(), today: today)
+        let project = try read(result.path, in: folder)
+        #expect(project == "---\ncreatedDate: 2026-10-12\ntype: project\nstatus: Not Started\n---\n- [ ] Step\n")
+        #expect(!exists("Ta Da/tasks/Step.md", in: folder))
+        #expect(try vault.convert(result.path, to: .task, index: await vault.loadIndex(), today: today).path == result.path)
     }
 }
 

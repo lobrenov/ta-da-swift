@@ -1,7 +1,7 @@
 // The file menu: a compact themed menu of file actions in a borderless panel, opened by a right-click on an area,
 // project, task or note. Rows add it with `.fileMenu(model, path:)`. A task's or project's menu starts with its status boxes. A note's menu (also its page's Note ▾) has Task…,
 // Project… and Area… to convert it, Tags… and Move to Folder… (a row's), Reveal in Finder and Move to Trash. Move, Schedule, Set Deadline…, Tags… (one file),
-// Reveal in Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Tags…,
+// Convert to Project… (one task), Reveal in Finder and Delete for tasks and projects; New Task and New Project in it, Open Area File, Tags…,
 // Reveal in Finder and Delete for an area; Restore, Reveal in Finder and Delete Forever in Trash.
 #if os(macOS)
 import SwiftUI
@@ -33,7 +33,7 @@ struct FileMenuAction: PopupMenuItem {
     let run: () -> Void
 
     /// Move (to a project or area for tasks, to an area for projects), Schedule, Set Deadline…, Tags… (only when the
-    /// menu acts on one file), Reveal in Finder and Delete for a file in the folder; Restore, Reveal in Finder and Delete Forever for one in `.trash/`. A
+    /// menu acts on one file), Convert to Project… (one task that isn't logged), Reveal in Finder and Delete for a file in the folder; Restore, Reveal in Finder and Delete Forever for one in `.trash/`. A
     /// right-click on a picked file acts on every picked file. Move, Schedule, Set Deadline… and Tags… open their menu at `point` (screen coordinates) in `window`, else under
     /// the row or the open file's chip.
     static func actions(for path: String, model: AppModel, at point: CGPoint? = nil, in window: NSWindow? = nil) -> [FileMenuAction] {
@@ -82,7 +82,13 @@ struct FileMenuAction: PopupMenuItem {
                                         systemImage: "trash", shortcut: "⌘⌫") {
                 Task { await model.moveToTrash(paths) }
             }
-            return (moved.isEmpty ? [] : [move]) + [schedule, deadline] + (paths.count == 1 ? [tags(path, model: model, at: point, in: window)] : []) + [reveal(paths, model: model), delete]
+            var convert: [FileMenuAction] = []
+            if paths.count == 1, let task = model.index[path], task.properties.kind == .task, !task.isLogged {
+                convert = [FileMenuAction(title: "Convert to Project…", systemImage: "checklist", shortcut: "") {
+                    model.convertRequest = AppModel.ConvertRequest(path: path, kind: .project)
+                }]
+            }
+            return (moved.isEmpty ? [] : [move]) + [schedule, deadline] + (paths.count == 1 ? [tags(path, model: model, at: point, in: window)] : []) + convert + [reveal(paths, model: model), delete]
         }
         let paths = model.trashSelection.contains(path) ? model.trashSelection : [path]
         return [

@@ -77,3 +77,10 @@ private func extract(_ marked: String) -> (SubtaskExtraction.Extract, String)? {
     #expect(e.body == "- [ ] B")
     #expect(rest == "\t- [ ] C\n")
 }
+
+@Test func extractAllTakesEverySubtaskAndLeavesTheRest() {
+    let (text, extracts) = SubtaskExtraction.extractAll(from: "- [ ] A\n- [x] B\n  - [ ] B1\n> - [ ] Quoted\nText\n- [-] C")
+    #expect(extracts.map(\.title) == ["A", "B", "C"])
+    #expect(extracts[1].body == "- [ ] B1")
+    #expect(text == "> - [ ] Quoted\nText\n")
+}

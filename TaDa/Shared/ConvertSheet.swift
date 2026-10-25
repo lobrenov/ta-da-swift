@@ -1,10 +1,11 @@
-// Converting a note to a task, project or area: a window sheet for `model.convertRequest` (ContentView shows it) with a
-// Task | Project | Area switch, status and parent menus (not for an area), where the file moves, the frontmatter lines
-// added, and what happens to its checkboxes and links. Convert writes it and opens the file in Tasks.
+// Converting a note to a task, project or area, or a task to a project: a window sheet for `model.convertRequest`
+// (ContentView shows it) with a Task | Project | Area switch (not for a task), status and parent menus (not for an area),
+// where the file moves, the frontmatter lines added, what happens to its checkboxes and links, and for a task whether
+// its subtasks become the project's tasks. Convert writes it and opens the file in Tasks.
 import SwiftUI
 import TaDaCore
 
-/// What converting a note will do, worked out from its text.
+/// What converting a note, or a task to a project, will do, worked out from its text.
 struct ConvertPreview: Equatable {
     struct Line: Hashable {
         enum Change { case kept, added, removed }
@@ -25,9 +26,9 @@ struct ConvertPreview: Equatable {
 
     /// `text` is the note's text as it will be converted (the open document's, unsaved edits included); `taken` holds the
     /// filenames the name is numbered against (the folder's, and for a project every project's); `folderLinks` counts the
-    /// links written with the note's path.
+    /// links written with the note's path; `extracted` counts the subtasks that become the project's tasks.
     init(note: Item, text: String, kind: Item.Kind, status: Status, parent: Parent?, today: LocalDate,
-         taken: Set<String>, folderLinks: Int) {
+         taken: Set<String>, folderLinks: Int, extracted: Int = 0) {
         let folder = kind == .area ? Vault.areaFolder : kind == .project ? Vault.projectFolder : Vault.taskFolder
         from = note.path
         to = folder + "/" + Vault.movedName(of: note.path, existing: taken)
@@ -49,6 +50,8 @@ struct ConvertPreview: Equatable {
         let boxes = parsed.checkboxes.count { $0.state != .icon }, (done, total) = parsed.subtasks
         subtasks = switch kind {
         case _ where boxes == 0: "It has no checkboxes."
+        case .project where extracted > 0:
+            "\(extracted == 1 ? "1 subtask becomes a task" : "\(extracted) subtasks become tasks") under the project and \(extracted == 1 ? "leaves" : "leave") its file"
         case .area: "An area counts no subtasks; its checkboxes stay as written."
         case .task: "\(boxes == 1 ? "1 checkbox becomes its subtask" : "\(boxes) checkboxes become its subtasks") · \(done)/\(total)"
         default: "\(boxes == 1 ? "1 checkbox stays" : "\(boxes) checkboxes stay") the project file’s own subtasks · \(done)/\(total)"
@@ -67,9 +70,14 @@ struct ConvertSheet: View {
     @State private var parent: Parent?
     @State private var text: String?
     @State private var taken: [Item.Kind: Set<String>]?
+    @State private var extractsSubtasks = true
+    /// The subtasks a task's conversion can make the project's tasks.
+    @State private var subtaskCount = 0
     @Environment(\.theme) private var theme
 
     private var note: Item? { model.index[request.path] }
+    /// Converting a task, which can only become a project.
+    private var isTask: Bool { note?.properties.kind == .task }
 
     private var kindName: String {
         switch kind {
@@ -84,7 +92,7 @@ struct ConvertSheet: View {
             Text("Convert “\(Item.title(ofPath: request.path))” to \(kind == .area ? "an area" : "a \(kindName.lowercased())")")
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(theme.color(\.strong))
-            typeSwitch
+            if !isTask { typeSwitch }
             if kind != .area {
                 HStack(spacing: 6) {
                     statusMenu
@@ -93,8 +101,14 @@ struct ConvertSheet: View {
             }
             if let note, let text, let taken {
                 let preview = ConvertPreview(note: note, text: text, kind: kind, status: status, parent: parent, today: model.today,
-                                             taken: taken[kind] ?? [], folderLinks: folderLinks(to: note))
+                                             taken: taken[kind] ?? [], folderLinks: folderLinks(to: note),
+                                             extracted: extractsSubtasks ? subtaskCount : 0)
                 details(preview)
+            }
+            if subtaskCount > 0 {
+                Toggle("Make its \(subtaskCount == 1 ? "subtask a task" : "\(subtaskCount) subtasks tasks") under the project",
+                       isOn: $extractsSubtasks)
+                    .toggleStyle(.checkbox)
             }
             HStack(spacing: 8) {
                 Spacer()
@@ -111,7 +125,16 @@ struct ConvertSheet: View {
         .foregroundStyle(theme.color(\.fg))
         .padding(20)
         .frame(width: 480)
-        .onAppear { kind = request.kind }
+        .onAppear {
+            kind = request.kind
+            // A task starts with its status and its area (its project's, when it's in one).
+            if let note, isTask {
+                status = note.properties.status
+                let parent = model.index.parent(of: note)
+                let area = parent?.properties.kind == .project ? parent.flatMap { model.index.parent(of: $0) } : parent
+                self.parent = area.map { .area($0.title) }
+            }
+        }
         .onChange(of: kind) {
             if kind == .project, case .project = parent { parent = nil }
             if !Status.choices(for: kind).contains(status) { status = .notStarted }
@@ -291,12 +314,14 @@ struct ConvertSheet: View {
         }.value
         text = read
         taken = names
+        if isTask, let read { subtaskCount = SubtaskExtraction.extractAll(from: FrontmatterSplitter.split(read).body).extracts.count }
     }
 
     private func convert() {
         let (path, kind, status, parent) = (request.path, kind, status, kind == .area ? nil : parent)
+        let extracting = isTask && extractsSubtasks
         model.convertRequest = nil
-        Task { await model.convert(path, to: kind, status: status, parent: parent) }
+        Task { await model.convert(path, to: kind, status: status, parent: parent, extractingSubtasks: extracting) }
     }
 }
 #endif

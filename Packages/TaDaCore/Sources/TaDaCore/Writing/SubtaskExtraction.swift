@@ -57,6 +57,21 @@ public enum SubtaskExtraction {
                        range: NSRange(location: line.location, length: end - line.location))
     }
 
+    /// Every subtask in `text` extracted, first to last, each with the lines indented under it (so a subtask under
+    /// another goes with its parent's), and the text left.
+    public static func extractAll(from text: String) -> (text: String, extracts: [Extract]) {
+        var text = text, extracts: [Extract] = [], location = 0
+        while location < (text as NSString).length {
+            if let extract = extract(lineAt: location, in: text) {
+                extracts.append(extract)
+                text = (text as NSString).replacingCharacters(in: extract.range, with: "")
+            } else {
+                location = NSMaxRange((text as NSString).lineRange(for: NSRange(location: location, length: 0)))
+            }
+        }
+        return (text, extracts)
+    }
+
     private static func isIndent(_ character: Character) -> Bool { character == " " || character == "\t" }
 
     /// The columns a line's leading spaces and tabs take, a tab moving to the next multiple of 4.

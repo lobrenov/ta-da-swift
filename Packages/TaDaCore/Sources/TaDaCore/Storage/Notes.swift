@@ -73,12 +73,14 @@ extension Vault {
         return try move(path, into: folder, index: index)
     }
 
-    /// Converts a note to a task, project or area: splices the keys in (`NoteConversion.text`), then moves the file to
-    /// `tasks/`, `projects/` or `areas/`, numbering a name that's taken there or, for a project, by another project, logged
-    /// or not; links to it follow. When the move fails, the note's text is put back. Returns its new path.
+    /// Converts a note to a task, project or area, or a task to a project: splices the keys in (`NoteConversion.text`),
+    /// then moves the file to `tasks/`, `projects/` or `areas/`, numbering a name that's taken there or, for a project, by
+    /// another project, logged or not; links to it follow. When the move fails, the file's text is put back. Returns its
+    /// new path.
     public func convert(_ path: String, to kind: Item.Kind, status: Status = .notStarted, parent: Parent? = nil,
                         index: VaultIndex, today: LocalDate) throws -> Relinked {
-        guard kind != .note, index[path]?.properties.kind == .note else { return (path, [], []) }
+        let source = index[path]?.properties.kind
+        guard kind != .note, source == .note || source == .task && kind == .project else { return (path, [], []) }
         var original = ""
         _ = try update(path) { text in
             original = text
@@ -91,6 +93,23 @@ extension Vault {
             _ = try? CoordinatedFileIO.update(url(for: path)) { _ in original }
             throw error
         }
+    }
+
+    /// Makes each subtask in a project's body a task under it (`SubtaskExtraction.extractAll`); once they're all made,
+    /// their lines leave the project's file. When one can't be made, the lines all stay. Returns the tasks' paths.
+    @discardableResult
+    public func extractSubtasks(ofProject path: String, today: LocalDate) throws -> [String] {
+        let extracts = SubtaskExtraction.extractAll(from: FrontmatterSplitter.split(try read(path)).body).extracts
+        guard !extracts.isEmpty else { return [] }
+        let tasks = try extracts.map { extract in
+            try create(SubtaskExtraction.taskText(extract, project: Item.title(ofPath: path), today: today),
+                       in: Self.taskFolder, title: extract.title)
+        }
+        _ = try update(path) { text in
+            let split = FrontmatterSplitter.split(text)
+            return split.block + SubtaskExtraction.extractAll(from: split.body).text
+        }
+        return tasks
     }
 
     /// Moves a file and points the links to it at its new path, and at its new title if that changed and its old title

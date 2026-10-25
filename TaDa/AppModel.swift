@@ -2261,11 +2261,24 @@ import UIKit
         }
     }
 
-    /// Converts a note to a task, project or area, filed under `parent`, and opens it in Tasks.
-    func convert(_ path: String, to kind: Item.Kind, status: Status = .notStarted, parent: Parent? = nil) async {
+    /// Converts a note to a task, project or area, or a task to a project (its subtasks to its tasks with
+    /// `extractingSubtasks`), filed under `parent`, and opens it in Tasks.
+    func convert(_ path: String, to kind: Item.Kind, status: Status = .notStarted, parent: Parent? = nil,
+                 extractingSubtasks: Bool = false) async {
         guard let newPath = await moveFiles(path, isFolder: false, failure: "convert “\(Item.title(ofPath: path))”", { vault, index, today in
             try vault.convert(path, to: kind, status: status, parent: parent, index: index, today: today)
         }), index[newPath]?.properties.kind == kind else { return }
+        if extractingSubtasks, let vault {
+            // After the move, so a failure here leaves the project in place, its subtasks still in its file.
+            let today = today
+            do {
+                _ = try await Self.run { try vault.extractSubtasks(ofProject: newPath, today: today) }
+            } catch {
+                errorMessage = Self.couldNot("make the subtasks of “\(Item.title(ofPath: newPath))” its tasks", error)
+            }
+            await refresh()
+            if let document, document.path == newPath { await reload(document, from: vault) }
+        }
         openLink(to: newPath)
     }
 
