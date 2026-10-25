@@ -460,7 +460,6 @@ import UIKit
         static let foldedTags = "foldedTags"
         static let foldedFolders = "foldedFolders"
         static let lastLogged = "lastLogged"
-        static let moveDeclined = "moveDeclined"
         static let quickEntryHotkey = "quickEntryHotkey"
         static let browserWidth = "browserWidth"
         static let groupings = "groupings"
@@ -562,8 +561,6 @@ import UIKit
         attachments = await Self.run { vault.attachmentPaths() }
         await reloadAttachmentGroups(vault, imagePaths: attachments)
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
-        oldLayoutFolders = await Self.run { vault.oldLayoutFolders().map(\.from) }
-        moveDeclined = Self.moveDeclined(folder, in: defaults)
         state = .ready
         #if os(iOS)
         await Self.run { vault.downloadPlaceholders() }
@@ -610,8 +607,7 @@ import UIKit
     /// watcher fires and when the app becomes active. Calls during a refresh fold into one more pass, so
     /// each call returns after a pass that started after it.
     func refresh() async {
-        // `moveIntoHome()` refreshes once it's done.
-        guard let vault, !isMovingIntoHome else { return }
+        guard let vault else { return }
         if let refreshing {
             refreshAgain = true
             await refreshing.value
@@ -641,8 +637,6 @@ import UIKit
                 await reloadAttachmentGroups(vault, imagePaths: attachments)
                 guard epoch == attachmentEpoch else { continue }
                 attachmentSelection.formIntersection((attachmentGroups.candidates + attachmentGroups.inUse).map(\.id))
-                let old = await Self.run { vault.oldLayoutFolders().map(\.from) }
-                if old != oldLayoutFolders { oldLayoutFolders = old }
                 multiSelection = multiSelection.filter { index[$0] != nil }
             } while refreshAgain
         }
@@ -1227,14 +1221,12 @@ import UIKit
         case data(Data, extension: String)
     }
 
-    /// Saves a pasted or dropped image into `Ta Da/attachments/`, numbering a name taken there or in the old
-    /// `attachments/`, and returns its `![[ ]]`. An image
+    /// Saves a pasted or dropped image into `Ta Da/attachments/`, numbering a name taken there, and returns its `![[ ]]`. An image
     /// already in the folder isn't copied. The file is written off the main actor, in order (`savingImage` finishes
     /// when they all are). Nil when it can't be saved, with the reason in `errorMessage`.
     func embed(_ image: PastedImage) -> String? {
         guard let vault else { return nil }
-        let folders = [Vault.attachmentFolder.lowercased(), Vault.legacyAttachmentFolder]
-        let taken = Set(attachments.filter { folders.contains(Vault.folder(of: $0).lowercased()) }.map { String($0.split(separator: "/").last ?? "") })
+        let taken = Set(attachments.filter { Vault.folder(of: $0).lowercased() == Vault.attachmentFolder.lowercased() }.map { String($0.split(separator: "/").last ?? "") })
         let path: String
         var save: (@Sendable () throws -> Void)?
         switch image {
@@ -1579,67 +1571,6 @@ import UIKit
         return paths[(i + 1)...].first { !removed.contains($0) } ?? paths[..<i].last { !removed.contains($0) }
     }
 
-    // MARK: Moving into Ta Da/
-
-    /// The old layout's top-level folders that hold files (`Vault.oldLayoutFolders()`); empty once the folder is moved.
-    private(set) var oldLayoutFolders: [String] = []
-    /// The move question was answered (Move or Not Now) for this folder on this device.
-    private(set) var moveDeclined = false
-    /// Whether `moveIntoHome()` is running.
-    private(set) var isMovingIntoHome = false
-
-    /// Whether to ask once about moving the old layout into `Ta Da/`: not while logging, moving or showing an error.
-    var offersMove: Bool {
-        state == .ready && !oldLayoutFolders.isEmpty && !moveDeclined && !isMovingIntoHome && !isLogging && errorMessage == nil
-    }
-
-    /// Answers the move question (Move or Not Now) for this folder on this device. Settings ▸ Vault still offers the move.
-    func answerMove() {
-        guard let folder = vault?.root else { return }
-        moveDeclined = true
-        Self.setMoveDeclined(folder, in: defaults)
-    }
-
-    static func moveDeclined(_ folder: URL, in defaults: any SettingsStore) -> Bool {
-        defaults.dictionary(forKey: Keys.moveDeclined)?[folder.resolvingSymlinksInPath().path] as? Bool == true
-    }
-
-    static func setMoveDeclined(_ folder: URL, in defaults: any SettingsStore) {
-        var folders = defaults.dictionary(forKey: Keys.moveDeclined) ?? [:]
-        folders[folder.resolvingSymlinksInPath().path] = true
-        defaults.set(folders, forKey: Keys.moveDeclined)
-    }
-
-    /// Saves the open file, moves the old layout's folders into `Ta Da/` (`Vault.moveIntoHome`), follows the moved files,
-    /// refreshes and logs if due. Refreshing and logging wait while it runs. Files that couldn't be moved or relinked
-    /// are named in `errorMessage`.
-    func moveIntoHome() async {
-        guard let vault, !isMovingIntoHome, !isLogging else { return }
-        isMovingIntoHome = true
-        #if os(iOS)
-        let background = UIApplication.shared.beginBackgroundTask(withName: "Move into Ta Da")
-        defer { UIApplication.shared.endBackgroundTask(background) }
-        #endif
-        if let document { await save(document) }
-        pendingSave?.cancel()
-        let index = index
-        let result = await Self.run { vault.moveIntoHome(index: index) }
-        let loaded = await Self.run { result.moved.values.compactMap { try? vault.load($0) } }
-        updateIndex { index in
-            for old in result.moved.keys { index.remove(old) }
-            for item in loaded + result.relinked { index.update(item) }
-        }
-        for (old, new) in result.moved { followPointers(old, to: new) }
-        if let document, result.moved.values.contains(document.path) { document.isRemovedOnDisk = false }
-        let problems = [(result.notMoved, "couldn’t be moved"), (result.failed, "couldn’t have their links updated")]
-            .filter { !$0.0.isEmpty }
-            .map { paths, what in "\(paths.count == 1 ? "1 file" : "\(paths.count) files") \(what): \(paths.prefix(5).map { Item.title(ofPath: $0) }.formatted(.list(type: .and)))." }
-        if !problems.isEmpty { errorMessage = (problems + ["Try again from Settings ▸ Vault."]).joined(separator: " ") }
-        isMovingIntoHome = false
-        await refresh()
-        await logIfDue()
-    }
-
     // MARK: Logbook
 
     /// Logs the files completed before today, once a day: when the folder opens or the day changes. Logged files reopened
@@ -1647,7 +1578,7 @@ import UIKit
     /// device has since logged.
     /// Each folder's day is kept once its logging succeeds; after a failure the next open or day change tries again.
     func logIfDue() async {
-        guard state == .ready, !isLogging, !isMovingIntoHome, let folder = vault?.root,
+        guard state == .ready, !isLogging, let folder = vault?.root,
               Self.lastLogged(folder, in: defaults) != today else { return }
         isLogging = true
         defer { isLogging = false }

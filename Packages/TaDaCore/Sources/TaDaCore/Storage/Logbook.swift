@@ -1,16 +1,14 @@
 import Foundation
 
-/// Logging moves completed (Done or Cancelled) tasks and projects into `Ta Da/Logbook/<yyyy-MM>/` by their
-/// `completedDate`. Files in the old `.logbook/` count as logged too.
+/// Logging moves completed (Done or Cancelled) tasks and projects into `Ta Da/logbook/<yyyy-MM>/` by their
+/// `completedDate`.
 /// Reopening a logged file moves it back to `tasks/` or `projects/`, and a task brings back its logged project as Doing.
 /// A project moved either way is numbered when another project, live or logged, has its title. Areas are never logged.
 extension Vault {
     /// Logged files: completed tasks and projects, in a folder per month.
-    public static let logbookFolder = home + "/Logbook"
-    /// The old layout's Logbook, hidden at the top level.
-    public static let legacyLogbookFolder = ".logbook"
+    public static let logbookFolder = home + "/logbook"
 
-    /// `Ta Da/Logbook/2026-10` for a file completed in October 2026.
+    /// `Ta Da/logbook/2026-10` for a file completed in October 2026.
     public static func logbookFolder(for date: LocalDate) -> String {
         "\(logbookFolder)/" + String(format: "%04d-%02d", date.year, date.month)
     }

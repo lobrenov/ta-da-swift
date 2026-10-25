@@ -27,7 +27,7 @@ private func uses(_ files: [String: String], images: [String], in folder: URL) a
 @Test func eachCleanUpReasonIsTold() async throws {
     try await withTemporaryFolder { folder in
         let files = [
-            "Ta Da/Logbook/2026-09/Logged.md": note(embedding: "logged.png", "both.png"),
+            "Ta Da/logbook/2026-09/Logged.md": note(embedding: "logged.png", "both.png"),
             ".trash/Trashed.md": note(embedding: "trashed.png", "both.png"),
             "Ta Da/tasks/Live.md": note(embedding: "live.png", "gone.png"),
         ]
@@ -48,7 +48,7 @@ private func uses(_ files: [String: String], images: [String], in folder: URL) a
 @Test func aLiveEmbedKeepsAnImageInUseAlongsideLoggedAndTrashedOnes() async throws {
     try await withTemporaryFolder { folder in
         let files = [
-            "Ta Da/Logbook/2026-09/Logged.md": note(embedding: "a.png"),
+            "Ta Da/logbook/2026-09/Logged.md": note(embedding: "a.png"),
             ".trash/Trashed.md": note(embedding: "a.png"),
             "Ta Da/tasks/Live.md": note(embedding: "a.png"),
         ]
@@ -140,12 +140,12 @@ private func uses(_ files: [String: String], images: [String], in folder: URL) a
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
         try writeFile("x", "Ta Da/attachments/a.png", in: folder)
-        for path in ["Ta Da/tasks/.Waiting.md.icloud", ".trash/.Binned.md.icloud", "Ta Da/Logbook/2026-09/.Old.md.icloud",
+        for path in ["Ta Da/tasks/.Waiting.md.icloud", ".trash/.Binned.md.icloud", "Ta Da/logbook/2026-09/.Old.md.icloud",
                      ".other/.Hidden.md.icloud", "Ta Da/attachments/.b.png.icloud"] {
             try writeFile("x", path, in: folder)
         }
         let groups = await vault.attachmentGroups(index: await vault.loadIndex(), trashed: [])
-        #expect(groups.pendingFiles == [".trash/Binned.md", "Ta Da/Logbook/2026-09/Old.md", "Ta Da/tasks/Waiting.md"])
+        #expect(groups.pendingFiles == [".trash/Binned.md", "Ta Da/logbook/2026-09/Old.md", "Ta Da/tasks/Waiting.md"])
     }
 }
 

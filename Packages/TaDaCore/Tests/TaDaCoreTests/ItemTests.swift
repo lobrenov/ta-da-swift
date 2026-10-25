@@ -65,15 +65,15 @@ func itemHasNoteWhenTheBodyHasMoreThanCheckboxes(body: String, hasNote: Bool) th
 func untypedFilesAreNotesOnlyAtNotePaths(_ text: String) {
     #expect(Item(parsing: text, path: "x.md")?.properties.kind == .note)
     #expect(Item(parsing: text, path: "Meetings/x.md")?.properties.kind == .note)
-    #expect(Item(parsing: text, path: "tasks/x.md") == nil)
+    #expect(Item(parsing: text, path: "Ta Da/tasks/x.md") == nil)
 }
 
 @Test func notePaths() {
-    for path in ["Note.md", "A/B/Note.MD", "Meetings/tasks/Note.md", ".trash/Note.md", ".trash/Meetings/Note.md"] {
+    for path in ["Note.md", "A/B/Note.MD", "Meetings/tasks/Note.md", "tasks/Note.md", "attachments/Note.md", ".trash/Note.md", ".trash/Meetings/Note.md"] {
         #expect(Item.isNotePath(path), "\(path)")
     }
-    for path in ["tasks/Note.md", "Projects/Note.md", "areas/x/Note.md", "attachments/Note.md", ".logbook/2026-10/Note.md",
-                 ".obsidian/Note.md", "A/.hidden/Note.md", ".Note.md", "Note.txt", ".trash/attachments/Note.md"] {
+    for path in ["Ta Da/Note.md", "ta da/tasks/Note.md", "Ta Da/logbook/2026-10/Note.md",
+                 ".obsidian/Note.md", "A/.hidden/Note.md", ".Note.md", "Note.txt", ".trash/Ta Da/Note.md"] {
         #expect(!Item.isNotePath(path), "\(path)")
     }
 }

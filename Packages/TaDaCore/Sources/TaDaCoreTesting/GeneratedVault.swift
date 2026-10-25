@@ -18,7 +18,7 @@ public enum GeneratedVault {
         for (i, title) in projects.enumerated() {
             var fm = ["type: project", "status: \(i % 7 == 0 ? "Done" : i % 2 == 0 ? "Doing" : i % 10 == 1 ? "Ongoing" : "Not Started")", "area: Area \(i % 5)"]
             if i % 3 == 0 { fm.append("deadline: \(today.adding(days: random.next(in: -10...90)))") }
-            files.append(("projects/\(title).md", file(fm, "The \(title.lowercased()) project.\n\nNotes and context for it.\n")))
+            files.append(("Ta Da/projects/\(title).md", file(fm, "The \(title.lowercased()) project.\n\nNotes and context for it.\n")))
         }
 
         for n in 1...(items - projectCount) {
@@ -47,7 +47,7 @@ public enum GeneratedVault {
                 body += "\n" + (0..<subtasks).map { "- [\(random.next(in: 0...2) == 0 ? "x" : " ")] Step \($0 + 1)\n" }.joined()
             }
             if n > 1, random.next(in: 0...9) == 0 { body += "\nSee [[Task \(String(format: "%04d", n - 1))]].\n" }
-            let folder = n % 10 == 0 ? "Areas/Area \(n % 5)/tasks" : "tasks"
+            let folder = n % 10 == 0 ? "Areas/Area \(n % 5)/tasks" : "Ta Da/tasks"
             files.append(("\(folder)/\(title).md", file(fm, body)))
         }
 

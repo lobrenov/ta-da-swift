@@ -150,15 +150,15 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
 
 @Test func updateReparsesTheChangedFile() async throws {
     try await withTemporaryFolder { folder in
-        try writeFile(task, "tasks/A.md", in: folder)
+        try writeFile(task, "Ta Da/tasks/A.md", in: folder)
         let vault = Vault(root: folder)
-        let item = try vault.update("tasks/A.md") { Completion.toggle(.notStarted, in: $0, today: LocalDate("2026-10-03")!) }
+        let item = try vault.update("Ta Da/tasks/A.md") { Completion.toggle(.notStarted, in: $0, today: LocalDate("2026-10-03")!) }
         #expect(item?.properties.status == .done)
         #expect(item?.properties.completedDate == LocalDate("2026-10-03"))
-        #expect(try vault.read("tasks/A.md") == "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\n---\n")
-        #expect(try vault.update("tasks/A.md") { _ in "no longer a task" } == nil)
-        #expect(vault.modificationDate(of: "tasks/A.md") != nil)
-        #expect(vault.modificationDate(of: "tasks/missing.md") == nil)
+        #expect(try vault.read("Ta Da/tasks/A.md") == "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\n---\n")
+        #expect(try vault.update("Ta Da/tasks/A.md") { _ in "no longer a task" } == nil)
+        #expect(vault.modificationDate(of: "Ta Da/tasks/A.md") != nil)
+        #expect(vault.modificationDate(of: "Ta Da/tasks/missing.md") == nil)
     }
 }
 

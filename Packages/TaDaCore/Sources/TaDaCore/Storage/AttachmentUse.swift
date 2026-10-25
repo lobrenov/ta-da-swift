@@ -175,8 +175,7 @@ extension Vault {
         return size.int64Value
     }
 
-    /// Markdown files iCloud Drive hasn't downloaded yet, by the path they'll have, in the folder, `.trash/` and the
-    /// old `.logbook/`.
+    /// Markdown files iCloud Drive hasn't downloaded yet, by the path they'll have, in the folder and `.trash/`.
     func pendingMarkdownPaths() -> [String] {
         guard let files = FileManager.default.enumerator(
             at: root, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsPackageDescendants]
@@ -186,7 +185,7 @@ extension Vault {
         for case let url as URL in files where url.lastPathComponent.hasPrefix(".") {
             let components = url.standardizedFileURL.pathComponents.dropFirst(rootComponents)
             if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
-                if ![Self.trashFolder, Self.legacyLogbookFolder].contains(components.joined(separator: "/")) { files.skipDescendants() }
+                if components.joined(separator: "/") != Self.trashFolder { files.skipDescendants() }
                 continue
             }
             guard let original = Self.placeholderOriginal(url.lastPathComponent), original.lowercased().hasSuffix(".md") else { continue }

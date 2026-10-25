@@ -2,7 +2,7 @@ import Foundation
 
 /// Every Ta Da item in the vault, held in memory. Files are the only truth; this is built at launch
 /// and patched as files change. Each patch touches only the changed item's entries in the maps.
-/// Logged files (in `.logbook/`) are held too: links to them resolve, but the lists of tasks, projects and areas, the
+/// Logged files (in `Ta Da/logbook/`) are held too: links to them resolve, but the lists of tasks, projects and areas, the
 /// files filed under a parent, and the tag map leave them out.
 public struct VaultIndex: Sendable {
     public private(set) var items: [String: Item] = [:]

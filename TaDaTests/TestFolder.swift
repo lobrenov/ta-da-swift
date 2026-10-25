@@ -29,7 +29,7 @@ final class TestFolder {
     }
 
     /// A model on the folder on 3 October 2026 unless `today` is given, with `path` selected and loaded. Unless `logging`,
-    /// the folder counts as logged today, so opening it moves nothing to `.logbook/`.
+    /// the folder counts as logged today, so opening it moves nothing to `Ta Da/logbook/`.
     @MainActor
     func model(today: LocalDate = LocalDate("2026-10-03")!, selecting path: String? = nil, logging: Bool = false) async -> AppModel {
         if !logging { AppModel.setLastLogged(url, to: today, in: defaults) }

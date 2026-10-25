@@ -47,7 +47,7 @@ private func exists(_ path: String, in folder: URL) -> Bool {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
         try writeFile("---\ntags: []\n---\nAgenda\n", "Meetings/Ark.md", in: folder)
-        try writeFile("---\ntype: project\nstatus: Done\n---\n", "Ta Da/Logbook/2026-09/Ark.md", in: folder)
+        try writeFile("---\ntype: project\nstatus: Done\n---\n", "Ta Da/logbook/2026-09/Ark.md", in: folder)
         try writeFile("See [[Meetings/Ark|the call]], [[Ark#Agenda]] and [[Meetings/Ark.md]].\n", "Links.md", in: folder)
         let result = try vault.convert("Meetings/Ark.md", to: .project, index: await vault.loadIndex(), today: today)
         #expect(result.path == "Ta Da/projects/Ark 2.md" && result.failed.isEmpty)

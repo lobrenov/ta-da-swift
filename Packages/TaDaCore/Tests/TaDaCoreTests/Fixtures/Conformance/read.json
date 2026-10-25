@@ -176,53 +176,6 @@
         },
         {
           "item" : {
-            "area" : null,
-            "checkboxes" : [
-              {
-                "column" : 3,
-                "lineIndex" : 2,
-                "marker" : " ",
-                "state" : "open"
-              }
-            ],
-            "completedDate" : null,
-            "createdDate" : null,
-            "deadline" : null,
-            "dueDate" : null,
-            "embeds" : [
-
-            ],
-            "hasNote" : true,
-            "isLogged" : false,
-            "isNotePath" : true,
-            "kind" : "note",
-            "links" : [
-
-            ],
-            "path" : "notes/Not a task.md",
-            "project" : null,
-            "repeat" : null,
-            "status" : "Not Started",
-            "subtasks" : {
-              "done" : 0,
-              "total" : 1
-            },
-            "summary" : "This note has no Ta Da frontmatter, so Ta Da ignores it, even though it contains a checklist.",
-            "tags" : [
-
-            ],
-            "tagUses" : [
-
-            ],
-            "title" : "Not a task",
-            "warnings" : [
-
-            ]
-          },
-          "path" : "notes/Not a task.md"
-        },
-        {
-          "item" : {
             "area" : {
               "alias" : null,
               "heading" : null,
@@ -245,7 +198,7 @@
             "links" : [
 
             ],
-            "path" : "projects/Atlas Billing.md",
+            "path" : "Ta Da/projects/Atlas Billing.md",
             "project" : null,
             "repeat" : null,
             "status" : "Doing",
@@ -265,7 +218,7 @@
 
             ]
           },
-          "path" : "projects/Atlas Billing.md"
+          "path" : "Ta Da/projects/Atlas Billing.md"
         },
         {
           "item" : {
@@ -287,7 +240,7 @@
             "links" : [
 
             ],
-            "path" : "projects/End of year reviews.md",
+            "path" : "Ta Da/projects/End of year reviews.md",
             "project" : null,
             "repeat" : null,
             "status" : "Doing",
@@ -307,7 +260,7 @@
 
             ]
           },
-          "path" : "projects/End of year reviews.md"
+          "path" : "Ta Da/projects/End of year reviews.md"
         },
         {
           "item" : {
@@ -333,7 +286,7 @@
             "links" : [
 
             ],
-            "path" : "projects/Game Jam - Starfall.md",
+            "path" : "Ta Da/projects/Game Jam - Starfall.md",
             "project" : null,
             "repeat" : null,
             "status" : "Doing",
@@ -353,7 +306,7 @@
 
             ]
           },
-          "path" : "projects/Game Jam - Starfall.md"
+          "path" : "Ta Da/projects/Game Jam - Starfall.md"
         },
         {
           "item" : {
@@ -379,7 +332,7 @@
             "links" : [
 
             ],
-            "path" : "projects/Sell the Kombi.md",
+            "path" : "Ta Da/projects/Sell the Kombi.md",
             "project" : null,
             "repeat" : null,
             "status" : "Doing",
@@ -399,7 +352,7 @@
 
             ]
           },
-          "path" : "projects/Sell the Kombi.md"
+          "path" : "Ta Da/projects/Sell the Kombi.md"
         },
         {
           "item" : {
@@ -425,7 +378,7 @@
             "links" : [
 
             ],
-            "path" : "projects/Ta Da MVP.md",
+            "path" : "Ta Da/projects/Ta Da MVP.md",
             "project" : null,
             "repeat" : null,
             "status" : "Doing",
@@ -445,7 +398,7 @@
 
             ]
           },
-          "path" : "projects/Ta Da MVP.md"
+          "path" : "Ta Da/projects/Ta Da MVP.md"
         },
         {
           "item" : {
@@ -467,7 +420,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Agenda view for Upcoming.md",
+            "path" : "Ta Da/tasks/Agenda view for Upcoming.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -494,7 +447,7 @@
               }
             ]
           },
-          "path" : "tasks/Agenda view for Upcoming.md"
+          "path" : "Ta Da/tasks/Agenda view for Upcoming.md"
         },
         {
           "item" : {
@@ -516,7 +469,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Book a roadworthy for the Kombi.md",
+            "path" : "Ta Da/tasks/Book a roadworthy for the Kombi.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -543,7 +496,7 @@
               }
             ]
           },
-          "path" : "tasks/Book a roadworthy for the Kombi.md"
+          "path" : "Ta Da/tasks/Book a roadworthy for the Kombi.md"
         },
         {
           "item" : {
@@ -565,7 +518,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Build the sidebar domains.md",
+            "path" : "Ta Da/tasks/Build the sidebar domains.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -592,7 +545,7 @@
               }
             ]
           },
-          "path" : "tasks/Build the sidebar domains.md"
+          "path" : "Ta Da/tasks/Build the sidebar domains.md"
         },
         {
           "item" : {
@@ -637,7 +590,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Create a system testing plan.md",
+            "path" : "Ta Da/tasks/Create a system testing plan.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -664,7 +617,7 @@
               }
             ]
           },
-          "path" : "tasks/Create a system testing plan.md"
+          "path" : "Ta Da/tasks/Create a system testing plan.md"
         },
         {
           "item" : {
@@ -686,7 +639,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Frontmatter schema for tasks and projects.md",
+            "path" : "Ta Da/tasks/Frontmatter schema for tasks and projects.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -713,7 +666,7 @@
               }
             ]
           },
-          "path" : "tasks/Frontmatter schema for tasks and projects.md"
+          "path" : "Ta Da/tasks/Frontmatter schema for tasks and projects.md"
         },
         {
           "item" : {
@@ -735,7 +688,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Import iTerm2 colour schemes as themes.md",
+            "path" : "Ta Da/tasks/Import iTerm2 colour schemes as themes.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -762,7 +715,7 @@
               }
             ]
           },
-          "path" : "tasks/Import iTerm2 colour schemes as themes.md"
+          "path" : "Ta Da/tasks/Import iTerm2 colour schemes as themes.md"
         },
         {
           "item" : {
@@ -807,7 +760,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Live preview editor on swift-markdown-engine.md",
+            "path" : "Ta Da/tasks/Live preview editor on swift-markdown-engine.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -834,7 +787,7 @@
               }
             ]
           },
-          "path" : "tasks/Live preview editor on swift-markdown-engine.md"
+          "path" : "Ta Da/tasks/Live preview editor on swift-markdown-engine.md"
         },
         {
           "item" : {
@@ -860,7 +813,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Message Max about a coat and a jacket.md",
+            "path" : "Ta Da/tasks/Message Max about a coat and a jacket.md",
             "project" : null,
             "repeat" : null,
             "status" : "Not Started",
@@ -880,7 +833,7 @@
 
             ]
           },
-          "path" : "tasks/Message Max about a coat and a jacket.md"
+          "path" : "Ta Da/tasks/Message Max about a coat and a jacket.md"
         },
         {
           "item" : {
@@ -902,7 +855,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Pick a test framework.md",
+            "path" : "Ta Da/tasks/Pick a test framework.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -929,7 +882,7 @@
               }
             ]
           },
-          "path" : "tasks/Pick a test framework.md"
+          "path" : "Ta Da/tasks/Pick a test framework.md"
         },
         {
           "item" : {
@@ -980,7 +933,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Read and write files through iCloud Drive.md",
+            "path" : "Ta Da/tasks/Read and write files through iCloud Drive.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -1007,7 +960,7 @@
               }
             ]
           },
-          "path" : "tasks/Read and write files through iCloud Drive.md"
+          "path" : "Ta Da/tasks/Read and write files through iCloud Drive.md"
         },
         {
           "item" : {
@@ -1044,7 +997,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Resolve the cabin payback.md",
+            "path" : "Ta Da/tasks/Resolve the cabin payback.md",
             "project" : null,
             "repeat" : null,
             "status" : "Doing",
@@ -1064,7 +1017,7 @@
 
             ]
           },
-          "path" : "tasks/Resolve the cabin payback.md"
+          "path" : "Ta Da/tasks/Resolve the cabin payback.md"
         },
         {
           "item" : {
@@ -1090,7 +1043,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Shift my physio appointment.md",
+            "path" : "Ta Da/tasks/Shift my physio appointment.md",
             "project" : null,
             "repeat" : null,
             "status" : "Blocked",
@@ -1110,7 +1063,7 @@
 
             ]
           },
-          "path" : "tasks/Shift my physio appointment.md"
+          "path" : "Ta Da/tasks/Shift my physio appointment.md"
         },
         {
           "item" : {
@@ -1132,7 +1085,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Spike the swift-markdown parser.md",
+            "path" : "Ta Da/tasks/Spike the swift-markdown parser.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -1159,7 +1112,7 @@
               }
             ]
           },
-          "path" : "tasks/Spike the swift-markdown parser.md"
+          "path" : "Ta Da/tasks/Spike the swift-markdown parser.md"
         },
         {
           "item" : {
@@ -1185,7 +1138,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Submit timesheet.md",
+            "path" : "Ta Da/tasks/Submit timesheet.md",
             "project" : null,
             "repeat" : "Weekly · Fri",
             "status" : "Not Started",
@@ -1205,7 +1158,7 @@
 
             ]
           },
-          "path" : "tasks/Submit timesheet.md"
+          "path" : "Ta Da/tasks/Submit timesheet.md"
         },
         {
           "item" : {
@@ -1231,7 +1184,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Update 2DS before the next session.md",
+            "path" : "Ta Da/tasks/Update 2DS before the next session.md",
             "project" : null,
             "repeat" : null,
             "status" : "Not Started",
@@ -1251,7 +1204,7 @@
 
             ]
           },
-          "path" : "tasks/Update 2DS before the next session.md"
+          "path" : "Ta Da/tasks/Update 2DS before the next session.md"
         },
         {
           "item" : {
@@ -1290,7 +1243,7 @@
             "links" : [
 
             ],
-            "path" : "tasks/Update Dan’s website for Starfall.md",
+            "path" : "Ta Da/tasks/Update Dan’s website for Starfall.md",
             "project" : {
               "alias" : null,
               "heading" : null,
@@ -1317,7 +1270,7 @@
               }
             ]
           },
-          "path" : "tasks/Update Dan’s website for Starfall.md"
+          "path" : "Ta Da/tasks/Update Dan’s website for Starfall.md"
         },
         {
           "item" : {
@@ -1376,7 +1329,7 @@
                 "target" : "Ta Da MVP"
               }
             ],
-            "path" : "tasks/Update my claude.md files.md",
+            "path" : "Ta Da/tasks/Update my claude.md files.md",
             "project" : null,
             "repeat" : null,
             "status" : "Doing",
@@ -1396,7 +1349,54 @@
 
             ]
           },
-          "path" : "tasks/Update my claude.md files.md"
+          "path" : "Ta Da/tasks/Update my claude.md files.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "lineIndex" : 2,
+                "marker" : " ",
+                "state" : "open"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+
+            ],
+            "path" : "notes/Not a task.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 1
+            },
+            "summary" : "This note has no Ta Da frontmatter, so Ta Da ignores it, even though it contains a checklist.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Not a task",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "notes/Not a task.md"
         }
       ],
       "name" : "DesignVault"
@@ -1980,98 +1980,6 @@
           "path" : "Periodic Notes/Daily Notes/2026-10-03.md"
         },
         {
-          "item" : null,
-          "path" : "TASKS/x.md"
-        },
-        {
-          "item" : {
-            "area" : null,
-            "checkboxes" : [
-
-            ],
-            "completedDate" : "2026-09-20",
-            "createdDate" : null,
-            "deadline" : null,
-            "dueDate" : null,
-            "embeds" : [
-
-            ],
-            "hasNote" : true,
-            "isLogged" : true,
-            "isNotePath" : false,
-            "kind" : "task",
-            "links" : [
-
-            ],
-            "path" : "Ta Da/Logbook/2026-09/Dup.md",
-            "project" : null,
-            "repeat" : null,
-            "status" : "Done",
-            "subtasks" : {
-              "done" : 0,
-              "total" : 0
-            },
-            "summary" : "Logged.",
-            "tags" : [
-
-            ],
-            "tagUses" : [
-
-            ],
-            "title" : "Dup",
-            "warnings" : [
-
-            ]
-          },
-          "path" : "Ta Da/Logbook/2026-09/Dup.md"
-        },
-        {
-          "item" : {
-            "area" : null,
-            "checkboxes" : [
-
-            ],
-            "completedDate" : "2026-09-28",
-            "createdDate" : "2026-09-01",
-            "deadline" : null,
-            "dueDate" : null,
-            "embeds" : [
-
-            ],
-            "hasNote" : true,
-            "isLogged" : true,
-            "isNotePath" : false,
-            "kind" : "task",
-            "links" : [
-
-            ],
-            "path" : "Ta Da/Logbook/2026-09/Old chore.md",
-            "project" : {
-              "alias" : null,
-              "heading" : null,
-              "target" : "Garden"
-            },
-            "repeat" : null,
-            "status" : "Done",
-            "subtasks" : {
-              "done" : 0,
-              "total" : 0
-            },
-            "summary" : "Done and logged.",
-            "tags" : [
-
-            ],
-            "tagUses" : [
-
-            ],
-            "title" : "Old chore",
-            "warnings" : [
-
-            ]
-          },
-          "path" : "Ta Da/Logbook/2026-09/Old chore.md"
-        },
-        {
           "item" : {
             "area" : null,
             "checkboxes" : [
@@ -2162,6 +2070,94 @@
             ]
           },
           "path" : "Ta Da/areas/Work.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-09-20",
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : true,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/logbook/2026-09/Dup.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Logged.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Dup",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/logbook/2026-09/Dup.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : "2026-09-28",
+            "createdDate" : "2026-09-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : true,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/logbook/2026-09/Old chore.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Garden"
+            },
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : "Done and logged.",
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old chore",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/logbook/2026-09/Old chore.md"
         },
         {
           "item" : {

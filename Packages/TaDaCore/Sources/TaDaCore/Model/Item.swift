@@ -46,13 +46,13 @@ public struct Item: Hashable, Sendable, Identifiable {
 
     public var id: String { path }
 
-    /// Whether the file has been logged: it's in `Ta Da/Logbook/` or the old `.logbook/`.
+    /// Whether the file has been logged: it's in `Ta Da/logbook/`.
     public var isLogged: Bool { Self.isLogged(path) }
 
-    /// Whether a path is in `Ta Da/Logbook/` or the old `.logbook/`, ignoring case.
+    /// Whether a path is in `Ta Da/logbook/`, ignoring case.
     public static func isLogged(_ path: String) -> Bool {
         let path = path.lowercased()
-        return path.hasPrefix(Vault.logbookFolder.lowercased() + "/") || path.hasPrefix(Vault.legacyLogbookFolder + "/")
+        return path.hasPrefix(Vault.logbookFolder.lowercased() + "/")
     }
 
     /// A note when the text has no `type: task`, `type: project` or `type: area` and the path is a note path; nil when
@@ -88,8 +88,8 @@ public struct Item: Hashable, Sendable, Identifiable {
 }
 
 extension Item {
-    /// The top-level folders whose files are never notes, lowercased: `Ta Da/`, and the old layout's folders.
-    public static let reservedFolders: Set<String> = Vault.legacyFolders.union([Vault.home.lowercased()])
+    /// The top-level folders whose files are never notes, lowercased: `Ta Da/`.
+    public static let reservedFolders: Set<String> = [Vault.home.lowercased()]
 
     /// Whether an untyped file at `path` is a note: a `.md` file outside hidden folders and the top-level reserved
     /// folders (ignoring case). A path in `.trash/` is judged by the rest of it.

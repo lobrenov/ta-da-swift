@@ -158,7 +158,7 @@ extension Vault {
     /// Moves trashed files back to `tasks/`, `projects/` or `areas/`, and notes back to their folder (made again if it's
     /// gone; the top level if a file has its name), numbering names that are taken. Folders left empty in `.trash/` go. Each brings back
     /// its parents: a task its project and that project's area, or its area; a project its area. A parent that isn't
-    /// in the vault (outside `.logbook/`) or `.trash/` is created by name (a project under a title no other project has). When a parent's name had to change, the link follows it.
+    /// in the vault or `.trash/` is created by name (a project under a title no other project has). When a parent's name had to change, the link follows it.
     /// Created files get `today` as their `createdDate`. `paths` can name trashed images too; each restored file brings
     /// back the trashed images it embeds, to `attachments/`, and its embeds follow an image whose name or folder
     /// changed. Returns the paths of the restored and created files, parents first, then the images.
@@ -214,7 +214,7 @@ extension Vault {
         var movedImages: [String: String] = [:]
         func bringBack(_ image: TrashedAttachment) throws {
             guard movedImages[image.path] == nil else { return }
-            let path = try moveFile(image.path, into: Self.attachmentFolder, taken: filenames(in: Self.legacyAttachmentFolder))
+            let path = try moveFile(image.path, into: Self.attachmentFolder)
             movedImages[image.path] = path
             restored.append(path)
         }

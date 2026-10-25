@@ -75,21 +75,17 @@ tags: work/admin
 ## Conformance/HomeVault/Periodic Notes/Daily Notes/2026-10-03.md
 checkboxes: [ ]4:3 [x]5:3
 
-## Conformance/HomeVault/TASKS/x.md
-summary: Upper-case reserved folder. #reserved
-tags: reserved
-
-## Conformance/HomeVault/Ta Da/Logbook/2026-09/Dup.md
-summary: Logged.
-
-## Conformance/HomeVault/Ta Da/Logbook/2026-09/Old chore.md
-summary: Done and logged.
-
 ## Conformance/HomeVault/Ta Da/areas/Home.md
 summary: Everything about the house and garden.
 
 ## Conformance/HomeVault/Ta Da/areas/Work.md
 summary: Job.
+
+## Conformance/HomeVault/Ta Da/logbook/2026-09/Dup.md
+summary: Logged.
+
+## Conformance/HomeVault/Ta Da/logbook/2026-09/Old chore.md
+summary: Done and logged.
 
 ## Conformance/HomeVault/Ta Da/projects/Garden.md
 summary: Get the beds ready for spring.
@@ -186,84 +182,82 @@ checkboxes: [x]6:3 [/]7:3 [ ]8:3
 ## DesignVault/Periodic Notes/Weekly Notes/2026-W40.md
 checkboxes: [/]4:3 [x]5:3 [ ]6:3
 
-## DesignVault/notes/Not a task.md
-summary: This note has no Ta Da frontmatter, so Ta Da ignores it, even though it contains a checklist.
-checkboxes: [ ]2:3
+## DesignVault/Ta Da/projects/Atlas Billing.md
 
-## DesignVault/projects/Atlas Billing.md
+## DesignVault/Ta Da/projects/End of year reviews.md
 
-## DesignVault/projects/End of year reviews.md
+## DesignVault/Ta Da/projects/Game Jam - Starfall.md
 
-## DesignVault/projects/Game Jam - Starfall.md
+## DesignVault/Ta Da/projects/Sell the Kombi.md
 
-## DesignVault/projects/Sell the Kombi.md
-
-## DesignVault/projects/Ta Da MVP.md
+## DesignVault/Ta Da/projects/Ta Da MVP.md
 summary: A Swift-native, markdown-powered task manager: one file per task or project, synced through iCloud Drive.
 
-## DesignVault/tasks/Agenda view for Upcoming.md
+## DesignVault/Ta Da/tasks/Agenda view for Upcoming.md
 summary: A date-segmented list that places each file on its dueDate and on its deadline.
 
-## DesignVault/tasks/Book a roadworthy for the Kombi.md
+## DesignVault/Ta Da/tasks/Book a roadworthy for the Kombi.md
 summary: Needed before the car can be listed.
 
-## DesignVault/tasks/Build the sidebar domains.md
+## DesignVault/Ta Da/tasks/Build the sidebar domains.md
 summary: Loose tasks, Projects, Upcoming and Today, each a saved query over frontmatter.
 
-## DesignVault/tasks/Create a system testing plan.md
+## DesignVault/Ta Da/tasks/Create a system testing plan.md
 summary: Cover each module in scope, with owners and entry and exit criteria.
 checkboxes: [ ]14:3 [ ]15:3 [ ]16:3 [ ]17:3
 
-## DesignVault/tasks/Frontmatter schema for tasks and projects.md
+## DesignVault/Ta Da/tasks/Frontmatter schema for tasks and projects.md
 summary: Agree the YAML keys every task and project file carries.
 
-## DesignVault/tasks/Import iTerm2 colour schemes as themes.md
+## DesignVault/Ta Da/tasks/Import iTerm2 colour schemes as themes.md
 summary: Parse .itermcolors files and map them onto the theme tokens.
 
-## DesignVault/tasks/Live preview editor on swift-markdown-engine.md
+## DesignVault/Ta Da/tasks/Live preview editor on swift-markdown-engine.md
 summary: Obsidian-style editing: raw markdown on the cursor line, rendered everywhere else.
 checkboxes: [x]15:3 [ ]16:3 [ ]17:3 [ ]18:3
 
-## DesignVault/tasks/Message Max about a coat and a jacket.md
+## DesignVault/Ta Da/tasks/Message Max about a coat and a jacket.md
 summary: Ask about a coat and a jacket in the same fabric as my pants.
 
-## DesignVault/tasks/Pick a test framework.md
+## DesignVault/Ta Da/tasks/Pick a test framework.md
 summary: Compare XCTest and Swift Testing for the core package.
 
-## DesignVault/tasks/Read and write files through iCloud Drive.md
+## DesignVault/Ta Da/tasks/Read and write files through iCloud Drive.md
 summary: Use NSFileCoordinator and NSMetadataQuery so every file stays plain markdown in iCloud Drive.
 checkboxes: [x]14:3 [x]15:3 [x]16:3 [ ]17:3 [ ]18:3
 
-## DesignVault/tasks/Resolve the cabin payback.md
+## DesignVault/Ta Da/tasks/Resolve the cabin payback.md
 summary: Settle the split from the long weekend.
 checkboxes: [x]13:3 [ ]14:3
 
-## DesignVault/tasks/Shift my physio appointment.md
+## DesignVault/Ta Da/tasks/Shift my physio appointment.md
 summary: Waiting on the clinic to open bookings for next week.
 
-## DesignVault/tasks/Spike the swift-markdown parser.md
+## DesignVault/Ta Da/tasks/Spike the swift-markdown parser.md
 summary: Check the AST covers task lists and source positions.
 
-## DesignVault/tasks/Submit timesheet.md
+## DesignVault/Ta Da/tasks/Submit timesheet.md
 summary: Hours for the week ending Friday 2 October.
 
-## DesignVault/tasks/Update 2DS before the next session.md
+## DesignVault/Ta Da/tasks/Update 2DS before the next session.md
 summary: Get the 2DS ready before the group meets again.
 
-## DesignVault/tasks/Update Dan’s website for Starfall.md
+## DesignVault/Ta Da/tasks/Update Dan’s website for Starfall.md
 summary: Refresh the event page for Starfall.
 checkboxes: [x]15:3 [ ]16:3 [ ]17:3
 
-## DesignVault/tasks/Update my claude.md files.md
+## DesignVault/Ta Da/tasks/Update my claude.md files.md
 summary: Bring the project instruction files in line with how I actually work now.
 checkboxes: [x]17:3 [x]18:3 [ ]19:3 [ ]20:3 [ ]21:3
 links: Ta Da MVP
 linkTargets: 255+9
 
+## DesignVault/notes/Not a task.md
+summary: This note has no Ta Da frontmatter, so Ta Da ignores it, even though it contains a checklist.
+checkboxes: [ ]2:3
+
 ## NoteVault/.hidden/Secret.md
 summary: Hidden.
-
-## NoteVault/.logbook/2026-09/Logged.md
 
 ## NoteVault/.trash/Trashed note.md
 summary: Trashed.
@@ -285,18 +279,20 @@ linkTargets: 13+7
 ## NoteVault/Reading list.md
 checkboxes: [ ]4:3 [-]5:3
 
+## NoteVault/Ta Da/attachments/Untyped in attachments.md
+summary: Not a note: it's in attachments/.
+
+## NoteVault/Ta Da/logbook/2026-09/Logged.md
+
+## NoteVault/Ta Da/tasks/Ship it.md
+
+## NoteVault/Ta Da/tasks/Untyped in tasks.md
+summary: Not a note: it's in tasks/.
+
 ## NoteVault/Typed/Task elsewhere.md
 
 ## NoteVault/Work/Clients/Brief.md
 summary: Notes on the brief.
-
-## NoteVault/attachments/Untyped in attachments.md
-summary: Not a note: it's in attachments/.
-
-## NoteVault/tasks/Ship it.md
-
-## NoteVault/tasks/Untyped in tasks.md
-summary: Not a note: it's in tasks/.
 
 ## TagVault/.logbook/tasks/Old errand.md
 

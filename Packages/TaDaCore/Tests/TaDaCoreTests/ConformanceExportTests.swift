@@ -253,9 +253,9 @@ private let frontmatterInputs: [(label: String, text: String)] = [
     ("home inbox", fixtureText("HomeVault", "Inbox.md")),
     ("home stray", fixtureText("HomeVault", "Ta Da/tasks/Stray.md")),
     ("home broken yaml", fixtureText("HomeVault", "Ta Da/tasks/Broken yaml.md")),
-    ("design pick a test framework", fixtureText("DesignVault", "tasks/Pick a test framework.md")),
-    ("design resolve cabin", fixtureText("DesignVault", "tasks/Resolve the cabin payback.md")),
-    ("design ta da mvp", fixtureText("DesignVault", "projects/Ta Da MVP.md")),
+    ("design pick a test framework", fixtureText("DesignVault", "Ta Da/tasks/Pick a test framework.md")),
+    ("design resolve cabin", fixtureText("DesignVault", "Ta Da/tasks/Resolve the cabin payback.md")),
+    ("design ta da mvp", fixtureText("DesignVault", "Ta Da/projects/Ta Da MVP.md")),
     ("design not a task", fixtureText("DesignVault", "notes/Not a task.md")),
 ]
 
@@ -269,7 +269,7 @@ private let checkboxInputs: [(label: String, text: String)] = [
     ("home buy seed", fixtureText("HomeVault", "Ta Da/tasks/Buy seed.md")),
     ("home daily note", fixtureText("HomeVault", "Periodic Notes/Daily Notes/2026-10-03.md")),
     ("design daily note", fixtureText("DesignVault", "Periodic Notes/Daily Notes/2026-10-01.md")),
-    ("design create a system testing plan", fixtureText("DesignVault", "tasks/Create a system testing plan.md")),
+    ("design create a system testing plan", fixtureText("DesignVault", "Ta Da/tasks/Create a system testing plan.md")),
     ("design weekly note", fixtureText("DesignVault", "Periodic Notes/Weekly Notes/2026-W40.md")),
 ]
 

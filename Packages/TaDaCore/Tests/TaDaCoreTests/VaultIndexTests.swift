@@ -105,23 +105,23 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
 @Test func loggedFilesResolveAsLinksButStayOutOfTheLists() {
     let index = VaultIndex([
         makeItem("projects/Kombi.md", "type: project\nstatus: Doing"),
-        makeItem(".logbook/2026-09/Kombi.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-30"),
-        makeItem(".logbook/2026-09/Sold.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-30"),
+        makeItem("Ta Da/logbook/2026-09/Kombi.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-30"),
+        makeItem("Ta Da/logbook/2026-09/Sold.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-30"),
         makeItem("tasks/Open.md", "type: task\nstatus: Doing\nproject: \"[[Kombi]]\""),
         makeItem("tasks/Closed.md", "type: task\nstatus: Done\nproject: \"[[Kombi]]\""),
-        makeItem(".logbook/2026-09/Photos.md", "type: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Kombi]]\""),
-        makeItem(".logbook/2026-09/Listing.md", "type: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Sold]]\""),
+        makeItem("Ta Da/logbook/2026-09/Photos.md", "type: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Kombi]]\""),
+        makeItem("Ta Da/logbook/2026-09/Listing.md", "type: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Sold]]\""),
     ])
-    #expect(index[".logbook/2026-09/Photos.md"]?.isLogged == true)
-    #expect(index.items(titled: "Kombi").map(\.path) == ["projects/Kombi.md", ".logbook/2026-09/Kombi.md"], "the file that isn't logged resolves first")
+    #expect(index["Ta Da/logbook/2026-09/Photos.md"]?.isLogged == true)
+    #expect(index.items(titled: "Kombi").map(\.path) == ["projects/Kombi.md", "Ta Da/logbook/2026-09/Kombi.md"], "the file that isn't logged resolves first")
     #expect(index.projects.map(\.title) == ["Kombi"])
     #expect(Set(index.logged.map(\.title)) == ["Kombi", "Sold", "Photos", "Listing"])
-    let kombi = index["projects/Kombi.md"]!, sold = index[".logbook/2026-09/Sold.md"]!
+    let kombi = index["projects/Kombi.md"]!, sold = index["Ta Da/logbook/2026-09/Sold.md"]!
     #expect(index.tasks(in: kombi).map(\.title) == ["Closed", "Open"])
     #expect(index.tasks(in: kombi, includingLogged: true).map(\.title) == ["Closed", "Open", "Photos"])
     #expect(index.openTasks(in: kombi).map(\.title) == ["Open"])
     #expect(index.tasks(in: sold, includingLogged: true).map(\.title) == ["Listing"], "a logged project has its logged tasks")
-    #expect(index.parent(of: index[".logbook/2026-09/Listing.md"]!)?.path == sold.path)
+    #expect(index.parent(of: index["Ta Da/logbook/2026-09/Listing.md"]!)?.path == sold.path)
     #expect((index.progress(of: kombi).done, index.progress(of: kombi).total) == (2, 3), "progress counts logged tasks")
     #expect(index.search("photos").isEmpty && index.search("open").map(\.title) == ["Open"])
 }
@@ -160,7 +160,7 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
 }
 
 @Test func indexLeavesLoggedFilesOutOfTags() {
-    let logged = makeItem(".logbook/tasks/Old.md", "type: task\nstatus: Done\ntags: [old]")
+    let logged = makeItem("Ta Da/logbook/tasks/Old.md", "type: task\nstatus: Done\ntags: [old]")
     var index = VaultIndex([logged])
     #expect(index.carriedTags.isEmpty)
     index.remove(logged.path)
@@ -173,11 +173,11 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
         makeItem("Ark.md", "tags: []"),
         makeItem("Meetings/Ark.md", "tags: []"),
         makeItem("projects/Ark.md", "type: project\nstatus: Doing"),
-        makeItem(".logbook/2026-09/Ark.md", "type: task\nstatus: Done"),
+        makeItem("Ta Da/logbook/2026-09/Ark.md", "type: task\nstatus: Done"),
     ])
-    #expect(index.items(titled: "ark").map(\.path) == ["projects/Ark.md", "Ark.md", "Meetings/Ark.md", ".logbook/2026-09/Ark.md"])
+    #expect(index.items(titled: "ark").map(\.path) == ["projects/Ark.md", "Ark.md", "Meetings/Ark.md", "Ta Da/logbook/2026-09/Ark.md"])
     index.update(makeItem("Ark.md", "type: area"))
-    #expect(index.items(titled: "Ark").map(\.path) == ["Ark.md", "projects/Ark.md", "Meetings/Ark.md", ".logbook/2026-09/Ark.md"])
+    #expect(index.items(titled: "Ark").map(\.path) == ["Ark.md", "projects/Ark.md", "Meetings/Ark.md", "Ta Da/logbook/2026-09/Ark.md"])
 }
 
 @Test func notesAreNeverFiledOrParents() {

@@ -64,7 +64,7 @@ struct LargeVaultTests {
             #expect(queryTime < 0.5)
 
             var patched = index
-            let task = try #require(index["tasks/Task 0001 call.md"] ?? index.tasks.first)
+            let task = try #require(index["Ta Da/tasks/Task 0001 call.md"] ?? index.tasks.first)
             let edited = try #require(Item(parsing: try vault.read(task.path) + "\nMore.\n", path: task.path))
             let (_, updateTime) = await time("index update (one keystroke)") { patched.update(edited) }
             #expect(updateTime < 0.1)

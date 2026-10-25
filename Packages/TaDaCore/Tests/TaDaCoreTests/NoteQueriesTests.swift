@@ -3,7 +3,7 @@ import Testing
 @testable import TaDaCore
 
 /// Notes at the top level and nested, an empty folder, folders holding only typed or non-Markdown files, untyped files
-/// in `tasks/` and `attachments/`, and hidden, trashed and logged files.
+/// in `Ta Da/tasks/` and `Ta Da/attachments/`, and hidden, trashed and logged files.
 private let noteVault = URL(filePath: #filePath).deletingLastPathComponent()
     .appending(path: "Fixtures/NoteVault").standardized
 
@@ -19,7 +19,7 @@ private func describe(_ nodes: [FolderNode], depth: Int = 0) -> [String] {
         "Loose idea.md", "Meetings/2026/Standup.md", "Meetings/Ark planning call.md", "Reading list.md", "Work/Clients/Brief.md",
     ])
     #expect(index["Typed/Task elsewhere.md"]?.properties.kind == .task)
-    #expect(index["tasks/Untyped in tasks.md"] == nil && index["attachments/Untyped in attachments.md"] == nil)
+    #expect(index["Ta Da/tasks/Untyped in tasks.md"] == nil && index["Ta Da/attachments/Untyped in attachments.md"] == nil)
 }
 
 @Test func emptyFoldersLeaveOutFilledHiddenAndReservedFolders() {
@@ -28,7 +28,7 @@ private func describe(_ nodes: [FolderNode], depth: Int = 0) -> [String] {
 
 @Test func emptyFoldersCountNestedEmptyFolders() async throws {
     try await withTemporaryFolder { folder in
-        for path in ["A/B/C", "D/E", "Tasks/Inside", "Work/tasks/Sub", ".hidden/F", "Bundle.app/G", "X/Bundle.app/H", "P"] {
+        for path in ["A/B/C", "D/E", "Ta Da/Inside", "Work/tasks/Sub", ".hidden/F", "Bundle.app/G", "X/Bundle.app/H", "P"] {
             try FileManager.default.createDirectory(at: folder.appending(path: path), withIntermediateDirectories: true)
         }
         try writeFile("note", "D/note.md", in: folder)
@@ -82,7 +82,7 @@ private func describe(_ nodes: [FolderNode], depth: Int = 0) -> [String] {
     #expect(index.tagBrowser(nil).notes.map(\.title) == ["Brief", "Loose idea"])
     #expect(index.search("ark").map(\.title) == ["Ark planning call"])
     #expect(index.search("brief").map(\.path) == ["Work/Clients/Brief.md"])
-    let ship = try #require(index["tasks/Ship it.md"])
+    let ship = try #require(index["Ta Da/tasks/Ship it.md"])
     #expect(index.backlinks(to: ship).map(\.title) == ["Ark planning call"])
     #expect(index.items(titled: "reading list").map(\.path) == ["Reading list.md"])
 }

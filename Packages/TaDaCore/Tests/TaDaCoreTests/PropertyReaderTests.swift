@@ -197,6 +197,6 @@ func readerReadsTags(_ yaml: String, _ tags: [String]) throws {
 @Test func brokenYAMLWithTypeNoteIsANoteOnlyAtNotePaths() {
     let text = "---\ntype: note\ntags: [a\n---\n"
     #expect(Item(parsing: text, path: "x.md")?.properties.kind == .note)
-    #expect(Item(parsing: text, path: "tasks/x.md") == nil)
-    #expect(Item(parsing: "---\ntags: [a\n---\n", path: "tasks/x.md") == nil)
+    #expect(Item(parsing: text, path: "Ta Da/tasks/x.md") == nil)
+    #expect(Item(parsing: "---\ntags: [a\n---\n", path: "Ta Da/tasks/x.md") == nil)
 }

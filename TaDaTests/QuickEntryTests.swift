@@ -14,7 +14,7 @@ struct QuickEntryTests {
             "Ta Da/areas/Personal.md": "---\ntype: area\n---\n",
             "Ta Da/tasks/Call Bea.md": "---\ntype: task\nstatus: Not Started\n---\n",
             "Ta Da/tasks/Notes.md": "Not a Ta Da file\n",
-            "Ta Da/Logbook/2026-09/Shipped.md": "---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n",
+            "Ta Da/logbook/2026-09/Shipped.md": "---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n",
         ])
     }
 

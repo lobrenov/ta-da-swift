@@ -19,7 +19,7 @@ struct LogbookModelTests {
 
     @Test func openingTheFolderLogsWhatWasCompletedBeforeTodayOncePerDay() async throws {
         let model = await folder.model(logging: true)
-        #expect(model.index["Ta Da/Logbook/2026-09/Old.md"] != nil && model.index["Ta Da/tasks/Old.md"] == nil)
+        #expect(model.index["Ta Da/logbook/2026-09/Old.md"] != nil && model.index["Ta Da/tasks/Old.md"] == nil)
         #expect(model.index["Ta Da/tasks/Today.md"] != nil, "today's stay until tomorrow")
         #expect(Set(model.logbook.map(\.title)) == ["Old", "Today"])
         #expect(model.hasFilesToLog)
@@ -33,7 +33,7 @@ struct LogbookModelTests {
     @Test func logNowLogsTodaysToo() async throws {
         let model = await folder.model(logging: true)
         await model.logNow()
-        #expect(model.index["Ta Da/Logbook/2026-10/Today.md"] != nil)
+        #expect(model.index["Ta Da/logbook/2026-10/Today.md"] != nil)
         #expect(!model.hasFilesToLog)
     }
 
@@ -91,14 +91,14 @@ struct LogbookModelTests {
         try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Kombi]]\"\n---\n", "Ta Da/tasks/Photos.md")
         try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Kombi]]\"\n---\n", "Ta Da/tasks/Listing.md")
         let model = await folder.model(logging: true)
-        #expect(model.index["Ta Da/Logbook/2026-09/Photos.md"] != nil)
+        #expect(model.index["Ta Da/logbook/2026-09/Photos.md"] != nil)
         model.show(.logbook)
-        model.selection = "Ta Da/Logbook/2026-09/Photos.md"
+        model.selection = "Ta Da/logbook/2026-09/Photos.md"
         await model.loading?.value
-        await model.toggleCompletion(try #require(model.index["Ta Da/Logbook/2026-09/Photos.md"]))
+        await model.toggleCompletion(try #require(model.index["Ta Da/logbook/2026-09/Photos.md"]))
         #expect(model.index["Ta Da/tasks/Photos.md"]?.properties.status == .notStarted)
         #expect(model.index["Ta Da/projects/Kombi.md"]?.properties.status == .doing)
-        #expect(model.index["Ta Da/Logbook/2026-09/Listing.md"] != nil)
+        #expect(model.index["Ta Da/logbook/2026-09/Listing.md"] != nil)
         #expect(model.selection == "Ta Da/tasks/Photos.md" && model.document?.path == "Ta Da/tasks/Photos.md")
     }
 
@@ -119,55 +119,55 @@ struct LogbookModelTests {
     }
 
     @Test func loggingATaskBeforeItsRenamedProjectRelinksIt() async throws {
-        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-01\n---\n", "Ta Da/Logbook/2026-10/Timesheet.md")
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-01\n---\n", "Ta Da/logbook/2026-10/Timesheet.md")
         try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-01\n---\n", "Ta Da/projects/Timesheet.md")
         try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-01\nproject: \"[[Timesheet]]\"\n---\n",
                          "Ta Da/tasks/Fill it in.md")
         let model = await folder.model(logging: true)
-        #expect(model.index["Ta Da/Logbook/2026-10/Timesheet 2.md"] != nil)
-        #expect(model.index["Ta Da/Logbook/2026-10/Fill it in.md"]?.properties.project?.title == "Timesheet 2")
+        #expect(model.index["Ta Da/logbook/2026-10/Timesheet 2.md"] != nil)
+        #expect(model.index["Ta Da/logbook/2026-10/Fill it in.md"]?.properties.project?.title == "Timesheet 2")
     }
 
     @Test func reopeningALoggedTaskSetsItsLiveCompletedProjectToDoing() async throws {
         try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-10-03\n---\n", "Ta Da/projects/Kombi.md")
-        try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Kombi]]\"\n---\n", "Ta Da/Logbook/2026-09/Tyres.md")
+        try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Kombi]]\"\n---\n", "Ta Da/logbook/2026-09/Tyres.md")
         try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\nproject: \"[[Kombi]]\"\n---\n", "Ta Da/tasks/Listing.md")
         let model = await folder.model(logging: true)
-        await model.setStatus(.notStarted, in: "Ta Da/Logbook/2026-09/Tyres.md")
+        await model.setStatus(.notStarted, in: "Ta Da/logbook/2026-09/Tyres.md")
         #expect(model.index["Ta Da/tasks/Tyres.md"]?.properties.status == .notStarted)
         #expect(model.index["Ta Da/projects/Kombi.md"]?.properties.status == .doing)
     }
 
     @Test func reopeningATaskWhoseProjectIsLoggedBringsTheProjectBack() async throws {
-        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n", "Ta Da/Logbook/2026-09/Boat.md")
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n", "Ta Da/logbook/2026-09/Boat.md")
         try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-03\nproject: \"[[Boat]]\"\n---\n", "Ta Da/tasks/Sail.md")
         let model = await folder.model(logging: true)
-        #expect(model.index["Ta Da/Logbook/2026-09/Boat.md"] != nil)
+        #expect(model.index["Ta Da/logbook/2026-09/Boat.md"] != nil)
         await model.toggleCompletion(try #require(model.index["Ta Da/tasks/Sail.md"]))
         #expect(model.index["Ta Da/tasks/Sail.md"]?.properties.status == .notStarted)
         #expect(model.index["Ta Da/projects/Boat.md"]?.properties.status == .doing)
         #expect(model.index["Ta Da/projects/Boat.md"]?.properties.completedDate == nil)
-        #expect(model.index["Ta Da/Logbook/2026-09/Boat.md"] == nil)
+        #expect(model.index["Ta Da/logbook/2026-09/Boat.md"] == nil)
     }
 
     @Test func loggingBringsBackALoggedProjectThatHasOpenTasks() async throws {
-        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n", "Ta Da/Logbook/2026-09/Boat.md")
+        try folder.write("---\ntype: project\nstatus: Done\ncompletedDate: 2026-09-30\n---\n", "Ta Da/logbook/2026-09/Boat.md")
         try folder.write("---\ntype: task\nstatus: Doing\nproject: \"[[Boat]]\"\n---\n", "Ta Da/tasks/Sail.md")
         try folder.write("---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-30\nproject: \"[[Boat]]\"\n---\n",
-                         "Ta Da/Logbook/2026-09/Tyres.md")
+                         "Ta Da/logbook/2026-09/Tyres.md")
         let model = await folder.model(logging: true)
         #expect(model.index["Ta Da/projects/Boat.md"]?.properties.status == .doing)
         #expect(model.index["Ta Da/projects/Boat.md"]?.properties.completedDate == nil)
-        #expect(model.index["Ta Da/Logbook/2026-09/Tyres.md"] != nil, "its logged tasks stay")
+        #expect(model.index["Ta Da/logbook/2026-09/Tyres.md"] != nil, "its logged tasks stay")
         #expect(model.index.loggedProjectsWithOpenTasks.isEmpty)
     }
 
     @Test func eachFolderLogsOnceADay() async throws {
         let other = try TestFolder(["Ta Da/tasks/Old.md": "---\ntype: task\nstatus: Done\ncompletedDate: 2026-09-20\n---\n"])
         let model = await folder.model(logging: true)
-        #expect(model.index["Ta Da/Logbook/2026-09/Old.md"] != nil)
+        #expect(model.index["Ta Da/logbook/2026-09/Old.md"] != nil)
         await model.choose(other.url)
-        #expect(model.index["Ta Da/Logbook/2026-09/Old.md"] != nil && model.index["Ta Da/tasks/Old.md"] == nil, "another folder logs that day too")
+        #expect(model.index["Ta Da/logbook/2026-09/Old.md"] != nil && model.index["Ta Da/tasks/Old.md"] == nil, "another folder logs that day too")
         #expect(AppModel.lastLogged(folder.url, in: folder.defaults) == model.today)
         #expect(AppModel.lastLogged(other.url, in: folder.defaults) == model.today)
     }
@@ -195,7 +195,7 @@ struct LogbookModelTests {
 
     @Test func aLinkToALoggedFileOpensInTheLogbook() async throws {
         let model = await folder.model(logging: true)
-        model.openLink(to: "Ta Da/Logbook/2026-09/Old.md")
-        #expect(model.domain == .logbook && model.selection == "Ta Da/Logbook/2026-09/Old.md")
+        model.openLink(to: "Ta Da/logbook/2026-09/Old.md")
+        #expect(model.domain == .logbook && model.selection == "Ta Da/logbook/2026-09/Old.md")
     }
 }

@@ -5,17 +5,12 @@ import MarkdownEngineSyntax
 /// resolves by filename, so they can live anywhere in the folder.
 extension Vault {
     public static let attachmentFolder = home + "/attachments"
-    /// The old layout's attachments folder, which new images' names also avoid.
-    public static let legacyAttachmentFolder = "attachments"
-    /// The old layout's top-level folders, lowercased: Ta Da made them before `Ta Da/`.
-    public static let legacyFolders: Set<String> = ["tasks", "projects", "areas", "attachments"]
     /// The spec's image extensions (`EmbedSyntax`), lowercase.
     public static let imageExtensions = Set(EmbedSyntax.imageExtensions)
 
-    /// Writes `data` as `Ta Da/attachments/<filename>`, numbering the name if it's taken there or in the old
-    /// `attachments/`. Returns the new path.
+    /// Writes `data` as `Ta Da/attachments/<filename>`, numbering the name if it's taken there. Returns the new path.
     public func saveAttachment(_ data: Data, as filename: String) throws -> String {
-        let taken = filenames(in: Self.attachmentFolder).union(filenames(in: Self.legacyAttachmentFolder))
+        let taken = filenames(in: Self.attachmentFolder)
         let path = Self.attachmentPath(named: filename, avoiding: taken)
         try saveAttachment(data, at: path)
         return path
@@ -124,6 +119,6 @@ extension Vault {
         }
         let matches = paths.filter { $0.split(separator: "/").last?.lowercased() == name }
         return matches.first { $0.lowercased() == attachmentFolder.lowercased() + "/" + name }
-            ?? matches.first { $0.lowercased() == legacyAttachmentFolder + "/" + name } ?? matches.min()
+            ?? matches.min()
     }
 }

@@ -25,25 +25,23 @@ struct DesignRenderTests {
         let empty = AppModel(defaults: defaults)
         try await render(empty, to: output.appending(path: "onboarding.png"))
 
-        // The fixtures count as logged that day, so opening them moves nothing to `.logbook/`.
+        // The fixtures count as logged that day, so opening them moves nothing to `Ta Da/logbook/`.
         AppModel.setLastLogged(sampleVault, to: LocalDate("2026-10-02")!, in: defaults)
-        // The fixture keeps the old layout; no move question over the renders.
-        AppModel.setMoveDeclined(sampleVault, in: defaults)
         let model = AppModel(defaults: defaults)
         model.today = LocalDate("2026-10-02")!
         await model.choose(sampleVault)
         #expect(model.state == .ready)
-        let project = "projects/Ta Da MVP.md"
+        let project = "Ta Da/projects/Ta Da MVP.md"
         // Artboard name → domain and selection.
         let screens: [(String, AppModel.Domain, String?)] = [
             ("agenda-day", .agenda, nil),
             ("agenda-week", .agenda, nil),
-            ("upcoming-task", .agenda, "tasks/Live preview editor on swift-markdown-engine.md"),
+            ("upcoming-task", .agenda, "Ta Da/tasks/Live preview editor on swift-markdown-engine.md"),
             ("project", .project(project), project),
-            ("project-task", .project(project), "tasks/Live preview editor on swift-markdown-engine.md"),
+            ("project-task", .project(project), "Ta Da/tasks/Live preview editor on swift-markdown-engine.md"),
             ("loose", .loose, nil),
-            ("source", .agenda, "tasks/Update my claude.md files.md"),
-            ("search", .agenda, "tasks/Update my claude.md files.md"),
+            ("source", .agenda, "Ta Da/tasks/Update my claude.md files.md"),
+            ("search", .agenda, "Ta Da/tasks/Update my claude.md files.md"),
         ]
         model.usesSchemePerAppearance = true
         for theme in Theme.all {
@@ -148,11 +146,11 @@ struct DesignRenderTests {
         let logbook = AppModel(defaults: TestSettings())
         logbook.today = LocalDate("2026-10-02")!
         await logbook.choose(copy)
-        await logbook.setStatus(.done, in: "tasks/Update my claude.md files.md")
-        await logbook.setStatus(.cancelled, in: "tasks/Submit timesheet.md")
+        await logbook.setStatus(.done, in: "Ta Da/tasks/Update my claude.md files.md")
+        await logbook.setStatus(.cancelled, in: "Ta Da/tasks/Submit timesheet.md")
         logbook.appearance = .dark
         logbook.show(.logbook)
-        logbook.selection = ".logbook/2026-09/Frontmatter schema for tasks and projects.md"
+        logbook.selection = "Ta Da/logbook/2026-09/Frontmatter schema for tasks and projects.md"
         try await render(logbook, to: output.appending(path: "logbook.png"))
         logbook.completionConfirmation = AppModel.CompletionConfirmation(
             project: try #require(logbook.index[project]), status: .done, tasks: logbook.index.openTasks(in: try #require(logbook.index[project])))
