@@ -1,13 +1,13 @@
 {
-  "originHash" : "cc8cda533ea5ed6885af180a38c0382875bce88e5276e25536ee9d8a4e423b6d",
+  "originHash" : "71cfa462c31c5b24dc3fd6d2a6ccbdb173c2d4c2ddb303128dc95ba4975f61ac",
   "pins" : [
     {
       "identity" : "swift-markdown-engine-extended",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lobrenov/swift-markdown-engine-extended.git",
       "state" : {
-        "revision" : "79a35a9fcdb8b65656779e47c044c2efe2b26adb",
-        "version" : "0.15.0-live.3"
+        "revision" : "98a9d9e7470d2ab1f3f71d4193e2af8a225f7bd3",
+        "version" : "0.15.0-live.4"
       }
     },
     {
