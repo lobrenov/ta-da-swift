@@ -63,11 +63,13 @@ struct AppModelTests {
         await first.choose(folder.url)
         first.choose(ThemeSet.named("Catppuccin")!)
         first.appearance = .light
+        await first.finishSavingSettings()
 
         let second = AppModel(defaults: folder.defaults)
-        #expect(second.themeSet.name == "Catppuccin" && second.appearance == .light && second.theme.name == "Catppuccin Latte")
+        #expect(second.appearance == .light)
         await second.start()
         #expect(second.state == .ready)
+        #expect(second.themeSet.name == "Catppuccin" && second.theme.name == "Catppuccin Latte")
         #expect(second.vault?.root.resolvingSymlinksInPath() == folder.url.resolvingSymlinksInPath())
     }
 
@@ -148,20 +150,86 @@ struct AppModelTests {
         #expect(model.selection == "Ta Da/tasks/Due today.md")
     }
 
-    @Test func autocompleteIsOnUntilASwitchIsTurnedOff() {
-        let first = AppModel(defaults: folder.defaults)
+    @Test func autocompleteIsOnUntilASwitchIsTurnedOff() async {
+        let first = await folder.model()
         #expect(first.autocomplete == Autocomplete())
         first.autocomplete.formatting = false
+        await first.finishSavingSettings()
 
-        let second = AppModel(defaults: folder.defaults)
+        let second = await folder.model()
         #expect(!second.autocomplete.formatting && second.autocomplete.brackets && second.autocomplete.wikiLinks)
     }
 
-    @Test func theTagsSwitchIsRemembered() {
-        let first = AppModel(defaults: folder.defaults)
+    @Test func theTagsSwitchIsRemembered() async {
+        let first = await folder.model()
         #expect(first.autocomplete.tags)
         first.autocomplete.tags = false
-        #expect(!AppModel(defaults: folder.defaults).autocomplete.tags)
+        await first.finishSavingSettings()
+        let second = await folder.model()
+        #expect(!second.autocomplete.tags)
+    }
+
+    @Test func changingASettingWritesTheFileAndKeepsItsOtherKeys() async throws {
+        try folder.write("{\"future\": {\"a\": 1}, \"theme\": {\"font\": \"Mono\"}}", Vault.settingsPath)
+        let model = await folder.model()
+        model.dailyFolder = "Journal"
+        model.autocomplete.brackets = false
+        await model.finishSavingSettings()
+        let object = try #require(JSONSerialization.jsonObject(with: Data(folder.read(Vault.settingsPath).utf8)) as? [String: Any])
+        #expect(object["future"] as? [String: Int] == ["a": 1])
+        #expect((object["theme"] as? [String: Any])?["font"] as? String == "Mono")
+        #expect((object["theme"] as? [String: Any])?["themeSet"] as? String == "Ayu")
+        #expect((object["dailyNotes"] as? [String: Any])?["dailyFolder"] as? String == "Journal")
+        #expect(((object["editor"] as? [String: Any])?["autocomplete"] as? [String: Any])?["brackets"] as? Bool == false)
+        #expect(folder.defaults.string(forKey: "dailyFolder") == nil, "no longer kept on the device")
+    }
+
+    @Test func aFoldersSettingsFileBeatsTheDevicesEarlierValues() async throws {
+        folder.defaults.set("Monokai", forKey: "themeSet")
+        folder.defaults.set("Device", forKey: "dailyFolder")
+        folder.defaults.set(["tags": false], forKey: "autocomplete")
+        try folder.write("""
+        {"dailyNotes": {"dailyFolder": "Journal", "weekNotes": false},
+         "theme": {"themeSet": "Catppuccin"}, "editor": {"autocomplete": {"brackets": false}}}
+        """, Vault.settingsPath)
+        let model = await folder.model()
+        #expect(model.dailyFolder == "Journal" && !model.weekNotes)
+        #expect(model.themeSet.name == "Catppuccin")
+        #expect(!model.autocomplete.brackets && !model.autocomplete.tags, "a missing key takes the device's value")
+    }
+
+    @Test func aMissingKeyTakesTheDevicesEarlierValueThenObsidiansThenTheDefault() async throws {
+        try folder.write("{\"folder\": \"Obsidian Days\", \"template\": \"Templates/Daily\"}", ".obsidian/daily-notes.json")
+        folder.defaults.set("Device", forKey: "dailyFolder")
+        folder.defaults.set("Dark Device", forKey: "darkScheme")
+        folder.defaults.set(true, forKey: "weekNotesOff")
+        let model = await folder.model()
+        #expect(model.dailyFolder == "Device" && model.dailyTemplate == "Templates/Daily.md")
+        #expect(model.darkScheme.name == "Ayu Mirage", "an unknown name takes the default")
+        #expect(!model.weekNotes && model.weekFolder == "Periodic Notes/Weekly Notes")
+
+        try folder.write("{\"dailyNotes\": {\"dailyTemplate\": null}}", Vault.settingsPath)
+        await model.refresh()
+        #expect(model.dailyTemplate == nil, "none in the file beats Obsidian's")
+    }
+
+    @Test func anOutsideEditToTheSettingsFileReloadsThem() async throws {
+        let model = await folder.model()
+        #expect(model.themeSet.name == "Ayu" && model.dailyFolder == "Periodic Notes/Daily Notes")
+        try folder.write("{\"theme\": {\"themeSet\": \"TokyoNight\"}, \"dailyNotes\": {\"dailyFolder\": \"Journal\"}}", Vault.settingsPath)
+        await model.refresh()
+        #expect(model.themeSet.name == "TokyoNight" && model.dailyFolder == "Journal")
+        #expect(try folder.read(Vault.settingsPath).contains("TokyoNight") && !folder.read(Vault.settingsPath).contains("dailyTemplate"),
+                "reloading doesn't write the file")
+    }
+
+    @Test func openingAFolderDoesNotCreateTheSettingsFile() async {
+        folder.defaults.set("Device", forKey: "dailyFolder")
+        let model = await folder.model()
+        await model.refresh()
+        await model.finishSavingSettings()
+        #expect(model.dailyFolder == "Device")
+        #expect(!FileManager.default.fileExists(atPath: folder.url.appending(path: Vault.settingsPath).path))
     }
 
     @Test func unknownThemeNamesFallBackToAyu() {
@@ -208,15 +276,17 @@ struct AppModelTests {
         #expect(model.systemIsDark == !macIsDark, "within 5 s")
     }
 
-    @Test func aSchemePerAppearanceStartsFromTheSetAndEndsWhenASetIsChosen() {
-        let model = AppModel(defaults: folder.defaults)
+    @Test func aSchemePerAppearanceStartsFromTheSetAndEndsWhenASetIsChosen() async {
+        let model = await folder.model()
         model.choose(ThemeSet.named("Ayu")!)
         model.appearance = .dark
         model.usesSchemePerAppearance = true
         #expect(model.lightScheme.name == "Ayu Light" && model.darkScheme.name == "Ayu Mirage")
         model.darkScheme = Theme.named("Catppuccin Mocha")!
         #expect(model.theme.name == "Catppuccin Mocha")
-        #expect(AppModel(defaults: folder.defaults).theme.name == "Catppuccin Mocha", "survives a relaunch")
+        await model.finishSavingSettings()
+        let reopened = await folder.model()
+        #expect(reopened.usesSchemePerAppearance && reopened.theme.name == "Catppuccin Mocha", "survives a relaunch")
         model.choose(ThemeSet.named("TokyoNight")!)
         #expect(!model.usesSchemePerAppearance && model.theme.name == "TokyoNight")
     }

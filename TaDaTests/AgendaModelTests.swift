@@ -82,8 +82,8 @@ struct AgendaModelTests {
         #expect(model.index[first.path]?.properties.dueDate == LocalDate("2026-10-12"))
     }
 
-    @Test func settingsStartAtTheirDefaultsAndAreKept() async {
-        let model = AppModel(defaults: folder.defaults)
+    @Test func settingsStartAtTheirDefaultsAndAreKeptInTheFolder() async {
+        let model = await folder.model()
         #expect(model.dailyNoteNames == DailyNoteNames(dailyFolder: "Periodic Notes/Daily Notes", weekFolder: "Periodic Notes/Weekly Notes"))
         #expect(model.weekNotes && model.dailyTemplate == nil && model.weekTemplate == nil)
 
@@ -91,7 +91,8 @@ struct AgendaModelTests {
         model.weekFolder = ""
         model.weekNotes = false
         model.dailyTemplate = "Templates/Daily.md"
-        let reopened = AppModel(defaults: folder.defaults)
+        await model.finishSavingSettings()
+        let reopened = await folder.model()
         #expect(reopened.dailyNoteNames == DailyNoteNames(dailyFolder: "Journal", weekFolder: ""))
         #expect(!reopened.weekNotes && reopened.dailyTemplate == "Templates/Daily.md" && reopened.weekTemplate == nil)
     }

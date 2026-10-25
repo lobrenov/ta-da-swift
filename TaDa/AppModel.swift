@@ -235,8 +235,9 @@ import UIKit
         }
     }
 
+    /// Themes, autocomplete and the daily notes settings are kept in the folder's `Ta Da/settings.json`.
     var themeSet: ThemeSet {
-        didSet { defaults.set(themeSet.name, forKey: Keys.themeSet) }
+        didSet { saveSettings() }
     }
     var appearance: Appearance {
         didSet { defaults.set(appearance.rawValue, forKey: Keys.appearance) }
@@ -244,21 +245,21 @@ import UIKit
     /// Use `lightScheme` and `darkScheme` instead of the theme set's pair. Turning it on starts from the set's pair.
     var usesSchemePerAppearance: Bool {
         didSet {
-            defaults.set(usesSchemePerAppearance, forKey: Keys.usesSchemePerAppearance)
-            if usesSchemePerAppearance, !oldValue {
+            if usesSchemePerAppearance, !oldValue, !isApplyingSettings {
                 lightScheme = themeSet.light
                 darkScheme = themeSet.dark
             }
+            saveSettings()
         }
     }
     var lightScheme: Theme {
-        didSet { defaults.set(lightScheme.name, forKey: Keys.lightScheme) }
+        didSet { saveSettings() }
     }
     var darkScheme: Theme {
-        didSet { defaults.set(darkScheme.name, forKey: Keys.darkScheme) }
+        didSet { saveSettings() }
     }
     var autocomplete: Autocomplete {
-        didSet { defaults.set(autocomplete.dictionary, forKey: Keys.autocomplete) }
+        didSet { saveSettings() }
     }
     /// Haptic feedback on iOS; Settings ▸ Haptics turns it off.
     var haptics: Bool {
@@ -275,24 +276,24 @@ import UIKit
     /// text new daily and week notes start from, by path.
     var dailyFolder: String {
         didSet {
-            defaults.set(dailyFolder, forKey: Keys.dailyFolder)
+            saveSettings()
             updateAgenda()
         }
     }
     var weekFolder: String {
         didSet {
-            defaults.set(weekFolder, forKey: Keys.weekFolder)
+            saveSettings()
             updateAgenda()
         }
     }
     var weekNotes: Bool {
-        didSet { defaults.set(!weekNotes, forKey: Keys.weekNotesOff) }
+        didSet { saveSettings() }
     }
     var dailyTemplate: String? {
-        didSet { defaults.set(dailyTemplate, forKey: Keys.dailyTemplate) }
+        didSet { saveSettings() }
     }
     var weekTemplate: String? {
-        didSet { defaults.set(weekTemplate, forKey: Keys.weekTemplate) }
+        didSet { saveSettings() }
     }
     var dailyNoteNames: DailyNoteNames { DailyNoteNames(dailyFolder: dailyFolder, weekFolder: weekFolder) }
     /// The task groups folded in each project's or area's browser ("Open", "Completed"), by its path.
@@ -444,7 +445,16 @@ import UIKit
     private var fileDates: [String: Date] = [:]
     private var refreshing: Task<Void, Never>?
     private var refreshAgain = false
+    /// When the settings file last changed, as last seen or written.
+    private var settingsDate: Date?
+    /// Loading the settings file sets the settings without writing it back.
+    private var isApplyingSettings = false
+    /// The settings write in progress; each waits for the one before, so writes land in order.
+    private var settingsSaving: Task<Void, Never>?
+    private var pendingSettingsWrites = 0
 
+    /// `themeSet` to `weekTemplate`, less `appearance`, are this device's earlier values: read when the folder's settings
+    /// file lacks them, no longer written.
     enum Keys {
         static let bookmark = "vaultBookmark"
         static let themeSet = "themeSet"
@@ -552,6 +562,7 @@ import UIKit
         state = .loading
         // Dates first: anything that changes while the index loads shows up as changed on the next refresh.
         fileDates = await Self.run { vault.modificationDates() }
+        await loadSettings(from: vault)
         let loaded = await vault.loadIndex()
         knownFolders = []
         updateIndex { $0 = loaded }
@@ -627,6 +638,7 @@ import UIKit
                 guard self.vault?.root == vault.root else { return }
                 fileDates = changes.dates
                 await apply(changes, from: vault)
+                await loadSettings(from: vault, ifChanged: true)
                 await rescanFolders(vault)
                 trash = await Self.run { vault.trashedItems() }
                 trashedAttachments = await Self.run { vault.trashedAttachments() }
@@ -642,6 +654,76 @@ import UIKit
         }
         refreshing = task
         await task.value
+    }
+
+    /// Takes the settings from the folder's file. Each missing one is this device's earlier value, then (for the daily
+    /// folder and template) Obsidian's Daily notes setting, then the default. With `ifChanged`, nothing happens unless the
+    /// file changed since it was last read or written, and not while a write is pending.
+    private func loadSettings(from vault: Vault, ifChanged: Bool = false) async {
+        if ifChanged {
+            let date = await Self.run { vault.modificationDate(of: Vault.settingsPath) }
+            guard date != settingsDate, pendingSettingsWrites == 0 else { return }
+        }
+        let (file, obsidian, date) = await Self.run {
+            (vault.readSettings(), vault.readObsidianDailyNotes(), vault.modificationDate(of: Vault.settingsPath))
+        }
+        guard self.vault?.root == vault.root, !ifChanged || pendingSettingsWrites == 0 else { return }
+        settingsDate = date
+        isApplyingSettings = true
+        defer { isApplyingSettings = false }
+        let names = DailyNoteNames()
+        let theme = file.theme, daily = file.dailyNotes
+        themeSet = theme.themeSet.map { ThemeSet.named($0) ?? .standard }
+            ?? defaults.string(forKey: Keys.themeSet).flatMap(ThemeSet.named) ?? .standard
+        usesSchemePerAppearance = theme.usesSchemePerAppearance ?? defaults.bool(forKey: Keys.usesSchemePerAppearance)
+        lightScheme = theme.lightScheme.map { Theme.named($0) ?? ThemeSet.standard.light }
+            ?? defaults.string(forKey: Keys.lightScheme).flatMap(Theme.named) ?? ThemeSet.standard.light
+        darkScheme = theme.darkScheme.map { Theme.named($0) ?? ThemeSet.standard.dark }
+            ?? defaults.string(forKey: Keys.darkScheme).flatMap(Theme.named) ?? ThemeSet.standard.dark
+        var autocomplete = Autocomplete(defaults.dictionary(forKey: Keys.autocomplete))
+        let typed = file.autocomplete
+        autocomplete.brackets = typed.brackets ?? autocomplete.brackets
+        autocomplete.formatting = typed.formatting ?? autocomplete.formatting
+        autocomplete.wikiLinks = typed.wikiLinks ?? autocomplete.wikiLinks
+        autocomplete.tags = typed.tags ?? autocomplete.tags
+        self.autocomplete = autocomplete
+        dailyFolder = daily.dailyFolder ?? defaults.string(forKey: Keys.dailyFolder) ?? obsidian.dailyFolder ?? names.dailyFolder
+        weekFolder = daily.weekFolder ?? defaults.string(forKey: Keys.weekFolder) ?? names.weekFolder
+        weekNotes = daily.weekNotes ?? !defaults.bool(forKey: Keys.weekNotesOff)
+        dailyTemplate = daily.dailyTemplate ?? defaults.string(forKey: Keys.dailyTemplate) ?? obsidian.dailyTemplate
+        weekTemplate = daily.weekTemplate ?? defaults.string(forKey: Keys.weekTemplate)
+    }
+
+    /// Writes all three settings groups to the folder's file, keeping its other keys. Does nothing while the file is being
+    /// loaded or without a folder.
+    private func saveSettings() {
+        guard !isApplyingSettings, let vault else { return }
+        let daily = VaultSettings.DailyNotes(dailyFolder: dailyFolder, dailyTemplate: .some(dailyTemplate), weekNotes: weekNotes,
+                                             weekFolder: weekFolder, weekTemplate: .some(weekTemplate))
+        let theme = VaultSettings.Theme(themeSet: themeSet.name, usesSchemePerAppearance: usesSchemePerAppearance,
+                                        lightScheme: lightScheme.name, darkScheme: darkScheme.name)
+        let typed = VaultSettings.Autocomplete(brackets: autocomplete.brackets, formatting: autocomplete.formatting,
+                                               wikiLinks: autocomplete.wikiLinks, tags: autocomplete.tags)
+        let previous = settingsSaving
+        pendingSettingsWrites += 1
+        settingsSaving = Task {
+            await previous?.value
+            do {
+                let date = try await Self.run {
+                    try vault.writeSettings(dailyNotes: daily, theme: theme, autocomplete: typed)
+                    return vault.modificationDate(of: Vault.settingsPath)
+                }
+                if self.vault?.root == vault.root, pendingSettingsWrites == 1 { settingsDate = date }
+            } catch {
+                errorMessage = Self.couldNot("save the settings", error)
+            }
+            pendingSettingsWrites -= 1
+        }
+    }
+
+    /// Returns once the settings written so far are in the file.
+    func finishSavingSettings() async {
+        await settingsSaving?.value
     }
 
     private func apply(_ changes: VaultChanges, from vault: Vault) async {
@@ -1049,6 +1131,7 @@ import UIKit
     /// Saves the open document before the app quits or goes to the background, after any save already under way.
     /// If another app changed or removed the file meanwhile, the edits go to a copy instead.
     func saveBeforeQuitting() async {
+        await finishSavingSettings()
         guard let document else { return }
         await save(document)
         await keepUnsavedEdits(of: document)

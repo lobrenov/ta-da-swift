@@ -96,10 +96,40 @@ The body's syntax is the spec in the Live editor's package, at the tag Ta Da pin
 
 ## Daily notes
 
-- **Names**: a day's note is `<daily folder>/YYYY-MM-DD.md` and a week's is `<week folder>/GGGG-[W]WW.md`, with the ISO year and week (`Periodic Notes/Daily Notes/2026-10-02.md`, `Periodic Notes/Weekly Notes/2026-W40.md`). The folders default to `Periodic Notes/Daily Notes` and `Periodic Notes/Weekly Notes`, and are set in Settings ▸ Daily notes (per device, not in the folder); they may be the same folder or the top level. The name patterns are fixed.
+- **Names**: a day's note is `<daily folder>/YYYY-MM-DD.md` and a week's is `<week folder>/GGGG-[W]WW.md`, with the ISO year and week (`Periodic Notes/Daily Notes/2026-10-02.md`, `Periodic Notes/Weekly Notes/2026-W40.md`). The folders default to `Periodic Notes/Daily Notes` and `Periodic Notes/Weekly Notes`, and are set in Settings ▸ Daily notes (kept in the folder, see Settings); they may be the same folder or the top level. The name patterns are fixed.
 - **Plain notes**: they have no `type` and the format doesn't change, so they sit in the Notes tree like any note. A folder matches in any case. A note is found by its exact name in its folder, so a note renamed or moved away from it is just a note. A date's ISO week starts on Monday.
 - **Making**: a note is created only on request (Start this day's note, or Create in the Agenda's empty editor), never by showing a day. Its folders are created with it, the existing folder's own case is used, and a name that's taken is never numbered. The file is the new note's frontmatter (`createdDate: <today>`, `tags: []`) followed by the body of the template note chosen in Settings (one for daily notes, one for week notes, or none); the template's frontmatter isn't copied.
 - **Open boxes**: a daily note's unchecked boxes (`[ ]`, `[/]`, `[>]`, `[<]`) mark its day in the Agenda.
+
+## Settings
+
+The settings that belong to the folder, not the device, are in `Ta Da/settings.json`, shared by Ta Da and the Obsidian plugin. Ta Da never writes in Obsidian's config folder (`.obsidian/`) or the plugin's `data.json`.
+
+```json
+{
+  "dailyNotes": {
+    "dailyFolder": "Periodic Notes/Daily Notes",
+    "dailyTemplate": null,
+    "weekNotes": true,
+    "weekFolder": "Periodic Notes/Weekly Notes",
+    "weekTemplate": null
+  },
+  "theme": {
+    "themeSet": "Ayu",
+    "usesSchemePerAppearance": false,
+    "lightScheme": "Ayu Light",
+    "darkScheme": "Ayu Mirage"
+  },
+  "editor": {
+    "autocomplete": { "brackets": true, "formatting": true, "wikiLinks": true, "tags": true }
+  }
+}
+```
+
+- **Groups**: `dailyNotes` (Settings ▸ Daily notes) is read and written by Ta Da and the plugin. `theme` (Settings ▸ Themes, less Appearance) and `editor` (Settings ▸ Editor) are Ta Da's only. Folders and templates are paths from the folder's top level, without surrounding slashes; `""` is the top level. A template is a note's path or `null` for none. Theme and scheme values are names.
+- **Reading**: each key is read on its own. A missing key, or a value of the wrong type, takes the device's earlier value (from before the setting moved into the folder), else, for `dailyFolder` and `dailyTemplate` only, Obsidian's Daily notes setting (`folder` and `template` in `.obsidian/daily-notes.json`, `.md` added to a template without it), else the default above. A missing or unreadable file reads as all keys missing. A name that isn't a theme takes the default.
+- **Writing**: the file is written only when a setting in it changes, never on opening. A write sets every key of the groups that side owns (Ta Da: all three; the plugin: `dailyNotes`) to its current value and keeps every other key and group as it was, unknown ones included. It's JSON with two-space indents and a final newline; key order doesn't matter.
+- **Changes** from another device or app are picked up as the file changes, as other files are.
 
 ## Attachments
 

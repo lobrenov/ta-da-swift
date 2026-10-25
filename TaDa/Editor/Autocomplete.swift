@@ -20,8 +20,4 @@ struct Autocomplete: Equatable {
         wikiLinks = dictionary?["wikiLinks"] as? Bool ?? true
         tags = dictionary?["tags"] as? Bool ?? true
     }
-
-    var dictionary: [String: Bool] {
-        ["brackets": brackets, "formatting": formatting, "wikiLinks": wikiLinks, "tags": tags]
-    }
 }

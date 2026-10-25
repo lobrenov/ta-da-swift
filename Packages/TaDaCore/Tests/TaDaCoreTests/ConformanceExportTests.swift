@@ -448,3 +448,86 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
     #expect(Set(names).count == names.count, "duplicate case names")
     try write(["today": today.description, "cases": cases] as [String: Any], to: "writes.json")
 }
+
+// MARK: Settings
+
+private func json(_ settings: VaultSettings) -> [String: Any] {
+    func keep(_ values: KeyValuePairs<String, Any?>) -> [String: Any] {
+        var kept: [String: Any] = [:]
+        for (key, value) in values { if let value { kept[key] = value } }
+        return kept
+    }
+    func template(_ value: String??) -> Any? { value.map { $0 ?? NSNull() } }
+    let d = settings.dailyNotes, t = settings.theme, a = settings.autocomplete
+    return [
+        "dailyNotes": keep(["dailyFolder": d.dailyFolder, "dailyTemplate": template(d.dailyTemplate), "weekNotes": d.weekNotes,
+                            "weekFolder": d.weekFolder, "weekTemplate": template(d.weekTemplate)]),
+        "theme": keep(["themeSet": t.themeSet, "usesSchemePerAppearance": t.usesSchemePerAppearance,
+                       "lightScheme": t.lightScheme, "darkScheme": t.darkScheme]),
+        "editor": ["autocomplete": keep(["brackets": a.brackets, "formatting": a.formatting, "wikiLinks": a.wikiLinks, "tags": a.tags])],
+    ]
+}
+
+@Test func writeConformanceSettings() throws {
+    let full = """
+    {"dailyNotes": {"dailyFolder": "Journal", "dailyTemplate": "Templates/Daily.md", "weekNotes": false, "weekFolder": "", "weekTemplate": null},
+     "theme": {"themeSet": "Ayu", "usesSchemePerAppearance": true, "lightScheme": "Ayu Light", "darkScheme": "Ayu Mirage"},
+     "editor": {"autocomplete": {"brackets": true, "formatting": false, "wikiLinks": true, "tags": false}}}
+    """
+    let reads: [(name: String, input: String?)] = [
+        ("no file", nil), ("empty file", ""), ("empty object", "{}"), ("full file", full), ("not an object", "[1, 2]"), ("not json", "nope"),
+        ("wrong types", """
+         {"dailyNotes": {"dailyFolder": 3, "dailyTemplate": 4, "weekNotes": 1, "weekFolder": null, "weekTemplate": ["a"]},
+          "theme": {"themeSet": true, "usesSchemePerAppearance": "yes", "lightScheme": 5, "darkScheme": {}},
+          "editor": {"autocomplete": {"brackets": 0, "formatting": "no", "wikiLinks": null, "tags": []}}}
+         """),
+        ("groups of the wrong type", "{\"dailyNotes\": 3, \"theme\": [], \"editor\": {\"autocomplete\": \"x\"}}"),
+        ("null template", "{\"dailyNotes\": {\"dailyTemplate\": null, \"weekTemplate\": null}}"),
+        ("only theme", "{\"theme\": {\"themeSet\": \"Nord\"}}"),
+        ("partial groups", "{\"dailyNotes\": {\"weekFolder\": \"Weeks\"}, \"editor\": {\"autocomplete\": {\"tags\": false}}}"),
+        ("unknown keys", "{\"future\": 1, \"dailyNotes\": {\"dailyFolder\": \"J\", \"extra\": true}, \"theme\": {\"font\": \"Mono\"}}"),
+    ]
+    let obsidian: [(name: String, input: String)] = [
+        ("folder and template", "{\"folder\": \"Journal\", \"template\": \"Templates/Daily\"}"),
+        ("template with extension", "{\"folder\": \"Journal\", \"template\": \"Templates/Daily.md\"}"),
+        ("empty folder", "{\"folder\": \"\", \"template\": \"Daily\"}"),
+        ("empty template", "{\"folder\": \"Journal\", \"template\": \"\"}"),
+        ("folder only", "{\"folder\": \"Journal\"}"),
+        ("wrong types", "{\"folder\": 3, \"template\": null}"),
+        ("empty object", "{}"), ("not json", "nope"),
+    ]
+    let daily = VaultSettings.DailyNotes(dailyFolder: "Journal", dailyTemplate: "Templates/Daily.md", weekNotes: false,
+                                         weekFolder: "Weeks", weekTemplate: .some(nil))
+    let defaults = VaultSettings.DailyNotes(dailyFolder: "Periodic Notes/Daily Notes", dailyTemplate: .some(nil), weekNotes: true,
+                                            weekFolder: "Periodic Notes/Weekly Notes", weekTemplate: .some(nil))
+    let writes: [(name: String, input: String?, daily: VaultSettings.DailyNotes)] = [
+        ("no file", nil, daily), ("empty file", "", defaults), ("empty object", "{}", daily), ("full file", full, daily),
+        ("clearing templates", full, defaults),
+        ("wrong types replaced", "{\"dailyNotes\": {\"dailyFolder\": 3, \"weekNotes\": 1}}", daily),
+        ("group of the wrong type", "{\"dailyNotes\": 3}", daily),
+        ("only theme", "{\"theme\": {\"themeSet\": \"Nord\"}}", daily),
+        ("unknown keys kept", "{\"future\": {\"a\": [1, 2]}, \"dailyNotes\": {\"dailyFolder\": \"Old\", \"extra\": true}, \"theme\": {\"font\": \"Mono\"}}", daily),
+    ]
+    let names = reads.map(\.name) + obsidian.map(\.name) + writes.map(\.name)
+    #expect(Set(reads.map(\.name)).count == reads.count && Set(obsidian.map(\.name)).count == obsidian.count
+            && Set(writes.map(\.name)).count == writes.count, "duplicate case names in \(names)")
+
+    try write([
+        "read": reads.map { ["name": $0.name, "input": orNull($0.input), "expected": json(VaultSettings(data: $0.input.map { Data($0.utf8) }))] as [String: Any] },
+        "obsidianDailyNotes": obsidian.map {
+            let found = ObsidianDailyNotes(data: Data($0.input.utf8))
+            var expected: [String: Any] = [:]
+            if let folder = found.dailyFolder { expected["dailyFolder"] = folder }
+            if let template = found.dailyTemplate { expected["dailyTemplate"] = template }
+            return ["name": $0.name, "input": $0.input, "expected": expected] as [String: Any]
+        },
+        "write": try writes.map {
+            let result = VaultSettings.updated($0.input.map { Data($0.utf8) }, dailyNotes: $0.daily)
+            var settings = VaultSettings()
+            settings.dailyNotes = $0.daily
+            let expected = try JSONSerialization.jsonObject(with: result)
+            return ["name": $0.name, "input": orNull($0.input), "dailyNotes": json(settings)["dailyNotes"] as Any,
+                    "expected": expected] as [String: Any]
+        },
+    ] as [String: Any], to: "settings.json")
+}

@@ -1,0 +1,503 @@
+{
+  "obsidianDailyNotes" : [
+    {
+      "expected" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md"
+      },
+      "input" : "{\"folder\": \"Journal\", \"template\": \"Templates/Daily\"}",
+      "name" : "folder and template"
+    },
+    {
+      "expected" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md"
+      },
+      "input" : "{\"folder\": \"Journal\", \"template\": \"Templates/Daily.md\"}",
+      "name" : "template with extension"
+    },
+    {
+      "expected" : {
+        "dailyFolder" : "",
+        "dailyTemplate" : "Daily.md"
+      },
+      "input" : "{\"folder\": \"\", \"template\": \"Daily\"}",
+      "name" : "empty folder"
+    },
+    {
+      "expected" : {
+        "dailyFolder" : "Journal"
+      },
+      "input" : "{\"folder\": \"Journal\", \"template\": \"\"}",
+      "name" : "empty template"
+    },
+    {
+      "expected" : {
+        "dailyFolder" : "Journal"
+      },
+      "input" : "{\"folder\": \"Journal\"}",
+      "name" : "folder only"
+    },
+    {
+      "expected" : {
+
+      },
+      "input" : "{\"folder\": 3, \"template\": null}",
+      "name" : "wrong types"
+    },
+    {
+      "expected" : {
+
+      },
+      "input" : "{}",
+      "name" : "empty object"
+    },
+    {
+      "expected" : {
+
+      },
+      "input" : "nope",
+      "name" : "not json"
+    }
+  ],
+  "read" : [
+    {
+      "expected" : {
+        "dailyNotes" : {
+
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : null,
+      "name" : "no file"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "",
+      "name" : "empty file"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "{}",
+      "name" : "empty object"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Journal",
+          "dailyTemplate" : "Templates/Daily.md",
+          "weekFolder" : "",
+          "weekNotes" : false,
+          "weekTemplate" : null
+        },
+        "editor" : {
+          "autocomplete" : {
+            "brackets" : true,
+            "formatting" : false,
+            "tags" : false,
+            "wikiLinks" : true
+          }
+        },
+        "theme" : {
+          "darkScheme" : "Ayu Mirage",
+          "lightScheme" : "Ayu Light",
+          "themeSet" : "Ayu",
+          "usesSchemePerAppearance" : true
+        }
+      },
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}}}",
+      "name" : "full file"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "[1, 2]",
+      "name" : "not an object"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "nope",
+      "name" : "not json"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": 3, \"dailyTemplate\": 4, \"weekNotes\": 1, \"weekFolder\": null, \"weekTemplate\": [\"a\"]},\n \"theme\": {\"themeSet\": true, \"usesSchemePerAppearance\": \"yes\", \"lightScheme\": 5, \"darkScheme\": {}},\n \"editor\": {\"autocomplete\": {\"brackets\": 0, \"formatting\": \"no\", \"wikiLinks\": null, \"tags\": []}}}",
+      "name" : "wrong types"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "{\"dailyNotes\": 3, \"theme\": [], \"editor\": {\"autocomplete\": \"x\"}}",
+      "name" : "groups of the wrong type"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+          "dailyTemplate" : null,
+          "weekTemplate" : null
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "{\"dailyNotes\": {\"dailyTemplate\": null, \"weekTemplate\": null}}",
+      "name" : "null template"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+          "themeSet" : "Nord"
+        }
+      },
+      "input" : "{\"theme\": {\"themeSet\": \"Nord\"}}",
+      "name" : "only theme"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+          "weekFolder" : "Weeks"
+        },
+        "editor" : {
+          "autocomplete" : {
+            "tags" : false
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "{\"dailyNotes\": {\"weekFolder\": \"Weeks\"}, \"editor\": {\"autocomplete\": {\"tags\": false}}}",
+      "name" : "partial groups"
+    },
+    {
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "J"
+        },
+        "editor" : {
+          "autocomplete" : {
+
+          }
+        },
+        "theme" : {
+
+        }
+      },
+      "input" : "{\"future\": 1, \"dailyNotes\": {\"dailyFolder\": \"J\", \"extra\": true}, \"theme\": {\"font\": \"Mono\"}}",
+      "name" : "unknown keys"
+    }
+  ],
+  "write" : [
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md",
+        "weekFolder" : "Weeks",
+        "weekNotes" : false,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Journal",
+          "dailyTemplate" : "Templates/Daily.md",
+          "weekFolder" : "Weeks",
+          "weekNotes" : false,
+          "weekTemplate" : null
+        }
+      },
+      "input" : null,
+      "name" : "no file"
+    },
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Periodic Notes/Daily Notes",
+        "dailyTemplate" : null,
+        "weekFolder" : "Periodic Notes/Weekly Notes",
+        "weekNotes" : true,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Periodic Notes/Daily Notes",
+          "dailyTemplate" : null,
+          "weekFolder" : "Periodic Notes/Weekly Notes",
+          "weekNotes" : true,
+          "weekTemplate" : null
+        }
+      },
+      "input" : "",
+      "name" : "empty file"
+    },
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md",
+        "weekFolder" : "Weeks",
+        "weekNotes" : false,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Journal",
+          "dailyTemplate" : "Templates/Daily.md",
+          "weekFolder" : "Weeks",
+          "weekNotes" : false,
+          "weekTemplate" : null
+        }
+      },
+      "input" : "{}",
+      "name" : "empty object"
+    },
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md",
+        "weekFolder" : "Weeks",
+        "weekNotes" : false,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Journal",
+          "dailyTemplate" : "Templates/Daily.md",
+          "weekFolder" : "Weeks",
+          "weekNotes" : false,
+          "weekTemplate" : null
+        },
+        "editor" : {
+          "autocomplete" : {
+            "brackets" : true,
+            "formatting" : false,
+            "tags" : false,
+            "wikiLinks" : true
+          }
+        },
+        "theme" : {
+          "darkScheme" : "Ayu Mirage",
+          "lightScheme" : "Ayu Light",
+          "themeSet" : "Ayu",
+          "usesSchemePerAppearance" : true
+        }
+      },
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}}}",
+      "name" : "full file"
+    },
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Periodic Notes/Daily Notes",
+        "dailyTemplate" : null,
+        "weekFolder" : "Periodic Notes/Weekly Notes",
+        "weekNotes" : true,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Periodic Notes/Daily Notes",
+          "dailyTemplate" : null,
+          "weekFolder" : "Periodic Notes/Weekly Notes",
+          "weekNotes" : true,
+          "weekTemplate" : null
+        },
+        "editor" : {
+          "autocomplete" : {
+            "brackets" : true,
+            "formatting" : false,
+            "tags" : false,
+            "wikiLinks" : true
+          }
+        },
+        "theme" : {
+          "darkScheme" : "Ayu Mirage",
+          "lightScheme" : "Ayu Light",
+          "themeSet" : "Ayu",
+          "usesSchemePerAppearance" : true
+        }
+      },
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}}}",
+      "name" : "clearing templates"
+    },
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md",
+        "weekFolder" : "Weeks",
+        "weekNotes" : false,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Journal",
+          "dailyTemplate" : "Templates/Daily.md",
+          "weekFolder" : "Weeks",
+          "weekNotes" : false,
+          "weekTemplate" : null
+        }
+      },
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": 3, \"weekNotes\": 1}}",
+      "name" : "wrong types replaced"
+    },
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md",
+        "weekFolder" : "Weeks",
+        "weekNotes" : false,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Journal",
+          "dailyTemplate" : "Templates/Daily.md",
+          "weekFolder" : "Weeks",
+          "weekNotes" : false,
+          "weekTemplate" : null
+        }
+      },
+      "input" : "{\"dailyNotes\": 3}",
+      "name" : "group of the wrong type"
+    },
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md",
+        "weekFolder" : "Weeks",
+        "weekNotes" : false,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Journal",
+          "dailyTemplate" : "Templates/Daily.md",
+          "weekFolder" : "Weeks",
+          "weekNotes" : false,
+          "weekTemplate" : null
+        },
+        "theme" : {
+          "themeSet" : "Nord"
+        }
+      },
+      "input" : "{\"theme\": {\"themeSet\": \"Nord\"}}",
+      "name" : "only theme"
+    },
+    {
+      "dailyNotes" : {
+        "dailyFolder" : "Journal",
+        "dailyTemplate" : "Templates/Daily.md",
+        "weekFolder" : "Weeks",
+        "weekNotes" : false,
+        "weekTemplate" : null
+      },
+      "expected" : {
+        "dailyNotes" : {
+          "dailyFolder" : "Journal",
+          "dailyTemplate" : "Templates/Daily.md",
+          "extra" : true,
+          "weekFolder" : "Weeks",
+          "weekNotes" : false,
+          "weekTemplate" : null
+        },
+        "future" : {
+          "a" : [
+            1,
+            2
+          ]
+        },
+        "theme" : {
+          "font" : "Mono"
+        }
+      },
+      "input" : "{\"future\": {\"a\": [1, 2]}, \"dailyNotes\": {\"dailyFolder\": \"Old\", \"extra\": true}, \"theme\": {\"font\": \"Mono\"}}",
+      "name" : "unknown keys kept"
+    }
+  ]
+}
