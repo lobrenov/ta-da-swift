@@ -6,6 +6,7 @@ import TaDaCore
 #if os(macOS)
 struct ContentView: View {
     @Bindable var model: AppModel
+    @State private var quickSwitcher = QuickSwitcher()
 
     var body: some View {
         Group {
@@ -17,6 +18,7 @@ struct ContentView: View {
             }
         }
         .imageDialogs(model)
+        .onChange(of: model.quickSwitcherRequest) { quickSwitcher.toggle(model) }
         .sheet(item: Binding { model.trashConfirmation.flatMap { $0.images.isEmpty ? nil : $0 } }
                          set: { if $0 == nil { model.trashConfirmation = nil } }) { request in
             DeleteFilesDialog(model: model, request: request)

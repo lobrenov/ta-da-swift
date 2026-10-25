@@ -190,6 +190,15 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         set { model.onSearch = newValue }
     }
 
+    /// The footer's key hints, in place of ↑↓ Navigate, ↵ and the style's confirm label, and esc Close.
+    var footerHints: [(key: String, label: String)]? {
+        get { model.footerHints }
+        set { model.footerHints = newValue }
+    }
+
+    /// What ⇧↵ does in a menu that takes keys; ⇧↵ picks the highlighted item unless set.
+    var onShiftReturn: (() -> Void)?
+
     /// `row` draws an item's row content, given whether it's highlighted. A menu with a `searchPrompt` has a
     /// search field above its list.
     init(style: PopupMenuStyle, takesKeys: Bool, emptyText: String? = nil, searchPrompt: String? = nil,
@@ -245,7 +254,8 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         switch event.specialKey {
         case .downArrow: move(by: 1)
         case .upArrow: move(by: -1)
-        case .carriageReturn, .enter: pickHighlighted()
+        case .carriageReturn, .enter:
+            if event.modifierFlags.contains(.shift), let onShiftReturn { onShiftReturn() } else { pickHighlighted() }
         default:
             guard model.searchPrompt == nil else { return false }
             typeSelect(event)
@@ -303,6 +313,7 @@ private final class PopupMenuModel<Item: PopupMenuItem> {
     var searchPrompt: String?
     var header: (height: CGFloat, view: AnyView)?
     var query = ""
+    var footerHints: [(key: String, label: String)]?
     /// Bumped on each show, to scroll the highlight into view.
     var revision = 0
     @ObservationIgnored var pick: (Item) -> Void = { _ in }
@@ -371,7 +382,7 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
                     .onChange(of: model.highlight) { reveal(in: scroller, anchor: nil) }
             }
             if let confirm = style.confirmLabel {
-                PopupFooter(hints: [("↑↓", "Navigate"), ("↵", confirm), ("esc", "Close")], theme: theme)
+                PopupFooter(hints: model.footerHints ?? [("↑↓", "Navigate"), ("↵", confirm), ("esc", "Close")], theme: theme)
             }
         }
         .popupChrome(theme: theme, width: style.width, padding: style.padding)

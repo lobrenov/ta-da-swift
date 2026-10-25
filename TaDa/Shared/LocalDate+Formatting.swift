@@ -26,6 +26,8 @@ extension LocalDate {
         case monthYear
         /// "October"
         case month
+        /// "Oct"
+        case shortMonth
     }
 
     func formatted(_ style: Style) -> String {
@@ -42,6 +44,7 @@ extension LocalDate {
         case .shortWeekday: date.formatted(.dateTime.weekday(.abbreviated))
         case .monthYear: date.formatted(.dateTime.month(.wide).year())
         case .month: date.formatted(.dateTime.month(.wide))
+        case .shortMonth: date.formatted(.dateTime.month(.abbreviated))
         }
     }
 

@@ -100,7 +100,7 @@ final class LinkMenuSearch {
         return (query.trimmingCharacters(in: .whitespaces).isEmpty ? "Attachments" : nil, choices)
     }
 
-    private func choice(_ item: Item) -> LinkChoice {
+    func choice(_ item: Item) -> LinkChoice {
         let index = source.index
         switch item.properties.kind {
         case .task:

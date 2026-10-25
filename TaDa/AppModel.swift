@@ -109,6 +109,8 @@ import UIKit
     var searchFocusRequest = 0
     /// Bumped by the Toggle Sidebar command; the window shows, hides or floats the sidebar.
     var sidebarToggleRequest = 0
+    /// Bumped by the Quick Switcher command; the window shows the quick switcher.
+    var quickSwitcherRequest = 0
     /// The browser list on screen, top to bottom, for the arrow keys and selection clicks. Set by the list itself.
     struct ArrowKeyList: Equatable {
         var id: UUID
@@ -978,6 +980,17 @@ import UIKit
             }
         }
         open(path)
+    }
+
+    /// The quick switcher's ↵: a project or area that isn't logged shows its browser; anything else opens as a link.
+    func switchTo(_ path: String) {
+        guard let item = index[path], !item.isLogged else { return openLink(to: path) }
+        switch item.properties.kind {
+        case .project: show(.project(path))
+        case .area: show(.area(path))
+        case .task, .note: return openLink(to: path)
+        }
+        selection = nil
     }
 
     /// The path of the project or area whose page is showing.
@@ -1916,15 +1929,15 @@ import UIKit
     /// Creates an untitled task and selects it with its title ready to type. On a project's or area's page it's filed
     /// there; in the Agenda, Loose tasks and a tag's page it's filed with the selected task's project or area; in the
     /// Agenda it's due on the selected day, or today when a week is selected; on a tag's page it carries the tag, and on Untagged it stays there; anywhere else it opens in Loose
-    /// tasks.
-    func newTask() async {
+    /// tasks. With a `title` (the quick switcher's ⇧↵) it's called that and selected without its title ready to type.
+    func newTask(titled title: String? = nil) async {
         let parent = domainParent ?? selectedGroup
         var tags: [Tag] = []
         if case .tag(_?) = domain, let shownTag { tags = [shownTag] }
         var text = Self.newTask(in: parent, tags: tags, today: today)
         if domain == .agenda { text = FrontmatterEditor.set("dueDate", to: .date(agendaDueDay), in: text) }
-        guard let path = await create(text, in: Vault.taskFolder) else { return }
-        titleFocus = path
+        guard let path = await create(text, in: Vault.taskFolder, title: title ?? "Untitled") else { return }
+        if title == nil { titleFocus = path }
         if case .tag = domain {} else if parent == nil, domain != .agenda { domain = .loose }
         selection = path
     }

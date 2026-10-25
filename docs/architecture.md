@@ -200,6 +200,7 @@ On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a check
 | File ▸ New Folder, File ▸ Convert to (no keys) | A folder in the notes folder on screen; convert the open or picked note |
 | File ▸ Reveal in Finder (no keys) | Select the picked or open files in Finder (`AppModel.picked`); the file menu has it too |
 | ⌥⌘F | Search files |
+| ⌘O | Quick switcher (`QuickSwitcher`): open a file where it lives, a project or area as its browser (`AppModel.switchTo(_:)`), or ⇧↵ a new task with the typed title, filed as ⌘N files one |
 | ⌃Space (Settings ▸ Hotkeys) | Open or close Quick Entry, from any app. In it: ↵ create, ⌘↵ create and open, esc close, ⌘P, ⌘S and ⌘D the parent and date menus |
 | ⌘1 / ⌘2 / ⌘3 / ⌘4 | Agenda / Loose tasks / Trash / Logbook (View ▸ Attachments has no keys) |
 | ← / → | In the Agenda, while the list has the keyboard: step a day, or a week when a week is selected |

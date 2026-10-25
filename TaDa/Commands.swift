@@ -1,4 +1,4 @@
-// Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; File ▸ Convert to for the open or
+// Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; ⌘O the quick switcher; File ▸ Convert to for the open or
 // picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on, ⌘P move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu;
@@ -33,6 +33,10 @@ struct AppCommands: Commands {
                 .keyboardShortcut("n", modifiers: [.command, .option])
                 .disabled(model.state != .ready)
             Button("New Folder") { Task { await model.newFolder() } }
+                .disabled(model.state != .ready)
+            Divider()
+            Button("Quick Switcher…") { model.quickSwitcherRequest += 1 }
+                .keyboardShortcut("o")
                 .disabled(model.state != .ready)
             Divider()
             Menu("Convert to") {
