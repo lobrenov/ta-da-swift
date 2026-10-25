@@ -60,6 +60,7 @@ struct BodyEditor: View {
             links: LinkMenuSource(index: model.index, vault: model.vault, attachments: model.attachments, recent: model.recentFiles, openPath: document.path),
             embedImage: model.embed,
             imageActions: model,
+            taskExtraction: model,
             takesFocus: model.bodyFocus == document.path,
             onTookFocus: { model.bodyFocus = nil },
             onLinkClick: openLink,

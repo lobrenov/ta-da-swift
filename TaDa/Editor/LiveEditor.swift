@@ -28,6 +28,8 @@ struct LiveEditor: View {
     /// Copies, renames, reveals and deletes the images embeds draw, from the embed menu (`EmbedMenu.swift`);
     /// without it, images have no menu.
     var imageActions: AppModel? = nil
+    /// Extracts subtasks to tasks from the checkbox menu (`ExtractTask.swift`, Mac); without it, the menu has no Extract to Task row.
+    var taskExtraction: AppModel? = nil
     /// Gives the editor the keyboard, caret at the start, once its text view is in a window; then calls `onTookFocus`.
     var takesFocus = false
     var onTookFocus: () -> Void = {}
@@ -280,9 +282,16 @@ struct LiveEditor: View {
     #if os(macOS)
 
     private func showCheckboxMenu(_ request: TaskMarkerMenuRequest) {
+        var extract: (() -> Void)?
+        if let model = taskExtraction, let textView = slashCommand.textView {
+            let location = textView.characterIndex(for: CGPoint(x: request.anchorRect.midX, y: request.anchorRect.midY))
+            if location != NSNotFound, ExtractTask.canExtract(in: textView, at: location) {
+                extract = { ExtractTask.perform(in: textView, at: location, model: model) }
+            }
+        }
         checkboxMenu.show(
             current: request.marker, anchor: request.anchorRect, items: TaskCheckboxStyle.referenceMenu,
-            theme: theme, pick: request.setMarker
+            theme: theme, pick: request.setMarker, extract: extract
         )
     }
 

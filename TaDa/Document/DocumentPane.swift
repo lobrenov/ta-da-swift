@@ -28,6 +28,12 @@ struct DocumentPane: View {
                     LiveDocumentView(model: model, document: document)
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                if let extracted = model.extracted {
+                    ExtractedToast(model: model, extracted: extracted)
+                        .padding(20)
+                }
+            }
         } else if let error = model.documentError, model.selection != nil {
             EmptyState(systemImage: "exclamationmark.triangle", title: "Couldn’t open the file", message: "\(error)")
         } else if model.selection == nil, model.multiSelection.count > 1 {

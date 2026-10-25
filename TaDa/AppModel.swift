@@ -1969,6 +1969,27 @@ import UIKit
         }
     }
 
+    /// A task Extract to Task just made: the window shows `ExtractedToast` for it.
+    var extracted: Extracted?
+    struct Extracted: Equatable, Identifiable {
+        let id = UUID()
+        let path: String
+        /// The project or area it's filed under; nil in Loose.
+        let parent: String?
+    }
+
+    /// Creates the task Extract to Task makes from a subtask in the file at `path`, filed under the file itself when
+    /// it's a project or area, else under the file's project or area. Returns what `extracted` shows for it.
+    func extractTask(_ extract: SubtaskExtraction.Extract, from path: String) async -> Extracted? {
+        let host = index[path]
+        let parent = host?.properties.kind == .project || host?.properties.kind == .area ? host : host.flatMap { index.parent(of: $0) }
+        let isProject = parent?.properties.kind == .project
+        let text = SubtaskExtraction.taskText(extract, project: isProject ? parent?.title : nil,
+                                              area: isProject ? nil : parent?.title, today: today)
+        guard let new = await create(text, in: Vault.taskFolder, title: extract.title) else { return nil }
+        return Extracted(path: new, parent: parent?.title)
+    }
+
     /// Creates an untitled project, in the area whose page is showing, and opens its page with its title ready to type.
     func newProject() async {
         let area = domainParent.flatMap { $0.properties.kind == .area ? $0 : nil }
