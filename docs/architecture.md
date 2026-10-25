@@ -208,7 +208,7 @@ On iOS the live editor (`LiveEditor`) uses 17 pt text; press and hold on a check
 | ⌘P | Move the open task (project menu under its project chip) or the picked tasks (under the first) to a project; with no task, the open or picked projects to an area (`AppModel.areaTargets(for:)`, area menu). Off in Source mode |
 | ⌘T | Open tagMenu for the open file (under its + Tag chip). Off in Source mode and with no open file |
 | ⌘S / ⌘D | Set the due date / deadline of the open file (calendar under its chip) or the picked tasks (under the first). Off in Source mode |
-| ⌘L | Make the caret's line a subtask, or complete (reopen) the subtask it's on, as one undo step. Off unless the Live or Source editor has the keyboard (its `editor` focused value) |
+| ⌘L | Make the caret's line (or each selected line) a subtask, or complete (reopen) the subtask it's on, as one undo step. Off unless the Live or Source editor has the keyboard (its `editor` focused value) |
 | ⌘B / ⌘I / ⇧⌘H / ⇧⌘S | Format ▸ Bold / Italic / Highlight / Strikethrough: wrap the selection, or the word at the caret (not for highlight), or insert the pair of markers around the caret; inside the format, remove it. Off unless the Live editor has the keyboard (its `editor` focused value, when it's `InlineFormatting`) in the key window; a table cell that has the keyboard gets it |
 | ↑ / ↓, Escape | Move through the list, clear the selection, while the list has the keyboard (↑ ↓ keep moving the selection in the Agenda) |
 | ⌫ or ⌘⌫ | Move the selected file, or the picked tasks, to the trash, while the list has the keyboard |

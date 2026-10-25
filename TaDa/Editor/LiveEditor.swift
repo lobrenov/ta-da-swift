@@ -842,28 +842,13 @@ private enum PhoneWikiLink {
     }
 }
 
-/// The subtask button: makes the caret's line a subtask, or completes (or reopens) it, as ⌘L does on the Mac.
+/// The subtask button: makes the caret's line (or each selected line) a subtask, or completes (or reopens) it, as ⌘L does on the Mac.
 private enum PhoneSubtask {
     static func perform(in textView: UITextView) {
-        let string = textView.text as NSString
-        let caret = textView.selectedRange.location
-        var start = 0, end = 0, contentsEnd = 0
-        string.getLineStart(&start, end: &end, contentsEnd: &contentsEnd, for: NSRange(location: caret, length: 0))
-        let line = string.substring(with: NSRange(location: start, length: contentsEnd - start))
-        switch SubtaskLine.edit(for: line[...]) {
-        case let .convert(offset, inserted):
-            let location = start + offset
-            textView.selectedRange = NSRange(location: location, length: 0)
-            textView.insertText(inserted)
-            let length = (inserted as NSString).length
-            textView.selectedRange = NSRange(location: caret >= location ? caret + length : caret, length: 0)
-        case let .setMarker(offset, marker):
-            textView.selectedRange = NSRange(location: start + offset, length: 1)
-            textView.insertText(String(marker))
-            textView.selectedRange = NSRange(location: caret, length: 0)
-        case .none:
-            break
-        }
+        guard let plan = SubtaskLine.plan(in: textView.text, selection: textView.selectedRange) else { return }
+        textView.selectedRange = plan.range
+        textView.insertText(plan.text)
+        textView.selectedRange = plan.selection
     }
 }
 #endif
