@@ -113,7 +113,8 @@ struct SidebarView: View {
         }
     }
 
-    /// Untagged, then the tag tree: roots aligned with Untagged, 16pt per level, the last segment only, a parent folding from its chevron.
+    /// Untagged, then the tag tree: a chevron column before each icon, 16pt per level, the last segment only, a parent
+    /// folding from its chevron.
     @ViewBuilder private var tags: some View {
         row(.tag(nil), count: model.untaggedCount)
         Spacer().frame(height: 10)
@@ -128,8 +129,8 @@ struct SidebarView: View {
         }
     }
 
-    /// Loose, the top level, then the folder tree: roots aligned with Loose, 16pt per level, a parent folding from its
-    /// chevron.
+    /// Loose, the top level, then the folder tree: a chevron column before each icon, 16pt per level, a parent folding
+    /// from its chevron.
     @ViewBuilder private var notes: some View {
         row(.folder(""), count: model.looseNoteCount, title: "Loose")
             .taskDrop(model, onto: .folder(""))
@@ -153,7 +154,7 @@ struct SidebarView: View {
         return rows(model.folderTree, depth: 0)
     }
 
-    /// A folder: a row with its icon, name and count, a fold chevron in the leading padding for a parent, and the folder
+    /// A folder: a row with its icon, name and count, a fold chevron in the chevron column for a parent, and the folder
     /// menu. While it's being named, a field in place of the row.
     @ViewBuilder private func folderRow(_ node: FolderNode, depth: Int) -> some View {
         let path = node.path
@@ -175,9 +176,10 @@ struct SidebarView: View {
                         Text(node.name)
                     }
                 }
-                .padding(.leading, 10)
+                .padding(.leading, Self.treeInset)
             } else {
-                SidebarRow(selected: model.domain == .folder(path) && !model.isSearching, height: 30, count: node.count) {
+                SidebarRow(selected: model.domain == .folder(path) && !model.isSearching, height: 30, count: node.count,
+                           leading: Self.treeInset) {
                     model.show(.folder(path))
                     picked()
                 } icon: {
@@ -200,10 +202,11 @@ struct SidebarView: View {
                     Image(systemName: folded ? "chevron.right" : "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(theme.color(\.muted))
-                        .frame(width: 10, height: 30)
+                        .frame(width: 14, height: 30)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                .padding(.leading, 8)
                 .accessibilityLabel(folded ? "Expand \(node.name)" : "Collapse \(node.name)")
             }
         }
@@ -242,11 +245,12 @@ struct SidebarView: View {
         namingFolder = path
     }
 
-    /// A tag: a row with its glyph, last segment and count, and for a parent a fold chevron in the row's leading padding.
+    /// A tag: a row with its glyph, last segment and count, and for a parent a fold chevron in the chevron column.
     private func tagRow(_ node: TagNode, depth: Int) -> some View {
         let path = node.tag.path
         let folded = model.isTagFolded(path)
-        return SidebarRow(selected: model.domain == .tag(path) && !model.isSearching, height: 30, count: node.count) {
+        return SidebarRow(selected: model.domain == .tag(path) && !model.isSearching, height: 30, count: node.count,
+                          leading: Self.treeInset) {
             model.show(.tag(path))
             picked()
         } icon: {
@@ -265,15 +269,19 @@ struct SidebarView: View {
                     Image(systemName: folded ? "chevron.right" : "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(theme.color(\.muted))
-                        .frame(width: 10, height: 30)
+                        .frame(width: 14, height: 30)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                .padding(.leading, 8)
                 .accessibilityLabel(folded ? "Expand \(node.tag.name)" : "Collapse \(node.tag.name)")
             }
         }
         .padding(.leading, CGFloat(depth) * 16)
     }
+
+    /// A tree row's leading padding: 8, the 14pt chevron column, then 6 before its icon.
+    private static let treeInset: CGFloat = 28
 
     private func row(_ domain: AppModel.Domain, count: Int?, text: String? = nil, title: String? = nil) -> some View {
         SidebarRow(selected: model.domain == domain && !model.isSearching, height: 32, count: count, text: text) {
@@ -462,6 +470,7 @@ struct SidebarRow<Icon: View, Label: View>: View {
     let count: Int?
     /// Trailing text in place of a count.
     var text: String? = nil
+    var leading: CGFloat = 10
     let action: () -> Void
     @ViewBuilder let icon: Icon
     @ViewBuilder let label: Label
@@ -489,7 +498,8 @@ struct SidebarRow<Icon: View, Label: View>: View {
             }
             .font(.system(size: 13, weight: selected ? .semibold : .medium))
             .foregroundStyle(theme.color(selected ? \.strong : \.fg))
-            .padding(.horizontal, 10)
+            .padding(.leading, leading)
+            .padding(.trailing, 10)
             .frame(height: height)
             .background(selected ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
             .contentShape(.rect)

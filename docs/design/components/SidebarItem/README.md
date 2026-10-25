@@ -6,6 +6,7 @@ A 32px navigation row in the sidebar: a coloured 16px icon, a label and an optio
 
 - `td-nav` — the 240px sidebar on `side`.
 - `td-nav-item` — `size-row` tall (30px for projects), `radius-md`, padding 0 10px, gap 10px, 13px 500 `fg`. `is-active` fills with `surface`, label `strong` 600, and the link carries `aria-current="page"`.
+- `td-nav-tree` — a tag or notes-folder tree row: padding-left 28px, with a 14px column 8px in holding a parent's 8px bold `muted` chevron (right folded, down expanded); 16px more per level. Parents start folded.
 - `td-count` — right-aligned, 12px 500 `muted`; hidden at zero.
 - `is-target` — a 2px `accent` inset ring while the row's file menu is open, or while rows are dragged over it: task rows onto a project, an area, Loose tasks or Agenda (linking them, emptying their project or making them due on the Agenda's selected day), projects onto an area, note rows onto Loose or a notes folder.
 - `td-nav-switch` — Tasks | Tags | Notes: a `surface` track (`radius-lg` less 2, padding 2px) of three 26px segments, 12px 500 `fg` with their icons (the area cube, `tag` in `accent`, `doc.text` in `link`); the picked one on `bg` in 600 `strong`. Swiping sideways over the sidebar switches too.

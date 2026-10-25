@@ -31,11 +31,11 @@ struct PhoneNotesScreen: View {
             } else {
                 let rows = visibleFolders
                 PhoneCard {
-                    ForEach(rows.indices, id: \.self) { i in
-                        let node = rows[i].node
+                    ForEach(rows, id: \.node.id) { row in
+                        let node = row.node
                         PhoneTreeRow(symbol: "folder", name: node.name, spoken: Self.spoken(node.name, node.count), route: .folder(node.path),
-                                     count: node.count, depth: rows[i].depth, hasChildren: !node.children.isEmpty,
-                                     isFolded: model.isFolderFolded(node.path), isLast: i == rows.count - 1) {
+                                     count: node.count, depth: row.depth, hasChildren: !node.children.isEmpty,
+                                     isFolded: model.isFolderFolded(node.path), isLast: node.id == rows.last?.node.id) {
                             model.toggleFolderFolded(node.path)
                         }
                     }

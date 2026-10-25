@@ -306,13 +306,13 @@ import UIKit
     var sidebarMode: SidebarMode {
         didSet { defaults.set(sidebarMode.rawValue, forKey: Keys.sidebarMode) }
     }
-    /// The tag tree's folded parents, by tag path.
-    private(set) var foldedTags: Set<String> {
-        didSet { defaults.set(foldedTags.sorted(), forKey: Keys.foldedTags) }
+    /// The tag tree's expanded parents, by tag path; the others are folded.
+    private(set) var expandedTags: Set<String> {
+        didSet { defaults.set(expandedTags.sorted(), forKey: Keys.expandedTags) }
     }
-    /// The Notes tree's folded folders, by path.
-    private(set) var foldedFolders: Set<String> {
-        didSet { defaults.set(foldedFolders.sorted(), forKey: Keys.foldedFolders) }
+    /// The Notes tree's expanded folders, by path; the others are folded.
+    private(set) var expandedFolders: Set<String> {
+        didSet { defaults.set(expandedFolders.sorted(), forKey: Keys.expandedFolders) }
     }
     /// The files opened last, most recent first, for the link menu's Recent: eight besides the open one.
     private(set) var recentFiles: [String] {
@@ -417,19 +417,19 @@ import UIKit
     }
 
     func isTagFolded(_ path: String) -> Bool {
-        foldedTags.contains(path)
+        !expandedTags.contains(path)
     }
 
     func toggleTagFolded(_ path: String) {
-        if foldedTags.remove(path) == nil { foldedTags.insert(path) }
+        if expandedTags.remove(path) == nil { expandedTags.insert(path) }
     }
 
     func isFolderFolded(_ path: String) -> Bool {
-        foldedFolders.contains(path)
+        !expandedFolders.contains(path)
     }
 
     func toggleFolderFolded(_ path: String) {
-        if foldedFolders.remove(path) == nil { foldedFolders.insert(path) }
+        if expandedFolders.remove(path) == nil { expandedFolders.insert(path) }
     }
 
     /// How long an edit waits before it's saved.
@@ -469,8 +469,8 @@ import UIKit
         static let hapticsOff = "hapticsOff"
         static let recentFiles = "recentFiles"
         static let sidebarMode = "sidebarMode"
-        static let foldedTags = "foldedTags"
-        static let foldedFolders = "foldedFolders"
+        static let expandedTags = "expandedTags"
+        static let expandedFolders = "expandedFolders"
         static let lastLogged = "lastLogged"
         static let quickEntryHotkey = "quickEntryHotkey"
         static let browserWidth = "browserWidth"
@@ -496,8 +496,8 @@ import UIKit
         haptics = !defaults.bool(forKey: Keys.hapticsOff)
         recentFiles = defaults.stringArray(forKey: Keys.recentFiles) ?? []
         sidebarMode = defaults.string(forKey: Keys.sidebarMode).flatMap(SidebarMode.init) ?? .projects
-        foldedTags = Set(defaults.stringArray(forKey: Keys.foldedTags) ?? [])
-        foldedFolders = Set(defaults.stringArray(forKey: Keys.foldedFolders) ?? [])
+        expandedTags = Set(defaults.stringArray(forKey: Keys.expandedTags) ?? [])
+        expandedFolders = Set(defaults.stringArray(forKey: Keys.expandedFolders) ?? [])
         groupings = defaults.dictionary(forKey: Keys.groupings) as? [String: String] ?? [:]
         let names = DailyNoteNames()
         dailyFolder = defaults.string(forKey: Keys.dailyFolder) ?? names.dailyFolder
@@ -2204,7 +2204,7 @@ import UIKit
         do {
             let path = try await Self.run { try vault.createFolder(named: name, in: parent) }
             knownFolders.insert(path)
-            foldedFolders.remove(parent)
+            expandedFolders.insert(parent)
             updateNotes()
             folderNameFocus = path
         } catch {
@@ -2313,7 +2313,7 @@ import UIKit
         let moved = { (file: String) in isInside(file) ? newPath + file.dropFirst(path.count) : file }
         if isFolder {
             knownFolders = Set(knownFolders.map(moved))
-            foldedFolders = Set(foldedFolders.map(moved))
+            expandedFolders = Set(expandedFolders.map(moved))
             for case let (.folder(old), filter) in tagFilters where isInside(old) {
                 tagFilters[.folder(old)] = nil
                 tagFilters[.folder(moved(old))] = filter

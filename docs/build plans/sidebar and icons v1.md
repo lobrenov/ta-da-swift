@@ -15,6 +15,7 @@ Two changes to the sidebar and the files it lists, on Mac and iPhone.
 - The icon picker is a popover: Emoji (the system picker), Image… (the folder's images, as the link menu lists them) and Remove. It opens from the file menu, the folder menu and the icon by a page's title, on Mac and iPhone.
 - The design framework's "No emoji anywhere" becomes emoji only as an icon chosen for an area, project or folder.
 - The Obsidian plugin reads and keeps `icon` and `folderIcons`; it doesn't draw them.
+- Versions: step 1 is 0.34.7; steps 3–7 ship together as 0.35.
 - Not in v1: icons on notes, tasks or tags; icon colours (Iconize's `iconColor`); reading Iconize's or Iconic's own icons; iPad.
 
 ## Steps

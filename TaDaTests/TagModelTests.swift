@@ -31,12 +31,12 @@ struct TagModelTests {
         #expect(tree(model) == ["errands 1", "Home 2", "home/garden 1", "People 1", "People/Max 1"] && model.untaggedCount == 0)
     }
 
-    @Test func theVisibleTagsLeaveOutFoldedChildrenAndTheCountHasParents() async throws {
+    @Test func theVisibleTagsStartFoldedAndTheCountHasParents() async throws {
         let model = await folder.model()
+        #expect(model.visibleTags.map(\.node.tag.name) == ["errands", "Home"] && model.tagCount == 3)
+        model.toggleTagFolded("home")
         #expect(model.visibleTags.map { "\($0.node.tag.name) \($0.depth)" } == ["errands 0", "Home 0", "home/garden 1"])
         #expect(model.tagCount == 3)
-        model.toggleTagFolded("home")
-        #expect(model.visibleTags.map(\.node.tag.name) == ["errands", "Home"] && model.tagCount == 3)
     }
 
     @Test func tagsAreAddedAndRemovedInTagsOnly() async throws {
@@ -68,13 +68,13 @@ struct TagModelTests {
 
     @Test func theSidebarModeAndTagFoldsSurviveARelaunch() async {
         let model = await folder.model()
-        #expect(model.sidebarMode == .projects && !model.isTagFolded("home"))
+        #expect(model.sidebarMode == .projects && model.isTagFolded("home"))
         model.sidebarMode = .tags
         model.toggleTagFolded("home")
         model.toggleTagFolded("people")
         model.toggleTagFolded("people")
         let relaunched = AppModel(defaults: folder.defaults)
-        #expect(relaunched.sidebarMode == .tags && relaunched.isTagFolded("home") && !relaunched.isTagFolded("people"))
+        #expect(relaunched.sidebarMode == .tags && !relaunched.isTagFolded("home") && relaunched.isTagFolded("people"))
     }
 
     @Test func pickingATagClearsTheSelection() async {

@@ -28,12 +28,12 @@ struct PhoneTagsScreen: View {
             } else {
                 let rows = model.visibleTags
                 PhoneCard {
-                    ForEach(rows.indices, id: \.self) { i in
-                        let node = rows[i].node
+                    ForEach(rows, id: \.node.id) { row in
+                        let node = row.node
                         let path = node.tag.path
                         PhoneTreeRow(symbol: "tag", tint: \.accent, name: node.tag.leaf, spoken: Self.spoken(node.tag.name, node.count),
-                                     route: .tag(path), count: node.count, depth: rows[i].depth, hasChildren: !node.children.isEmpty,
-                                     isFolded: model.isTagFolded(path), isLast: i == rows.count - 1) {
+                                     route: .tag(path), count: node.count, depth: row.depth, hasChildren: !node.children.isEmpty,
+                                     isFolded: model.isTagFolded(path), isLast: node.id == rows.last?.node.id) {
                             model.toggleTagFolded(path)
                         }
                     }

@@ -40,8 +40,9 @@ struct NoteModelTests {
         #expect(model.sidebarMode == .notes && model.shownFolder == "Meetings")
         model.show(.loose)
         #expect(model.sidebarMode == .projects && model.shownFolder == nil)
+        #expect(model.isFolderFolded("Meetings"))
         model.toggleFolderFolded("Meetings")
-        #expect(AppModel(defaults: folder.defaults).isFolderFolded("Meetings"))
+        #expect(!AppModel(defaults: folder.defaults).isFolderFolded("Meetings"))
     }
 
     @Test func openingANoteShowsItsFolder() async {
@@ -66,7 +67,6 @@ struct NoteModelTests {
         #expect(model.domain == .loose && model.selection == "Ta Da/tasks/Untitled.md")
 
         model.show(.folder("Meetings"))
-        model.toggleFolderFolded("Meetings")
         await model.newFolder()
         #expect(model.folderNameFocus == "Meetings/Untitled folder" && !model.isFolderFolded("Meetings"))
         #expect(tree(model).contains("Meetings/Untitled folder 0"))
@@ -77,11 +77,11 @@ struct NoteModelTests {
         model.show(.folder("Meetings"))
         model.selection = "Meetings/Ark call.md"
         await model.loading?.value
-        model.toggleFolderFolded("Meetings/2026")
+        model.toggleFolderFolded("Meetings")
         await model.renameFolder("Meetings", to: "Calls")
         #expect(model.domain == .folder("Calls") && model.selection == "Calls/Ark call.md")
         #expect(model.document?.path == "Calls/Ark call.md" && model.index["Calls/Ark call.md"] != nil)
-        #expect(model.isFolderFolded("Calls/2026") && !model.isFolderFolded("Meetings/2026"))
+        #expect(!model.isFolderFolded("Calls") && model.isFolderFolded("Meetings"))
         #expect(tree(model) == ["Calls 2", "Calls/2026 1", "Empty 0"])
         #expect(try folder.read("Links.md") == "[[Calls/Ark call]]\n")
     }
