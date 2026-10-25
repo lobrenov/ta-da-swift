@@ -10,26 +10,28 @@ struct PhoneIntegrationsScreen: View {
 
     var body: some View {
         List {
-            Section {
-                ForEach(IntegrationsStore.Kind.allCases, id: \.self) { kind in
-                    let access = store.access(kind)
-                    Toggle(isOn: Binding(get: { access == .granted || access == .asking },
-                                         set: { on in Task { await store.setOn(on, kind) } })) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(kind.toggleLabel).foregroundStyle(theme.color(\.fg))
-                            Text(kind.phoneHint)
-                                .scaledFont(size: 13)
-                                .foregroundStyle(theme.color(\.muted))
+            Group {
+                Section {
+                    ForEach(IntegrationsStore.Kind.allCases, id: \.self) { kind in
+                        let access = store.access(kind)
+                        Toggle(isOn: Binding(get: { access == .granted || access == .asking },
+                                             set: { on in Task { await store.setOn(on, kind) } })) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(kind.toggleLabel).foregroundStyle(theme.color(\.fg))
+                                Text(kind.phoneHint)
+                                    .scaledFont(size: 13)
+                                    .foregroundStyle(theme.color(\.muted))
+                            }
                         }
+                        .disabled(access == .asking || !store.canAsk(kind))
                     }
-                    .disabled(access == .asking || !store.canAsk(kind))
+                }
+                ForEach(IntegrationsStore.Kind.allCases, id: \.self) { kind in
+                    section(kind)
                 }
             }
-            ForEach(IntegrationsStore.Kind.allCases, id: \.self) { kind in
-                section(kind)
-            }
+            .listRowBackground(theme.color(\.code))
         }
-        .listRowBackground(theme.color(\.code))
         .scrollContentBackground(.hidden)
         .background(theme.color(\.bg))
         .tint(theme.color(\.accent))

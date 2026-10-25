@@ -1,4 +1,4 @@
-// The Other tab: Logbook, Attachments and Trash, and Settings (Vault, Themes, Editor, Daily notes, Integrations, Notifications, Haptics), with the folder's sync state under them.
+// The Other tab: Logbook, Attachments and Trash, and Settings (Vault, Themes, Editor, Daily notes, Integrations, Notifications, Haptics), each line its own page, with the folder's sync state under them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -21,6 +21,7 @@ struct PhoneOtherScreen: View {
                     row("Trash", "trash", tint: \.muted, value: "\(model.trashCount)")
                 }
             }
+            .listRowBackground(theme.color(\.code))
             Section {
                 NavigationLink(value: PhoneRoute.settings(.vault)) {
                     row("Vault", "folder", tint: \.accent, value: model.vault?.root.lastPathComponent ?? "")
@@ -106,55 +107,55 @@ struct PhoneSettingsScreen: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        ScrollViewReader { proxy in
-            List {
-                Section("Vault") {
-                    value("Folder", model.folderDisplayName, monospaced: true)
-                    LabeledContent("Sync") { SyncState(model: model) }
-                    value("Contents", "\(tasks(model.index.tasks.count)) · \(model.index.projects.count) projects · \(model.index.areas.count) areas")
-                    Button("Change Folder…") { isPicking = true }
-                        .foregroundStyle(theme.color(\.accent))
-                }
-                .id(SettingsSection.vault)
-                Section("Themes") {
-                    ThemeSwatches(model: model)
-                    Picker("Theme set", selection: Binding { model.themeSet } set: { model.choose($0) }) {
-                        ForEach(ThemeSet.all) { Text($0.name).tag($0) }
+        List {
+            Group {
+                switch section {
+                case .vault:
+                    Section {
+                        value("Folder", model.folderDisplayName, monospaced: true)
+                        LabeledContent("Sync") { SyncState(model: model) }
+                        value("Contents", "\(tasks(model.index.tasks.count)) · \(model.index.projects.count) projects · \(model.index.areas.count) areas")
+                        Button("Change Folder…") { isPicking = true }
+                            .foregroundStyle(theme.color(\.accent))
                     }
-                    Picker("Appearance", selection: $model.appearance) {
-                        ForEach(Appearance.allCases) { Text($0.rawValue).tag($0) }
+                case .themes:
+                    Section {
+                        ThemeSwatches(model: model)
+                        Picker("Theme set", selection: Binding { model.themeSet } set: { model.choose($0) }) {
+                            ForEach(ThemeSet.all) { Text($0.name).tag($0) }
+                        }
+                        Picker("Appearance", selection: $model.appearance) {
+                            ForEach(Appearance.allCases) { Text($0.rawValue).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
+                case .editor:
+                    Section("Autocomplete") {
+                        toggle("Brackets", "( [ {", \.brackets)
+                        toggle("Text formatting", "** _ ==", \.formatting)
+                        toggle("Wikilinks", "[[ ![[", \.wikiLinks)
+                        toggle("Tags", "#", \.tags)
+                    }
+                case .dailyNotes:
+                    dailyNotes
+                case .notifications:
+                    notifications
+                case .haptics:
+                    Section {
+                        Toggle("Haptics", isOn: $model.haptics)
+                    } footer: {
+                        Text("A tap you can feel when you complete a task, pick rows, or set a date or project.")
+                    }
                 }
-                .id(SettingsSection.themes)
-                Section("Editor Autocomplete") {
-                    toggle("Brackets", "( [ {", \.brackets)
-                    toggle("Text formatting", "** _ ==", \.formatting)
-                    toggle("Wikilinks", "[[ ![[", \.wikiLinks)
-                    toggle("Tags", "#", \.tags)
-                }
-                .id(SettingsSection.editor)
-                dailyNotes
-                    .id(SettingsSection.dailyNotes)
-                notifications
-                    .id(SettingsSection.notifications)
-                Section {
-                    Toggle("Haptics", isOn: $model.haptics)
-                } header: {
-                    Text("Haptics")
-                } footer: {
-                    Text("A tap you can feel when you complete a task, pick rows, or set a date or project.")
-                }
-                .id(SettingsSection.haptics)
             }
             .listRowBackground(theme.color(\.code))
-            .scrollContentBackground(.hidden)
-            .background(theme.color(\.bg))
-            .tint(theme.color(\.accent))
-            .navigationTitle("Settings")
-            .folderImporter(isPresented: $isPicking, model: model)
-            .onAppear { proxy.scrollTo(section, anchor: .top) }
+            .foregroundStyle(theme.color(\.fg))
         }
+        .scrollContentBackground(.hidden)
+        .background(theme.color(\.bg))
+        .tint(theme.color(\.accent))
+        .navigationTitle(section.title)
+        .folderImporter(isPresented: $isPicking, model: model)
     }
 
     private var dailyNotes: some View {
@@ -162,8 +163,6 @@ struct PhoneSettingsScreen: View {
             Section {
                 folderField($model.dailyFolder)
                 template($model.dailyTemplate)
-            } header: {
-                Text("Daily notes")
             } footer: {
                 Text("File name YYYY-MM-DD, e.g. \(model.dailyNoteExample)")
             }
@@ -208,8 +207,6 @@ struct PhoneSettingsScreen: View {
                 Button("Open Notification Settings") { openURL(NotificationsStore.settingsURL) }
                     .foregroundStyle(theme.color(\.accent))
             }
-        } header: {
-            Text("Notifications")
         } footer: {
             Text(store.access == .denied
                  ? "Ta Da can’t show badges. Turn on Allow Notifications and Badges in Settings ▸ Apps ▸ Ta Da ▸ Notifications."
