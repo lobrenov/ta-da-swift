@@ -39,7 +39,7 @@ public struct LocalDate: Hashable, Comparable, Sendable, CustomStringConvertible
         (lhs.year, lhs.month, lhs.day) < (rhs.year, rhs.month, rhs.day)
     }
 
-    private static func daysIn(month: Int, year: Int) -> Int {
+    static func daysIn(month: Int, year: Int) -> Int {
         switch month {
         case 2: year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) ? 29 : 28
         case 4, 6, 9, 11: 30
@@ -59,6 +59,17 @@ extension LocalDate {
         let calendar = Self.utc
         let date = calendar.date(byAdding: .day, value: days, to: midnightUTC)!
         return LocalDate(date, calendar: calendar)
+    }
+
+    /// `days` away, or nil when that leaves years 1 to 9999.
+    func checkedAdding(days: Int) -> LocalDate? {
+        let calendar = Self.utc
+        guard let date = calendar.date(byAdding: .day, value: days, to: midnightUTC) else { return nil }
+        let parts = calendar.dateComponents([.year, .month, .day], from: date)
+        guard let year = parts.year, let month = parts.month, let day = parts.day,
+              let result = LocalDate(year: year, month: month, day: day),
+              days >= 0 ? result >= self : result <= self else { return nil }
+        return result
     }
 
     /// Whole days from `self` to `other`; negative when `other` is earlier.
@@ -169,5 +180,5 @@ extension LocalDate {
         return (0...first.firstDay.days(to: last.mondayOfWeek) / 7).map { first.adding(weeks: $0) }
     }
 
-    fileprivate var mondayOfWeek: LocalDate { adding(days: -((weekday + 5) % 7)) }
+    var mondayOfWeek: LocalDate { adding(days: -((weekday + 5) % 7)) }
 }

@@ -121,6 +121,8 @@ func nextDueDate(phrase: String, due: String, done: String, expected: String) {
     ("every week on Mon when done", "2026-10-27", "2026-11-02"),
     ("every 2 weeks on Mon when done", "2026-10-27", "2026-11-09"),
     ("every 2 weeks on Mon, Thu when done", "2026-10-27", "2026-11-05"),
+    ("every month on the 2nd Tue when done", "2026-10-14", "2026-11-10"),
+    ("every 2 months on the last Fri when done", "2026-10-31", "2026-12-25"),
     ("every month on the 15th when done", "2026-10-20", "2026-11-15"),
     ("every 2 months on the 15th when done", "2026-10-20", "2026-12-15"),
     ("every 2 months on the 31st when done", "2026-01-05", "2026-02-28"),
@@ -140,13 +142,13 @@ func nextWhenDone(phrase: String, done: String, expected: String) {
     #expect(next("every 3 days when done", due: "2026-10-10", done: "2026-10-27", rollover: "2026-11-20") == ["2026-10-30", nil])
 }
 
-@Test func whenDoneWithoutACompletedDateCountsFromTheDueDateThenTheRolloverDay() {
+@Test func whenDoneWithoutACompletedDateCountsFromTheDueDateThenTheDayBeforeRollover() {
     let rule = RepeatRule.parse("every 3 days when done")!
     let rollover = LocalDate("2026-10-27")!
     #expect(rule.next(dueDate: LocalDate("2026-10-26"), deadline: nil, completedDate: nil, rolloverDay: rollover)?.dueDate
         == LocalDate("2026-10-29"))
     #expect(rule.next(dueDate: nil, deadline: nil, completedDate: nil, rolloverDay: rollover)?.dueDate
-        == LocalDate("2026-10-30"))
+        == LocalDate("2026-10-29"))
 }
 
 @Test(arguments: [
@@ -167,4 +169,36 @@ func untilIsInclusive(until: String, expected: String?) {
 @Test func untilAppliesToWhenDoneRules() {
     #expect(next("every 3 days until 2026-10-30 when done", done: "2026-10-27") == ["2026-10-30", nil])
     #expect(next("every 3 days until 2026-10-29 when done", done: "2026-10-27") == nil)
+}
+
+@Test func weeksAlignAcrossAYearBoundary() {
+    #expect(next("every 2 weeks on Mon, Thu", due: "2026-12-31", done: "2026-12-31") == ["2027-01-11", nil])
+    #expect(next("every 2 weeks on Mon, Thu", due: "2026-12-31", rollover: "2027-01-12") == ["2027-01-14", nil])
+}
+
+@Test func weeksRunMondayToSunday() {
+    #expect(next("every 2 weeks on Sun, Mon", due: "2026-10-26", done: "2026-10-26") == ["2026-11-01", nil])
+    #expect(next("every 2 weeks on Mon", due: "2026-10-05", rollover: "2026-10-27") == ["2026-11-02", nil])
+}
+
+@Test func nothingIsNextPastYear9999() {
+    #expect(next("every week on Mon", deadline: "9999-12-31", done: "9999-12-31", rollover: "9999-12-31") == nil)
+    #expect(next("every day", due: "9999-12-31", done: "9999-12-31", rollover: "9999-12-31") == nil)
+    #expect(next("every day when done", due: "9999-12-31", done: "9999-12-31", rollover: "9999-12-31") == nil)
+    #expect(next("every week", due: "9999-12-24", deadline: "9999-12-31", done: "9999-12-24", rollover: "9999-12-31") == nil)
+}
+
+@Test func datesAreCountedFromTheAnchor() {
+    let monthly = RepeatRule.parse("every month")!
+    #expect(monthly.dates(after: date("2026-01-31")!, from: date("2026-01-31")!, through: date("2026-05-31")!).map(\.description)
+        == ["2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31"])
+    let daily = RepeatRule.parse("every day")!
+    #expect(daily.dates(after: date("2026-10-01")!, from: date("2026-10-10")!, through: date("2026-10-12")!).map(\.description)
+        == ["2026-10-10", "2026-10-11", "2026-10-12"])
+}
+
+@Test func datesStopAtUntil() {
+    let rule = RepeatRule.parse("every week on Mon until 2026-11-09")!
+    #expect(rule.dates(after: date("2026-10-26")!, from: date("2026-10-26")!, through: date("2026-12-31")!).map(\.description)
+        == ["2026-11-02", "2026-11-09"])
 }
