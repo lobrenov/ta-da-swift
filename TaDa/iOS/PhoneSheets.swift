@@ -1,5 +1,5 @@
 // The sheets that set a property on one or more files: a due date or deadline from a month calendar, or a project or
-// area. Each sets nothing until ✓.
+// area. Each sets nothing until ✓. A task's due date sheet also holds its repeat rule, on a Repeat page.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -13,6 +13,12 @@ struct PhoneDateSheet: View {
     /// The kinds the user set or cleared here; only these are written.
     @State private var changed: Set<AgendaEntry.Kind> = []
     @State private var month: LocalDate
+    /// The Repeat page's model, and the rule the files share (nil when they have none or differ).
+    @State private var picker = CalendarPickerModel()
+    private let sharedRule: RepeatRule?
+    /// The rule set or stopped on the Repeat page, written with the dates; nil while it's untouched.
+    @State private var repeatChange: RepeatRule??
+    @State private var showsRepeat = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
@@ -26,12 +32,23 @@ struct PhoneDateSheet: View {
             return dates.count == 1 ? dates.first ?? nil : nil
         }
         let due = agreed(\.dueDate), deadline = agreed(\.deadline)
+        let rules = Set(items.map { $0.properties.repeatRule?.rule })
+        sharedRule = rules.count == 1 ? rules.first ?? nil : nil
         _kind = State(initialValue: kind)
         _days = State(initialValue: [.due: due, .deadline: deadline])
         _month = State(initialValue: ((kind == .due ? due : deadline) ?? model.today).startOfMonth)
     }
 
     private var day: LocalDate? { days[kind] ?? nil }
+
+    /// Whether the sheet has the Repeat row and page: the due date of tasks.
+    private var isRepeatable: Bool {
+        let items = paths.compactMap { model.index[$0] }
+        return kind == .due && !items.isEmpty && items.allSatisfy { $0.properties.kind == .task }
+    }
+
+    /// The rule the files will have: the one set here, else the one they share.
+    private var shownRule: RepeatRule? { repeatChange ?? sharedRule }
 
     var body: some View {
         NavigationStack {
@@ -44,10 +61,12 @@ struct PhoneDateSheet: View {
                     .pickerStyle(.segmented)
                     quickDays
                     calendar
+                    if isRepeatable { repeatRow }
                     if day != nil {
                         Button("Clear \(kind == .due ? "Due Date" : "Deadline")", role: .destructive) { set(nil) }
                             .scaledFont(size: 17)
                             .foregroundStyle(theme.color(\.deadline))
+                            .frame(maxWidth: .infinity)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -56,6 +75,7 @@ struct PhoneDateSheet: View {
             .background(theme.color(\.bg))
             .navigationTitle(kind.name)
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(isPresented: $showsRepeat) { PhoneRepeatPage(picker: picker) }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .cancel) { dismiss() }
@@ -67,7 +87,30 @@ struct PhoneDateSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .onAppear { configureRepeat() }
         .onChange(of: kind) { month = (day ?? model.today).startOfMonth }
+    }
+
+    private var repeatRow: some View {
+        Button { showsRepeat = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "repeat").foregroundStyle(theme.color(\.muted))
+                Text("Repeat").foregroundStyle(theme.color(\.fg))
+                Spacer()
+                Text(shownRule?.frequencyLabel ?? "Never").foregroundStyle(theme.color(\.muted))
+                Image(systemName: "chevron.right")
+                    .scaledFont(size: 14, weight: .semibold)
+                    .foregroundStyle(theme.color(\.muted))
+            }
+            .scaledFont(size: 17)
+            .padding(.horizontal, 14)
+            .scaledMinHeight(48)
+            .background(theme.color(\.code), in: .rect(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(theme.color(\.border)) }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityValue(shownRule?.frequencyLabel ?? "Never")
     }
 
     private var quickDays: some View {
@@ -99,10 +142,73 @@ struct PhoneDateSheet: View {
     }
 
     private var calendar: some View {
+        PhoneMonthCalendar(month: $month, today: model.today, selected: day, tint: kind.tint,
+                           other: days[kind == .due ? .deadline : .due] ?? nil, otherTint: kind == .due ? \.deadline : \.due,
+                           occurrences: isRepeatable ? picker.occurrenceDays(in: month) : [], pick: set)
+    }
+
+    private func set(_ date: LocalDate?) {
+        days[kind] = .some(date)
+        changed.insert(kind)
+        if let date { month = date.startOfMonth }
+        configureRepeat()
+        nav.play(.pick)
+    }
+
+    /// Gives the Repeat page the files as the dates here will leave them, and the rule they will have. Setting a rule, its
+    /// end or When done, or stopping it, there holds the change until ✓.
+    private func configureRepeat() {
+        guard isRepeatable else { return }
+        let items = paths.compactMap { model.index[$0] }.map { item in
+            var item = item
+            if changed.contains(.due) { item.properties.dueDate = days[.due] ?? nil }
+            if changed.contains(.deadline) { item.properties.deadline = days[.deadline] ?? nil }
+            return item
+        }
+        picker.today = model.today
+        picker.firstWeekday = Calendar.current.firstWeekday
+        picker.selected = days[.due] ?? nil
+        picker.other = days[.deadline] ?? nil
+        picker.cursor = picker.selected ?? model.today
+        picker.configure(CalendarPickerModel.Repeating(items: items, index: model.index, rule: shownRule) { rule, _ in
+            repeatChange = .some(rule)
+            configureRepeat()
+        })
+    }
+
+    private func apply() {
+        let changes = AgendaEntry.Kind.changes(changed, in: days)
+        let change = repeatChange
+        let paths = paths
+        nav.endPicking()
+        dismiss()
+        Task {
+            for (kind, date) in changes {
+                await model.setDate(kind, to: date, of: paths)
+            }
+            if let change { await model.setRepeat(change, of: paths) }
+        }
+    }
+}
+
+/// A month of days: the one picked filled in `tint`, a coming occurrence on a faint `due` fill, and the file's `other`
+/// date as a dot. A day `canPick` refuses is dimmed.
+private struct PhoneMonthCalendar: View {
+    @Binding var month: LocalDate
+    let today: LocalDate
+    let selected: LocalDate?
+    let tint: KeyPath<Theme, PlatformColor>
+    var other: LocalDate?
+    var otherTint: KeyPath<Theme, PlatformColor> = \.deadline
+    var occurrences: Set<LocalDate> = []
+    var canPick: (LocalDate) -> Bool = { _ in true }
+    let pick: (LocalDate) -> Void
+    @Environment(\.theme) private var theme
+
+    var body: some View {
         let grid = MonthGrid(month)
         let columns = Array(repeating: GridItem(.flexible(minimum: 0), spacing: 0), count: 7)
-        let other = days[kind == .due ? .deadline : .due] ?? nil
-        return VStack(spacing: 10) {
+        VStack(spacing: 10) {
             HStack {
                 Text(month.formatted(.monthYear))
                     .scaledFont(size: 17, weight: .semibold)
@@ -123,7 +229,7 @@ struct PhoneDateSheet: View {
                 .accessibilityHidden(true)
                 ForEach(grid.days.indices, id: \.self) { i in
                     if let date = grid.days[i] {
-                        dayCell(date, other: other)
+                        dayCell(date)
                     } else {
                         Color.clear.frame(height: 44)
                     }
@@ -134,46 +240,188 @@ struct PhoneDateSheet: View {
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 
-    private func dayCell(_ date: LocalDate, other: LocalDate?) -> some View {
-        let isSet = date == day
-        let isToday = date == model.today
-        return Button { set(date) } label: {
+    private func dayCell(_ date: LocalDate) -> some View {
+        let isSet = date == selected
+        let isToday = date == today
+        let isOccurrence = occurrences.contains(date)
+        return Button { pick(date) } label: {
             VStack(spacing: 2) {
                 Text("\(date.day)")
                     .scaledFont(size: 19, weight: isSet || isToday ? .bold : .regular)
                     .monospacedDigit()
-                    .foregroundStyle(isSet ? theme.color(\.bg) : theme.color(isToday ? \.accent : date < model.today ? \.muted : \.fg))
+                    .foregroundStyle(theme.color(isSet ? \.bg : isToday ? \.accent : isOccurrence ? \.strong : date < today ? \.muted : \.fg))
                     .frame(width: 38, height: 38)
-                    .background(isSet ? theme.color(kind.tint) : .clear, in: .circle)
+                    .background(fill(isSet: isSet, isOccurrence: isOccurrence), in: .circle)
                 Circle()
-                    .fill(date == other ? theme.color(kind == .due ? \.deadline : \.due) : .clear)
+                    .fill(date == other ? theme.color(otherTint) : .clear)
                     .frame(width: 5, height: 5)
             }
             .frame(maxWidth: .infinity)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(date.formatted(.weekdayDayMonth) + (isToday ? ", today" : ""))
+        .disabled(!canPick(date))
+        .opacity(canPick(date) ? 1 : 0.4)
+        .accessibilityLabel(date.formatted(.weekdayDayMonth) + (isToday ? ", today" : "") + (isOccurrence && !isSet ? ", repeats" : ""))
         .accessibilityAddTraits(isSet ? .isSelected : [])
     }
 
-    private func set(_ date: LocalDate?) {
-        days[kind] = .some(date)
-        changed.insert(kind)
-        if let date { month = date.startOfMonth }
-        nav.play(.pick)
+    private func fill(isSet: Bool, isOccurrence: Bool) -> Color {
+        if isSet { return theme.color(tint) }
+        return isOccurrence ? theme.color(\.due).opacity(theme.isDark ? 0.26 : 0.3) : .clear
+    }
+}
+
+/// The Repeat page: the rule typed in a field and spelled out under it, When done, Ends and Stop Repeating. Each sets
+/// its change on the date sheet, which writes it with ✓.
+private struct PhoneRepeatPage: View {
+    let picker: CalendarPickerModel
+    @State private var text = ""
+    @State private var showsEnds = false
+    @FocusState private var isFocused: Bool
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "repeat").foregroundStyle(theme.color(\.muted))
+                        TextField("", text: $text, prompt: Text("every 2 weeks on mon"))
+                            .foregroundStyle(theme.color(\.strong))
+                            .focused($isFocused)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .submitLabel(.done)
+                            .onSubmit { picker.confirm() }
+                            .accessibilityLabel("Repeat rule")
+                    }
+                    .scaledFont(size: 17)
+                    .padding(.horizontal, 14)
+                    .scaledMinHeight(46)
+                    .background(theme.color(\.code), in: .rect(cornerRadius: 12))
+                    .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(theme.color(\.border)) }
+                    if let rule = picker.displayedRule {
+                        Text(picker.spelled(rule))
+                            .scaledFont(size: 13)
+                            .foregroundStyle(theme.color(picker.typedRule == nil ? \.strong : \.muted))
+                            .padding(.horizontal, 14)
+                    }
+                    Text("Type repetition rules naturally. They're recognised as you type.")
+                        .scaledFont(size: 13)
+                        .foregroundStyle(theme.color(\.muted))
+                        .padding(.horizontal, 14)
+                }
+                if let rule = picker.current {
+                    VStack(spacing: 0) {
+                        Toggle("When done", isOn: Binding { rule.whenDone } set: { picker.setWhenDone($0) })
+                            .tint(theme.color(\.accent))
+                            .padding(.horizontal, 14)
+                            .scaledMinHeight(46)
+                        Divider().overlay(theme.color(\.border))
+                        Button {
+                            picker.showEnds()
+                            showsEnds = true
+                        } label: {
+                            HStack(spacing: 10) {
+                                Text("Ends").foregroundStyle(theme.color(\.fg))
+                                Spacer()
+                                Text(rule.until?.formatted(.weekdayDayMonth) ?? "Never").foregroundStyle(theme.color(\.muted))
+                                Image(systemName: "chevron.right")
+                                    .scaledFont(size: 14, weight: .semibold)
+                                    .foregroundStyle(theme.color(\.muted))
+                            }
+                            .padding(.horizontal, 14)
+                            .scaledMinHeight(46)
+                            .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Ends")
+                        .accessibilityValue(rule.until?.formatted(.weekdayDayMonthYear) ?? "Never")
+                    }
+                    .scaledFont(size: 17)
+                    .background(theme.color(\.code), in: .rect(cornerRadius: 12))
+                    .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(theme.color(\.border)) }
+                    Button("Stop Repeating", role: .destructive) {
+                        picker.stopRepeating()
+                        dismiss()
+                    }
+                    .scaledFont(size: 17)
+                    .foregroundStyle(theme.color(\.deadline))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(theme.color(\.bg))
+        .navigationTitle("Repeat")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showsEnds) { PhoneRepeatEndsPage(picker: picker) }
+        .onAppear { text = picker.current?.phrase ?? "" }
+        .onChange(of: text) { picker.phrase = text }
+    }
+}
+
+/// The Ends page: a date page like the date sheet's, with Never, In 4 weeks and End of year. A day before the repeat
+/// starts can't be picked.
+private struct PhoneRepeatEndsPage: View {
+    let picker: CalendarPickerModel
+    @State private var month: LocalDate
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.theme) private var theme
+
+    init(picker: CalendarPickerModel) {
+        self.picker = picker
+        _month = State(initialValue: picker.cursor.startOfMonth)
     }
 
-    private func apply() {
-        let changes = AgendaEntry.Kind.changes(changed, in: days)
-        let paths = paths
-        nav.endPicking()
-        dismiss()
-        Task {
-            for (kind, date) in changes {
-                await model.setDate(kind, to: date, of: paths)
+    var body: some View {
+        let today = picker.today
+        let choices: [(String, LocalDate?)] = [
+            ("Never", nil),
+            ("In 4 weeks", today.adding(days: 28)),
+            ("End of year", LocalDate(year: today.year, month: 12, day: 31)),
+        ]
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        ForEach(choices, id: \.0) { title, date in
+                            Button { end(on: date) } label: {
+                                Text(title)
+                                    .scaledFont(size: 15, weight: .semibold)
+                                    .foregroundStyle(theme.color(picker.shownDate == date ? \.strong : \.fg))
+                                    .padding(.horizontal, 12)
+                                    .scaledMinHeight(34)
+                                    .background(theme.color(picker.shownDate == date ? \.surface : \.code), in: .capsule)
+                                    .contentShape(.capsule)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!picker.canPick(date))
+                            .opacity(picker.canPick(date) ? 1 : 0.4)
+                            .accessibilityValue(date?.formatted(.weekdayDayMonth) ?? "No end date")
+                        }
+                    }
+                }
+                .scrollIndicators(.never)
+                PhoneMonthCalendar(month: $month, today: today, selected: picker.shownDate, tint: \.muted,
+                                   occurrences: picker.occurrenceDays(in: month), canPick: { picker.canPick($0) }) { end(on: $0) }
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
         }
+        .background(theme.color(\.bg))
+        .navigationTitle("Ends")
+        .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { picker.hideEnds() }
+    }
+
+    private func end(on day: LocalDate?) {
+        guard picker.canPick(day) else { return }
+        picker.setEnd(day)
+        dismiss()
     }
 }
 
