@@ -83,6 +83,7 @@ struct AgendaDayList: View {
 struct AgendaNoteRow: View {
     let model: AppModel
     let period: AppModel.AgendaSelection
+    @State private var loaded: [NoteBoxLine]?
     @Environment(\.theme) private var theme
 
     private var isDay: Bool { if case .day = period { true } else { false } }
@@ -130,6 +131,12 @@ struct AgendaNoteRow: View {
                     .font(.system(size: 11.5))
                     .foregroundStyle(theme.color(\.muted))
                     .lineLimit(1)
+                    if let lines = model.cachedBoxLines(of: note) ?? loaded {
+                        ForEach(lines.indices, id: \.self) { boxLine(lines[$0]) }
+                    } else {
+                        // Room for the lines until they're read, so nothing below moves.
+                        ForEach(0..<NoteBoxLine.count(of: note.checkboxes), id: \.self) { _ in Color.clear.frame(height: 20) }
+                    }
                 }
                 Spacer(minLength: 8)
                 if past, open > 0 {
@@ -155,6 +162,35 @@ struct AgendaNoteRow: View {
         .buttonStyle(.plain)
         .accessibilityLabel("\(isDay ? "Daily note" : "Week note"), \(file)")
         .accessibilityAddTraits(selected ? .isSelected : [])
+        .task(id: note) { loaded = await model.boxLines(of: note) }
+    }
+
+    private func boxLine(_ line: NoteBoxLine) -> some View {
+        let tint: KeyPath<Theme, PlatformColor> = switch line.state {
+        case .done: \.done
+        case .doing: \.doing
+        case .open: \.muted
+        }
+        return HStack(spacing: 7) {
+            RoundedRectangle(cornerRadius: 3.5)
+                .strokeBorder(theme.color(tint), lineWidth: 1.5)
+                .background(line.state == .done ? theme.color(tint) : .clear, in: .rect(cornerRadius: 3.5))
+                .frame(width: 13, height: 13)
+                .overlay {
+                    switch line.state {
+                    case .done: Image(systemName: "checkmark").font(.system(size: 7.5, weight: .heavy)).foregroundStyle(theme.color(\.bg))
+                    case .doing: RoundedRectangle(cornerRadius: 1.5).fill(theme.color(tint)).frame(width: 5, height: 5)
+                    case .open: EmptyView()
+                    }
+                }
+                .accessibilityHidden(true)
+            Text(line.text)
+                .font(.system(size: 13))
+                .strikethrough(line.state == .done)
+                .foregroundStyle(theme.color(line.state == .done ? \.muted : \.fg))
+                .lineLimit(1)
+        }
+        .frame(minHeight: 20)
     }
 }
 

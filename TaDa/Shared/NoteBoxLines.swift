@@ -1,4 +1,4 @@
-// A note's checkbox lines, for the iPhone Agenda's inline note card.
+// A note's checkbox lines, for the Agenda's note row and card.
 import Foundation
 import TaDaCore
 
