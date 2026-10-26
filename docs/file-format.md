@@ -13,7 +13,7 @@ createdDate: 2026-09-28
 completedDate:
 dueDate: 2026-10-02
 deadline: 2026-10-06
-repeat: Weekly · Fri
+repeat: every week on Fri
 ---
 Bring the project instruction files in line with how I actually work now.
 
@@ -41,7 +41,7 @@ Bring the project instruction files in line with how I actually work now.
 | `completedDate` | both | `YYYY-MM-DD` | Set when completed or cancelled, cleared when reopened |
 | `dueDate` | both | `YYYY-MM-DD` | Optional |
 | `deadline` | both | `YYYY-MM-DD` | Optional |
-| `repeat` | both | text | Displayed only; no recurrence yet |
+| `repeat` | both | rule (tasks), text (projects) | Optional. A task's rule makes it repeat (see Repeating tasks); a project's is displayed only |
 | `tags` | all | list of tags | Optional. A flow list, a block list, or one string split on commas. Items may hold spaces; a leading `#` is dropped. See Tags |
 
 - A note reads only `createdDate` and `tags`. It has no status, parent or dates; any other keys stay untouched and unread. A note's frontmatter that isn't valid YAML reads as empty, with a warning.
@@ -142,6 +142,29 @@ The settings that belong to the folder, not the device, are in `Ta Da/settings.j
 - **Clean Up** moves the ticked images not in use to `.trash/attachments/` (as Deleting an attachment does) without rewriting any embed; logged and trashed files show them as missing until they're restored. While markdown files in the folder or `.trash/` are iCloud Drive placeholders, an image they embed can look unused.
 - **Renaming an attachment** keeps its folder and extension (the same extension typed in the new name is dropped); the name can't be another image's filename anywhere in the folder. Every embed in a file's body that resolved to it is rewritten to the new filename (to the new path where it was written as a path); anything after `|` stays, and embeds in code are left alone.
 
+## Repeating tasks
+
+A task with a `repeat` rule comes back after it's completed, in the same file: its dates move to the next occurrence and it reopens. No file is made per occurrence, and none is logged per completion.
+
+- **Rule**: an English phrase, read case-insensitively, with day names in full or three letters:
+  - `every day` | `every N days` | `every weekday` (Monday to Friday)
+  - `every week` | `every N weeks`, optionally `on Mon, Thu`
+  - `every month` | `every N months`, optionally `on the 15th` | `on the last day` | `on the 2nd Tuesday` | `on the last Friday`
+  - `every year` | `every N years`, optionally `on Oct 26`
+  - then optionally `until YYYY-MM-DD` and `when done`, in either order.
+- **Writing**: Ta Da writes the rule in this form, `until` before `when done`, with numbers as digits, days as three letters and ordinals as `1st`…`5th`. A month or year rule is always written with its day (`every month on the 31st`). `N` is 1 or more; `every 1 week` is written `every week`.
+- A rule that can't be read (`Weekly · Fri`) is shown as written, with a warning, and the task doesn't repeat.
+- **Next date** is worked out from the rule, the task's dates and the day the task moves forward:
+  - A regular schedule moves to the first date of the rule after the current `dueDate` that is on or after that day, so missed occurrences are skipped.
+  - `when done` moves to `completedDate` plus the interval. A rule with `on …` moves to its first day after `completedDate`, then on by the interval less one (`every 2 weeks on Mon when done`, done on a Tuesday: the Monday a week after next).
+  - A rule without `on …` takes its day from the current `dueDate` (its weekday, day of the month or date). A day the month doesn't have is its last day, without drifting (`every month on the 31st`: Jan 31, Feb 28, Mar 31).
+  - A task with only a `deadline` applies the rule to the deadline. A task with neither date counts `completedDate` as its `dueDate`, and gets one.
+  - `deadline` keeps its distance from `dueDate`.
+- **End**: `until` is inclusive. When the next date would be after it, the task isn't moved forward; it logs as any completed task.
+- **Moving forward** happens in logging (see Behaviour rules), not when the task is completed. In one write: `status: Not Started`, `completedDate` emptied, `dueDate` and `deadline` set to the next date, and subtasks `[x]`, `[/]` and `[-]` reset to `[ ]`; other markers stay. Done and Cancelled (a skipped occurrence) both move forward. Clearing `repeat` ends the series.
+- **Occurrences**: a task's coming dates in a range, from its current date (or, completed but not yet moved, from its next date) to `until`. A `when done` rule's are estimates, each assumed done on its day.
+- Projects, areas and notes don't repeat.
+
 ## Behaviour rules
 
 - **Completing** sets `status: Done` and `completedDate: <today>`; **cancelling** sets `status: Cancelled` and `completedDate: <today>`. Done and Cancelled files are *completed*. **Reopening** sets `status: Not Started` and clears `completedDate`. `status` is the source of truth; a mismatched `completedDate` is ignored. Ticking every subtask does not complete the task. Ticking a subtask (`[x]`) of a Not Started task in Ta Da sets it to `Doing`; unticking or removing subtasks leaves the status, and ticks made in another app change nothing. Reopening a task (any status that isn't Done or Cancelled) whose project is Done or Cancelled sets the project to `Doing` and clears its `completedDate`. Completing or cancelling a project that has open tasks asks first whether they're completed or cancelled too, each getting its own `status` and `completedDate`.
@@ -155,7 +178,7 @@ The settings that belong to the folder, not the device, are in `Ta Da/settings.j
 - A trashed attachment **went with** a trashed file when its filename is the embed's filename, or that name numbered (`front 2.jpg`, when `front.jpg` was taken in `.trash/attachments/`); of those, the one trashed nearest the file.
 - **Restoring** moves a task to `Ta Da/tasks/`, a project to `Ta Da/projects/` and an area to `Ta Da/areas/`, numbering a taken name. A note goes back to its folder, which is made again if it's gone (so a deleted folder's notes bring it back), or to the top level when a file has the folder's name. Folders left empty in `.trash/` are removed. Restoring brings back parents, never children: a task brings back its project and that project's area, or its area; a project brings back its area; an area comes back alone. A parent that's only logged doesn't count; a parent that isn't in the folder or `.trash/` is created by name (a project under a title no other project has). If a parent's name had to change, the restored file's link is rewritten. Each restored file brings back the attachments that went with it, and a trashed attachment can be restored alone; both go to `Ta Da/attachments/`, numbering a name taken there. An embed that no longer resolves to its restored attachment (renamed by numbering, or restored to another folder) is rewritten to it.
 - **Delete Forever** on a project also removes its trashed tasks; on an area, its trashed projects, their tasks and its own tasks. Each removed file takes the attachments that went with it, except those that a trashed file that stays, or a file outside `.trash/`, embeds. Delete Forever and Empty Trash move the Ta Da files (notes included) and attachments in `.trash/` to the system Trash (on iOS, deleting them where that isn't supported, outside iCloud Drive; a failure doesn't stop the others); other files there are left alone.
-- **Logging** moves completed tasks and projects into `Ta Da/logbook/<yyyy-MM>/` (by `completedDate`, else today), numbering a taken name, and for a project any other project's title, live or logged (`Monthly accounts 2`); if a project's name changes, its tasks' `project:` links follow. Ta Da logs each folder once a day, when it opens or the day changes, the files completed before that day (a run that fails is tried again at the next open or day change); Log Now in the Logbook logs every completed file. A completed project with open tasks waits, with its tasks: Log Now asks whether they're completed or cancelled. Areas and notes aren't logged. Logged files keep their contents and their embeds, and links to them still resolve, after a file of the same title that isn't logged; they're left out of the Agenda, Loose tasks, the project and area pages, Search and the link menu.
+- **Logging** moves a completed repeating task forward instead (see Repeating tasks), and other completed tasks and projects into `Ta Da/logbook/<yyyy-MM>/` (by `completedDate`, else today), numbering a taken name, and for a project any other project's title, live or logged (`Monthly accounts 2`); if a project's name changes, its tasks' `project:` links follow. Ta Da logs each folder once a day, when it opens or the day changes, the files completed before that day (a run that fails is tried again at the next open or day change); Log Now in the Logbook logs every completed file. A completed project with open tasks waits, with its tasks: Log Now asks whether they're completed or cancelled. Areas and notes aren't logged. Logged files keep their contents and their embeds, and links to them still resolve, after a file of the same title that isn't logged; they're left out of the Agenda, Loose tasks, the project and area pages, Search and the link menu.
 - **Reopening a logged file** (any status that isn't Done or Cancelled: at once in Ta Da, or at the next day's logging when set in another app) moves it back to `Ta Da/tasks/` or `Ta Da/projects/`, numbering a taken name (for a project, also any other project's title). A task whose project is logged brings it back too, set to `Doing` with `completedDate` cleared; the project's other logged tasks stay. An open task whose project is logged does the same: when its status is set in Ta Da, and at the next day's logging when it's changed in another app.
 
 ## Writing rules (how Ta Da edits files)
