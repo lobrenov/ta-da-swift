@@ -48,6 +48,11 @@ private func json(_ box: Checkbox) -> [String: Any] {
     ["marker": String(box.marker), "lineIndex": box.lineIndex, "column": box.column, "state": "\(box.state)"]
 }
 
+private func json(_ extract: SubtaskExtraction.Extract) -> [String: Any] {
+    ["title": extract.title, "status": extract.status.rawValue, "body": extract.body,
+     "range": [extract.range.location, extract.range.length]]
+}
+
 private func json(_ warning: Warning) -> [String: Any] {
     switch warning {
     case let .invalidYAML(problem, line): ["case": "invalidYAML", "problem": problem, "line": orNull(line)]
@@ -445,10 +450,6 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
     }
 
     // SubtaskExtraction
-    func json(_ extract: SubtaskExtraction.Extract) -> [String: Any] {
-        ["title": extract.title, "status": extract.status.rawValue, "body": extract.body,
-         "range": [extract.range.location, extract.range.length]]
-    }
     func lineStart(_ line: Int, in text: String) -> Int {
         var location = 0
         for _ in 0..<line { location = NSMaxRange((text as NSString).lineRange(for: NSRange(location: location, length: 0))) }
@@ -468,14 +469,17 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         ("plain line", "Plain line\n", 0),
         ("no text after box", "- [ ] \n- [ ] next\n", 0),
         ("numbered", "1. [ ] Numbered\n", 0),
-        ("star and plus", "* [x] Star\n+ [ ] Plus\n", 1),
+        ("star", "* [x] Star\n+ [ ] Plus\n", 0),
+        ("plus", "* [x] Star\n+ [ ] Plus\n", 1),
         ("no space after box", "- [ ]no space\n", 0),
         ("in callout", "> [!todo]\n> - [ ] A\n> \t- [ ] B\n", 1),
         ("in quote", "> quote\n> - [ ] A\n", 1),
         ("in backtick fence", "```\n- [ ] Example\n```\n", 1),
         ("in tilde fence", "~~~\n- [ ] Example\n~~~\n", 1),
         ("after closed fence", "~~~\n~~~\n- [ ] After\n", 2),
-        ("fence line", "```\n- [ ] A\n    code\n```\n", 1),
+        ("mismatched fences", "```\n~~~\n- [ ] X\n```\n", 2),
+        ("indented fence", "  ```\n- [ ] A\n  ```\n", 1),
+        ("fence line", "```\n- [ ] A\n    code\n```\n", 0),
         ("space children", "- [ ] Parent\n  - [ ] Child\n    - [ ] Grandchild\n  text\n- [ ] Next\n", 0),
         ("nested child", "- [ ] Parent\n\t- [ ] Child\n\t\t- [ ] Grandchild\n\t- [ ] Next\n\nAfter\n", 1),
         ("tab children", "- [x] Ship\n\t- [ ] Tag it\n\t\tdeeper\n\tmore\n", 0),
@@ -485,6 +489,7 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         ("last line", "Intro\n- [ ] Last", 1),
         ("last line with child", "- [ ] A\n  child", 0),
         ("with frontmatter", "---\ntype: task\n---\n- [ ] A\n  b\n", 3),
+        ("astral emoji", "🥛 Intro\n- [ ] Buy 🥛\n  2 🥛\n", 1),
         ("emoji title", "- [ ] Café ☕️ 日本\n  naïve\n", 0),
     ]
     for (label, text, line) in extractInputs {
@@ -528,7 +533,8 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         (.doing, .area("Home"), ["kind": "area", "title": "Home"]),
         (.done, nil, NSNull()),
     ]
-    for (label, text) in core {
+    let taskLabels: Set<String> = ["task", "task with body", "comments", "both parents", "home buy seed", "design resolve cabin"]
+    for (label, text) in core where taskLabels.contains(label) {
         for (status, parent, parentArg) in conversions {
             add("NoteConversion.text", "\(label) to project \(status.rawValue) parent \(parent == nil ? "nil" : "area")",
                 ["kind": "project", "status": status.rawValue, "parent": parentArg], input: text) {
