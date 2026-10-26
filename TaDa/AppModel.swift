@@ -1680,7 +1680,7 @@ import UIKit
         defer { isLogging = false }
         await refresh()
         let day = today
-        var succeeded = await log(index.filesToLog(completedBefore: day, today: day).map(\.path))
+        var succeeded = await log(index.filesToLog(completedBefore: day).map(\.path))
         let reopened = index.reopenedLogged.map(\.path)
         if !reopened.isEmpty {
             succeeded = await moveFiles("put back the reopened files") { try $0.unlog(reopened, index: $1, today: $2) } != nil
@@ -1720,7 +1720,7 @@ import UIKit
                                        tasks: index.openTasks(in: project), logsAfter: true))
             return
         }
-        await log(index.filesToLog(completedBefore: nil, today: today).map(\.path))
+        await log(index.filesToLog(completedBefore: nil).map(\.path))
     }
 
     /// Whether Log Now has anything to log or ask about.

@@ -162,7 +162,7 @@ A task with a `repeat` rule comes back after it's completed, in the same file: i
   - `deadline` keeps its distance from `dueDate`.
   - `every N` counts its periods from the current date's day, week, month or year; weeks run Monday to Sunday.
 - **End**: `until` is inclusive. When the next date would be after it, the task isn't moved forward; it logs as any completed task.
-- **Moving forward** happens in logging (see Behaviour rules), not when the task is completed. In one write: `status: Not Started`, `completedDate` emptied, `dueDate` and `deadline` set to the next date, and subtasks `[x]`, `[/]` and `[-]` reset to `[ ]`; other markers stay. Done and Cancelled (a skipped occurrence) both move forward. Clearing `repeat` ends the series.
+- **Moving forward** happens in logging (see Behaviour rules), not when the task is completed. In one write: `status: Not Started`, `completedDate` emptied, `dueDate` and `deadline` set to the next date, and subtasks `[x]` (or `[X]`), `[/]` and `[-]` reset to `[ ]`; other markers stay. Done and Cancelled (a skipped occurrence) both move forward. Clearing `repeat` ends the series, as does completing the task's project: the task then logs with it.
 - **Occurrences**: a task's coming dates in a range, from its current date (or, completed but not yet moved, from its next date) to `until`. A `when done` rule's are estimates, each assumed done on its day.
 - Projects, areas and notes don't repeat.
 

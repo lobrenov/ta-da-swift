@@ -31,9 +31,9 @@ private func project(_ status: String, completed: String? = nil) -> String {
         makeItem("Ta Da/logbook/2026-09/Logged.md", "type: task\nstatus: Done\ncompletedDate: 2026-09-01"),
         makeItem("Ta Da/logbook/2026-09/Reopened.md", "type: task\nstatus: Not Started"),
     ])
-    #expect(index.filesToLog(completedBefore: today, today: today).map(\.title)
+    #expect(index.filesToLog(completedBefore: today).map(\.title)
         == ["Cancelled yesterday", "Done undated", "Done yesterday", "Shipped", "Shipped task"])
-    #expect(index.filesToLog(completedBefore: nil, today: today).map(\.title)
+    #expect(index.filesToLog(completedBefore: nil).map(\.title)
         == ["Cancelled yesterday", "Done today", "Done undated", "Done yesterday", "Shipped", "Shipped task"])
     #expect(index.reopenedLogged.map(\.title) == ["Reopened"])
 }

@@ -16,7 +16,8 @@ extension Vault {
     /// Moves files into their month's folder in the Logbook, creating it if needed and numbering names that are taken
     /// there, or by another project for a project. A file without a `completedDate` goes in `today`'s month. A file no
     /// longer at its path (another device logged it) is skipped. A completed repeating task with a next date moves
-    /// forward in place instead (`Recurrence`), so it isn't in the result. A file that can't be moved doesn't stop the
+    /// forward in place instead (`Recurrence`), so it isn't in the result; one whose file no longer moves forward is
+    /// logged. A file that can't be moved doesn't stop the
     /// rest; the first error is thrown only when nothing moved. When a project's
     /// name had to change, its tasks' links follow it. Returns each moved file's new path by its old one.
     public func log(_ paths: [String], index: VaultIndex, today: LocalDate) throws -> [String: String] {
@@ -27,10 +28,13 @@ extension Vault {
         let items = paths.compactMap { index[$0] }.filter { !$0.isLogged && [.task, .project].contains($0.properties.kind) }
         for item in items where moved[item.path] == nil {
             do {
-                if Recurrence.next(for: item, today: today) != nil {
-                    try update(item.path) { Recurrence.moveForward($0, path: item.path, today: today) }
-                    rolled = true
-                    continue
+                let closed = index.project(of: item)?.properties.status.isClosed == true
+                if Recurrence.next(for: item, today: today, projectClosed: closed) != nil {
+                    let now = try update(item.path) { Recurrence.moveForward($0, path: item.path, today: today, projectClosed: closed) }
+                    if let now, !now.properties.status.isClosed {
+                        rolled = true
+                        continue
+                    }
                 }
                 moved[item.path] = try moveFile(item, into: Self.logbookFolder(for: item.properties.completedDate ?? today),
                                                 index: index, named: &named)
@@ -97,24 +101,22 @@ extension VaultIndex {
 
     /// The tasks and projects to log: Done or Cancelled and not logged yet, completed before `before` (any day when it's
     /// nil; a file without a `completedDate` counts as completed before it), sorted by title. A Done or Cancelled
-    /// project that still has open tasks waits, and so do its tasks. A completed repeating task that moves forward on
-    /// `today` is included whatever its project: `log` moves it forward rather than logging it.
-    public func filesToLog(completedBefore before: LocalDate?, today: LocalDate) -> [Item] {
+    /// project that still has open tasks waits, and so do its tasks. `log` moves a completed repeating task forward
+    /// rather than logging it.
+    public func filesToLog(completedBefore before: LocalDate?) -> [Item] {
         liveItems.filter { item in
             let p = item.properties
-            guard p.kind == .task || p.kind == .project, p.status.isClosed,
-                  Recurrence.next(for: item, today: today) != nil || !waitsForOpenTasks(item, today: today) else { return false }
+            guard p.kind == .task || p.kind == .project, p.status.isClosed, !waitsForOpenTasks(item) else { return false }
             guard let before, let completed = p.completedDate else { return true }
             return completed < before
         }.sorted(by: Self.byTitle)
     }
 
     /// Whether a file waits to be logged: a live Done or Cancelled project that still has open tasks, or one of its tasks.
-    /// A completed task that moves forward on `today` counts as open, as it reopens.
-    public func waitsForOpenTasks(_ item: Item, today: LocalDate) -> Bool {
+    public func waitsForOpenTasks(_ item: Item) -> Bool {
         guard let project = item.properties.kind == .project ? item : project(of: item),
               !project.isLogged, project.properties.status.isClosed else { return false }
-        return tasks(in: project).contains { !$0.properties.status.isClosed || Recurrence.next(for: $0, today: today) != nil }
+        return !openTasks(in: project).isEmpty
     }
 
     /// Logged files that aren't Done or Cancelled any more, as when reopened in another app: logging moves them back.

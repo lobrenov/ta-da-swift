@@ -92,5 +92,5 @@ private func describe(_ nodes: [FolderNode], depth: Int = 0) -> [String] {
     let today = LocalDate("2026-10-10")!
     #expect(index.loose().map(\.title) == ["Ship it", "Task elsewhere"])
     #expect(index.today(today).isEmpty && index.upcoming(after: today).isEmpty)
-    #expect(index.filesToLog(completedBefore: nil, today: LocalDate("2026-10-02")!).isEmpty)
+    #expect(index.filesToLog(completedBefore: nil).isEmpty)
 }
