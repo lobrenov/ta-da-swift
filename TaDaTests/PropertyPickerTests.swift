@@ -211,6 +211,7 @@ struct PropertyPickerTests {
         let model = CalendarPickerModel()
         model.today = LocalDate(today)!
         model.selected = Set(items.map(\.properties.dueDate)).count == 1 ? items[0].properties.dueDate : nil
+        model.other = Set(items.map(\.properties.deadline)).count == 1 ? items[0].properties.deadline : nil
         model.cursor = model.selected ?? model.today
         model.configure(CalendarPickerModel.Repeating(items: items, index: VaultIndex(items)) { rule, closing in
             writes.rules.append(rule)
@@ -286,6 +287,32 @@ struct PropertyPickerTests {
         let (deadline, _) = repeatMenu([weekly])
         deadline.configure(nil)
         #expect(deadline.occurrenceDays(in: november).isEmpty)
+    }
+
+    @Test func aRuleThatHasEndedBeforeItStartsIsNoMatch() {
+        let (model, writes) = repeatMenu([plain])
+        model.phrase = "every week until 2026-11-01"
+        #expect(model.typedRule == nil && model.note == "No match")
+        model.confirm()
+        #expect(writes.rules.isEmpty)
+    }
+
+    @Test func endsRefusesADayBeforeTheRepeatStarts() {
+        let (model, writes) = repeatMenu(["---\ntype: task\ndueDate: 2026-12-20\nrepeat: every week\n---\n"])
+        model.showEnds()
+        #expect(!model.canPick(model.today.adding(days: 28)) && model.canPick(nil) && model.canPick(LocalDate("2026-12-20")!))
+        model.pick(model.today.adding(days: 28))
+        model.pick(LocalDate("2026-12-19"))
+        #expect(writes.rules.isEmpty)
+        model.pick(LocalDate("2026-12-20"))
+        #expect(writes.rules == [RepeatRule.parse("every week until 2026-12-20")])
+    }
+
+    @Test func aDeadlineOnlyTaskPreviewsFromItsDeadline() {
+        let (model, _) = repeatMenu(["---\ntype: task\ndeadline: 2026-11-15\n---\n"])
+        model.phrase = "every month"
+        #expect(model.note == "From \(LocalDate("2026-11-15")!.formatted(.weekdayDayMonth))")
+        #expect(model.occurrenceDays(in: LocalDate("2026-12-01")!) == [LocalDate("2026-12-15")!] as Set)
     }
 
     @Test func stopAndWhenDoneWriteTheRule() throws {

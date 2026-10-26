@@ -586,6 +586,18 @@ struct AppModelTests {
         #expect(item.properties.dueDate == LocalDate("2026-10-27")! && item.properties.repeatRule?.text == "every 2 weeks on Tue")
     }
 
+    @Test func aRepeatTakesItsDayFromTheDeadlineAndAddsNoDueDate() async throws {
+        let folder = try TestFolder([
+            "Ta Da/tasks/Deadline.md": "---\ntype: task\nstatus: Not Started\ndeadline: 2026-11-15\n---\n",
+            "Ta Da/tasks/Repeating.md": "---\ntype: task\nstatus: Not Started\nrepeat: every week\n---\n",
+        ])
+        let model = await folder.model(today: LocalDate("2026-10-26")!)
+        await model.setRepeat(RepeatRule.parse("every month"), of: ["Ta Da/tasks/Deadline.md"])
+        #expect(try folder.read("Ta Da/tasks/Deadline.md") == "---\ntype: task\nstatus: Not Started\ndeadline: 2026-11-15\nrepeat: every month on the 15th\n---\n")
+        await model.setRepeat(RepeatRule.parse("every week when done"), of: ["Ta Da/tasks/Repeating.md"])
+        #expect(model.index["Ta Da/tasks/Repeating.md"]?.properties.dueDate == nil, "toggling When done adds no date")
+    }
+
     @Test func quickEntryTakesARepeatInItsDraft() async throws {
         let folder = try TestFolder()
         let model = await folder.model(today: LocalDate("2026-10-26")!)

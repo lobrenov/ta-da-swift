@@ -1907,8 +1907,8 @@ import UIKit
     }
 
     /// Sets the `repeat` rule of the tasks at `paths`, or empties it when `rule` is nil. A month or year rule is written
-    /// with its day from the task's due date; a task with no due date is made due on the rule's first date. Tasks already
-    /// repeating by the written rule aren't written.
+    /// with its day from the task's due date, else its deadline, else the rule's first date. A task with neither date that
+    /// isn't repeating yet is made due on that first date. Tasks already repeating by the written rule aren't written.
     func setRepeat(_ rule: RepeatRule?, of paths: [String]) async {
         let today = today
         for path in paths {
@@ -1919,9 +1919,9 @@ import UIKit
                 if p.repeatRule != nil { await setProperty("repeat", to: nil, in: path) }
                 continue
             }
-            let start = p.dueDate ?? rule.firstDate(from: today)
+            let start = p.dueDate ?? p.deadline ?? rule.firstDate(from: today)
             let text = rule.anchored(to: start ?? today).phrase
-            let due = p.dueDate == nil ? start : nil
+            let due = p.dueDate == nil && p.deadline == nil && p.repeatRule?.rule == nil ? start : nil
             if editDraft(path, { $0.repeatText = text; if let due { $0.dueDate = due } }) { continue }
             guard p.repeatRule?.text != text || due != nil else { continue }
             await edit(path) { source in

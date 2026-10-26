@@ -27,6 +27,8 @@ final class PropertyPicker {
     @ObservationIgnored private let tagMenu = PopupMenu(style: .full(confirm: "Toggle", maxListHeight: 312), takesKeys: true,
                                                         searchPrompt: TagChoice.prompt, row: TagChoiceRow.init)
     @ObservationIgnored private let calendar = CalendarPicker()
+    /// The last repeat write, which the next waits for so the writes land in the order they were made.
+    @ObservationIgnored private var repeatWrite: Task<Void, Never>?
     /// The open picker's chip, in screen coordinates.
     @ObservationIgnored private var anchor = CGRect.zero
     /// The chip whose picker a mouse-down on it closed, and when, so the click's own action doesn't reopen it.
@@ -155,7 +157,12 @@ final class PropertyPicker {
         if kind == .due, items.allSatisfy({ $0.properties.kind == .task }) {
             repeating = CalendarPickerModel.Repeating(items: items, index: model.index) { [weak self] rule, closing in
                 if closing { self?.close() }
-                Task { await model.setRepeat(rule, of: paths) }
+                let previous = self?.repeatWrite
+                let write = Task {
+                    await previous?.value
+                    await model.setRepeat(rule, of: paths)
+                }
+                self?.repeatWrite = write
             }
         }
         calendar.show(kind, selected: current, other: agreed(kind == .due ? \.deadline : \.dueDate), today: model.today,

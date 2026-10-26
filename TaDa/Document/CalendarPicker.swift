@@ -134,6 +134,16 @@ final class CalendarPickerModel {
     @ObservationIgnored private var index = VaultIndex()
     @ObservationIgnored private var setRepeat: (RepeatRule?, Bool) -> Void = { _, _ in }
     @ObservationIgnored private var laidOut = [false, false, false, false]
+    @ObservationIgnored private var occurrenceCache: (key: OccurrenceKey, days: Set<LocalDate>)?
+
+    /// What the month's occurrence days depend on, besides the files picked.
+    private struct OccurrenceKey: Hashable {
+        let month: LocalDate
+        let rule: RepeatRule?
+        let selected: LocalDate?
+        let other: LocalDate?
+        let today: LocalDate
+    }
 
     /// Starts the menu with `repeating`'s section, or none, and the date view.
     func configure(_ repeating: Repeating?) {
@@ -145,6 +155,7 @@ final class CalendarPickerModel {
         index = repeating?.index ?? VaultIndex()
         setRepeat = repeating?.set ?? { _, _ in }
         laidOut = shape
+        occurrenceCache = nil
     }
 
     /// The date typed so far. Each change moves the cursor to the day it gives, if any; emptying it moves the
@@ -213,9 +224,15 @@ final class CalendarPickerModel {
         if isEnds { setEnd(day) } else { set(day) }
     }
 
-    /// Ends the repeat on `day`, or never when it's nil.
+    /// Whether a day can be picked: any day, except in the Ends view a day before the repeat starts.
+    func canPick(_ day: LocalDate?) -> Bool {
+        guard isEnds, let day else { return true }
+        return current.flatMap(startDate(of:)).map { day >= $0 } ?? false
+    }
+
+    /// Ends the repeat on `day`, or never when it's nil. A day before the repeat starts is ignored.
     func setEnd(_ day: LocalDate?) {
-        guard let current else { return }
+        guard let current, canPick(day) else { return }
         setRepeat(current.ending(on: day), true)
     }
 
@@ -272,20 +289,25 @@ final class CalendarPickerModel {
     /// The days of `month` a coming occurrence of the rule falls on, as ↵ would set it.
     func occurrenceDays(in month: LocalDate) -> Set<LocalDate> {
         guard showsRepeat, let rule = previewRule else { return [] }
-        let first = month.startOfMonth, last = month.addingMonths(1).adding(days: -1)
+        let key = OccurrenceKey(month: month.startOfMonth, rule: rule, selected: selected, other: other, today: today)
+        if let occurrenceCache, occurrenceCache.key == key { return occurrenceCache.days }
+        let first = key.month, last = month.addingMonths(1).adding(days: -1)
         var days = Set<LocalDate>()
         for item in items {
             var task = item
-            var starts: LocalDate?
-            if task.properties.dueDate == nil, typedRule != nil, let date = rule.firstDate(from: today) {
+            let p = item.properties
+            var anchor = p.dueDate ?? p.deadline
+            if anchor == nil, p.repeatRule?.rule == nil, let date = rule.firstDate(from: today) {
                 task.properties.dueDate = date
-                starts = date
+                anchor = date
+                if (first...last).contains(date) { days.insert(date) }
             }
-            task.properties.repeatRule = Repeat(text: rule.phrase, rule: rule)
-            let dates = index.occurrences(of: task, from: first, through: last, today: today).filter { $0.kind == .due }.map(\.date)
-            days.formUnion(dates)
-            if let starts, (first...last).contains(starts) { days.insert(starts) }
+            task.properties.repeatRule = Repeat(text: rule.phrase, rule: rule.anchored(to: anchor ?? today))
+            let hasDue = task.properties.dueDate != nil
+            days.formUnion(index.occurrences(of: task, from: first, through: last, today: today)
+                .filter { !hasDue || $0.kind == .due }.map(\.date))
         }
+        occurrenceCache = (key, days)
         return days
     }
 
@@ -294,8 +316,13 @@ final class CalendarPickerModel {
         showsRepeat && !isEnds && phrase.drop(while: \.isWhitespace).lowercased().hasPrefix("every")
     }
 
-    /// Where a rule starts: the date set, else its first date; nil when its end has passed.
-    private func start(of rule: RepeatRule) -> LocalDate? { selected ?? rule.firstDate(from: today) }
+    /// Where a rule starts, ignoring its end: the due date, else the deadline, else its first date.
+    private func startDate(of rule: RepeatRule) -> LocalDate? { selected ?? other ?? rule.ending(on: nil).firstDate(from: today) }
+
+    /// Where a rule starts; nil when its end is before that.
+    private func start(of rule: RepeatRule) -> LocalDate? {
+        startDate(of: rule).flatMap { date in rule.until.map { date <= $0 } ?? true ? date : nil }
+    }
 
     /// What decides the height of the Repeat section.
     private var shape: [Bool] { [showsRepeat, isEnds, displayedRule != nil, current != nil] }
@@ -476,6 +503,8 @@ private struct QuickDayButton: View {
                 .contentShape(.capsule)
         }
         .buttonStyle(.plain)
+        .disabled(!model.canPick(day))
+        .opacity(model.canPick(day) ? 1 : 0.4)
         .help(day?.formatted(.weekdayDayMonth) ?? "No end date")
         .accessibilityValue(day?.formatted(.weekdayDayMonth) ?? "No end date")
     }
@@ -523,6 +552,7 @@ private struct PickerDayCell: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .disabled(!model.canPick(day))
         .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(isSet ? .isSelected : [])
     }

@@ -148,34 +148,8 @@ extension RepeatRule {
     /// The canonical form: `until` before `when done`, three-letter days and months, `1st`…`5th`.
     /// A month or year rule without a day writes without one; Ta Da writes them with the day from `dueDate`.
     public var phrase: String {
-        var words: String
-        switch frequency {
-        case .weekday: words = "every weekday"
-        case .day: words = interval == 1 ? "every day" : "every \(interval) days"
-        case .week: words = interval == 1 ? "every week" : "every \(interval) weeks"
-        case .month: words = interval == 1 ? "every month" : "every \(interval) months"
-        case .year: words = interval == 1 ? "every year" : "every \(interval) years"
-        }
-        switch frequency {
-        case .week where !weekdays.isEmpty:
-            let names = ((2...7).map { $0 } + [1]).filter(weekdays.contains).map { Self.dayName($0) }
-            words += " on " + names.joined(separator: ", ")
-        case .month:
-            switch monthDay {
-            case let .day(day): words += " on the \(Self.ordinal(day))"
-            case .lastDay: words += " on the last day"
-            case let .nth(n, weekday): words += " on the \(Self.ordinal(n)) \(Self.dayName(weekday))"
-            case let .lastWeekday(weekday): words += " on the last \(Self.dayName(weekday))"
-            case nil: break
-            }
-        case .year:
-            if let yearDate { words += " on \(Self.monthName(yearDate.month)) \(yearDate.day)" }
-        default:
-            break
-        }
-        if let until { words += " until \(until)" }
-        if whenDone { words += " when done" }
-        return words
+        words(every: "every", dayName: Self.dayName, monthName: Self.monthName, list: { $0.joined(separator: ", ") },
+              until: { $0.description })
     }
 
     /// The rule with a month or year rule's day taken from `date` when it names none, as Ta Da writes it.
@@ -203,33 +177,10 @@ extension RepeatRule {
     /// The rule spelled out, with `format` writing the end date: "Every week on Monday",
     /// "Every month on the 2nd Tuesday until 2026-12-31 when done".
     public func description(until format: (LocalDate) -> String = { $0.description }) -> String {
-        var words: String
-        switch frequency {
-        case .weekday: words = "Every weekday"
-        case .day: words = interval == 1 ? "Every day" : "Every \(interval) days"
-        case .week: words = interval == 1 ? "Every week" : "Every \(interval) weeks"
-        case .month: words = interval == 1 ? "Every month" : "Every \(interval) months"
-        case .year: words = interval == 1 ? "Every year" : "Every \(interval) years"
-        }
-        switch frequency {
-        case .week where !weekdays.isEmpty:
-            let names = ((2...7).map { $0 } + [1]).filter(weekdays.contains).map { Self.fullDayNames[$0 - 1].capitalized }
-            words += " on " + (names.count == 1 ? names[0] : names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1])
-        case .month:
-            switch monthDay {
-            case let .day(day): words += " on the \(Self.ordinal(day))"
-            case .lastDay: words += " on the last day"
-            case let .nth(n, weekday): words += " on the \(Self.ordinal(n)) \(Self.fullDayNames[weekday - 1].capitalized)"
-            case let .lastWeekday(weekday): words += " on the last \(Self.fullDayNames[weekday - 1].capitalized)"
-            case nil: break
-            }
-        case .year:
-            if let yearDate { words += " on \(Self.fullMonthNames[yearDate.month - 1].capitalized) \(yearDate.day)" }
-        default:
-            break
-        }
-        if let until { words += " until \(format(until))" }
-        return whenDone ? words + " when done" : words
+        words(every: "Every", dayName: { Self.fullDayNames[$0 - 1].capitalized },
+              monthName: { Self.fullMonthNames[$0 - 1].capitalized },
+              list: { $0.count == 1 ? $0[0] : $0.dropLast().joined(separator: ", ") + " and " + $0[$0.count - 1] },
+              until: format)
     }
 
     /// A short label for a chip: "Weekly", "Every 2 weeks when done".
@@ -247,6 +198,38 @@ extension RepeatRule {
         case (.year, _): label = "Every \(interval) years"
         }
         return whenDone ? label + " when done" : label
+    }
+
+    /// The rule spelled out, its names, day list and end date written as given.
+    private func words(every: String, dayName: (Int) -> String, monthName: (Int) -> String,
+                       list: ([String]) -> String, until format: (LocalDate) -> String) -> String {
+        var words: String
+        switch frequency {
+        case .weekday: words = "\(every) weekday"
+        case .day: words = interval == 1 ? "\(every) day" : "\(every) \(interval) days"
+        case .week: words = interval == 1 ? "\(every) week" : "\(every) \(interval) weeks"
+        case .month: words = interval == 1 ? "\(every) month" : "\(every) \(interval) months"
+        case .year: words = interval == 1 ? "\(every) year" : "\(every) \(interval) years"
+        }
+        switch frequency {
+        case .week where !weekdays.isEmpty:
+            words += " on " + list(((2...7).map { $0 } + [1]).filter(weekdays.contains).map(dayName))
+        case .month:
+            switch monthDay {
+            case let .day(day): words += " on the \(Self.ordinal(day))"
+            case .lastDay: words += " on the last day"
+            case let .nth(n, weekday): words += " on the \(Self.ordinal(n)) \(dayName(weekday))"
+            case let .lastWeekday(weekday): words += " on the last \(dayName(weekday))"
+            case nil: break
+            }
+        case .year:
+            if let yearDate { words += " on \(monthName(yearDate.month)) \(yearDate.day)" }
+        default:
+            break
+        }
+        if let until { words += " until \(format(until))" }
+        if whenDone { words += " when done" }
+        return words
     }
 
     private static func weekday(_ name: String) -> Int? {
