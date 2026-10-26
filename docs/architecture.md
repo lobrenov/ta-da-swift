@@ -225,6 +225,8 @@ The Obsidian plugin (id `ta-da`) is its own repo, `ta-da-obsidian`, cloned besid
 
 It reads the vault's markdown into its own `VaultIndex` as `docs/file-format.md` says, and reads `.trash/` for its Trash list. It writes by splicing lines, as the apps do: the open file through Obsidian's editor, other files through `Vault.process`, renames through `FileManager.renameFile`. It creates files in `Ta Da/` and daily and week notes in the folders its own settings name (`Ta Da/settings.json`, which the Obsidian plugin shares for `dailyNotes`), and applies the apps' status rules, moving a reopened logged file out of the Logbook.
 
+It extracts a subtask to a task and converts a task to a project as the apps do (`SubtaskExtraction`, `NoteConversion`). Its own items join Obsidian's file menu (Status…, Convert to project…), which is also a navigator row's right-click menu; Extract to task is in the editor's right-click menu.
+
 On a phone, the navigator in Obsidian's drawer shows one pane at a time, with a top bar (back, Search, New task) and a bottom bar for Agenda and Projects.
 
 It doesn't log or show Calendar events and reminders, and its Trash is read only. Its layout, commands and rules are in its `CLAUDE.md`; what it does for users is in its `README.md`.

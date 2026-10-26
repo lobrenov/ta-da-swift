@@ -1,7 +1,7 @@
 # Ta Da for Obsidian — Type Promotion
 
 ## Context
-Ta Da 0.34.5 and 0.34.6 promote items up the task hierarchy: Extract to Task makes a subtask a task, and Convert to Project makes a task a project, its subtasks optionally the project's tasks. The rules are in `docs/file-format.md` (Extracting a subtask, Converting); the core is `SubtaskExtraction`, `NoteConversion` and `Vault.convert`/`Vault.extractSubtasks(ofProject:)`. The plugin (`ta-da-obsidian`) ports them, kept in step by the conformance fixtures, and pairs with Ta Da 0.34.6.
+Ta Da 0.34.5 and 0.34.6 promote items up the task hierarchy: Extract to Task makes a subtask a task, and Convert to Project makes a task a project, its subtasks optionally the project's tasks. The rules are in `docs/file-format.md` (Extracting a subtask, Converting); the core is `SubtaskExtraction`, `NoteConversion` and `Vault.convert`/`Vault.extractSubtasks(ofProject:)`. The plugin (`ta-da-obsidian`) ports them, kept in step by the conformance fixtures, and pairs with Ta Da 0.34.10, whose fixtures include the Type Promotion cases.
 
 ## Decisions
 - The core ports as written: `src/core/writing/subtaskExtraction.ts` (`extract`, `extractAll`, `taskText`) and `src/core/writing/noteConversion.ts` (`keys`, `text`), on the ported `checkboxSyntax`, `taskMarker`, `frontmatterEditor` (`insertAtTop`, `hasValue`, `clearProperty`), `completion` and `newFile`.
@@ -24,7 +24,7 @@ Ta Da 0.34.5 and 0.34.6 promote items up the task hierarchy: Extract to Task mak
 3. **Extract to task**: the menu item, command and `Notice` through `Writer`, filed by `VaultIndex.parent`. Check: unit tests for the edit; by hand in SampleVault, Live Preview and Source mode, desktop and iPhone.
 4. **File menu**: rows' right-click opens Obsidian's file menu; the `file-menu` handler adds Status… and its submenu. Check: by hand, a task and a project row show Obsidian's items and Status…, the file explorer shows Status… on the same files and nothing on other files, a status picked from the submenu is written; desktop and iPhone.
 5. **Convert to project**: the modal, the file menu item and command, the rename, then the subtasks' tasks. Check: unit tests for the order of writes and the failure case; by hand in SampleVault, with and without the toggle, a task in a project and one in an area.
-6. **Docs and version**: `CLAUDE.md`'s layout and commands lines in the plugin; Ta Da's `docs/architecture.md` (Obsidian section); the canvas's Obsidian page gets the modal and menus. Version 0.3.0 (`manifest.json`, `package.json`, `versions.json`), tagged, and its row in `docs/versioning.md`'s pairing table (0.3.0 | 0.34.6). Check: `npm run build` passes; the plugin installed in SampleVault matches the apps on the same files.
+6. **Docs and version**: `CLAUDE.md`'s layout and commands lines in the plugin; Ta Da's `docs/architecture.md` (Obsidian section); the canvas's Obsidian page gets the modal and menus. Version 0.3.0 (`manifest.json`, `package.json`, `versions.json`), tagged, and its row in `docs/versioning.md`'s pairing table (0.3.0 | 0.34.10). Check: `npm run build` passes; the plugin installed in SampleVault matches the apps on the same files.
 
 ## Risks
 - Obsidian's link updating is a user setting, off by default: Obsidian then asks whether to update links when the file moves, and with "Don't update" links to a converted task keep its old path.
