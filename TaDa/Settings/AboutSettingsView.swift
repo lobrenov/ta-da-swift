@@ -5,27 +5,23 @@ import SwiftUI
 struct AboutSettingsView: View {
     @Environment(\.theme) private var theme
 
-    private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-    private static let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
-
     var body: some View {
         SettingsPage(title: "About") {
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(title: "Ta Da")
                 VStack(spacing: 0) {
-                    row("Version", Self.version)
+                    row("Version", Bundle.main.version)
                     Hairline()
-                    row("Build", Self.build)
+                    row("Build", Bundle.main.build)
                 }
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
             }
             VStack(alignment: .leading, spacing: 8) {
                 SectionLabel(title: "Acknowledgements")
                 VStack(spacing: 0) {
-                    let all = Acknowledgement.all
-                    ForEach(all.indices, id: \.self) { index in
-                        if index > 0 { Hairline() }
-                        package(all[index])
+                    ForEach(Acknowledgement.all, id: \.url) { package in
+                        if package.url != Acknowledgement.all.first?.url { Hairline() }
+                        self.package(package)
                     }
                 }
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
@@ -37,7 +33,7 @@ struct AboutSettingsView: View {
         HStack(spacing: 16) {
             Text(label)
                 .foregroundStyle(theme.color(\.muted))
-                .frame(width: 88, alignment: .leading)
+                .frame(width: 84, alignment: .leading)
             Text(value)
                 .font(.system(size: 12).monospaced())
                 .foregroundStyle(theme.color(\.strong))

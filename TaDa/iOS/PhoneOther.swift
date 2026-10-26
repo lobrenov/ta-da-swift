@@ -45,7 +45,7 @@ struct PhoneOtherScreen: View {
                     row("Haptics", "hand.tap", tint: \.due, value: model.haptics ? "On" : "Off")
                 }
                 NavigationLink(value: PhoneRoute.settings(.about)) {
-                    row("About", "info.circle", tint: \.muted, value: Self.version)
+                    row("About", "info.circle", tint: \.muted, value: Bundle.main.version)
                 }
             } header: {
                 Text("Settings")
@@ -59,8 +59,6 @@ struct PhoneOtherScreen: View {
         .background(theme.color(\.bg))
         .navigationTitle("Other")
     }
-
-    private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
 
     /// "Events and reminders", "Events", "Reminders" or "Off".
     private var integrationsValue: String {
@@ -153,8 +151,8 @@ struct PhoneSettingsScreen: View {
                     }
                 case .about:
                     Section {
-                        value("Version", Self.info("CFBundleShortVersionString"))
-                        value("Build", Self.info("CFBundleVersion"))
+                        value("Version", Bundle.main.version)
+                        value("Build", Bundle.main.build)
                     }
                     Section("Acknowledgements") {
                         ForEach(Acknowledgement.all, id: \.url) { package in
@@ -229,10 +227,6 @@ struct PhoneSettingsScreen: View {
                  ? "Ta Da can’t show badges. Turn on Allow Notifications and Badges in Settings ▸ Apps ▸ Ta Da ▸ Notifications."
                  : "Open tasks due or at their deadline today or earlier.")
         }
-    }
-
-    private static func info(_ key: String) -> String {
-        Bundle.main.object(forInfoDictionaryKey: key) as? String ?? ""
     }
 
     private func value(_ title: String, _ value: String, monospaced: Bool = false) -> some View {

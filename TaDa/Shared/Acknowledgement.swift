@@ -1,10 +1,11 @@
+// The packages Ta Da ships with, read from Acknowledgements.txt for Settings ▸ About.
 import Foundation
 
 /// A package Ta Da ships with: its name, URL and licence name, read from `Acknowledgements.txt`.
 nonisolated struct Acknowledgement: Equatable, Sendable {
     let name: String
     let url: String
-    let licence: String
+    var licence: String
 
     /// The bundled file's packages, in its order.
     static let all: [Acknowledgement] = {
@@ -23,13 +24,19 @@ nonisolated struct Acknowledgement: Equatable, Sendable {
                 result.append(Acknowledgement(name: lines[i + 1], url: lines[i + 2], licence: ""))
                 i += 4
             } else {
-                if lines[i].lowercased().hasPrefix("--- license ("), let open = lines[i].firstIndex(of: "("),
-                   let close = lines[i].lastIndex(of: ")"), let last = result.indices.last, result[last].licence.isEmpty {
-                    result[last] = Acknowledgement(name: result[last].name, url: result[last].url, licence: String(lines[i][lines[i].index(after: open)..<close]))
+                let line = lines[i]
+                if line.lowercased().hasPrefix("--- license ("), result.last?.licence.isEmpty == true,
+                   let open = line.firstIndex(of: "("), let close = line.lastIndex(of: ")") {
+                    result[result.count - 1].licence = String(line[line.index(after: open)..<close])
                 }
                 i += 1
             }
         }
         return result
     }
+}
+
+extension Bundle {
+    var version: String { object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
+    var build: String { object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "" }
 }
