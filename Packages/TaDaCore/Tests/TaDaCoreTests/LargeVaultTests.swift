@@ -74,6 +74,23 @@ struct LargeVaultTests {
         }
     }
 
+    @Test func dayMarksOverAMonthWithRepeatingTasksAreQuick() async throws {
+        let rules = ["every week", "every 2 weeks on Mon, Thu", "every month", "every month on the 31st", "every year",
+                     "every 3 days", "every 4 days when done", "every week when done", "every month on the 2nd Tuesday", "every day"]
+        let today = Self.today
+        let repeating = (0..<200).map { n in
+            makeItem("tasks/Repeat \(n).md", "type: task\nstatus: \(n % 4 == 0 ? "Done\ncompletedDate: \(today)" : "Doing")\n"
+                     + "dueDate: \(today.adding(days: n % 90 - 45))\nrepeat: \(rules[n % rules.count])")
+        }
+        let items = GeneratedVault.files(today: today).compactMap { Item(parsing: $0.text, path: $0.path) }
+        let index = VaultIndex(items + repeating)
+        let (marks, marksTime) = await time("day marks, one month, 200 repeating tasks") {
+            index.dayMarks(from: today, through: today.adding(days: 34), today: today)
+        }
+        #expect(!marks.isEmpty)
+        #expect(marksTime < 0.5)
+    }
+
     @Test func attachmentGroupsListQuicklyWithEveryFileEmbeddingImages() async throws {
         try await withTemporaryFolder { folder in
             try GeneratedVault.write(to: folder, today: Self.today)

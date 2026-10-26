@@ -157,13 +157,13 @@ A task with a `repeat` rule comes back after it's completed, in the same file: i
 - **Next date** is worked out from the rule, the task's dates and the day the task moves forward:
   - A regular schedule moves to the first date of the rule after the current `dueDate` that is on or after that day, so missed occurrences are skipped.
   - `when done` moves to `completedDate` plus the interval. A rule with `on …` moves to its first day after `completedDate`, then on by the interval less one (`every 2 weeks on Mon when done`, done on a Tuesday: the Monday a week after next).
-  - A rule without `on …` takes its day from the current `dueDate` (its weekday, day of the month or date). A day the month doesn't have is its last day, without drifting (`every month on the 31st`: Jan 31, Feb 28, Mar 31).
+  - A rule without `on …` takes its day from the current `dueDate` (its weekday, day of the month or date). A day the month doesn't have is its last day. With `on …` the day doesn't drift (`every month on the 31st`: Jan 31, Feb 28, Mar 31); without it, the next date takes the clamped day (`every month` from Jan 31: Feb 28, Mar 28).
   - A task with only a `deadline` applies the rule to the deadline. A task with neither date counts `completedDate` as its `dueDate`, and gets one.
   - `deadline` keeps its distance from `dueDate`.
   - `every N` counts its periods from the current date's day, week, month or year; weeks run Monday to Sunday.
 - **End**: `until` is inclusive. When the next date would be after it, the task isn't moved forward; it logs as any completed task.
 - **Moving forward** happens in logging (see Behaviour rules), not when the task is completed. In one write: `status: Not Started`, `completedDate` emptied, `dueDate` and `deadline` set to the next date, and subtasks `[x]` (or `[X]`), `[/]` and `[-]` reset to `[ ]`; other markers stay. Done and Cancelled (a skipped occurrence) both move forward. Clearing `repeat` ends the series, as does completing the task's project: the task then logs with it.
-- **Occurrences**: a task's coming dates in a range, from its current date (or, completed but not yet moved, from its next date) to `until`. A `when done` rule's are estimates, each assumed done on its day.
+- **Occurrences**: a task's coming dates in a range, as logging would move it, each assumed done on its day. A completed task's start at the date it will move to; an open task's at the first date after its current date that's after today (missed dates are skipped, as in moving forward). They stop at `until`. A `when done` rule's are estimates, except the date a completed task will move to.
 - Projects, areas and notes don't repeat.
 
 ## Behaviour rules

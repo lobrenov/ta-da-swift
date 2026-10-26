@@ -17,14 +17,27 @@ private func occurrences(_ frontmatter: String, _ from: String, _ through: Strin
     #expect(occurrences(open, "2026-10-20", "2026-10-19").isEmpty)
 }
 
-@Test func occurrencesBeforeTodayAreListed() {
-    #expect(occurrences("status: Doing\ndueDate: 2026-09-07\nrepeat: every week", "2026-09-20", "2026-10-05")
-            == ["2026-09-21", "2026-09-28", "2026-10-05"])
+@Test func anOpenTasksPastDatesAreNotListed() {
+    #expect(occurrences("status: Doing\ndueDate: 2026-09-07\nrepeat: every week", "2026-09-01", "2026-10-12")
+            == ["2026-10-05", "2026-10-12"])
+    #expect(occurrences("status: Doing\ndueDate: 2026-09-07\nrepeat: every week on Mon", "2026-09-01", "2026-10-12")
+            == ["2026-10-05", "2026-10-12"])
+    #expect(occurrences("status: Doing\ndueDate: 2026-09-07\nrepeat: every 3 days when done", "2026-09-01", "2026-10-10")
+            == ["2026-10-05 ~", "2026-10-08 ~"])
 }
 
-@Test func occurrencesDontDriftFromTheAnchor() {
-    #expect(occurrences("status: Doing\ndueDate: 2026-01-31\nrepeat: every month", "2026-02-01", "2026-04-30")
-            == ["2026-02-28", "2026-03-31", "2026-04-30"])
+@Test func occurrencesDontDriftFromTheAnchorWithADay() {
+    #expect(occurrences("status: Doing\ndueDate: 2026-01-31\nrepeat: every month on the 31st", "2026-10-03", "2027-02-28")
+            == ["2026-10-31", "2026-11-30", "2026-12-31", "2027-01-31", "2027-02-28"])
+}
+
+@Test func aMonthOrYearRuleWithoutADayDriftsAsLoggingDoes() {
+    #expect(occurrences("status: Doing\ndueDate: 2026-10-31\nrepeat: every month", "2026-11-01", "2027-02-28")
+            == ["2026-11-30", "2026-12-30", "2027-01-30", "2027-02-28"])
+    #expect(occurrences("status: Doing\ndueDate: 2026-01-31\nrepeat: every month", "2026-10-03", "2026-12-31")
+            == ["2026-10-31", "2026-11-30", "2026-12-30"])
+    #expect(occurrences("status: Doing\ndueDate: 2028-02-29\nrepeat: every year", "2028-03-01", "2031-03-01")
+            == ["2029-02-28", "2030-02-28", "2031-02-28"])
 }
 
 @Test func aFarAwayRangeIsCheap() {
@@ -47,7 +60,18 @@ private func occurrences(_ frontmatter: String, _ from: String, _ through: Strin
     let overdue = "status: Cancelled\ncompletedDate: 2026-09-20\ndueDate: 2026-09-20\nrepeat: every day"
     #expect(occurrences(overdue, "2026-10-01", "2026-10-03") == ["2026-10-02", "2026-10-03"])
     let whenDone = "status: Done\ncompletedDate: 2026-10-01\ndueDate: 2026-09-28\nrepeat: every 3 days when done"
-    #expect(occurrences(whenDone, "2026-10-01", "2026-10-12") == ["2026-10-04 ~", "2026-10-07 ~", "2026-10-10 ~"])
+    #expect(occurrences(whenDone, "2026-10-01", "2026-10-12") == ["2026-10-04", "2026-10-07 ~", "2026-10-10 ~"])
+}
+
+@Test func aCompletedTasksKindsAndOffsetComeFromItsNextDates() {
+    #expect(occurrences("status: Done\ncompletedDate: 2026-10-01\nrepeat: every week", "2026-10-01", "2026-10-22")
+            == ["2026-10-08", "2026-10-15", "2026-10-22"])
+    let both = "status: Done\ncompletedDate: 2026-10-01\ndueDate: 2026-09-28\ndeadline: 2026-09-30\nrepeat: every week"
+    #expect(occurrences(both, "2026-10-01", "2026-10-14") == ["2026-10-05", "2026-10-07 deadline", "2026-10-12", "2026-10-14 deadline"])
+    let deadlineOnly = "status: Done\ncompletedDate: 2026-10-01\ndeadline: 2026-09-28\nrepeat: every week"
+    #expect(occurrences(deadlineOnly, "2026-10-01", "2026-10-14") == ["2026-10-05 deadline", "2026-10-12 deadline"])
+    let whenDone = "status: Done\ncompletedDate: 2026-10-01\ndueDate: 2026-09-28\ndeadline: 2026-09-30\nrepeat: every 3 days when done"
+    #expect(occurrences(whenDone, "2026-10-01", "2026-10-08") == ["2026-10-04", "2026-10-06 deadline", "2026-10-07 ~"])
 }
 
 @Test func untilEndsOccurrences() {
@@ -88,5 +112,6 @@ private func occurrences(_ frontmatter: String, _ from: String, _ through: Strin
     #expect(marks("every 2 days") == ["2026-10-07", "2026-10-09", "2026-10-11", "2026-10-13"].map { LocalDate($0)! })
     #expect(marks("every day").isEmpty)
     #expect(marks("every weekday").isEmpty)
+    #expect(marks("every 3 days when done") == [LocalDate("2026-10-08")!, LocalDate("2026-10-11")!, LocalDate("2026-10-14")!])
     #expect(marks("every week", status: "Done\ncompletedDate: 2026-10-01\ndueDate: 2026-09-28") == [LocalDate("2026-10-12")!])
 }

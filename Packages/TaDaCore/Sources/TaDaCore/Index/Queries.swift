@@ -150,32 +150,43 @@ extension VaultIndex {
             .sorted(by: Self.byAgendaOrder)
     }
 
-    /// A repeating task's coming dates from `from` through `through`, by date, due before deadline. An open task's are
-    /// the rule's dates after its current date, which is its own entry. A completed task not yet moved forward lists
-    /// its next date too, as the logging run would set it: on `today`, or the day after for a task completed today.
-    /// A deadline-only task has deadline occurrences; a task with both has a due occurrence on each date and a deadline
-    /// one at the same offset. Dates before `today` are listed too. Empty without a rule that reads, or past `until`.
+    /// A repeating task's coming dates from `from` through `through`, by date, due before deadline, each assumed done on
+    /// its day. An open task's are the rule's dates after its current date that are after `today`. A completed task not
+    /// yet moved forward lists its next date too, as the logging run would set it: on `today`, or the day after for a
+    /// task completed today. A deadline-only task has deadline occurrences; a task with both has a due occurrence on each
+    /// date and a deadline one at the same offset. A `when done` rule's are estimates, except a completed task's first.
+    /// A month or year rule without `on …` steps date by date, as logging does. Empty without a rule that reads, or past `until`.
     public func occurrences(of item: Item, from: LocalDate, through: LocalDate, today: LocalDate) -> [Occurrence] {
         let p = item.properties
         guard p.kind == .task, let rule = p.repeatRule?.rule, from <= through else { return [] }
         var dates: [LocalDate] = []
         var anchor: LocalDate
+        var known: LocalDate?
+        var hasDue = p.dueDate != nil
+        var hasDeadline = p.deadline != nil
+        var offset = p.dueDate.flatMap { due in p.deadline.map { due.days(to: $0) } } ?? 0
+        var earliest = from
         if p.status.isClosed {
             let rollover = (p.completedDate.map { $0 < today } ?? true) ? today : today.adding(days: 1)
             let closed = project(of: item)?.properties.status.isClosed == true
             guard let next = Recurrence.next(for: item, today: rollover, projectClosed: closed),
                   let date = next.dueDate ?? next.deadline else { return [] }
+            hasDue = next.dueDate != nil
+            hasDeadline = next.deadline != nil
+            offset = next.dueDate.flatMap { due in next.deadline.map { due.days(to: $0) } } ?? 0
             dates = [date]
             anchor = date
+            if rule.whenDone { known = date }
         } else {
             guard let date = p.dueDate ?? p.deadline else { return [] }
-            anchor = date
+            anchor = rule.whenDone ? max(date, today) : date
+            earliest = max(from, today.adding(days: 1))
         }
-        let offset = p.dueDate.flatMap { due in p.deadline.map { due.days(to: $0) } } ?? 0
-        let (low, high) = (min(from, from.adding(days: -offset)), max(through, through.adding(days: -offset)))
-        if rule.whenDone {
-            while let date = rule.next(dueDate: anchor, deadline: nil, completedDate: anchor, rolloverDay: anchor)?.dueDate,
-                  date <= high {
+        let (low, high) = (min(earliest, earliest.adding(days: -offset)), max(through, through.adding(days: -offset)))
+        let drifts = (rule.frequency == .month && rule.monthDay == nil) || (rule.frequency == .year && rule.yearDate == nil)
+        if rule.whenDone || drifts {
+            while let date = rule.next(dueDate: anchor, deadline: nil, completedDate: anchor,
+                                       rolloverDay: max(anchor, today).adding(days: 1))?.dueDate, date <= high {
                 dates.append(date)
                 anchor = date
             }
@@ -183,10 +194,11 @@ extension VaultIndex {
             dates += rule.dates(after: anchor, from: low, through: high)
         }
         let found = dates.filter { $0 >= low && $0 <= high }.flatMap { date -> [Occurrence] in
+            let estimated = rule.whenDone && date != known
             var entries: [Occurrence] = []
-            if p.dueDate != nil { entries.append(Occurrence(item: item, date: date, kind: .due, estimated: rule.whenDone)) }
-            if p.deadline != nil, let moved = date.checkedAdding(days: offset) {
-                entries.append(Occurrence(item: item, date: moved, kind: .deadline, estimated: rule.whenDone))
+            if hasDue { entries.append(Occurrence(item: item, date: date, kind: .due, estimated: estimated)) }
+            if hasDeadline, let moved = date.checkedAdding(days: offset) {
+                entries.append(Occurrence(item: item, date: moved, kind: .deadline, estimated: estimated))
             }
             return entries
         }
