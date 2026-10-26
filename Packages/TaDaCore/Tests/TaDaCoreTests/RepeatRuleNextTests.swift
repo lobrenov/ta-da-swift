@@ -202,3 +202,21 @@ func untilIsInclusive(until: String, expected: String?) {
     #expect(rule.dates(after: date("2026-10-26")!, from: date("2026-10-26")!, through: date("2026-12-31")!).map(\.description)
         == ["2026-11-02", "2026-11-09"])
 }
+
+@Test(arguments: [
+    ("every day", "2026-10-26", "2026-10-26"),
+    ("every 2 days", "2026-10-26", "2026-10-26"),
+    ("every week", "2026-10-26", "2026-10-26"),
+    ("every month", "2026-10-26", "2026-10-26"),
+    ("every weekday", "2026-10-24", "2026-10-26"),
+    ("every week on Mon", "2026-10-26", "2026-10-26"),
+    ("every week on Wed", "2026-10-26", "2026-10-28"),
+    ("every 2 weeks on Mon", "2026-10-27", "2026-11-02"),
+    ("every month on the 15th", "2026-10-26", "2026-11-15"),
+    ("every year on Oct 20", "2026-10-26", "2027-10-20"),
+    ("every week on Wed until 2026-10-27", "2026-10-26", nil),
+    ("every week until 2026-10-25", "2026-10-26", nil),
+])
+func aTaskWithNoDatesStartsOnTheRulesFirstDate(_ phrase: String, _ today: String, _ expected: String?) {
+    #expect(RepeatRule.parse(phrase)!.firstDate(from: LocalDate(today)!) == expected.flatMap(LocalDate.init))
+}

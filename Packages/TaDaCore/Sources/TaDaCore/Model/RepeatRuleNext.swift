@@ -27,6 +27,20 @@ extension RepeatRule {
         return Next(dueDate: date, deadline: moved)
     }
 
+    /// The first date a task with no dates would be due: the first day of a rule that names its days (weekdays, a day of
+    /// the month, a date) on or after `today`, else `today`. Nil when `until` has passed.
+    public func firstDate(from today: LocalDate) -> LocalDate? {
+        let namesDay = switch frequency {
+        case .weekday: true
+        case .week: !weekdays.isEmpty
+        case .month: monthDay != nil
+        case .year: yearDate != nil
+        case .day: false
+        }
+        let date = namesDay ? first(onOrAfter: today, anchor: today, interval: 1) : today
+        return date.flatMap { date in until.map { date <= $0 } ?? true ? date : nil }
+    }
+
     /// The dates of a regular rule after `anchor`, on or after `from` and through `through`, each counted from `anchor`
     /// rather than from the one before; stops at `until`.
     func dates(after anchor: LocalDate, from: LocalDate, through: LocalDate) -> [LocalDate] {

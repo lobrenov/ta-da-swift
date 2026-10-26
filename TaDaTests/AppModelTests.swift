@@ -550,6 +550,53 @@ struct AppModelTests {
         #expect(model.index[files[0]]?.properties.dueDate == nil)
     }
 
+    @Test func settingARepeatWritesItsCanonicalPhraseWithTheDayAMonthRuleNeeds() async throws {
+        let folder = try TestFolder([
+            "Ta Da/tasks/Dated.md": "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-31\n---\nBody\n",
+            "Ta Da/tasks/Undated.md": "---\ntype: task\nstatus: Not Started\n---\n",
+            "Ta Da/tasks/Same.md": "---\ntype: task\ndueDate: 2026-10-31\nrepeat: every month on the 31st\n---\n",
+            "Ta Da/projects/Project.md": "---\ntype: project\nstatus: Doing\n---\n",
+        ])
+        let model = await folder.model(today: LocalDate("2026-10-26")!)
+        let paths = ["Ta Da/tasks/Dated.md", "Ta Da/tasks/Undated.md", "Ta Da/tasks/Same.md", "Ta Da/projects/Project.md"]
+        let same = try folder.read(paths[2])
+
+        await model.setRepeat(RepeatRule.parse("every month"), of: paths)
+        #expect(try folder.read(paths[0]) == "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-31\nrepeat: every month on the 31st\n---\nBody\n")
+        #expect(try folder.read(paths[1]) == "---\ntype: task\nstatus: Not Started\nrepeat: every month on the 26th\ndueDate: 2026-10-26\n---\n",
+                "no due date: the first date, which is today for a rule with no day")
+        #expect(try folder.read(paths[2]) == same, "already that rule")
+        #expect(try folder.read(paths[3]) == "---\ntype: project\nstatus: Doing\n---\n", "a project doesn't repeat")
+        #expect(model.index[paths[0]]?.properties.repeatRule?.rule?.phrase == "every month on the 31st")
+
+        await model.setRepeat(RepeatRule.parse("every week on wed until 2026-12-20 when done"), of: [paths[1]])
+        #expect(model.index[paths[1]]?.properties.repeatRule?.text == "every week on Wed until 2026-12-20 when done")
+        #expect(model.index[paths[1]]?.properties.dueDate == LocalDate("2026-10-26")!, "it already has a due date")
+
+        await model.setRepeat(nil, of: paths)
+        #expect(try folder.read(paths[0]) == "---\ntype: task\nstatus: Not Started\ndueDate: 2026-10-31\nrepeat:\n---\nBody\n")
+        #expect(model.index[paths[1]]?.properties.repeatRule == nil && model.index[paths[2]]?.properties.repeatRule == nil)
+    }
+
+    @Test func aRepeatOnATaskWithNoDatesSetsItsDueDateToTheFirstOccurrence() async throws {
+        let folder = try TestFolder(["Ta Da/tasks/Undated.md": "---\ntype: task\nstatus: Not Started\n---\n"])
+        let model = await folder.model(today: LocalDate("2026-10-26")!)
+        await model.setRepeat(RepeatRule.parse("every 2 weeks on tue"), of: ["Ta Da/tasks/Undated.md"])
+        let item = try #require(model.index["Ta Da/tasks/Undated.md"])
+        #expect(item.properties.dueDate == LocalDate("2026-10-27")! && item.properties.repeatRule?.text == "every 2 weeks on Tue")
+    }
+
+    @Test func quickEntryTakesARepeatInItsDraft() async throws {
+        let folder = try TestFolder()
+        let model = await folder.model(today: LocalDate("2026-10-26")!)
+        let path = AppModel.quickEntryDraftPath
+        await model.setRepeat(RepeatRule.parse("every month"), of: [path])
+        #expect(model.quickEntryDraft.repeatText == "every month on the 26th" && model.quickEntryDraft.dueDate == LocalDate("2026-10-26")!)
+        #expect(model.item(at: path)?.properties.repeatRule?.rule != nil)
+        await model.setRepeat(nil, of: [path])
+        #expect(model.quickEntryDraft.repeatText == nil)
+    }
+
     @Test func movingSeveralTasksWritesOnlyTheOnesThatChange() async throws {
         let model = await folder.model()
         let tasks = ["Ta Da/tasks/Due today.md", "Ta Da/tasks/Loose.md"]

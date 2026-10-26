@@ -7,6 +7,8 @@ public struct QuickEntryDraft: Equatable, Sendable {
     public var parent: Parent?
     public var dueDate: LocalDate?
     public var deadline: LocalDate?
+    /// A task's `repeat` phrase, as it's written.
+    public var repeatText: String?
     public var tags: [Tag] = []
 
     public init() {}
@@ -21,7 +23,7 @@ public struct QuickEntryDraft: Equatable, Sendable {
         }
     }
 
-    /// The file's text: `NewFile`'s for the kind, with the status, due date and deadline set.
+    /// The file's text: `NewFile`'s for the kind, with the status, due date, deadline and a task's repeat set.
     public func text(today: LocalDate) -> String {
         var text = switch kind {
         case .task:
@@ -37,6 +39,7 @@ public struct QuickEntryDraft: Equatable, Sendable {
         if status != .notStarted { text = Completion.setStatus(status, in: text, today: today) }
         if let dueDate { text = FrontmatterEditor.set("dueDate", to: .date(dueDate), in: text) }
         if let deadline { text = FrontmatterEditor.set("deadline", to: .date(deadline), in: text) }
+        if kind == .task, let repeatText { text = FrontmatterEditor.set("repeat", to: .text(repeatText), in: text) }
         return text
     }
 
@@ -50,6 +53,7 @@ public struct QuickEntryDraft: Equatable, Sendable {
         draft.status = Status.choices(for: kind).contains(status) ? status : .notStarted
         draft.dueDate = dueDate
         draft.deadline = deadline
+        draft.repeatText = kind == .task ? repeatText : nil
         draft.parent = kind == .project && parent?.areaTitle == nil ? nil : parent
         return draft
     }

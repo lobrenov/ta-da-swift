@@ -91,3 +91,12 @@ func closedStatusSetsCompletedDate(kind: Item.Kind, status: Status) throws {
     #expect(draft.parent == nil && draft.status == .notStarted && draft.dueDate == nil && draft.folder.isEmpty)
     #expect(draft.text(today: today) == "---\ncreatedDate: 2026-10-12\ntags: [people/bea]\n---\n")
 }
+
+@Test func aTaskDraftWritesItsRepeatAndAProjectKeepsNone() throws {
+    var draft = full(.task, parent: nil)
+    draft.repeatText = "every week on Mon"
+    let item = try #require(Item(parsing: draft.text(today: today), path: "t.md"))
+    #expect(item.properties.repeatRule?.rule?.phrase == "every week on Mon" && item.warnings.isEmpty)
+    let project = draft.changingKind(to: .project)
+    #expect(project.repeatText == nil && !project.text(today: today).contains("repeat"))
+}

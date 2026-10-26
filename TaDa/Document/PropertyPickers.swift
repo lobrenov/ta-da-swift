@@ -150,8 +150,16 @@ final class PropertyPicker {
         }
         let current = agreed(kind.date)
         let paths = items.map(\.path)
+        // A task's due date menu has the Repeat section; several files show the rule only when they all share it.
+        var repeating: CalendarPickerModel.Repeating?
+        if kind == .due, items.allSatisfy({ $0.properties.kind == .task }) {
+            repeating = CalendarPickerModel.Repeating(items: items, index: model.index) { [weak self] rule, closing in
+                if closing { self?.close() }
+                Task { await model.setRepeat(rule, of: paths) }
+            }
+        }
         calendar.show(kind, selected: current, other: agreed(kind == .due ? \.deadline : \.dueDate), today: model.today,
-                      theme: model.theme, below: rect, gap: gap, in: window) { [weak self] date in
+                      theme: model.theme, repeating: repeating, below: rect, gap: gap, in: window) { [weak self] date in
             self?.close()
             if date != current { Task { await model.setDate(kind, to: date, of: paths) } }
         }

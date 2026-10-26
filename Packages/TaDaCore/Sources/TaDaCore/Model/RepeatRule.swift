@@ -4,6 +4,11 @@ import Foundation
 public struct Repeat: Hashable, Sendable {
     public var text: String
     public var rule: RepeatRule?
+
+    public init(text: String, rule: RepeatRule?) {
+        self.text = text
+        self.rule = rule
+    }
 }
 
 /// A repeating task's schedule, read from and written as an English phrase (see Repeating tasks in
@@ -171,6 +176,77 @@ extension RepeatRule {
         if let until { words += " until \(until)" }
         if whenDone { words += " when done" }
         return words
+    }
+
+    /// The rule with a month or year rule's day taken from `date` when it names none, as Ta Da writes it.
+    public func anchored(to date: LocalDate) -> RepeatRule {
+        var rule = self
+        if frequency == .month, monthDay == nil { rule.monthDay = .day(date.day) }
+        if frequency == .year, yearDate == nil { rule.yearDate = YearDate(month: date.month, day: date.day) }
+        return rule
+    }
+
+    /// The rule ending on `until`, or never when it's nil.
+    public func ending(on until: LocalDate?) -> RepeatRule {
+        var rule = self
+        rule.until = until
+        return rule
+    }
+
+    /// The rule counting from completion, or on its schedule.
+    public func whenDone(_ whenDone: Bool) -> RepeatRule {
+        var rule = self
+        rule.whenDone = whenDone
+        return rule
+    }
+
+    /// The rule spelled out, with `format` writing the end date: "Every week on Monday",
+    /// "Every month on the 2nd Tuesday until 2026-12-31 when done".
+    public func description(until format: (LocalDate) -> String = { $0.description }) -> String {
+        var words: String
+        switch frequency {
+        case .weekday: words = "Every weekday"
+        case .day: words = interval == 1 ? "Every day" : "Every \(interval) days"
+        case .week: words = interval == 1 ? "Every week" : "Every \(interval) weeks"
+        case .month: words = interval == 1 ? "Every month" : "Every \(interval) months"
+        case .year: words = interval == 1 ? "Every year" : "Every \(interval) years"
+        }
+        switch frequency {
+        case .week where !weekdays.isEmpty:
+            let names = ((2...7).map { $0 } + [1]).filter(weekdays.contains).map { Self.fullDayNames[$0 - 1].capitalized }
+            words += " on " + (names.count == 1 ? names[0] : names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1])
+        case .month:
+            switch monthDay {
+            case let .day(day): words += " on the \(Self.ordinal(day))"
+            case .lastDay: words += " on the last day"
+            case let .nth(n, weekday): words += " on the \(Self.ordinal(n)) \(Self.fullDayNames[weekday - 1].capitalized)"
+            case let .lastWeekday(weekday): words += " on the last \(Self.fullDayNames[weekday - 1].capitalized)"
+            case nil: break
+            }
+        case .year:
+            if let yearDate { words += " on \(Self.fullMonthNames[yearDate.month - 1].capitalized) \(yearDate.day)" }
+        default:
+            break
+        }
+        if let until { words += " until \(format(until))" }
+        return whenDone ? words + " when done" : words
+    }
+
+    /// A short label for a chip: "Weekly", "Every 2 weeks when done".
+    public var frequencyLabel: String {
+        let label: String
+        switch (frequency, interval) {
+        case (.weekday, _): label = "Weekdays"
+        case (.day, 1): label = "Daily"
+        case (.week, 1): label = "Weekly"
+        case (.month, 1): label = "Monthly"
+        case (.year, 1): label = "Yearly"
+        case (.day, _): label = "Every \(interval) days"
+        case (.week, _): label = "Every \(interval) weeks"
+        case (.month, _): label = "Every \(interval) months"
+        case (.year, _): label = "Every \(interval) years"
+        }
+        return whenDone ? label + " when done" : label
     }
 
     private static func weekday(_ name: String) -> Int? {

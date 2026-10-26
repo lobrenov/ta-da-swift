@@ -133,3 +133,44 @@ func writingThenReadingKeepsTheRule(_ phrase: String) throws {
     #expect(RepeatRule.parse(rule.phrase) == rule)
     #expect(rule.phrase == phrase)
 }
+
+@Test(arguments: [
+    ("every day", "Every day", "Daily"),
+    ("every weekday", "Every weekday", "Weekdays"),
+    ("every 3 days", "Every 3 days", "Every 3 days"),
+    ("every week on Mon", "Every week on Monday", "Weekly"),
+    ("every 2 weeks on Mon, Thu", "Every 2 weeks on Monday and Thursday", "Every 2 weeks"),
+    ("every week on Sun, Mon, Fri", "Every week on Monday, Friday and Sunday", "Weekly"),
+    ("every month on the 15th", "Every month on the 15th", "Monthly"),
+    ("every month on the last day", "Every month on the last day", "Monthly"),
+    ("every month on the 2nd Tue", "Every month on the 2nd Tuesday", "Monthly"),
+    ("every 3 months on the last Fri", "Every 3 months on the last Friday", "Every 3 months"),
+    ("every year on Oct 26", "Every year on October 26", "Yearly"),
+    ("every year", "Every year", "Yearly"),
+    ("every week until 2026-12-20", "Every week until 2026-12-20", "Weekly"),
+    ("every week when done", "Every week when done", "Weekly when done"),
+    ("every 2 weeks on Mon when done", "Every 2 weeks on Monday when done", "Every 2 weeks when done"),
+    ("every week until 2026-12-20 when done", "Every week until 2026-12-20 when done", "Weekly when done"),
+])
+func spellsARuleOutAndLabelsItsFrequency(_ phrase: String, _ description: String, _ label: String) {
+    let rule = RepeatRule.parse(phrase)!
+    #expect(rule.description() == description)
+    #expect(rule.description { _ in "then" } == description.replacingOccurrences(of: "2026-12-20", with: "then"))
+    #expect(rule.frequencyLabel == label)
+}
+
+@Test func aMonthOrYearRuleTakesItsDayFromADate() {
+    let date = LocalDate("2026-10-31")!
+    #expect(RepeatRule.parse("every month")!.anchored(to: date).phrase == "every month on the 31st")
+    #expect(RepeatRule.parse("every 2 years")!.anchored(to: date).phrase == "every 2 years on Oct 31")
+    #expect(RepeatRule.parse("every month on the last day")!.anchored(to: date).phrase == "every month on the last day")
+    #expect(RepeatRule.parse("every week")!.anchored(to: date).phrase == "every week")
+}
+
+@Test func endingAndWhenDoneChangeOnlyThoseFields() {
+    let rule = RepeatRule.parse("every week on Mon")!
+    let ended = rule.ending(on: LocalDate("2026-12-20"))
+    #expect(ended.phrase == "every week on Mon until 2026-12-20")
+    #expect(ended.whenDone(true).phrase == "every week on Mon until 2026-12-20 when done")
+    #expect(ended.ending(on: nil) == rule)
+}

@@ -196,6 +196,156 @@ struct PropertyPickerTests {
         #expect(model.match == nil)
     }
 
+    // MARK: Repeat
+
+    private final class Writes {
+        var rules: [RepeatRule?] = []
+        var closing: [Bool] = []
+        var dates: [LocalDate?] = []
+    }
+
+    /// A due date menu on tasks with `files`' text, today Monday 26 October 2026.
+    private func repeatMenu(_ files: [String], today: String = "2026-10-26") -> (CalendarPickerModel, Writes) {
+        let items = files.enumerated().compactMap { Item(parsing: $0.element, path: "Ta Da/tasks/T\($0.offset).md") }
+        let writes = Writes()
+        let model = CalendarPickerModel()
+        model.today = LocalDate(today)!
+        model.selected = Set(items.map(\.properties.dueDate)).count == 1 ? items[0].properties.dueDate : nil
+        model.cursor = model.selected ?? model.today
+        model.configure(CalendarPickerModel.Repeating(items: items, index: VaultIndex(items)) { rule, closing in
+            writes.rules.append(rule)
+            writes.closing.append(closing)
+        })
+        model.set = { writes.dates.append($0) }
+        return (model, writes)
+    }
+
+    private let weekly = "---\ntype: task\ndueDate: 2026-11-02\nrepeat: every week on Mon\n---\n"
+    private let plain = "---\ntype: task\ndueDate: 2026-11-02\n---\n"
+    private let undated = "---\ntype: task\n---\n"
+
+    @Test func aPhraseStartingWithEveryIsARuleAndLeavesTheCursor() throws {
+        let (model, _) = repeatMenu([plain])
+        model.phrase = "every 2 weeks on mon"
+        #expect(model.typedRule?.phrase == "every 2 weeks on Mon" && model.match == nil)
+        #expect(model.cursor == LocalDate("2026-11-02")!, "stays on the due date")
+        #expect(model.note == "From \(LocalDate("2026-11-02")!.formatted(.weekdayDayMonth))")
+        #expect(model.displayedRule == model.typedRule)
+        model.phrase = "every 2 w"
+        #expect(model.typedRule == nil && model.note == "No match")
+        model.phrase = "fri"
+        #expect(model.typedRule == nil && model.match == LocalDate("2026-10-30")! && model.cursor == LocalDate("2026-10-30")!, "a date still moves the cursor")
+        model.phrase = ""
+        #expect(model.cursor == LocalDate("2026-11-02")!)
+    }
+
+    @Test func aMenuWithoutARepeatSectionReadsEveryAsADate() {
+        let model = CalendarPickerModel()
+        model.today = LocalDate("2026-10-26")!
+        model.cursor = model.today
+        model.phrase = "every mon"
+        #expect(model.typedRule == nil && model.match == nil && model.note == "No match · \(model.today.formatted(.weekdayDayMonth))")
+        model.configure(nil)
+        #expect(!model.showsRepeat)
+    }
+
+    @Test func enterSetsAReadableRuleAndNothingOtherwise() {
+        let (model, writes) = repeatMenu([plain])
+        model.phrase = "every 2 w"
+        model.confirm()
+        #expect(writes.rules.isEmpty && writes.dates.isEmpty)
+        model.phrase = "Every 2 weeks on Mon"
+        model.confirm()
+        #expect(writes.rules == [RepeatRule.parse("every 2 weeks on Mon")] && writes.closing == [true] && writes.dates.isEmpty)
+        model.phrase = ""
+        model.confirm()
+        #expect(writes.dates == [LocalDate("2026-11-02")!], "a date is set as before")
+    }
+
+    @Test func aRuleOnATaskWithNoDueDateStartsOnItsFirstDate() {
+        let (model, writes) = repeatMenu([undated])
+        model.phrase = "every week on wed"
+        #expect(model.note == "From \(LocalDate("2026-10-28")!.formatted(.weekdayDayMonth))")
+        #expect(model.occurrenceDays(in: LocalDate("2026-10-01")!).contains(LocalDate("2026-10-28")!), "the first date is marked")
+        model.phrase = "every day until 2026-10-20"
+        #expect(model.typedRule == nil && model.note == "No match", "ended before it starts")
+        model.confirm()
+        #expect(writes.rules.isEmpty)
+    }
+
+    @Test func theMonthPreviewsComingOccurrencesOfTheTypedOrSetRule() {
+        let (model, _) = repeatMenu([plain])
+        let november = LocalDate("2026-11-01")!
+        #expect(model.occurrenceDays(in: november).isEmpty, "no rule")
+        model.phrase = "every 2 weeks on mon"
+        #expect(model.occurrenceDays(in: november) == [LocalDate("2026-11-16")!, LocalDate("2026-11-30")!] as Set)
+        let (set, _) = repeatMenu([weekly])
+        #expect(set.occurrenceDays(in: november) == Set(["2026-11-09", "2026-11-16", "2026-11-23", "2026-11-30"].map { LocalDate($0)! }))
+        set.phrase = "every 2 weeks on mon"
+        #expect(set.displayedRule?.interval == 2 && set.current?.interval == 1, "the typed rule previews over the set one")
+        let (deadline, _) = repeatMenu([weekly])
+        deadline.configure(nil)
+        #expect(deadline.occurrenceDays(in: november).isEmpty)
+    }
+
+    @Test func stopAndWhenDoneWriteTheRule() throws {
+        let (model, writes) = repeatMenu([weekly])
+        model.setWhenDone(true)
+        #expect(writes.rules == [RepeatRule.parse("every week on Mon when done")] && writes.closing == [false])
+        #expect(model.current?.whenDone == true)
+        model.setWhenDone(true)
+        #expect(writes.rules.count == 1, "no change, no write")
+        model.setWhenDone(false)
+        #expect(writes.rules.last == RepeatRule.parse("every week on Mon") && model.current?.whenDone == false)
+        model.stopRepeating()
+        #expect(writes.rules.count == 3 && writes.rules[2] == nil && writes.closing[2])
+        let (none, noWrites) = repeatMenu([plain])
+        none.setWhenDone(true)
+        none.showEnds()
+        #expect(noWrites.rules.isEmpty && !none.isEnds, "nothing to change without a rule")
+    }
+
+    @Test func endsPicksTheLastDay() throws {
+        let (model, writes) = repeatMenu([weekly])
+        let december = LocalDate("2026-12-01")!
+        model.showEnds()
+        #expect(model.isEnds && model.shownDate == nil && model.cursor == model.today)
+        model.phrase = "20 dec"
+        #expect(model.match == LocalDate("2026-12-20")! && model.cursor == LocalDate("2026-12-20")!)
+        #expect(model.note == LocalDate("2026-12-20")!.formatted(.weekdayDayMonth))
+        #expect(model.occurrenceDays(in: december) == [LocalDate("2026-12-07")!, LocalDate("2026-12-14")!] as Set, "stops at the end typed")
+        #expect(model.endsSummary == "Every week on Monday until \(LocalDate("2026-12-20")!.formatted(.weekdayDayMonth))")
+        model.confirm()
+        #expect(writes.rules == [RepeatRule.parse("every week on Mon until 2026-12-20")] && writes.closing == [true])
+        model.pick(LocalDate("2026-12-31"))
+        #expect(writes.rules.last == RepeatRule.parse("every week on Mon until 2026-12-31"))
+        model.pick(nil)
+        #expect(writes.rules.last == RepeatRule.parse("every week on Mon"), "Never")
+        model.phrase = "every day"
+        #expect(model.typedRule == nil, "a rule isn't read in the Ends view")
+        model.hideEnds()
+        #expect(!model.isEnds && model.cursor == LocalDate("2026-11-02")!)
+    }
+
+    @Test func endsShowsTheSetEndOnItsDay() {
+        let (model, _) = repeatMenu(["---\ntype: task\ndueDate: 2026-11-02\nrepeat: every week on Mon until 2026-12-20\n---\n"])
+        model.showEnds()
+        #expect(model.shownDate == LocalDate("2026-12-20")! && model.cursor == LocalDate("2026-12-20")!)
+        model.hideEnds()
+        #expect(model.shownDate == LocalDate("2026-11-02")!)
+    }
+
+    @Test func pickedFilesShowARuleOnlyWhenTheyAllShareIt() {
+        #expect(repeatMenu([weekly, weekly]).0.current == RepeatRule.parse("every week on Mon"))
+        #expect(repeatMenu([weekly, plain]).0.current == nil)
+        #expect(repeatMenu([weekly, "---\ntype: task\nrepeat: every day\n---\n"]).0.current == nil)
+        let (model, writes) = repeatMenu([weekly, plain])
+        model.phrase = "every month"
+        #expect(model.typedRule != nil)
+        model.confirm()
+        #expect(writes.rules == [RepeatRule.parse("every month")], "one rule for every file")
+    }
+
     // MARK: tagMenu
 
     private func tagMenu(_ query: String = "", keeping: String? = nil) -> (titles: [String?], labels: [String?], highlight: Int?) {

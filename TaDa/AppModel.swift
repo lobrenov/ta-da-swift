@@ -1906,6 +1906,31 @@ import UIKit
         }
     }
 
+    /// Sets the `repeat` rule of the tasks at `paths`, or empties it when `rule` is nil. A month or year rule is written
+    /// with its day from the task's due date; a task with no due date is made due on the rule's first date. Tasks already
+    /// repeating by the written rule aren't written.
+    func setRepeat(_ rule: RepeatRule?, of paths: [String]) async {
+        let today = today
+        for path in paths {
+            guard let item = item(at: path), item.properties.kind == .task else { continue }
+            let p = item.properties
+            guard let rule else {
+                if editDraft(path, { $0.repeatText = nil }) { continue }
+                if p.repeatRule != nil { await setProperty("repeat", to: nil, in: path) }
+                continue
+            }
+            let start = p.dueDate ?? rule.firstDate(from: today)
+            let text = rule.anchored(to: start ?? today).phrase
+            let due = p.dueDate == nil ? start : nil
+            if editDraft(path, { $0.repeatText = text; if let due { $0.dueDate = due } }) { continue }
+            guard p.repeatRule?.text != text || due != nil else { continue }
+            await edit(path) { source in
+                let written = FrontmatterEditor.set("repeat", to: .text(text), in: source)
+                return due.map { FrontmatterEditor.set("dueDate", to: .date($0), in: written) } ?? written
+            }
+        }
+    }
+
     /// The day a task made in the Agenda or dropped on it is due: the selected day, or today when a week is selected.
     var agendaDueDay: LocalDate {
         if case let .day(day) = agendaSelection { day } else { today }
