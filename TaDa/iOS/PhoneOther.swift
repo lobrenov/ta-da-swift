@@ -1,4 +1,4 @@
-// The Other tab: Logbook, Attachments and Trash, and Settings (Vault, Themes, Editor, Daily notes, Integrations, Notifications, Haptics), each line its own page, with the folder's sync state under them.
+// The Other tab: Logbook, Attachments and Trash, and Settings (Vault, Themes, Editor, Daily notes, Integrations, Notifications, Haptics, About), each line its own page, with the folder's sync state under them.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -44,6 +44,9 @@ struct PhoneOtherScreen: View {
                 NavigationLink(value: PhoneRoute.settings(.haptics)) {
                     row("Haptics", "hand.tap", tint: \.due, value: model.haptics ? "On" : "Off")
                 }
+                NavigationLink(value: PhoneRoute.settings(.about)) {
+                    row("About", "info.circle", tint: \.muted, value: Self.version)
+                }
             } header: {
                 Text("Settings")
             } footer: {
@@ -56,6 +59,8 @@ struct PhoneOtherScreen: View {
         .background(theme.color(\.bg))
         .navigationTitle("Other")
     }
+
+    private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
 
     /// "Events and reminders", "Events", "Reminders" or "Off".
     private var integrationsValue: String {
@@ -146,6 +151,18 @@ struct PhoneSettingsScreen: View {
                     } footer: {
                         Text("A tap you can feel when you complete a task, pick rows, or set a date or project.")
                     }
+                case .about:
+                    Section {
+                        value("Version", Self.info("CFBundleShortVersionString"))
+                        value("Build", Self.info("CFBundleVersion"))
+                    }
+                    Section("Acknowledgements") {
+                        ForEach(Acknowledgement.all, id: \.url) { package in
+                            LabeledContent(package.name) {
+                                Text(package.licence).foregroundStyle(theme.color(\.muted))
+                            }
+                        }
+                    }
                 }
             }
             .listRowBackground(theme.color(\.code))
@@ -212,6 +229,10 @@ struct PhoneSettingsScreen: View {
                  ? "Ta Da can’t show badges. Turn on Allow Notifications and Badges in Settings ▸ Apps ▸ Ta Da ▸ Notifications."
                  : "Open tasks due or at their deadline today or earlier.")
         }
+    }
+
+    private static func info(_ key: String) -> String {
+        Bundle.main.object(forInfoDictionaryKey: key) as? String ?? ""
     }
 
     private func value(_ title: String, _ value: String, monospaced: Bool = false) -> some View {

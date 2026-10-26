@@ -43,7 +43,7 @@ enum PhoneRoute: Hashable {
 }
 
 enum SettingsSection: String, Hashable, CaseIterable {
-    case vault, themes, editor, dailyNotes, notifications, haptics
+    case vault, themes, editor, dailyNotes, notifications, haptics, about
 
     var title: String {
         switch self {
@@ -53,6 +53,7 @@ enum SettingsSection: String, Hashable, CaseIterable {
         case .dailyNotes: "Daily notes"
         case .notifications: "Notifications"
         case .haptics: "Haptics"
+        case .about: "About"
         }
     }
 }

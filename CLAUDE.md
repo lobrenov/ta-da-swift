@@ -33,6 +33,6 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - Swift 6 language mode. The app target defaults to MainActor isolation; TaDaCore is nonisolated and does file IO off the main actor.
 - Never re-serialise YAML or markdown. Edit files by splicing lines (see Writing rules in `docs/file-format.md`).
 - `dueDate`/`deadline`/`createdDate`/`completedDate` are `LocalDate` (from `YYYY-MM-DD` strings), never `Date`. Queries take an injected `today`.
-- Dependencies are pinned with `exact:`. `MarkdownEngine` is imported only in `TaDa/Editor/LiveEditor.swift`. Adding or bumping a linked package updates its section of `TaDa/Acknowledgements.txt` from the package's own licence and notice files.
+- Dependencies are pinned with `exact:`. `MarkdownEngine` is imported only in `TaDa/Editor/LiveEditor.swift`. Adding or bumping a linked package updates its section of `TaDa/Acknowledgements.txt` from the package's own licence and notice files; each section keeps its `=====` banner (name, URL) and `--- LICENSE (name) ---` line, which the About page reads.
 - Use `#Preview` only (`PreviewProvider` is deprecated in Xcode 27). Xcode 27 makes `@State` a macro: don't assign an `@State` property in `init` if it has an initial value.
 - Tests use Swift Testing (`@Test`, `#expect`). XCTest is only for UI tests.
