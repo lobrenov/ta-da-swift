@@ -81,12 +81,16 @@ extension RepeatRule {
             .split(whereSeparator: \.isWhitespace).map(String.init)[...]
         guard tokens.popFirst() == "every", var unit = tokens.popFirst() else { return nil }
         var interval = 1
-        if let number = Int(unit) {
+        var number: String?
+        if let value = Int(unit) {
             guard let next = tokens.popFirst() else { return nil }
-            interval = number
+            interval = value
+            number = unit
             unit = next
         }
         var weekdays: Set<Int> = []
+        var monthDay: MonthDay?
+        var yearDate: YearDate?
         let frequency: Frequency
         switch unit {
         case "day", "days": frequency = .day
@@ -95,18 +99,31 @@ extension RepeatRule {
         case "month", "months": frequency = .month
         case "year", "years": frequency = .year
         default:
-            // `every mon, thu` is `every week on mon, thu`.
-            guard interval == 1, let first = weekday(unit) else { return nil }
-            frequency = .week
-            weekdays.insert(first)
+            // A day or date alone: `every mon, thu`, `every 15th`, `every 2nd tue`, `every oct 26`, `every 26 oct`.
+            var clause = [unit]
             while let token = tokens.first, token != "until", token != "when" {
-                guard let day = weekday(token) else { return nil }
-                weekdays.insert(day)
+                clause.append(token)
                 tokens.removeFirst()
             }
+            let days = clause.compactMap(weekday)
+            if let number {
+                guard let parsed = Self.yearDate([number] + clause) else { return nil }
+                interval = 1
+                frequency = .year
+                yearDate = parsed
+            } else if days.count == clause.count {
+                frequency = .week
+                weekdays = Set(days)
+            } else if let parsed = Self.monthDay(["the"] + clause) {
+                frequency = .month
+                monthDay = parsed
+            } else if let parsed = Self.yearDate(clause) {
+                frequency = .year
+                yearDate = parsed
+            } else {
+                return nil
+            }
         }
-        var monthDay: MonthDay?
-        var yearDate: YearDate?
         var until: LocalDate?
         var whenDone = false
 
@@ -264,11 +281,12 @@ extension RepeatRule {
         }
     }
 
-    /// `oct 26`.
+    /// `oct 26` or `26 oct`.
     private static func yearDate(_ clause: [String]) -> YearDate? {
-        guard clause.count == 2,
-              let index = monthNames.firstIndex(of: clause[0]) ?? fullMonthNames.firstIndex(of: clause[0]),
-              let day = number(clause[1]), (1...monthLengths[index]).contains(day) else { return nil }
+        guard clause.count == 2 else { return nil }
+        let (name, dayText) = number(clause[0]) == nil ? (clause[0], clause[1]) : (clause[1], clause[0])
+        guard let index = monthNames.firstIndex(of: name) ?? fullMonthNames.firstIndex(of: name),
+              let day = number(dayText), (1...monthLengths[index]).contains(day) else { return nil }
         return YearDate(month: index + 1, day: day)
     }
 

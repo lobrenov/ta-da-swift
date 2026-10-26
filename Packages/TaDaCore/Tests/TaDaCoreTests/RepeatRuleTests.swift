@@ -52,6 +52,22 @@ func parsesAndWritesCanonicalForms(_ phrase: String, _ rule: RepeatRule) {
     #expect(RepeatRule.parse("every mon funday") == nil)
 }
 
+@Test func aDayOfTheMonthOrADateAloneIsAMonthOrYearRule() {
+    #expect(RepeatRule.parse("every 15th")?.phrase == "every month on the 15th")
+    #expect(RepeatRule.parse("every last day")?.phrase == "every month on the last day")
+    #expect(RepeatRule.parse("every 2nd tue")?.phrase == "every month on the 2nd Tue")
+    #expect(RepeatRule.parse("every last fri when done")?.phrase == "every month on the last Fri when done")
+    #expect(RepeatRule.parse("every oct 26")?.phrase == "every year on Oct 26")
+    #expect(RepeatRule.parse("every 26 oct")?.phrase == "every year on Oct 26")
+    #expect(RepeatRule.parse("every 26 October until 2030-01-01")?.phrase == "every year on Oct 26 until 2030-01-01")
+    #expect(RepeatRule.parse("every year on 26 oct")?.phrase == "every year on Oct 26")
+    #expect(RepeatRule.parse("every january") == nil)
+    #expect(RepeatRule.parse("every 15") == nil)
+    #expect(RepeatRule.parse("every 32nd") == nil)
+    #expect(RepeatRule.parse("every 30 feb") == nil)
+    #expect(RepeatRule.parse("every 2 mon") == nil)
+}
+
 @Test func readsCaseDayNamesAndSpacing() {
     #expect(RepeatRule.parse("Every Week On Monday, THU")?.weekdays == [mon, thu])
     #expect(RepeatRule.parse("  every   week \t on  Mon,Thu  ")?.weekdays == [mon, thu])

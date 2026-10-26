@@ -675,7 +675,7 @@ private let ruleInputs: [String] = [
     "every year on Sep 1", "every year on feb 29", "every year on Feb 29 until 2040-01-01",
     // Leniencies
     "  every   week  ", "every\tweek\ton\tMon", "every week on Mon,Thu", "every week on Mon Thu", "every week on Mon , Thu",
-    "every mon", "every Monday", "every mon, thu", "every Tue Fri when done", "every sun until 2026-12-31", "every week, on Mon", "every week on mon, mon", "every month on the 15", "every month on the 1th", "every month on the 22th",
+    "every 15th", "every last day", "every 2nd tue", "every last fri when done", "every oct 26", "every 26 oct", "every 26 October until 2030-01-01", "every year on 26 oct", "every 1 oct", "every mon", "every Monday", "every mon, thu", "every Tue Fri when done", "every sun until 2026-12-31", "every week, on Mon", "every week on mon, mon", "every month on the 15", "every month on the 1th", "every month on the 22th",
     "every month on the 15TH", "every month on the 2 Tue", "every month on the last day when done",
     "every 1 week", "every 1 day", "every 1 weekday", "every 1 month", "every 1 year", "every 01 weeks", "every +2 days",
     "every 999 days", "every 999 weeks on Mon", "every week until 2026-1-5", "every week until 2026-10-5",
@@ -684,7 +684,7 @@ private let ruleInputs: [String] = [
     "", " ", "every", "every 2", "every day on", "every fortnight", "every 2 fortnights", "weekly", "Weekly · Fri", "week",
     "each week", "every  ", "every 0 days", "every 1000 days", "every -1 days", "every 2.5 days", "every two days", "every 2 weekday",
     "every 2 weekdays", "every weekdays", "every days", "every day on Mon", "every weekday on Mon", "every week on",
-    "every 2 mon", "every mon on tue", "every mon funday", "every mon until", "every week on funday", "every week on the Mon", "every week on Mon on Tue", "every week on Mon until",
+    "every january", "every 15", "every 32nd", "every 30 feb", "every 2 oct 26", "every 15th on mon", "every 2 mon", "every mon on tue", "every mon funday", "every mon until", "every week on funday", "every week on the Mon", "every week on Mon on Tue", "every week on Mon until",
     "every week on 15th", "every month on 15th", "every month on", "every month on the", "every month on the 32nd",
     "every month on the 0th", "every month on the 6th Mon", "every month on the 0th Mon", "every month on the last",
     "every month on the last funday", "every month on the 2nd", "every month on the first Monday",

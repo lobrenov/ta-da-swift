@@ -148,9 +148,10 @@ A task with a `repeat` rule comes back after it's completed, in the same file: i
 
 - **Rule**: an English phrase, read case-insensitively, with day and month names in full or three letters:
   - `every day` | `every N days` | `every weekday` (Monday to Friday)
-  - `every week` | `every N weeks`, optionally `on Mon, Thu`; `every Mon, Thu` is short for `every week on Mon, Thu`
+  - `every week` | `every N weeks`, optionally `on Mon, Thu`
   - `every month` | `every N months`, optionally `on the 15th` | `on the last day` | `on the 2nd Tuesday` | `on the last Friday`
-  - `every year` | `every N years`, optionally `on Oct 26`
+  - `every year` | `every N years`, optionally `on Oct 26` (or `on 26 Oct`)
+  - a day or date alone is short for its week, month or year rule: `every Mon, Thu`, `every 15th`, `every last day`, `every 2nd Tue`, `every Oct 26`, `every 26 Oct`
   - then optionally `until YYYY-MM-DD` and `when done`, in either order.
 - **Writing**: Ta Da writes the rule in this form, `until` before `when done`, with numbers as digits, days and months as three letters and ordinals as `1st`…`5th`. A month or year rule is always written with its day (`every month on the 31st`). `N` is 1 to 999; `every 1 week` is written `every week`.
 - A rule that can't be read (`Weekly · Fri`) is shown as written, with a warning, and the task doesn't repeat.

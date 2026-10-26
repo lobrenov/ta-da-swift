@@ -4124,6 +4124,168 @@
       }
     },
     {
+      "input" : "every 15th",
+      "phrase" : "every month on the 15th",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 15
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every last day",
+      "phrase" : "every month on the last day",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "lastDay"
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 2nd tue",
+      "phrase" : "every month on the 2nd Tue",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "nth",
+          "n" : 2,
+          "weekday" : 3
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every last fri when done",
+      "phrase" : "every month on the last Fri when done",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "lastWeekday",
+          "weekday" : 6
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every oct 26",
+      "phrase" : "every year on Oct 26",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
+    },
+    {
+      "input" : "every 26 oct",
+      "phrase" : "every year on Oct 26",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
+    },
+    {
+      "input" : "every 26 October until 2030-01-01",
+      "phrase" : "every year on Oct 26 until 2030-01-01",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2030-01-01",
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
+    },
+    {
+      "input" : "every year on 26 oct",
+      "phrase" : "every year on Oct 26",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
+    },
+    {
+      "input" : "every 1 oct",
+      "phrase" : "every year on Oct 1",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 1,
+          "month" : 10
+        }
+      }
+    },
+    {
       "input" : "every mon",
       "phrase" : "every week on Mon",
       "rule" : {
@@ -4662,6 +4824,36 @@
       "rule" : null
     },
     {
+      "input" : "every january",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 15",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 32nd",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 30 feb",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 2 oct 26",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 15th on mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
       "input" : "every 2 mon",
       "phrase" : null,
       "rule" : null
@@ -4811,8 +5003,21 @@
     },
     {
       "input" : "every year on 26 Oct",
-      "phrase" : null,
-      "rule" : null
+      "phrase" : "every year on Oct 26",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
     },
     {
       "input" : "every year on Oct 32",
