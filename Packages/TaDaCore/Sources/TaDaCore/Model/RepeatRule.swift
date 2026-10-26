@@ -25,25 +25,38 @@ public struct RepeatRule: Hashable, Sendable {
         public var day: Int
     }
 
-    public var frequency: Frequency
-    /// 1 or more; always 1 for `weekday`.
-    public var interval = 1
+    public private(set) var frequency: Frequency
+    /// 1…999; always 1 for `weekday`.
+    public private(set) var interval = 1
     /// Week rules; empty takes the weekday from `dueDate`.
-    public var weekdays: Set<Int> = []
+    public private(set) var weekdays: Set<Int> = []
     /// Month rules; nil takes the day from `dueDate`.
-    public var monthDay: MonthDay?
+    public private(set) var monthDay: MonthDay?
     /// Year rules; nil takes the date from `dueDate`.
-    public var yearDate: YearDate?
-    public var until: LocalDate?
-    public var whenDone = false
+    public private(set) var yearDate: YearDate?
+    public private(set) var until: LocalDate?
+    public private(set) var whenDone = false
 
-    public init(frequency: Frequency, interval: Int = 1, weekdays: Set<Int> = [], monthDay: MonthDay? = nil,
-                yearDate: YearDate? = nil, until: LocalDate? = nil, whenDone: Bool = false) {
+    /// Nil when a value is out of range. Fields that don't belong to the frequency are dropped.
+    public init?(frequency: Frequency, interval: Int = 1, weekdays: Set<Int> = [], monthDay: MonthDay? = nil,
+                 yearDate: YearDate? = nil, until: LocalDate? = nil, whenDone: Bool = false) {
+        guard (1...999).contains(interval), frequency != .weekday || interval == 1,
+              weekdays.allSatisfy((1...7).contains) else { return nil }
+        switch monthDay {
+        case let .day(day): guard (1...31).contains(day) else { return nil }
+        case let .nth(n, weekday): guard (1...5).contains(n), (1...7).contains(weekday) else { return nil }
+        case let .lastWeekday(weekday): guard (1...7).contains(weekday) else { return nil }
+        case .lastDay, nil: break
+        }
+        if let yearDate {
+            guard (1...12).contains(yearDate.month),
+                  (1...Self.monthLengths[yearDate.month - 1]).contains(yearDate.day) else { return nil }
+        }
         self.frequency = frequency
         self.interval = interval
-        self.weekdays = weekdays
-        self.monthDay = monthDay
-        self.yearDate = yearDate
+        self.weekdays = frequency == .week ? weekdays : []
+        self.monthDay = frequency == .month ? monthDay : nil
+        self.yearDate = frequency == .year ? yearDate : nil
         self.until = until
         self.whenDone = whenDone
     }
@@ -64,20 +77,24 @@ extension RepeatRule {
         guard tokens.popFirst() == "every", var unit = tokens.popFirst() else { return nil }
         var interval = 1
         if let number = Int(unit) {
-            guard number >= 1, let next = tokens.popFirst() else { return nil }
+            guard let next = tokens.popFirst() else { return nil }
             interval = number
             unit = next
         }
         let frequency: Frequency
         switch unit {
         case "day", "days": frequency = .day
-        case "weekday" where interval == 1: frequency = .weekday
+        case "weekday": frequency = .weekday
         case "week", "weeks": frequency = .week
         case "month", "months": frequency = .month
         case "year", "years": frequency = .year
         default: return nil
         }
-        var rule = RepeatRule(frequency: frequency, interval: interval)
+        var weekdays: Set<Int> = []
+        var monthDay: MonthDay?
+        var yearDate: YearDate?
+        var until: LocalDate?
+        var whenDone = false
 
         if tokens.first == "on" {
             tokens.removeFirst()
@@ -91,14 +108,14 @@ extension RepeatRule {
                 guard !clause.isEmpty else { return nil }
                 for name in clause {
                     guard let weekday = weekday(name) else { return nil }
-                    rule.weekdays.insert(weekday)
+                    weekdays.insert(weekday)
                 }
             case .month:
-                guard let monthDay = monthDay(clause) else { return nil }
-                rule.monthDay = monthDay
+                guard let parsed = Self.monthDay(clause) else { return nil }
+                monthDay = parsed
             case .year:
-                guard let yearDate = yearDate(clause) else { return nil }
-                rule.yearDate = yearDate
+                guard let parsed = Self.yearDate(clause) else { return nil }
+                yearDate = parsed
             case .day, .weekday:
                 return nil
             }
@@ -109,20 +126,22 @@ extension RepeatRule {
             switch token {
             case "until" where !sawUntil:
                 guard let date = tokens.popFirst().flatMap(LocalDate.init) else { return nil }
-                rule.until = date
+                until = date
                 sawUntil = true
             case "when" where !sawWhenDone:
                 guard tokens.popFirst() == "done" else { return nil }
-                rule.whenDone = true
+                whenDone = true
                 sawWhenDone = true
             default:
                 return nil
             }
         }
-        return rule
+        return RepeatRule(frequency: frequency, interval: interval, weekdays: weekdays, monthDay: monthDay,
+                          yearDate: yearDate, until: until, whenDone: whenDone)
     }
 
     /// The canonical form: `until` before `when done`, three-letter days and months, `1st`…`5th`.
+    /// A month or year rule without a day writes without one; Ta Da writes them with the day from `dueDate`.
     public var phrase: String {
         var words: String
         switch frequency {

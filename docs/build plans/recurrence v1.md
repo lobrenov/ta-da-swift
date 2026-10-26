@@ -62,7 +62,7 @@ Each stage: swift-expert builds it, commit, code-reviewer reviews the commit (up
 - Check: tests for regular and when-done rules, a completed task before rollover, `until`, ranges before `today`, `dayMarks` with occurrences, and `LargeVaultTests` timings no worse than now.
 
 ### R6 — Obsidian plugin core
-- `writeConformance` fixtures for rules, next dates, occurrences and `dayMarks`; the plugin's core port of R2, R3 and R5. No rollover: the plugin reads and writes `repeat` but never moves a task forward.
+- `writeConformance` fixtures for rules, next dates, occurrences and `dayMarks`, and the `invalidRepeat` warning R2 added to `read.json` and `queries.json` (regenerated here, not before); the plugin's core port of R2, R3 and R5. No rollover: the plugin reads and writes `repeat` but never moves a task forward.
 - Check: plugin `npm test` against the new fixtures, `npm run build`.
 
 ### R7 — Date menu (Mac)

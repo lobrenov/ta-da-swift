@@ -113,7 +113,7 @@ private let index = VaultIndex(items)
     // The design has no area files, so its areas don't resolve, and its `Weekly · Fri` isn't a rule.
     for item in index.items.values {
         #expect(index.warnings(for: item).allSatisfy { warning in
-            switch warning { case .areaIgnored, .unresolvedArea, .invalidRepeat: true; default: false }
+            switch warning { case .areaIgnored, .unresolvedArea, .invalidRepeat("Weekly · Fri"): true; default: false }
         }, "\(item.path)")
     }
 }

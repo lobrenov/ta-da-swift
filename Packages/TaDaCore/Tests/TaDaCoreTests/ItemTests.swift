@@ -120,7 +120,7 @@ func untypedFilesAreNotesOnlyAtNotePaths(_ text: String) {
             continue
         }
         // The design's tasks name an area beside their project, which ignores it, and its `Weekly · Fri` isn't a rule.
-        let warnings = item.warnings.filter { if case .invalidRepeat = $0 { false } else { true } }
+        let warnings = item.warnings.filter { if case .invalidRepeat("Weekly · Fri") = $0 { false } else { true } }
         let ignored = warnings.filter { if case .areaIgnored = $0 { true } else { false } }
         #expect(warnings == ignored && ignored.count == (item.properties.project != nil ? 1 : 0), "\(title): \(item.warnings)")
         #expect(item.properties.kind == (file.path.contains("/projects/") ? .project : .task), "\(title)")
