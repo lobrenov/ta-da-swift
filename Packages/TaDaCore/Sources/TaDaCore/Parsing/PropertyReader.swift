@@ -43,7 +43,11 @@ public enum PropertyReader {
         properties.completedDate = reader.date("completedDate")
         properties.dueDate = reader.date("dueDate")
         properties.deadline = reader.date("deadline")
-        properties.repeatRule = reader.text("repeat")
+        if let text = reader.text("repeat") {
+            let rule = kind == .task ? RepeatRule.parse(text) : nil
+            if kind == .task, rule == nil { reader.warnings.append(.invalidRepeat(text)) }
+            properties.repeatRule = Repeat(text: text, rule: rule)
+        }
         properties.tags = reader.tags()
         return (properties, reader.warnings)
     }

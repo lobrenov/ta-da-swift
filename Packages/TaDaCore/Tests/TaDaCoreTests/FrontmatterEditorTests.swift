@@ -95,8 +95,8 @@ Body with status: Done
 func textValuesReadBackUnchanged(_ value: String) throws {
     let text = FrontmatterEditor.set("repeat", to: .text(value), in: "---\ntype: task\nstatus: Doing\n---\n")
     let read = try #require(PropertyReader.read(FrontmatterSplitter.split(text).yaml!))
-    #expect(read.properties.repeatRule == value)
-    #expect(read.warnings.isEmpty)
+    #expect(read.properties.repeatRule?.text == value)
+    #expect(read.warnings == [.invalidRepeat(value)])
 }
 
 @Test func listAndLinkValuesReadBackUnchanged() throws {

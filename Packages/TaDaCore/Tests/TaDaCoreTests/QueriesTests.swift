@@ -110,10 +110,10 @@ private let index = VaultIndex(items)
         "Message Max about a coat and a jacket", "Resolve the cabin payback", "Shift my physio appointment",
         "Submit timesheet", "Update my claude.md files", "Update 2DS before the next session",
     ])
-    // The design has no area files, so its areas don't resolve.
+    // The design has no area files, so its areas don't resolve, and its `Weekly · Fri` isn't a rule.
     for item in index.items.values {
         #expect(index.warnings(for: item).allSatisfy { warning in
-            switch warning { case .areaIgnored, .unresolvedArea: true; default: false }
+            switch warning { case .areaIgnored, .unresolvedArea, .invalidRepeat: true; default: false }
         }, "\(item.path)")
     }
 }

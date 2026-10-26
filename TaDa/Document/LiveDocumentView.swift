@@ -202,6 +202,8 @@ extension Warning {
             "Unknown status “\(value)”, so it reads as Not Started."
         case let .invalidDate(key, value):
             "`\(key)` isn’t a YYYY-MM-DD date: “\(value)”."
+        case let .invalidRepeat(value):
+            "`repeat` isn’t a rule like “every week on Mon”: “\(value)”, so the task doesn’t repeat."
         case let .invalidProject(value):
             "`project` isn’t a link like \"[[Project]]\": “\(value)”."
         case let .unexpectedValue(key):

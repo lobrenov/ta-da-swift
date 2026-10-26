@@ -1,0 +1,205 @@
+import Foundation
+
+/// A task's `repeat` value: its text as written, and the rule when the text reads as one.
+public struct Repeat: Hashable, Sendable {
+    public var text: String
+    public var rule: RepeatRule?
+}
+
+/// A repeating task's schedule, read from and written as an English phrase (see Repeating tasks in
+/// `docs/file-format.md`). Weekdays are `Calendar` numbers, 1 = Sunday … 7 = Saturday.
+public struct RepeatRule: Hashable, Sendable {
+    public enum Frequency: Sendable { case day, weekday, week, month, year }
+
+    /// The day a month rule falls on.
+    public enum MonthDay: Hashable, Sendable {
+        case day(Int)
+        case lastDay
+        /// The nth (1…5) weekday of the month.
+        case nth(Int, weekday: Int)
+        case lastWeekday(Int)
+    }
+
+    public struct YearDate: Hashable, Sendable {
+        public var month: Int
+        public var day: Int
+    }
+
+    public var frequency: Frequency
+    /// 1 or more; always 1 for `weekday`.
+    public var interval = 1
+    /// Week rules; empty takes the weekday from `dueDate`.
+    public var weekdays: Set<Int> = []
+    /// Month rules; nil takes the day from `dueDate`.
+    public var monthDay: MonthDay?
+    /// Year rules; nil takes the date from `dueDate`.
+    public var yearDate: YearDate?
+    public var until: LocalDate?
+    public var whenDone = false
+
+    public init(frequency: Frequency, interval: Int = 1, weekdays: Set<Int> = [], monthDay: MonthDay? = nil,
+                yearDate: YearDate? = nil, until: LocalDate? = nil, whenDone: Bool = false) {
+        self.frequency = frequency
+        self.interval = interval
+        self.weekdays = weekdays
+        self.monthDay = monthDay
+        self.yearDate = yearDate
+        self.until = until
+        self.whenDone = whenDone
+    }
+}
+
+extension RepeatRule {
+    private static let dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+    private static let fullDayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+    private static let monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+    private static let fullMonthNames = ["january", "february", "march", "april", "may", "june", "july", "august",
+                                         "september", "october", "november", "december"]
+    private static let monthLengths = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+    /// Reads a phrase; nil when it isn't a rule.
+    public static func parse(_ text: String) -> RepeatRule? {
+        var tokens = text.lowercased().replacingOccurrences(of: ",", with: " ")
+            .split(whereSeparator: \.isWhitespace).map(String.init)[...]
+        guard tokens.popFirst() == "every", var unit = tokens.popFirst() else { return nil }
+        var interval = 1
+        if let number = Int(unit) {
+            guard number >= 1, let next = tokens.popFirst() else { return nil }
+            interval = number
+            unit = next
+        }
+        let frequency: Frequency
+        switch unit {
+        case "day", "days": frequency = .day
+        case "weekday" where interval == 1: frequency = .weekday
+        case "week", "weeks": frequency = .week
+        case "month", "months": frequency = .month
+        case "year", "years": frequency = .year
+        default: return nil
+        }
+        var rule = RepeatRule(frequency: frequency, interval: interval)
+
+        if tokens.first == "on" {
+            tokens.removeFirst()
+            var clause: [String] = []
+            while let token = tokens.first, token != "until", token != "when" {
+                clause.append(token)
+                tokens.removeFirst()
+            }
+            switch frequency {
+            case .week:
+                guard !clause.isEmpty else { return nil }
+                for name in clause {
+                    guard let weekday = weekday(name) else { return nil }
+                    rule.weekdays.insert(weekday)
+                }
+            case .month:
+                guard let monthDay = monthDay(clause) else { return nil }
+                rule.monthDay = monthDay
+            case .year:
+                guard let yearDate = yearDate(clause) else { return nil }
+                rule.yearDate = yearDate
+            case .day, .weekday:
+                return nil
+            }
+        }
+
+        var sawUntil = false, sawWhenDone = false
+        while let token = tokens.popFirst() {
+            switch token {
+            case "until" where !sawUntil:
+                guard let date = tokens.popFirst().flatMap(LocalDate.init) else { return nil }
+                rule.until = date
+                sawUntil = true
+            case "when" where !sawWhenDone:
+                guard tokens.popFirst() == "done" else { return nil }
+                rule.whenDone = true
+                sawWhenDone = true
+            default:
+                return nil
+            }
+        }
+        return rule
+    }
+
+    /// The canonical form: `until` before `when done`, three-letter days and months, `1st`…`5th`.
+    public var phrase: String {
+        var words: String
+        switch frequency {
+        case .weekday: words = "every weekday"
+        case .day: words = interval == 1 ? "every day" : "every \(interval) days"
+        case .week: words = interval == 1 ? "every week" : "every \(interval) weeks"
+        case .month: words = interval == 1 ? "every month" : "every \(interval) months"
+        case .year: words = interval == 1 ? "every year" : "every \(interval) years"
+        }
+        switch frequency {
+        case .week where !weekdays.isEmpty:
+            let names = ((2...7).map { $0 } + [1]).filter(weekdays.contains).map { Self.dayName($0) }
+            words += " on " + names.joined(separator: ", ")
+        case .month:
+            switch monthDay {
+            case let .day(day): words += " on the \(Self.ordinal(day))"
+            case .lastDay: words += " on the last day"
+            case let .nth(n, weekday): words += " on the \(Self.ordinal(n)) \(Self.dayName(weekday))"
+            case let .lastWeekday(weekday): words += " on the last \(Self.dayName(weekday))"
+            case nil: break
+            }
+        case .year:
+            if let yearDate { words += " on \(Self.monthName(yearDate.month)) \(yearDate.day)" }
+        default:
+            break
+        }
+        if let until { words += " until \(until)" }
+        if whenDone { words += " when done" }
+        return words
+    }
+
+    private static func weekday(_ name: String) -> Int? {
+        (dayNames.firstIndex(of: name) ?? fullDayNames.firstIndex(of: name)).map { $0 + 1 }
+    }
+
+    /// `the 15th`, `the last day`, `the 2nd tuesday`, `the last friday`.
+    private static func monthDay(_ clause: [String]) -> MonthDay? {
+        guard clause.first == "the" else { return nil }
+        let rest = Array(clause.dropFirst())
+        switch rest.count {
+        case 1:
+            guard let day = number(rest[0]), (1...31).contains(day) else { return nil }
+            return .day(day)
+        case 2 where rest[0] == "last":
+            if rest[1] == "day" { return .lastDay }
+            return weekday(rest[1]).map(MonthDay.lastWeekday)
+        case 2:
+            guard let n = number(rest[0]), (1...5).contains(n), let weekday = weekday(rest[1]) else { return nil }
+            return .nth(n, weekday: weekday)
+        default:
+            return nil
+        }
+    }
+
+    /// `oct 26`.
+    private static func yearDate(_ clause: [String]) -> YearDate? {
+        guard clause.count == 2,
+              let index = monthNames.firstIndex(of: clause[0]) ?? fullMonthNames.firstIndex(of: clause[0]),
+              let day = number(clause[1]), (1...monthLengths[index]).contains(day) else { return nil }
+        return YearDate(month: index + 1, day: day)
+    }
+
+    /// `15` or `15th`.
+    private static func number(_ token: String) -> Int? {
+        let digits = token.prefix { $0.isASCII && $0.isNumber }
+        guard !digits.isEmpty, ["", "st", "nd", "rd", "th"].contains(token.dropFirst(digits.count)) else { return nil }
+        return Int(digits)
+    }
+
+    private static func dayName(_ weekday: Int) -> String { dayNames[weekday - 1].capitalized }
+
+    private static func monthName(_ month: Int) -> String { monthNames[month - 1].capitalized }
+
+    private static func ordinal(_ n: Int) -> String {
+        switch n {
+        case 11...13: "\(n)th"
+        default: "\(n)" + ["th", "st", "nd", "rd"][n % 10 < 4 ? n % 10 : 0]
+        }
+    }
+}

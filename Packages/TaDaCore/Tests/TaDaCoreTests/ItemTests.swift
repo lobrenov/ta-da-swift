@@ -119,9 +119,10 @@ func untypedFilesAreNotesOnlyAtNotePaths(_ text: String) {
             #expect(file.path.contains("/notes/") || file.path.contains("/Periodic Notes/"), "\(title) is a note")
             continue
         }
-        // The design's tasks name an area beside their project, which ignores it.
-        let ignored = item.warnings.filter { if case .areaIgnored = $0 { true } else { false } }
-        #expect(item.warnings == ignored && ignored.count == (item.properties.project != nil ? 1 : 0), "\(title): \(item.warnings)")
+        // The design's tasks name an area beside their project, which ignores it, and its `Weekly · Fri` isn't a rule.
+        let warnings = item.warnings.filter { if case .invalidRepeat = $0 { false } else { true } }
+        let ignored = warnings.filter { if case .areaIgnored = $0 { true } else { false } }
+        #expect(warnings == ignored && ignored.count == (item.properties.project != nil ? 1 : 0), "\(title): \(item.warnings)")
         #expect(item.properties.kind == (file.path.contains("/projects/") ? .project : .task), "\(title)")
         items[title] = item
     }
@@ -134,7 +135,7 @@ func untypedFilesAreNotesOnlyAtNotePaths(_ text: String) {
     #expect(claude.links.map(\.title) == ["Ta Da MVP"])
 
     let timesheet = try #require(items["Submit timesheet"])
-    #expect(timesheet.properties.repeatRule == "Weekly · Fri")
+    #expect(timesheet.properties.repeatRule?.text == "Weekly · Fri")
 
     let website = try #require(items["Update Dan’s website for Starfall"])
     #expect(website.properties.project?.title == "Game Jam - Starfall")

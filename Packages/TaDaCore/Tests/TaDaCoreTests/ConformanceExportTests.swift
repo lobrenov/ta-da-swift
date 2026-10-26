@@ -59,6 +59,7 @@ private func json(_ warning: Warning) -> [String: Any] {
     case .missingStatus: ["case": "missingStatus"]
     case let .unknownStatus(value): ["case": "unknownStatus", "value": value]
     case let .invalidDate(key, value): ["case": "invalidDate", "key": key, "value": value]
+    case let .invalidRepeat(value): ["case": "invalidRepeat", "value": value]
     case let .invalidProject(value): ["case": "invalidProject", "value": value]
     case let .unexpectedValue(key): ["case": "unexpectedValue", "key": key]
     case let .unresolvedProject(value): ["case": "unresolvedProject", "value": value]
@@ -74,7 +75,7 @@ private func json(_ item: Item) -> [String: Any] {
         "area": orNull(p.area.map(json)), "project": orNull(p.project.map(json)),
         "createdDate": orNull(p.createdDate?.description), "completedDate": orNull(p.completedDate?.description),
         "dueDate": orNull(p.dueDate?.description), "deadline": orNull(p.deadline?.description),
-        "repeat": orNull(p.repeatRule), "tags": p.tags.map(\.name),
+        "repeat": orNull(p.repeatRule?.text), "tags": p.tags.map(\.name),
         "summary": orNull(item.summary), "hasNote": item.hasNote,
         "subtasks": ["done": item.subtasks.done, "total": item.subtasks.total],
         "checkboxes": item.checkboxes.map(json), "links": item.links.map(json), "embeds": item.embeds.map(json),

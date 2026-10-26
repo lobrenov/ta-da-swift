@@ -75,7 +75,7 @@ struct RowGlyphs: View {
             glyphs.append(("checklist", "\(subtasks.done) of \(subtasks.total) subtasks done", \.muted, nil))
         }
         if let rule = item.properties.repeatRule {
-            glyphs.append(("repeat", "Repeats \(rule)", \.muted, nil))
+            glyphs.append(("repeat", "Repeats \(rule.text)", \.muted, nil))
         }
         if !item.tags.isEmpty {
             glyphs.append(("tag", item.tags.count == 1 ? "1 tag" : "\(item.tags.count) tags", \.accent,

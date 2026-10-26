@@ -121,8 +121,8 @@ public struct Properties: Hashable, Sendable {
     public var completedDate: LocalDate?
     public var dueDate: LocalDate?
     public var deadline: LocalDate?
-    /// The `repeat` text, displayed only.
-    public var repeatRule: String?
+    /// The `repeat` text, with its rule when it's a task's and reads as one.
+    public var repeatRule: Repeat?
     /// `tags:`, in order, without repeats.
     public var tags: [Tag] = []
 
@@ -140,6 +140,8 @@ public enum Warning: Hashable, Sendable {
     /// A `status` that isn't one of the five; read as Not Started.
     case unknownStatus(String)
     case invalidDate(key: String, value: String)
+    /// A task's `repeat` that isn't a rule; the task doesn't repeat.
+    case invalidRepeat(String)
     /// A `project` value that isn't a `"[[Title]]"` link.
     case invalidProject(String)
     /// A list or mapping where text was expected, or vice versa.

@@ -10,7 +10,7 @@ import Testing
     completedDate: 2026-10-01
     dueDate: 2026-10-02
     deadline: "2026-10-06"
-    repeat: Weekly · Fri
+    repeat: every week on Fri
     custom: kept but not read
 
     """
@@ -23,7 +23,7 @@ import Testing
     #expect(p.completedDate == LocalDate("2026-10-01"))
     #expect(p.dueDate == LocalDate("2026-10-02"))
     #expect(p.deadline == LocalDate("2026-10-06"))
-    #expect(p.repeatRule == "Weekly · Fri")
+    #expect(p.repeatRule == Repeat(text: "every week on Fri", rule: RepeatRule(frequency: .week, weekdays: [6])))
     #expect(read.warnings.isEmpty)
 }
 
@@ -64,7 +64,7 @@ import Testing
 @Test func readerKeepsValuesAsWritten() throws {
     let read = try #require(PropertyReader.read("type: task\nstatus: Doing\narea: yes\nrepeat: 2026\n"))
     #expect(read.properties.area?.title == "yes")
-    #expect(read.properties.repeatRule == "2026")
+    #expect(read.properties.repeatRule?.text == "2026")
 }
 
 @Test func readerMatchesTypeCaseInsensitively() {
@@ -199,4 +199,15 @@ func readerReadsTags(_ yaml: String, _ tags: [String]) throws {
     #expect(Item(parsing: text, path: "x.md")?.properties.kind == .note)
     #expect(Item(parsing: text, path: "Ta Da/tasks/x.md") == nil)
     #expect(Item(parsing: "---\ntags: [a\n---\n", path: "Ta Da/tasks/x.md") == nil)
+}
+
+@Test func unreadableRepeatKeepsItsTextAndWarnsOnATask() throws {
+    let task = try #require(PropertyReader.read("type: task\nstatus: Doing\nrepeat: Weekly · Fri\n"))
+    #expect(task.properties.repeatRule == Repeat(text: "Weekly · Fri", rule: nil))
+    #expect(task.warnings == [.invalidRepeat("Weekly · Fri")])
+    let project = try #require(PropertyReader.read("type: project\nstatus: Doing\nrepeat: Weekly · Fri\n"))
+    #expect(project.properties.repeatRule == Repeat(text: "Weekly · Fri", rule: nil))
+    #expect(project.warnings.isEmpty)
+    let projectRule = try #require(PropertyReader.read("type: project\nstatus: Doing\nrepeat: every week\n"))
+    #expect(projectRule.properties.repeatRule?.rule == nil)
 }
