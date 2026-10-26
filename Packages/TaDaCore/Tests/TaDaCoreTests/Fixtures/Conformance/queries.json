@@ -781,6 +781,10 @@
         ],
         "Ta Da/tasks/Submit timesheet.md" : [
           {
+            "case" : "invalidRepeat",
+            "value" : "Weekly · Fri"
+          },
+          {
             "case" : "unresolvedArea",
             "value" : "Work"
           }
@@ -2736,6 +2740,12 @@
             "case" : "invalidYAML",
             "line" : 4,
             "problem" : "did not find expected ',' or ']'"
+          }
+        ],
+        "Ta Da/tasks/Buy seed.md" : [
+          {
+            "case" : "invalidRepeat",
+            "value" : "Weekly · Fri"
           }
         ],
         "Ta Da/tasks/No status.md" : [

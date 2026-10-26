@@ -1,0 +1,4502 @@
+{
+  "dayMarks" : {
+    "from" : "2026-10-01",
+    "marks" : [
+      {
+        "date" : "2026-10-12",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-10-20",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-10-26",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-10-27",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-10-28",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-10-29",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-10-30",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-10-31",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-01",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-02",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-03",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-04",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-05",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-06",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-08",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-09",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-10",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-11",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-12",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-13",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-14",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-15",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-16",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-17",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-18",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-19",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-20",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-21",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-22",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-23",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-24",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-26",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-27",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-28",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-11-30",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-01",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-02",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-03",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-04",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-06",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-07",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-08",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-09",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-10",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-11",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-12",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-14",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-15",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-16",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-17",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-18",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-20",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-21",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-22",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-24",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-25",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-26",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-27",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-28",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-29",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-30",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      },
+      {
+        "date" : "2026-12-31",
+        "hasOpenBoxes" : false,
+        "hasOpenTasks" : true
+      }
+    ],
+    "through" : "2026-12-31"
+  },
+  "next" : [
+    {
+      "completedDate" : "2026-10-22",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon",
+      "rolloverDay" : "2026-10-23"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-11-04",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-09"
+      },
+      "phrase" : "every week on Mon",
+      "rolloverDay" : "2026-11-05"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-12",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-27"
+      },
+      "phrase" : "every day",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-12",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-27"
+      },
+      "phrase" : "every 3 days",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-12",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-30"
+      },
+      "phrase" : "every 3 days",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-30",
+      "deadline" : null,
+      "dueDate" : "2026-10-30",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every weekday",
+      "rolloverDay" : "2026-10-31"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-27"
+      },
+      "phrase" : "every weekday",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-31",
+      "deadline" : null,
+      "dueDate" : "2026-10-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every weekday",
+      "rolloverDay" : "2026-11-01"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-09"
+      },
+      "phrase" : "every 2 weeks on Mon",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-29"
+      },
+      "phrase" : "every 2 weeks on Mon, Thu",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-29",
+      "deadline" : null,
+      "dueDate" : "2026-10-29",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-09"
+      },
+      "phrase" : "every 2 weeks on Mon, Thu",
+      "rolloverDay" : "2026-10-30"
+    },
+    {
+      "completedDate" : "2026-10-29",
+      "deadline" : null,
+      "dueDate" : "2026-10-29",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Thu, Mon",
+      "rolloverDay" : "2026-10-30"
+    },
+    {
+      "completedDate" : "2026-10-15",
+      "deadline" : null,
+      "dueDate" : "2026-10-15",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-12-15"
+      },
+      "phrase" : "every 2 months",
+      "rolloverDay" : "2026-10-16"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-10-26"
+      },
+      "phrase" : "every 2 years",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : null,
+      "dueDate" : "2026-10-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-04"
+      },
+      "phrase" : "every week",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : "2026-10-15",
+      "deadline" : null,
+      "dueDate" : "2026-10-15",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-15"
+      },
+      "phrase" : "every month",
+      "rolloverDay" : "2026-10-16"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : null,
+      "dueDate" : "2026-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-02-28"
+      },
+      "phrase" : "every month",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-10-26"
+      },
+      "phrase" : "every year",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : null,
+      "dueDate" : "2026-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-02-28"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2028-01-31",
+      "deadline" : null,
+      "dueDate" : "2028-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-02-29"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2028-02-01"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : null,
+      "dueDate" : "2026-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-02-28"
+      },
+      "phrase" : "every month on the last day",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2026-10-20",
+      "deadline" : null,
+      "dueDate" : "2026-10-20",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-15"
+      },
+      "phrase" : "every month on the 15th",
+      "rolloverDay" : "2026-10-21"
+    },
+    {
+      "completedDate" : "2026-10-13",
+      "deadline" : null,
+      "dueDate" : "2026-10-13",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-10"
+      },
+      "phrase" : "every month on the 2nd Tue",
+      "rolloverDay" : "2026-10-14"
+    },
+    {
+      "completedDate" : "2026-10-30",
+      "deadline" : null,
+      "dueDate" : "2026-10-30",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-27"
+      },
+      "phrase" : "every month on the last Fri",
+      "rolloverDay" : "2026-10-31"
+    },
+    {
+      "completedDate" : "2026-11-27",
+      "deadline" : null,
+      "dueDate" : "2026-11-27",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-12-25"
+      },
+      "phrase" : "every month on the last Fri",
+      "rolloverDay" : "2026-11-28"
+    },
+    {
+      "completedDate" : "2026-08-31",
+      "deadline" : null,
+      "dueDate" : "2026-08-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-30"
+      },
+      "phrase" : "every month on the 5th Mon",
+      "rolloverDay" : "2026-09-01"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-10-26"
+      },
+      "phrase" : "every year on Oct 26",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-03-01"
+      },
+      "phrase" : "every year on Mar 1",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2028-02-29",
+      "deadline" : null,
+      "dueDate" : "2028-02-29",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2029-02-28"
+      },
+      "phrase" : "every year on Feb 29",
+      "rolloverDay" : "2028-03-01"
+    },
+    {
+      "completedDate" : "2031-02-28",
+      "deadline" : null,
+      "dueDate" : "2031-02-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2032-02-29"
+      },
+      "phrase" : "every year on Feb 29",
+      "rolloverDay" : "2031-03-01"
+    },
+    {
+      "completedDate" : "2028-02-29",
+      "deadline" : null,
+      "dueDate" : "2028-02-29",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2029-02-28"
+      },
+      "phrase" : "every year",
+      "rolloverDay" : "2028-03-01"
+    },
+    {
+      "completedDate" : "2026-10-25",
+      "deadline" : null,
+      "dueDate" : "2026-10-25",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-26"
+      },
+      "phrase" : "every week on Sun, Mon",
+      "rolloverDay" : "2026-10-26"
+    },
+    {
+      "completedDate" : "2026-12-27",
+      "deadline" : null,
+      "dueDate" : "2026-12-27",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-01-31"
+      },
+      "phrase" : "every month on the last Sun",
+      "rolloverDay" : "2026-12-28"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : null,
+      "dueDate" : "2026-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-02-28"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2026-02-28",
+      "deadline" : null,
+      "dueDate" : "2026-02-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-03-31"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2026-03-01"
+    },
+    {
+      "completedDate" : "2026-03-31",
+      "deadline" : null,
+      "dueDate" : "2026-03-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-04-30"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2026-04-01"
+    },
+    {
+      "completedDate" : "2026-04-30",
+      "deadline" : null,
+      "dueDate" : "2026-04-30",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-05-31"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2026-05-01"
+    },
+    {
+      "completedDate" : "2026-05-31",
+      "deadline" : null,
+      "dueDate" : "2026-05-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-06-30"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2026-06-01"
+    },
+    {
+      "completedDate" : "2027-12-31",
+      "deadline" : null,
+      "dueDate" : "2027-12-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-01-31"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2028-01-01"
+    },
+    {
+      "completedDate" : "2028-01-31",
+      "deadline" : null,
+      "dueDate" : "2028-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-02-29"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2028-02-01"
+    },
+    {
+      "completedDate" : "2028-02-29",
+      "deadline" : null,
+      "dueDate" : "2028-02-29",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-03-31"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2028-03-01"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : null,
+      "dueDate" : "2026-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-03-31"
+      },
+      "phrase" : "every 2 months on the 31st",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2026-03-31",
+      "deadline" : null,
+      "dueDate" : "2026-03-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-05-31"
+      },
+      "phrase" : "every 2 months on the 31st",
+      "rolloverDay" : "2026-04-01"
+    },
+    {
+      "completedDate" : "2026-05-31",
+      "deadline" : null,
+      "dueDate" : "2026-05-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-07-31"
+      },
+      "phrase" : "every 2 months on the 31st",
+      "rolloverDay" : "2026-06-01"
+    },
+    {
+      "completedDate" : "2028-01-31",
+      "deadline" : null,
+      "dueDate" : "2028-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-02-29"
+      },
+      "phrase" : "every month on the last day",
+      "rolloverDay" : "2028-02-01"
+    },
+    {
+      "completedDate" : "2028-02-29",
+      "deadline" : null,
+      "dueDate" : "2028-02-29",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-03-31"
+      },
+      "phrase" : "every month on the last day",
+      "rolloverDay" : "2028-03-01"
+    },
+    {
+      "completedDate" : "2028-03-31",
+      "deadline" : null,
+      "dueDate" : "2028-03-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-04-30"
+      },
+      "phrase" : "every month on the last day",
+      "rolloverDay" : "2028-04-01"
+    },
+    {
+      "completedDate" : "2028-02-29",
+      "deadline" : null,
+      "dueDate" : "2028-02-29",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2029-02-28"
+      },
+      "phrase" : "every year on Feb 29",
+      "rolloverDay" : "2028-03-01"
+    },
+    {
+      "completedDate" : "2029-02-28",
+      "deadline" : null,
+      "dueDate" : "2029-02-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2030-02-28"
+      },
+      "phrase" : "every year on Feb 29",
+      "rolloverDay" : "2029-03-01"
+    },
+    {
+      "completedDate" : "2030-02-28",
+      "deadline" : null,
+      "dueDate" : "2030-02-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2031-02-28"
+      },
+      "phrase" : "every year on Feb 29",
+      "rolloverDay" : "2030-03-01"
+    },
+    {
+      "completedDate" : "2031-02-28",
+      "deadline" : null,
+      "dueDate" : "2031-02-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2032-02-29"
+      },
+      "phrase" : "every year on Feb 29",
+      "rolloverDay" : "2031-03-01"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : null,
+      "dueDate" : "2026-01-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-02-28"
+      },
+      "phrase" : "every month",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2026-02-28",
+      "deadline" : null,
+      "dueDate" : "2026-02-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-03-28"
+      },
+      "phrase" : "every month",
+      "rolloverDay" : "2026-03-01"
+    },
+    {
+      "completedDate" : "2026-03-28",
+      "deadline" : null,
+      "dueDate" : "2026-03-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-04-28"
+      },
+      "phrase" : "every month",
+      "rolloverDay" : "2026-03-29"
+    },
+    {
+      "completedDate" : "2026-04-28",
+      "deadline" : null,
+      "dueDate" : "2026-04-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-05-28"
+      },
+      "phrase" : "every month",
+      "rolloverDay" : "2026-04-29"
+    },
+    {
+      "completedDate" : "2026-08-31",
+      "deadline" : null,
+      "dueDate" : "2026-08-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-30"
+      },
+      "phrase" : "every month on the 5th Mon",
+      "rolloverDay" : "2026-09-01"
+    },
+    {
+      "completedDate" : "2026-11-30",
+      "deadline" : null,
+      "dueDate" : "2026-11-30",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-03-29"
+      },
+      "phrase" : "every month on the 5th Mon",
+      "rolloverDay" : "2026-12-01"
+    },
+    {
+      "completedDate" : "2026-10-12",
+      "deadline" : null,
+      "dueDate" : "2026-10-12",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-27"
+      },
+      "phrase" : "every day",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-05",
+      "deadline" : null,
+      "dueDate" : "2026-10-05",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-06-15",
+      "deadline" : null,
+      "dueDate" : "2026-06-15",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-15"
+      },
+      "phrase" : "every month on the 15th",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : null,
+      "dueDate" : "2026-10-05",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every 2 weeks on Mon",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-01",
+      "deadline" : null,
+      "dueDate" : "2026-10-01",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-28"
+      },
+      "phrase" : "every 3 days",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : "2026-10-28",
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : "2026-11-04",
+        "dueDate" : null
+      },
+      "phrase" : "every week",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : null,
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-04"
+      },
+      "phrase" : "every week",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : null,
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-01"
+      },
+      "phrase" : "every month on the 1st",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : null,
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-27"
+      },
+      "phrase" : "every day",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : null,
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-29"
+      },
+      "phrase" : "every 3 days",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : "2026-10-30",
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : "2026-11-06",
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : "2026-02-03",
+      "dueDate" : "2026-01-31",
+      "expected" : {
+        "deadline" : "2026-03-03",
+        "dueDate" : "2026-02-28"
+      },
+      "phrase" : "every month on the 31st",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : "2026-10-10",
+      "dueDate" : "2026-10-12",
+      "expected" : {
+        "deadline" : "2026-10-25",
+        "dueDate" : "2026-10-27"
+      },
+      "phrase" : "every day",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : "2026-10-28",
+      "dueDate" : "2026-10-28",
+      "expected" : {
+        "deadline" : "2026-11-04",
+        "dueDate" : "2026-11-04"
+      },
+      "phrase" : "every week",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-30"
+      },
+      "phrase" : "every 3 days when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-28"
+      },
+      "phrase" : "every day when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-10"
+      },
+      "phrase" : "every 2 weeks when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-02-28"
+      },
+      "phrase" : "every month when done",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-12-27"
+      },
+      "phrase" : "every 2 months when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2028-02-29",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2029-02-28"
+      },
+      "phrase" : "every year when done",
+      "rolloverDay" : "2028-03-01"
+    },
+    {
+      "completedDate" : "2026-10-30",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every weekday when done",
+      "rolloverDay" : "2026-10-31"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-27"
+      },
+      "phrase" : "every weekday when done",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon when done",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-09"
+      },
+      "phrase" : "every 2 weeks on Mon when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-05"
+      },
+      "phrase" : "every 2 weeks on Mon, Thu when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-14",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-10"
+      },
+      "phrase" : "every month on the 2nd Tue when done",
+      "rolloverDay" : "2026-10-15"
+    },
+    {
+      "completedDate" : "2026-10-31",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-12-25"
+      },
+      "phrase" : "every 2 months on the last Fri when done",
+      "rolloverDay" : "2026-11-01"
+    },
+    {
+      "completedDate" : "2026-10-20",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-15"
+      },
+      "phrase" : "every month on the 15th when done",
+      "rolloverDay" : "2026-10-21"
+    },
+    {
+      "completedDate" : "2026-10-20",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-12-15"
+      },
+      "phrase" : "every 2 months on the 15th when done",
+      "rolloverDay" : "2026-10-21"
+    },
+    {
+      "completedDate" : "2026-01-05",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-02-28"
+      },
+      "phrase" : "every 2 months on the 31st when done",
+      "rolloverDay" : "2026-01-06"
+    },
+    {
+      "completedDate" : "2026-01-31",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-03-31"
+      },
+      "phrase" : "every 2 months on the 31st when done",
+      "rolloverDay" : "2026-02-01"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2028-10-26"
+      },
+      "phrase" : "every 2 years on Oct 26 when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-03-01"
+      },
+      "phrase" : "every year on Mar 1 when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-04"
+      },
+      "phrase" : "every week when done",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : "2026-10-04",
+      "dueDate" : "2026-10-01",
+      "expected" : {
+        "deadline" : "2026-11-13",
+        "dueDate" : "2026-11-10"
+      },
+      "phrase" : "every 2 weeks when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : "2026-10-10",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-30"
+      },
+      "phrase" : "every 3 days when done",
+      "rolloverDay" : "2026-11-20"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-29"
+      },
+      "phrase" : "every 3 days when done",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : null,
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-29"
+      },
+      "phrase" : "every 3 days when done",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : "2026-10-20",
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : "2026-10-23",
+        "dueDate" : null
+      },
+      "phrase" : "every 3 days when done",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : null,
+      "dueDate" : "2026-10-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon when done",
+      "rolloverDay" : "2026-10-30"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon until 2026-11-09",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every week on Mon until 2026-11-02",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : null,
+      "phrase" : "every week on Mon until 2026-11-01",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : null,
+      "phrase" : "every week on Mon until 2026-10-26",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : "2026-10-28",
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : "2026-11-04",
+        "dueDate" : null
+      },
+      "phrase" : "every week until 2026-11-04",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : "2026-10-28",
+      "dueDate" : null,
+      "expected" : null,
+      "phrase" : "every week until 2026-11-03",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : null,
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-10-30"
+      },
+      "phrase" : "every 3 days until 2026-10-30 when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-27",
+      "deadline" : null,
+      "dueDate" : null,
+      "expected" : null,
+      "phrase" : "every 3 days until 2026-10-29 when done",
+      "rolloverDay" : "2026-10-28"
+    },
+    {
+      "completedDate" : "2026-10-28",
+      "deadline" : null,
+      "dueDate" : "2026-10-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-04"
+      },
+      "phrase" : "every week when done until 2026-11-04",
+      "rolloverDay" : "2026-10-29"
+    },
+    {
+      "completedDate" : "2026-12-31",
+      "deadline" : null,
+      "dueDate" : "2026-12-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-01-11"
+      },
+      "phrase" : "every 2 weeks on Mon, Thu",
+      "rolloverDay" : "2027-01-01"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : null,
+      "dueDate" : "2026-12-31",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-01-14"
+      },
+      "phrase" : "every 2 weeks on Mon, Thu",
+      "rolloverDay" : "2027-01-12"
+    },
+    {
+      "completedDate" : "2026-10-26",
+      "deadline" : null,
+      "dueDate" : "2026-10-26",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-01"
+      },
+      "phrase" : "every 2 weeks on Sun, Mon",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : null,
+      "deadline" : null,
+      "dueDate" : "2026-10-05",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2026-11-02"
+      },
+      "phrase" : "every 2 weeks on Mon",
+      "rolloverDay" : "2026-10-27"
+    },
+    {
+      "completedDate" : "2026-12-30",
+      "deadline" : null,
+      "dueDate" : "2026-12-30",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-01-20"
+      },
+      "phrase" : "every 3 weeks on Wed",
+      "rolloverDay" : "2026-12-31"
+    },
+    {
+      "completedDate" : "2026-12-28",
+      "deadline" : null,
+      "dueDate" : "2026-12-28",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "2027-01-04"
+      },
+      "phrase" : "every week on Mon",
+      "rolloverDay" : "2026-12-29"
+    },
+    {
+      "completedDate" : "9999-12-31",
+      "deadline" : "9999-12-31",
+      "dueDate" : null,
+      "expected" : null,
+      "phrase" : "every week on Mon",
+      "rolloverDay" : "9999-12-31"
+    },
+    {
+      "completedDate" : "9999-12-31",
+      "deadline" : null,
+      "dueDate" : "9999-12-31",
+      "expected" : null,
+      "phrase" : "every day",
+      "rolloverDay" : "9999-12-31"
+    },
+    {
+      "completedDate" : "9999-12-31",
+      "deadline" : null,
+      "dueDate" : "9999-12-31",
+      "expected" : null,
+      "phrase" : "every day when done",
+      "rolloverDay" : "9999-12-31"
+    },
+    {
+      "completedDate" : "9999-12-24",
+      "deadline" : "9999-12-31",
+      "dueDate" : "9999-12-24",
+      "expected" : null,
+      "phrase" : "every week",
+      "rolloverDay" : "9999-12-31"
+    },
+    {
+      "completedDate" : "9999-06-01",
+      "deadline" : null,
+      "dueDate" : "9999-06-01",
+      "expected" : null,
+      "phrase" : "every year",
+      "rolloverDay" : "9999-06-02"
+    },
+    {
+      "completedDate" : "9999-11-30",
+      "deadline" : null,
+      "dueDate" : "9999-11-30",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "9999-12-30"
+      },
+      "phrase" : "every month",
+      "rolloverDay" : "9999-12-01"
+    },
+    {
+      "completedDate" : "9999-12-30",
+      "deadline" : null,
+      "dueDate" : "9999-12-30",
+      "expected" : {
+        "deadline" : null,
+        "dueDate" : "9999-12-31"
+      },
+      "phrase" : "every day",
+      "rolloverDay" : "9999-12-31"
+    }
+  ],
+  "occurrences" : [
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/projects/Running.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/projects/Wound up.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Closed project.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-10-28",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-10-29",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-10-30",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-10-31",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-01",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-02",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-03",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-04",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-05",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-06",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-07",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-08",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-11",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-14",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-15",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-16",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-17",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-18",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-19",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-20",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-21",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-22",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Daily.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-04",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-14",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Dateless done no completed.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-01",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Dateless done.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Dateless open.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-06",
+          "estimated" : false,
+          "kind" : "deadline"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "deadline"
+        },
+        {
+          "date" : "2026-11-20",
+          "estimated" : false,
+          "kind" : "deadline"
+        }
+      ],
+      "path" : "Ta Da/tasks/Deadline only.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-10-27",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-10-30",
+          "estimated" : false,
+          "kind" : "deadline"
+        },
+        {
+          "date" : "2026-11-03",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-06",
+          "estimated" : false,
+          "kind" : "deadline"
+        },
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "deadline"
+        },
+        {
+          "date" : "2026-11-17",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-20",
+          "estimated" : false,
+          "kind" : "deadline"
+        }
+      ],
+      "path" : "Ta Da/tasks/Due and deadline done.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-03",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-06",
+          "estimated" : false,
+          "kind" : "deadline"
+        },
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "deadline"
+        },
+        {
+          "date" : "2026-11-17",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-20",
+          "estimated" : false,
+          "kind" : "deadline"
+        }
+      ],
+      "path" : "Ta Da/tasks/Due and deadline.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-10-29",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-10-31",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-02",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-04",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-06",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-08",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-14",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-16",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-18",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-20",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-22",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Every 2 days.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Invalid repeat.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Monthly drift.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Monthly last Friday.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/No repeat.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-05",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-19",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Open in live project.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Until completed.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-04",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-11",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Until open.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-10-28",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-10-29",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-10-30",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-02",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-03",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-04",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-05",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-06",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-11",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-16",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-17",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-18",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-19",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-20",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekdays.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly cancelled.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-10-26",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-02",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-16",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly done before rollover.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-02",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-16",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly done today.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-02",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-16",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly open.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-02",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-16",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly overdue.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-02",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-16",
+          "estimated" : true,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/When done completed.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-10-31",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-03",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-06",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-09",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-15",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-18",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-21",
+          "estimated" : true,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/When done open.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : true,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/When done overdue.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-10-26",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Yearly.md",
+      "through" : "2026-11-22"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/projects/Running.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/projects/Wound up.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Closed project.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-11",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-14",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-15",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Daily.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-14",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Dateless done no completed.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Dateless done.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Dateless open.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "deadline"
+        }
+      ],
+      "path" : "Ta Da/tasks/Deadline only.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "deadline"
+        }
+      ],
+      "path" : "Ta Da/tasks/Due and deadline done.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "deadline"
+        }
+      ],
+      "path" : "Ta Da/tasks/Due and deadline.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-14",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Every 2 days.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Invalid repeat.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Monthly drift.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Monthly last Friday.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/No repeat.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-12",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Open in live project.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Until completed.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-11",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Until open.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-10",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-11",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekdays.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-13",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly cancelled.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly done before rollover.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly done today.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly open.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : false,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/Weekly overdue.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/When done completed.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-12",
+          "estimated" : true,
+          "kind" : "due"
+        },
+        {
+          "date" : "2026-11-15",
+          "estimated" : true,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/When done open.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+        {
+          "date" : "2026-11-09",
+          "estimated" : true,
+          "kind" : "due"
+        }
+      ],
+      "path" : "Ta Da/tasks/When done overdue.md",
+      "through" : "2026-11-15"
+    },
+    {
+      "from" : "2026-11-09",
+      "occurrences" : [
+
+      ],
+      "path" : "Ta Da/tasks/Yearly.md",
+      "through" : "2026-11-15"
+    }
+  ],
+  "rules" : [
+    {
+      "input" : "every day",
+      "phrase" : "every day",
+      "rule" : {
+        "frequency" : "day",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 3 days",
+      "phrase" : "every 3 days",
+      "rule" : {
+        "frequency" : "day",
+        "interval" : 3,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every weekday",
+      "phrase" : "every weekday",
+      "rule" : {
+        "frequency" : "weekday",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week",
+      "phrase" : "every week",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 2 weeks",
+      "phrase" : "every 2 weeks",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 2,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Mon",
+      "phrase" : "every week on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Mon, Thu",
+      "phrase" : "every week on Mon, Thu",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2,
+          5
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 2 weeks on Mon, Thu",
+      "phrase" : "every 2 weeks on Mon, Thu",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 2,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2,
+          5
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month",
+      "phrase" : "every month",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 2 months",
+      "phrase" : "every 2 months",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 2,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 15th",
+      "phrase" : "every month on the 15th",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 15
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the last day",
+      "phrase" : "every month on the last day",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "lastDay"
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 2nd Tuesday",
+      "phrase" : "every month on the 2nd Tue",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "nth",
+          "n" : 2,
+          "weekday" : 3
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the last Friday",
+      "phrase" : "every month on the last Fri",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "lastWeekday",
+          "weekday" : 6
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every year",
+      "phrase" : "every year",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 2 years",
+      "phrase" : "every 2 years",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 2,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every year on Oct 26",
+      "phrase" : "every year on Oct 26",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
+    },
+    {
+      "input" : "every month on the 1st",
+      "phrase" : "every month on the 1st",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 1
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 2nd",
+      "phrase" : "every month on the 2nd",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 2
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 3rd",
+      "phrase" : "every month on the 3rd",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 3
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 4th",
+      "phrase" : "every month on the 4th",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 4
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 11th",
+      "phrase" : "every month on the 11th",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 11
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 12th",
+      "phrase" : "every month on the 12th",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 12
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 13th",
+      "phrase" : "every month on the 13th",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 13
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 21st",
+      "phrase" : "every month on the 21st",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 21
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 22nd",
+      "phrase" : "every month on the 22nd",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 22
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 23rd",
+      "phrase" : "every month on the 23rd",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 23
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 31st",
+      "phrase" : "every month on the 31st",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 31
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 5th Mon",
+      "phrase" : "every month on the 5th Mon",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "nth",
+          "n" : 5,
+          "weekday" : 2
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 1st Sun",
+      "phrase" : "every month on the 1st Sun",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "nth",
+          "n" : 1,
+          "weekday" : 1
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 3rd wed",
+      "phrase" : "every month on the 3rd Wed",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "nth",
+          "n" : 3,
+          "weekday" : 4
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week until 2026-12-31",
+      "phrase" : "every week until 2026-12-31",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2026-12-31",
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week when done",
+      "phrase" : "every week when done",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week until 2026-12-31 when done",
+      "phrase" : "every week until 2026-12-31 when done",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2026-12-31",
+        "weekdays" : [
+
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week when done until 2026-12-31",
+      "phrase" : "every week until 2026-12-31 when done",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2026-12-31",
+        "weekdays" : [
+
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Mon until 2026-12-31 when done",
+      "phrase" : "every week on Mon until 2026-12-31 when done",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2026-12-31",
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Mon when done until 2026-12-31",
+      "phrase" : "every week on Mon until 2026-12-31 when done",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2026-12-31",
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every day until 2026-12-31",
+      "phrase" : "every day until 2026-12-31",
+      "rule" : {
+        "frequency" : "day",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2026-12-31",
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every weekday when done",
+      "phrase" : "every weekday when done",
+      "rule" : {
+        "frequency" : "weekday",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 31st until 2027-06-30 when done",
+      "phrase" : "every month on the 31st until 2027-06-30 when done",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 31
+        },
+        "until" : "2027-06-30",
+        "weekdays" : [
+
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every year on Feb 29 when done until 2032-02-29",
+      "phrase" : "every year on Feb 29 until 2032-02-29 when done",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2032-02-29",
+        "weekdays" : [
+
+        ],
+        "whenDone" : true,
+        "yearDate" : {
+          "day" : 29,
+          "month" : 2
+        }
+      }
+    },
+    {
+      "input" : "EVERY WEEK ON MON",
+      "phrase" : "every week on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "Every Day",
+      "phrase" : "every day",
+      "rule" : {
+        "frequency" : "day",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on monday",
+      "phrase" : "every week on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Tuesday, THURSDAY",
+      "phrase" : "every week on Tue, Thu",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          3,
+          5
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on wed, Friday",
+      "phrase" : "every week on Wed, Fri",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          4,
+          6
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on sun",
+      "phrase" : "every week on Sun",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          1
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Sun, Mon",
+      "phrase" : "every week on Mon, Sun",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          1,
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on sat, sun, mon",
+      "phrase" : "every week on Mon, Sat, Sun",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          1,
+          2,
+          7
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the last SUNDAY",
+      "phrase" : "every month on the last Sun",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "lastWeekday",
+          "weekday" : 1
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 2nd thu",
+      "phrase" : "every month on the 2nd Thu",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "nth",
+          "n" : 2,
+          "weekday" : 5
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every year on october 26",
+      "phrase" : "every year on Oct 26",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
+    },
+    {
+      "input" : "every year on OCT 26",
+      "phrase" : "every year on Oct 26",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
+    },
+    {
+      "input" : "every year on december 25",
+      "phrase" : "every year on Dec 25",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 25,
+          "month" : 12
+        }
+      }
+    },
+    {
+      "input" : "every year on Sep 1",
+      "phrase" : "every year on Sep 1",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 1,
+          "month" : 9
+        }
+      }
+    },
+    {
+      "input" : "every year on feb 29",
+      "phrase" : "every year on Feb 29",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 29,
+          "month" : 2
+        }
+      }
+    },
+    {
+      "input" : "every year on Feb 29 until 2040-01-01",
+      "phrase" : "every year on Feb 29 until 2040-01-01",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2040-01-01",
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 29,
+          "month" : 2
+        }
+      }
+    },
+    {
+      "input" : "  every   week  ",
+      "phrase" : "every week",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every\tweek\ton\tMon",
+      "phrase" : "every week on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Mon,Thu",
+      "phrase" : "every week on Mon, Thu",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2,
+          5
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Mon Thu",
+      "phrase" : "every week on Mon, Thu",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2,
+          5
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on Mon , Thu",
+      "phrase" : "every week on Mon, Thu",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2,
+          5
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week, on Mon",
+      "phrase" : "every week on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week on mon, mon",
+      "phrase" : "every week on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 15",
+      "phrase" : "every month on the 15th",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 15
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 1th",
+      "phrase" : "every month on the 1st",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 1
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 22th",
+      "phrase" : "every month on the 22nd",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 22
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 15TH",
+      "phrase" : "every month on the 15th",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 15
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the 2 Tue",
+      "phrase" : "every month on the 2nd Tue",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "nth",
+          "n" : 2,
+          "weekday" : 3
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the last day when done",
+      "phrase" : "every month on the last day when done",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "lastDay"
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 1 week",
+      "phrase" : "every week",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 1 day",
+      "phrase" : "every day",
+      "rule" : {
+        "frequency" : "day",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 1 weekday",
+      "phrase" : "every weekday",
+      "rule" : {
+        "frequency" : "weekday",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 1 month",
+      "phrase" : "every month",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 1 year",
+      "phrase" : "every year",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 01 weeks",
+      "phrase" : "every week",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every +2 days",
+      "phrase" : "every 2 days",
+      "rule" : {
+        "frequency" : "day",
+        "interval" : 2,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 999 days",
+      "phrase" : "every 999 days",
+      "rule" : {
+        "frequency" : "day",
+        "interval" : 999,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every 999 weeks on Mon",
+      "phrase" : "every 999 weeks on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 999,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week until 2026-1-5",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until 2026-10-5",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until 9999-12-31",
+      "phrase" : "every week until 9999-12-31",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "9999-12-31",
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every week until 2026-02-28",
+      "phrase" : "every week until 2026-02-28",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2026-02-28",
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every year on feb 29 until 2028-02-29",
+      "phrase" : "every year on Feb 29 until 2028-02-29",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2028-02-29",
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 29,
+          "month" : 2
+        }
+      }
+    },
+    {
+      "input" : "",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : " ",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 2",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every day on",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every fortnight",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 2 fortnights",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "weekly",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "Weekly · Fri",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "week",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "each week",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every  ",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 0 days",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 1000 days",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every -1 days",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 2.5 days",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every two days",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 2 weekday",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 2 weekdays",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every weekdays",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every days",
+      "phrase" : "every day",
+      "rule" : {
+        "frequency" : "day",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every day on Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every weekday on Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week on",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week on funday",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week on the Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week on Mon on Tue",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week on Mon until",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week on 15th",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on 15th",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the 32nd",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the 0th",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the 6th Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the 0th Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the last",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the last funday",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the 2nd",
+      "phrase" : "every month on the 2nd",
+      "rule" : {
+        "frequency" : "month",
+        "interval" : 1,
+        "monthDay" : {
+          "case" : "day",
+          "day" : 2
+        },
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every month on the first Monday",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the 15th Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the 15 th",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on the last day of the month",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every month on Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on Feb 30",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on Apr 31",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on Oct",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on 26 Oct",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on Oct 32",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on Oct 0",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on foo 1",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on the Oct 26",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every year on Oct 26th",
+      "phrase" : "every year on Oct 26",
+      "rule" : {
+        "frequency" : "year",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+
+        ],
+        "whenDone" : false,
+        "yearDate" : {
+          "day" : 26,
+          "month" : 10
+        }
+      }
+    },
+    {
+      "input" : "every week until",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until 2026-13-01",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until 2026-02-30",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until tomorrow",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until 26 Oct 2026",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until 2026-11-01 until 2026-12-01",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week when done when done",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week when",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week when finished",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week foo",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week on Mon foo",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week and more",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until 2026-11-01 foo",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week when done foo",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week on Mon until 2026-12-31 on Tue",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week until 2026-12-31 on Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every week when done on Mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every day when done on",
+      "phrase" : null,
+      "rule" : null
+    }
+  ],
+  "today" : "2026-10-26",
+  "vault" : "RecurrenceVault"
+}

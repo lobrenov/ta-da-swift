@@ -171,6 +171,62 @@ summary: lower
 ## Conformance/HomeVault/Ta Da/tasks/Ünïcode 日本.md
 summary: non-ascii
 
+## Conformance/RecurrenceVault/Ta Da/projects/Running.md
+
+## Conformance/RecurrenceVault/Ta Da/projects/Wound up.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Closed project.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Daily.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Dateless done no completed.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Dateless done.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Dateless open.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Deadline only.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Due and deadline done.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Due and deadline.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Every 2 days.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Invalid repeat.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Monthly drift.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Monthly last Friday.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/No repeat.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Open in live project.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Until completed.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Until open.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Weekdays.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Weekly cancelled.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Weekly done before rollover.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Weekly done today.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Weekly open.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Weekly overdue.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/When done completed.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/When done open.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/When done overdue.md
+
+## Conformance/RecurrenceVault/Ta Da/tasks/Yearly.md
+
 ## DesignVault/Periodic Notes/Daily Notes/2026-10-01.md
 summary: Two tab bar options sketched; Other stays as the fifth tab.
 checkboxes: [/]4:3 [x]5:3

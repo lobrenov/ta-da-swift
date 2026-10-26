@@ -1155,7 +1155,10 @@
             ],
             "title" : "Submit timesheet",
             "warnings" : [
-
+              {
+                "case" : "invalidRepeat",
+                "value" : "Weekly · Fri"
+              }
             ]
           },
           "path" : "Ta Da/tasks/Submit timesheet.md"
@@ -2564,7 +2567,10 @@
             ],
             "title" : "Buy seed",
             "warnings" : [
-
+              {
+                "case" : "invalidRepeat",
+                "value" : "Weekly · Fri"
+              }
             ]
           },
           "path" : "Ta Da/tasks/Buy seed.md"

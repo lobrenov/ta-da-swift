@@ -631,3 +631,233 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
         },
     ] as [String: Any], to: "settings.json")
 }
+
+// MARK: Recurrence
+
+private let recurrenceToday = LocalDate("2026-10-26")!
+
+private func json(_ rule: RepeatRule?) -> Any {
+    guard let rule else { return NSNull() }
+    let monthDay: Any
+    switch rule.monthDay {
+    case let .day(day): monthDay = ["case": "day", "day": day]
+    case .lastDay: monthDay = ["case": "lastDay"]
+    case let .nth(n, weekday): monthDay = ["case": "nth", "n": n, "weekday": weekday]
+    case let .lastWeekday(weekday): monthDay = ["case": "lastWeekday", "weekday": weekday]
+    case nil: monthDay = NSNull()
+    }
+    return [
+        "frequency": "\(rule.frequency)", "interval": rule.interval, "weekdays": rule.weekdays.sorted(),
+        "monthDay": monthDay, "yearDate": orNull(rule.yearDate.map { ["month": $0.month, "day": $0.day] }),
+        "until": orNull(rule.until?.description), "whenDone": rule.whenDone,
+    ] as [String: Any]
+}
+
+private let ruleInputs: [String] = [
+    // Every form
+    "every day", "every 3 days", "every weekday", "every week", "every 2 weeks", "every week on Mon", "every week on Mon, Thu",
+    "every 2 weeks on Mon, Thu", "every month", "every 2 months", "every month on the 15th", "every month on the last day",
+    "every month on the 2nd Tuesday", "every month on the last Friday", "every year", "every 2 years", "every year on Oct 26",
+    // Ordinals
+    "every month on the 1st", "every month on the 2nd", "every month on the 3rd", "every month on the 4th",
+    "every month on the 11th", "every month on the 12th", "every month on the 13th", "every month on the 21st",
+    "every month on the 22nd", "every month on the 23rd", "every month on the 31st", "every month on the 5th Mon",
+    "every month on the 1st Sun", "every month on the 3rd wed",
+    // Suffixes, both orders
+    "every week until 2026-12-31", "every week when done", "every week until 2026-12-31 when done",
+    "every week when done until 2026-12-31", "every week on Mon until 2026-12-31 when done",
+    "every week on Mon when done until 2026-12-31", "every day until 2026-12-31", "every weekday when done",
+    "every month on the 31st until 2027-06-30 when done", "every year on Feb 29 when done until 2032-02-29",
+    // Case, three-letter and full names
+    "EVERY WEEK ON MON", "Every Day", "every week on monday", "every week on Tuesday, THURSDAY", "every week on wed, Friday",
+    "every week on sun", "every week on Sun, Mon", "every week on sat, sun, mon", "every month on the last SUNDAY",
+    "every month on the 2nd thu", "every year on october 26", "every year on OCT 26", "every year on december 25",
+    "every year on Sep 1", "every year on feb 29", "every year on Feb 29 until 2040-01-01",
+    // Leniencies
+    "  every   week  ", "every\tweek\ton\tMon", "every week on Mon,Thu", "every week on Mon Thu", "every week on Mon , Thu",
+    "every week, on Mon", "every week on mon, mon", "every month on the 15", "every month on the 1th", "every month on the 22th",
+    "every month on the 15TH", "every month on the 2 Tue", "every month on the last day when done",
+    "every 1 week", "every 1 day", "every 1 weekday", "every 1 month", "every 1 year", "every 01 weeks", "every +2 days",
+    "every 999 days", "every 999 weeks on Mon", "every week until 2026-1-5", "every week until 2026-10-5",
+    "every week until 9999-12-31", "every week until 2026-02-28", "every year on feb 29 until 2028-02-29",
+    // Invalid
+    "", " ", "every", "every 2", "every day on", "every fortnight", "every 2 fortnights", "weekly", "Weekly · Fri", "week",
+    "each week", "every  ", "every 0 days", "every 1000 days", "every -1 days", "every 2.5 days", "every two days", "every 2 weekday",
+    "every 2 weekdays", "every weekdays", "every days", "every day on Mon", "every weekday on Mon", "every week on",
+    "every week on funday", "every week on the Mon", "every week on Mon on Tue", "every week on Mon until",
+    "every week on 15th", "every month on 15th", "every month on", "every month on the", "every month on the 32nd",
+    "every month on the 0th", "every month on the 6th Mon", "every month on the 0th Mon", "every month on the last",
+    "every month on the last funday", "every month on the 2nd", "every month on the first Monday",
+    "every month on the 15th Mon", "every month on the 15 th", "every month on the last day of the month",
+    "every month on Mon", "every year on Feb 30", "every year on Apr 31", "every year on Oct", "every year on 26 Oct",
+    "every year on Oct 32", "every year on Oct 0", "every year on foo 1", "every year on the Oct 26", "every year on Oct 26th",
+    "every week until", "every week until 2026-13-01", "every week until 2026-02-30", "every week until tomorrow",
+    "every week until 26 Oct 2026", "every week until 2026-11-01 until 2026-12-01", "every week when done when done",
+    "every week when", "every week when finished", "every week foo", "every week on Mon foo", "every week and more",
+    "every week until 2026-11-01 foo", "every week when done foo", "every week on Mon until 2026-12-31 on Tue",
+    "every week until 2026-12-31 on Mon", "every week when done on Mon", "every day when done on",
+]
+
+private typealias NextCase = (phrase: String, due: String?, deadline: String?, done: String?, rollover: String)
+
+private func nextCases() -> [NextCase] {
+    var cases: [NextCase] = []
+    func add(_ phrase: String, due: String? = nil, deadline: String? = nil, done: String? = nil, rollover: String? = nil) {
+        cases.append((phrase, due, deadline, done, rollover ?? LocalDate(done!)!.adding(days: 1).description))
+    }
+    // done on the due date, rollover the day after
+    let regular: [(String, String, String, String)] = [
+        ("every week on Mon", "2026-10-26", "2026-10-22", "2026-11-02"),
+        ("every week on Mon", "2026-10-26", "2026-10-26", "2026-11-02"),
+        ("every week on Mon", "2026-10-26", "2026-11-04", "2026-11-09"),
+        ("every day", "2026-10-12", "2026-10-26", "2026-10-27"),
+        ("every 3 days", "2026-10-12", "2026-10-26", "2026-10-27"),
+        ("every 3 days", "2026-10-12", "2026-10-27", "2026-10-30"),
+        ("every weekday", "2026-10-30", "2026-10-30", "2026-11-02"),
+        ("every weekday", "2026-10-26", "2026-10-26", "2026-10-27"),
+        ("every weekday", "2026-10-31", "2026-10-31", "2026-11-02"),
+        ("every 2 weeks on Mon", "2026-10-26", "2026-10-26", "2026-11-09"),
+        ("every 2 weeks on Mon, Thu", "2026-10-26", "2026-10-26", "2026-10-29"),
+        ("every 2 weeks on Mon, Thu", "2026-10-29", "2026-10-29", "2026-11-09"),
+        ("every week on Thu, Mon", "2026-10-29", "2026-10-29", "2026-11-02"),
+        ("every 2 months", "2026-10-15", "2026-10-15", "2026-12-15"),
+        ("every 2 years", "2026-10-26", "2026-10-26", "2028-10-26"),
+        ("every week", "2026-10-28", "2026-10-28", "2026-11-04"),
+        ("every month", "2026-10-15", "2026-10-15", "2026-11-15"),
+        ("every month", "2026-01-31", "2026-01-31", "2026-02-28"),
+        ("every year", "2026-10-26", "2026-10-26", "2027-10-26"),
+        ("every month on the 31st", "2026-01-31", "2026-01-31", "2026-02-28"),
+        ("every month on the 31st", "2028-01-31", "2028-01-31", "2028-02-29"),
+        ("every month on the last day", "2026-01-31", "2026-01-31", "2026-02-28"),
+        ("every month on the 15th", "2026-10-20", "2026-10-20", "2026-11-15"),
+        ("every month on the 2nd Tue", "2026-10-13", "2026-10-13", "2026-11-10"),
+        ("every month on the last Fri", "2026-10-30", "2026-10-30", "2026-11-27"),
+        ("every month on the last Fri", "2026-11-27", "2026-11-27", "2026-12-25"),
+        ("every month on the 5th Mon", "2026-08-31", "2026-08-31", "2026-11-30"),
+        ("every year on Oct 26", "2026-10-26", "2026-10-26", "2027-10-26"),
+        ("every year on Mar 1", "2026-10-26", "2026-10-26", "2027-03-01"),
+        ("every year on Feb 29", "2028-02-29", "2028-02-29", "2029-02-28"),
+        ("every year on Feb 29", "2031-02-28", "2031-02-28", "2032-02-29"),
+        ("every year", "2028-02-29", "2028-02-29", "2029-02-28"),
+        ("every week on Sun, Mon", "2026-10-25", "2026-10-25", "2026-10-26"),
+        ("every month on the last Sun", "2026-12-27", "2026-12-27", "2027-01-31"),
+    ]
+    for (phrase, due, done, _) in regular { add(phrase, due: due, done: done) }
+    // month ends do not drift: each step from the one before
+    for (phrase, start, steps) in [("every month on the 31st", "2026-01-31", 5), ("every month on the 31st", "2027-12-31", 3),
+                                   ("every 2 months on the 31st", "2026-01-31", 3), ("every month on the last day", "2028-01-31", 3),
+                                   ("every year on Feb 29", "2028-02-29", 4), ("every month", "2026-01-31", 4),
+                                   ("every month on the 5th Mon", "2026-08-31", 2)] {
+        var current = start
+        for _ in 0..<steps {
+            let next = RepeatRule.parse(phrase)!.next(dueDate: LocalDate(current), deadline: nil, completedDate: LocalDate(current),
+                                                      rolloverDay: LocalDate(current)!.adding(days: 1))!.dueDate!.description
+            add(phrase, due: current, done: current)
+            current = next
+        }
+    }
+    // missed occurrences skip to the rollover day
+    add("every day", due: "2026-10-12", done: "2026-10-12", rollover: "2026-10-27")
+    add("every week on Mon", due: "2026-10-05", done: "2026-10-05", rollover: "2026-10-27")
+    add("every month on the 15th", due: "2026-06-15", done: "2026-06-15", rollover: "2026-10-27")
+    add("every 2 weeks on Mon", due: "2026-10-05", rollover: "2026-10-27")
+    add("every 3 days", due: "2026-10-01", done: "2026-10-01", rollover: "2026-10-27")
+    // deadline only, no dates, deadline distance
+    add("every week", deadline: "2026-10-28", done: "2026-10-28")
+    add("every week", done: "2026-10-28")
+    add("every month on the 1st", done: "2026-10-28")
+    cases.append(("every day", nil, nil, nil, "2026-10-27"))
+    cases.append(("every 3 days", nil, nil, nil, "2026-10-27"))
+    add("every week on Mon", due: "2026-10-26", deadline: "2026-10-30", done: "2026-10-26")
+    add("every month on the 31st", due: "2026-01-31", deadline: "2026-02-03", done: "2026-01-31")
+    add("every day", due: "2026-10-12", deadline: "2026-10-10", done: "2026-10-26")
+    add("every week", due: "2026-10-28", deadline: "2026-10-28", done: "2026-10-28")
+    // when done
+    let whenDone: [(String, String, String)] = [
+        ("every 3 days when done", "2026-10-27", "2026-10-30"), ("every day when done", "2026-10-27", "2026-10-28"),
+        ("every 2 weeks when done", "2026-10-27", "2026-11-10"), ("every month when done", "2026-01-31", "2026-02-28"),
+        ("every 2 months when done", "2026-10-27", "2026-12-27"), ("every year when done", "2028-02-29", "2029-02-28"),
+        ("every weekday when done", "2026-10-30", "2026-11-02"), ("every weekday when done", "2026-10-26", "2026-10-27"),
+        ("every week on Mon when done", "2026-10-27", "2026-11-02"), ("every week on Mon when done", "2026-10-26", "2026-11-02"),
+        ("every 2 weeks on Mon when done", "2026-10-27", "2026-11-09"),
+        ("every 2 weeks on Mon, Thu when done", "2026-10-27", "2026-11-05"),
+        ("every month on the 2nd Tue when done", "2026-10-14", "2026-11-10"),
+        ("every 2 months on the last Fri when done", "2026-10-31", "2026-12-25"),
+        ("every month on the 15th when done", "2026-10-20", "2026-11-15"),
+        ("every 2 months on the 15th when done", "2026-10-20", "2026-12-15"),
+        ("every 2 months on the 31st when done", "2026-01-05", "2026-02-28"),
+        ("every 2 months on the 31st when done", "2026-01-31", "2026-03-31"),
+        ("every 2 years on Oct 26 when done", "2026-10-27", "2028-10-26"),
+        ("every year on Mar 1 when done", "2026-10-27", "2027-03-01"),
+        ("every week when done", "2026-10-28", "2026-11-04"),
+    ]
+    for (phrase, done, _) in whenDone { add(phrase, due: "2026-10-10", done: done) }
+    add("every 2 weeks when done", due: "2026-10-01", deadline: "2026-10-04", done: "2026-10-27")
+    add("every 3 days when done", due: "2026-10-10", done: "2026-10-27", rollover: "2026-11-20")
+    add("every 3 days when done", due: "2026-10-26", rollover: "2026-10-27")
+    add("every 3 days when done", rollover: "2026-10-27")
+    add("every 3 days when done", deadline: "2026-10-20", rollover: "2026-10-27")
+    add("every week on Mon when done", due: "2026-10-28", rollover: "2026-10-30")
+    // until
+    for until in ["2026-11-09", "2026-11-02", "2026-11-01", "2026-10-26"] {
+        add("every week on Mon until \(until)", due: "2026-10-26", done: "2026-10-26")
+    }
+    add("every week until 2026-11-04", deadline: "2026-10-28", done: "2026-10-28")
+    add("every week until 2026-11-03", deadline: "2026-10-28", done: "2026-10-28")
+    add("every 3 days until 2026-10-30 when done", done: "2026-10-27")
+    add("every 3 days until 2026-10-29 when done", done: "2026-10-27")
+    add("every week when done until 2026-11-04", due: "2026-10-28", done: "2026-10-28")
+    // weeks align Monday to Sunday across a year boundary
+    add("every 2 weeks on Mon, Thu", due: "2026-12-31", done: "2026-12-31")
+    add("every 2 weeks on Mon, Thu", due: "2026-12-31", rollover: "2027-01-12")
+    add("every 2 weeks on Sun, Mon", due: "2026-10-26", done: "2026-10-26")
+    add("every 2 weeks on Mon", due: "2026-10-05", rollover: "2026-10-27")
+    add("every 3 weeks on Wed", due: "2026-12-30", done: "2026-12-30")
+    add("every week on Mon", due: "2026-12-28", done: "2026-12-28")
+    // the 9999 edge
+    add("every week on Mon", deadline: "9999-12-31", done: "9999-12-31", rollover: "9999-12-31")
+    add("every day", due: "9999-12-31", done: "9999-12-31", rollover: "9999-12-31")
+    add("every day when done", due: "9999-12-31", done: "9999-12-31", rollover: "9999-12-31")
+    add("every week", due: "9999-12-24", deadline: "9999-12-31", done: "9999-12-24", rollover: "9999-12-31")
+    add("every year", due: "9999-06-01", done: "9999-06-01")
+    add("every month", due: "9999-11-30", done: "9999-11-30")
+    add("every day", due: "9999-12-30", done: "9999-12-30")
+    return cases
+}
+
+private let occurrenceRanges = [("2026-10-26", "2026-11-22"), ("2026-11-09", "2026-11-15")]
+
+@Test func writeConformanceRecurrence() throws {
+    let vault = try loadVault("RecurrenceVault", at: conformanceFolder.appending(path: "RecurrenceVault"))
+    let index = vault.index
+    let items = Array(index.items.values).sorted { $0.path < $1.path }
+    let marks = index.dayMarks(from: LocalDate("2026-10-01")!, through: LocalDate("2026-12-31")!, today: recurrenceToday)
+    try write([
+        "today": recurrenceToday.description,
+        "rules": ruleInputs.map { input in
+            let rule = RepeatRule.parse(input)
+            return ["input": input, "rule": json(rule), "phrase": orNull(rule?.phrase)] as [String: Any]
+        },
+        "next": nextCases().map { c in
+            let rule = RepeatRule.parse(c.phrase)!
+            let next = rule.next(dueDate: c.due.flatMap(LocalDate.init), deadline: c.deadline.flatMap(LocalDate.init),
+                                 completedDate: c.done.flatMap(LocalDate.init), rolloverDay: LocalDate(c.rollover)!)
+            return ["phrase": c.phrase, "dueDate": orNull(c.due), "deadline": orNull(c.deadline),
+                    "completedDate": orNull(c.done), "rolloverDay": c.rollover,
+                    "expected": orNull(next.map { ["dueDate": orNull($0.dueDate?.description),
+                                                   "deadline": orNull($0.deadline?.description)] as [String: Any] })] as [String: Any]
+        },
+        "vault": "RecurrenceVault",
+        "occurrences": occurrenceRanges.flatMap { range in
+            items.map { item in
+                ["path": item.path, "from": range.0, "through": range.1,
+                 "occurrences": index.occurrences(of: item, from: LocalDate(range.0)!, through: LocalDate(range.1)!, today: recurrenceToday)
+                    .map { ["date": $0.date.description, "kind": "\($0.kind)", "estimated": $0.estimated] as [String: Any] }] as [String: Any]
+            }
+        },
+        "dayMarks": ["from": "2026-10-01", "through": "2026-12-31",
+                     "marks": marks.keys.sorted().map {
+                         ["date": $0.description, "hasOpenTasks": marks[$0]!.hasOpenTasks, "hasOpenBoxes": marks[$0]!.hasOpenBoxes]
+                     }],
+    ] as [String: Any], to: "recurrence.json")
+}
