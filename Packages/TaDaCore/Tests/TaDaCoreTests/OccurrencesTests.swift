@@ -115,3 +115,19 @@ private func occurrences(_ frontmatter: String, _ from: String, _ through: Strin
     #expect(marks("every 3 days when done") == [LocalDate("2026-10-08")!, LocalDate("2026-10-11")!, LocalDate("2026-10-14")!])
     #expect(marks("every week", status: "Done\ncompletedDate: 2026-10-01\ndueDate: 2026-09-28") == [LocalDate("2026-10-12")!])
 }
+
+@Test func theOccurrencesOfAllTasksAreOrderedByDateKindThenTitle() {
+    let items = [
+        makeItem("tasks/B.md", "type: task\nstatus: Doing\ndueDate: 2026-10-05\nrepeat: every week"),
+        makeItem("tasks/A.md", "type: task\nstatus: Doing\ndeadline: 2026-10-05\nrepeat: every week"),
+        makeItem("tasks/C.md", "type: task\nstatus: Doing\ndueDate: 2026-10-05\nrepeat: every week"),
+        makeItem("tasks/Unreadable.md", "type: task\nstatus: Doing\ndueDate: 2026-10-05\nrepeat: Weekly · Fri"),
+        makeItem("tasks/Plain.md", "type: task\nstatus: Doing\ndueDate: 2026-10-12"),
+        makeItem("tasks/Mon.md", "type: task\nstatus: Doing\ndueDate: 2026-10-06\nrepeat: every 6 days")
+    ]
+    let found = VaultIndex(items).occurrences(from: LocalDate("2026-10-10")!, through: LocalDate("2026-10-19")!, today: today)
+        .map { "\($0.date) \($0.item.title)\($0.kind == .deadline ? " deadline" : "")" }
+    #expect(found == ["2026-10-12 B", "2026-10-12 C", "2026-10-12 Mon", "2026-10-12 A deadline", "2026-10-18 Mon",
+                      "2026-10-19 B", "2026-10-19 C", "2026-10-19 A deadline"])
+    #expect(VaultIndex(items).occurrences(from: LocalDate("2026-10-19")!, through: LocalDate("2026-10-10")!, today: today).isEmpty)
+}

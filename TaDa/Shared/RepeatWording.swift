@@ -66,6 +66,13 @@ enum RepeatWording {
         }
     }
 
+    /// An occurrence row's tooltip and spoken detail: the rule spelled out, led by what an estimate or a deadline means.
+    static func occurrenceHelp(_ occurrence: Occurrence, today: LocalDate) -> String {
+        guard let rule = occurrence.item.properties.repeatRule?.rule else { return "" }
+        let lead = occurrence.estimated ? "Estimated, if done on its due date · " : occurrence.kind == .deadline ? "Deadline · " : ""
+        return lead + ruleText(rule, today: today)
+    }
+
     /// The chip that carries a task's rule: the due chip, or the deadline chip when there's a deadline and no due date.
     static func chipKind(of properties: Properties) -> AgendaEntry.Kind? {
         guard properties.kind == .task, properties.repeatRule != nil else { return nil }

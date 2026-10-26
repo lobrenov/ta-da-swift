@@ -2379,6 +2379,8 @@ import UIKit
     /// The Agenda's tasks when a day is selected, grouped as Today's are, and its entries when a week is selected.
     private(set) var agendaTasks: [Item] = []
     private(set) var agendaWeekEntries: [AgendaEntry] = []
+    /// The coming occurrences of repeating tasks on the selected day, or in the selected week.
+    private(set) var agendaOccurrences: [Occurrence] = []
     /// What the days in `agendaMarksRange` show: their dots.
     private(set) var agendaMarks: [LocalDate: DayMarks] = [:]
     /// Active projects with their progress.
@@ -2455,6 +2457,7 @@ import UIKit
         for i in upcoming.indices where upcoming[i].item.path == item.path { upcoming[i].item = item }
         if let i = agendaTasks.firstIndex(where: { $0.path == item.path }) { agendaTasks[i] = item }
         for i in agendaWeekEntries.indices where agendaWeekEntries[i].item.path == item.path { agendaWeekEntries[i].item = item }
+        for i in agendaOccurrences.indices where agendaOccurrences[i].item.path == item.path { agendaOccurrences[i].item = item }
         if let i = projects.firstIndex(where: { $0.project.path == item.path }) { projects[i].project = item }
         if let i = looseProjects.firstIndex(where: { $0.project.path == item.path }) { looseProjects[i].project = item }
         if let i = logbook.firstIndex(where: { $0.path == item.path }) { logbook[i] = item }
@@ -2494,15 +2497,17 @@ import UIKit
         notifications.update(count: todayCount)
     }
 
-    /// The selected period's tasks or entries, the dots for the days shown, and the events and reminders to fetch.
+    /// The selected period's tasks, entries and occurrences, the dots for the days shown, and the events and reminders to fetch.
     private func updateAgenda() {
         switch agendaSelection {
         case let .day(day):
             agendaTasks = index.agendaDay(day, today: today)
             agendaWeekEntries = []
+            agendaOccurrences = index.occurrences(from: day, through: day, today: today)
         case let .week(week):
             agendaTasks = []
             agendaWeekEntries = index.agendaWeek(week)
+            agendaOccurrences = index.occurrences(from: week.firstDay, through: week.firstDay.adding(days: 6), today: today)
         }
         updateAgendaMarks()
         updateIntegrations()

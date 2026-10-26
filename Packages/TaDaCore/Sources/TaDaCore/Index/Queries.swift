@@ -206,6 +206,18 @@ extension VaultIndex {
             .sorted { $0.date == $1.date ? $0.kind == .due && $1.kind == .deadline : $0.date < $1.date }
     }
 
+    /// The occurrences of every task whose rule reads, from `from` through `through`, by date, due before deadline,
+    /// then title.
+    public func occurrences(from: LocalDate, through: LocalDate, today: LocalDate) -> [Occurrence] {
+        tasks.filter { $0.properties.repeatRule?.rule != nil }
+            .flatMap { occurrences(of: $0, from: from, through: through, today: today) }
+            .sorted {
+                if $0.date != $1.date { return $0.date < $1.date }
+                if $0.kind != $1.kind { return $0.kind == .due }
+                return Self.byTitle($0.item, $1.item)
+            }
+    }
+
     /// Open tasks without a parent that resolves, sorted by their earliest date, then title.
     public func loose() -> [Item] {
         tasks.filter { isLoose($0) }.sorted(by: Self.byDate)

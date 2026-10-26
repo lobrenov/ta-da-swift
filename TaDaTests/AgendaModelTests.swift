@@ -65,6 +65,36 @@ struct AgendaModelTests {
         #expect(model.agendaMarks[LocalDate("2026-10-05")!]?.hasOpenTasks == true && model.agendaMarks[LocalDate("2026-10-05")!]?.hasOpenBoxes == false)
     }
 
+    @Test func repeatingTasksListTheirComingOccurrencesOnDaysAfterTheirDate() async throws {
+        let folder = try TestFolder([
+            "tasks/Weekly.md": "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nrepeat: every week\n---\n",
+            "tasks/Monthly.md": "---\ntype: task\nstatus: Doing\ndeadline: 2026-10-07\nrepeat: every 2 weeks when done\n---\n",
+            "tasks/Plain.md": "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-12\n---\n",
+        ])
+        let model = await folder.model(today: LocalDate("2026-10-03")!)
+        let (fifth, twelfth, nineteenth) = (LocalDate("2026-10-05")!, LocalDate("2026-10-12")!, LocalDate("2026-10-19")!)
+
+        model.agendaSelection = .day(fifth)
+        #expect(model.agendaOccurrences.isEmpty, "a task's own date lists the task itself")
+        model.agendaSelection = .day(twelfth)
+        #expect(model.agendaOccurrences.map(\.item.title) == ["Weekly"] && model.agendaTasks.map(\.title) == ["Plain"])
+        #expect(model.agendaMarks[twelfth]?.hasOpenTasks == true)
+        model.agendaSelection = .day(LocalDate("2026-10-21")!)
+        let monthly = try #require(model.agendaOccurrences.first)
+        #expect(monthly.item.title == "Monthly" && monthly.kind == .deadline && monthly.estimated)
+
+        model.agendaSelection = .week(twelfth.isoWeek)
+        let occurrences = model.agendaOccurrences
+        #expect(occurrences.map(\.date) == [twelfth], "the week of the 12th")
+        #expect(model.agendaDaySummary(twelfth, entries: model.agendaWeekEntries, occurrences: occurrences) == "1 due · 1 repeat")
+        #expect(model.firstRepeat(on: twelfth, entries: model.agendaWeekEntries, occurrences: occurrences) == nil, "a task is due that day")
+        #expect(model.agendaDaySummary(LocalDate("2026-10-14")!, entries: model.agendaWeekEntries, occurrences: occurrences).isEmpty)
+
+        model.agendaSelection = .week(nineteenth.isoWeek)
+        #expect(model.agendaDaySummary(nineteenth, entries: [], occurrences: model.agendaOccurrences) == "1 repeat")
+        #expect(model.firstRepeat(on: LocalDate("2026-10-21")!, entries: [], occurrences: model.agendaOccurrences)?.title == "Monthly")
+    }
+
     @Test func aNewTaskIsDueOnTheSelectedDayOrTodayForAWeek() async throws {
         let model = await folder.model(today: LocalDate("2026-10-03")!)
         model.agendaSelection = .day(LocalDate("2026-10-09")!)

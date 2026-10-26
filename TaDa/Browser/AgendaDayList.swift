@@ -1,6 +1,6 @@
 // The Agenda's day: its heading, the daily note's row, the day's events then reminders, then its tasks as Today's list
-// groups them, under Scheduled. A day's tasks keep Today's Group menu and tag filter; while tags are picked the
-// events and reminders hide.
+// groups them, under Scheduled, then the coming occurrences of repeating tasks in a Repeats group. A day's tasks keep
+// Today's Group menu and tag filter; while tags are picked the events and reminders hide.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -19,8 +19,10 @@ struct AgendaDayList: View {
         let groups = grouping == .project ? model.index.grouped(tasks) : []
         let sections = grouping == .project ? [] : ListSection.sections(tasks, by: grouping, today: model.today)
         let events = filter.isActive ? [] : model.events(on: day), reminders = filter.isActive ? [] : model.reminders(on: day)
-        let paths = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
+        let occurrences = model.agendaOccurrences.filter { filter.matches($0.item) }
+        let shownPaths = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : TaskSections.shown(sections, by: grouping, in: list.foldKey, model: model)
+        let paths = shownPaths + model.repeats(on: day, in: occurrences).map(\.path).filter { !shownPaths.contains($0) }
 
         BrowserColumn(model: model, paths: paths, spacing: 22) {
             AgendaStrip(model: model)
@@ -70,11 +72,87 @@ struct AgendaDayList: View {
                         }
                     }
                 }
-            } else if events.isEmpty && reminders.isEmpty {
+            } else if events.isEmpty && reminders.isEmpty && occurrences.isEmpty {
                 Text("Nothing scheduled").foregroundStyle(theme.color(\.muted)).padding(.horizontal, 10)
             }
+            if !occurrences.isEmpty { AgendaRepeats(model: model, occurrences: occurrences) }
         }
         .showsAgendaNote(model)
+    }
+}
+
+/// The Repeats group: a muted row for each occurrence on the day, with a box that can't be ticked. A click opens the task.
+private struct AgendaRepeats: View {
+    let model: AppModel
+    let occurrences: [Occurrence]
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            VStack(spacing: 7) {
+                HStack(spacing: 8) {
+                    Image(systemName: "repeat").font(.system(size: 12)).accessibilityHidden(true)
+                    Text("Repeats").fontWeight(.semibold)
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(theme.color(\.muted))
+                .padding(.horizontal, 10)
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
+                Hairline()
+            }
+            .padding(.bottom, 4)
+            ForEach(occurrences, id: \.self) { row($0) }
+        }
+    }
+
+    private func row(_ occurrence: Occurrence) -> some View {
+        let item = occurrence.item
+        let selected = model.isSelected(item.path)
+        let help = RepeatWording.occurrenceHelp(occurrence, today: model.today)
+        let place = model.index.parent(of: item)?.title
+        return HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 4)
+                .strokeBorder(theme.color(\.muted).opacity(0.7), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
+                .frame(width: 16, height: 16)
+                .accessibilityHidden(true)
+            Button { model.click(item.path) } label: {
+                HStack(spacing: 8) {
+                    if occurrence.estimated { pill("≈") }
+                    if occurrence.kind == .deadline { pill("Deadline", tint: \.deadline) }
+                    Text(item.title)
+                        .font(.system(size: 13.5))
+                        .foregroundStyle(theme.color(\.muted))
+                        .lineLimit(1)
+                        .layoutPriority(1)
+                    Image(systemName: "repeat").font(.system(size: 11.5)).foregroundStyle(theme.color(\.muted)).accessibilityHidden(true)
+                    Spacer(minLength: 8)
+                    if let place {
+                        Text(place).font(.system(size: 12)).foregroundStyle(theme.color(\.muted)).lineLimit(1).layoutPriority(-1)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(item.title), \(help)")
+            .accessibilityAddTraits(selected ? .isSelected : [])
+        }
+        .padding(.horizontal, 10)
+        .frame(height: 32)
+        .background(selected ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
+        .help(help)
+    }
+
+    private func pill(_ text: String, tint: KeyPath<Theme, PlatformColor> = \.muted) -> some View {
+        Text(text)
+            .font(.system(size: 12))
+            .foregroundStyle(theme.color(\.muted))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(theme.color(tint).opacity(theme.isDark ? 0.2 : 0.12), in: .capsule)
+            .fixedSize()
+            .accessibilityHidden(true)
     }
 }
 

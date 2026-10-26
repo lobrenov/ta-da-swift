@@ -1,5 +1,5 @@
-// The Agenda tab's pages: a day (its note, events and reminders, then its tasks) or a week (its note, a row for each
-// day, then the tasks due in it), and the cards and rows that open a day's or a week's note.
+// The Agenda tab's pages: a day (its note, events and reminders, then its tasks and its repeating tasks' occurrences) or
+// a week (its note, a row for each day, then the tasks due in it), and the cards and rows that open a day's or a week's note.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -43,6 +43,8 @@ private struct PhoneAgendaDay: View {
         let groups = grouping == .project ? model.index.grouped(tasks) : []
         let sections = grouping == .project ? [] : ListSection.sections(tasks, by: grouping, today: model.today)
         let events = filter.isActive ? [] : model.events(on: day), reminders = filter.isActive ? [] : model.reminders(on: day)
+        let occurrences = (isSelected ? model.agendaOccurrences : model.index.occurrences(from: day, through: day, today: model.today))
+            .filter { filter.matches($0.item) }
         let note = model.note(for: .day(day))
         let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : sections.filter { !model.isFolded($0, by: grouping, in: list.foldKey) }.flatMap(\.tasks).map(\.path)
@@ -94,10 +96,11 @@ private struct PhoneAgendaDay: View {
                         PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey,
                                           dates: .agenda, place: { model.index.parent(of: $0)?.title })
                     }
-                } else if note == nil, events.isEmpty, reminders.isEmpty {
+                } else if note == nil, events.isEmpty, reminders.isEmpty, occurrences.isEmpty {
                     Text("Nothing scheduled").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
                         .frame(maxWidth: .infinity).padding(.top, 24)
                 }
+                if !occurrences.isEmpty { AgendaRepeats(model: model, occurrences: occurrences) }
                 PickingBarClearance()
             }
         }
@@ -120,6 +123,8 @@ private struct PhoneAgendaWeek: View {
     var body: some View {
         let isSelected = model.agendaSelection == .week(week)
         let entries = isSelected ? model.agendaWeekEntries : model.index.agendaWeek(week)
+        let occurrences = isSelected ? model.agendaOccurrences
+            : model.index.occurrences(from: week.firstDay, through: week.firstDay.adding(days: 6), today: model.today)
         var seen = Set<String>()
         // A task can have two entries (due and deadline); picking lists it once.
         let paths = entries.map(\.item.path).filter { seen.insert($0).inserted }
@@ -142,7 +147,7 @@ private struct PhoneAgendaWeek: View {
                     AgendaNote(model: model, period: .week(week), note: model.note(for: .week(week)), isInline: true)
                 }
                 Color.clear.frame(height: 10)
-                ForEach(week.days, id: \.self) { dayRow($0, entries: entries) }
+                ForEach(week.days, id: \.self) { dayRow($0, entries: entries, occurrences: occurrences) }
                 if !entries.isEmpty {
                     VStack(spacing: 7) {
                         Text("Due this week").scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong))
@@ -168,9 +173,10 @@ private struct PhoneAgendaWeek: View {
     }
 
     /// A day: its label, its note's first paragraph with its dots, and what it holds. A tap picks the day.
-    private func dayRow(_ day: LocalDate, entries: [AgendaEntry]) -> some View {
+    private func dayRow(_ day: LocalDate, entries: [AgendaEntry], occurrences: [Occurrence]) -> some View {
         let note = model.index.dailyNote(for: day, names: model.dailyNoteNames)
-        let counts = model.agendaDaySummary(day, entries: entries)
+        let counts = model.agendaDaySummary(day, entries: entries, occurrences: occurrences)
+        let firstRepeat = model.firstRepeat(on: day, entries: entries, occurrences: occurrences)
         let marks = model.index.dayMarks(from: day, through: day, today: model.today, names: model.dailyNoteNames)[day]
         return Button { withAnimation { model.agendaSelection = .day(day) } } label: {
             HStack(spacing: 12) {
@@ -181,10 +187,15 @@ private struct PhoneAgendaWeek: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         AgendaDots(model: model, day: day, size: 6, marks: marks)
-                        Text(note == nil ? "No note" : note?.summary ?? "")
-                            .scaledFont(size: 16)
-                            .foregroundStyle(theme.color(note == nil ? \.muted : \.fg))
-                            .lineLimit(1)
+                        if let firstRepeat {
+                            Image(systemName: "repeat").scaledFont(size: 14).foregroundStyle(theme.color(\.muted)).accessibilityHidden(true)
+                            Text(firstRepeat.title).scaledFont(size: 16).foregroundStyle(theme.color(\.muted)).lineLimit(1)
+                        } else {
+                            Text(note == nil ? "No note" : note?.summary ?? "")
+                                .scaledFont(size: 16)
+                                .foregroundStyle(theme.color(note == nil ? \.muted : \.fg))
+                                .lineLimit(1)
+                        }
                     }
                     if !counts.isEmpty {
                         Text(counts).scaledFont(size: 13).foregroundStyle(theme.color(\.muted)).lineLimit(1)
@@ -201,6 +212,74 @@ private struct PhoneAgendaWeek: View {
         .buttonStyle(.plain)
         .accessibilityLabel(day.formatted(.fullDate) + (note == nil ? ", no note" : ", note") + (counts.isEmpty ? "" : ", " + counts)
                             + AgendaDots.spoken(model, day, marks: marks))
+    }
+}
+
+/// The Repeats group: a muted row for each occurrence on the day, with a box that can't be ticked. A tap opens the task.
+private struct AgendaRepeats: View {
+    let model: AppModel
+    let occurrences: [Occurrence]
+    @Environment(PhoneNavigation.self) private var nav
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "repeat").scaledFont(size: 14).accessibilityHidden(true)
+                Text("Repeats").scaledFont(size: 15, weight: .semibold)
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(theme.color(\.muted))
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            Hairline()
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 18)
+        ForEach(occurrences, id: \.self) { row($0) }
+    }
+
+    private func row(_ occurrence: Occurrence) -> some View {
+        let item = occurrence.item
+        let help = RepeatWording.occurrenceHelp(occurrence, today: model.today)
+        let place = model.index.parent(of: item)?.title ?? "Loose task"
+        return VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(theme.color(\.muted).opacity(0.7), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                    .frame(width: 22, height: 22)
+                    .accessibilityHidden(true)
+                Button { nav.push(.file(item.path)) } label: {
+                    HStack(spacing: 8) {
+                        if occurrence.estimated { pill("≈") }
+                        if occurrence.kind == .deadline { pill("Deadline", tint: \.deadline) }
+                        Text(item.title).scaledFont(size: 17).lineLimit(1).layoutPriority(1)
+                        Image(systemName: "repeat").scaledFont(size: 14).accessibilityHidden(true)
+                        Spacer(minLength: 8)
+                        Text(place).scaledFont(size: 15).lineLimit(1).layoutPriority(-1)
+                    }
+                    .foregroundStyle(theme.color(\.muted))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(item.title), \(help)")
+            }
+            .padding(.horizontal, 16)
+            .scaledMinHeight(46)
+            PhoneRowSeparator()
+        }
+    }
+
+    private func pill(_ text: String, tint: KeyPath<Theme, PlatformColor> = \.muted) -> some View {
+        Text(text)
+            .scaledFont(size: 15)
+            .foregroundStyle(theme.color(\.muted))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 2)
+            .background(theme.color(tint).opacity(theme.isDark ? 0.2 : 0.12), in: .capsule)
+            .fixedSize()
+            .accessibilityHidden(true)
     }
 }
 

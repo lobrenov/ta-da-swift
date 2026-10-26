@@ -64,18 +64,28 @@ struct AgendaWeekList: View {
     /// A day: its label, its note's first paragraph, what it holds, and its dots. Clicking picks the day.
     private func dayRow(_ day: LocalDate, entries: [AgendaEntry]) -> some View {
         let note = model.index.dailyNote(for: day, names: model.dailyNoteNames)
-        let counts = model.agendaDaySummary(day, entries: entries)
+        let occurrences = model.agendaOccurrences
+        let counts = model.agendaDaySummary(day, entries: entries, occurrences: occurrences)
+        let firstRepeat = model.firstRepeat(on: day, entries: entries, occurrences: occurrences)
         let isToday = day == model.today
         return Button { model.agendaSelection = .day(day) } label: {
             HStack(spacing: 10) {
                 Text(day.formatted(.weekdayDay)).fontWeight(.semibold)
                     .foregroundStyle(theme.color(isToday ? \.accent : \.strong))
                     .frame(width: 52, alignment: .leading)
-                Text(note == nil ? "No note" : note?.summary ?? "")
-                    .font(.system(size: 13.5))
-                    .foregroundStyle(theme.color(note == nil ? \.muted : \.fg))
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 8) {
+                    if let firstRepeat {
+                        Image(systemName: "repeat").font(.system(size: 11.5)).accessibilityHidden(true)
+                        Text(firstRepeat.title)
+                    } else {
+                        Text(note == nil ? "No note" : note?.summary ?? "")
+                            .foregroundStyle(theme.color(note == nil ? \.muted : \.fg))
+                    }
+                }
+                .font(.system(size: 13.5))
+                .foregroundStyle(theme.color(\.muted))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Text(counts).font(.system(size: 11.5)).foregroundStyle(theme.color(\.muted)).lineLimit(1).fixedSize()
                 AgendaDots(model: model, day: day, size: 5).frame(width: 22, alignment: .trailing)
             }

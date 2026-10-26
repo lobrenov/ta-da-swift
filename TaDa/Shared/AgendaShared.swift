@@ -68,11 +68,27 @@ extension AppModel {
         }
     }
 
-    /// A week's day row: "2 events · 1 due", counting the open tasks `entries` have on `day`, as its dots do.
-    func agendaDaySummary(_ day: LocalDate, entries: [AgendaEntry]) -> String {
+    /// The repeating tasks with an occurrence on `day`, once each, in `occurrences`' order.
+    func repeats(on day: LocalDate, in occurrences: [Occurrence]) -> [Item] {
+        var seen = Set<String>()
+        return occurrences.filter { $0.date == day && seen.insert($0.item.path).inserted }.map(\.item)
+    }
+
+    /// A week's day row: "2 events · 1 due · 3 repeats", counting the open tasks `entries` have on `day`, as its dots
+    /// do, and the repeating tasks `occurrences` have on it.
+    func agendaDaySummary(_ day: LocalDate, entries: [AgendaEntry], occurrences: [Occurrence] = []) -> String {
         let external = events(on: day).count + reminders(on: day).count
         let due = Set(entries.filter { $0.date == day && !$0.item.properties.status.isClosed }.map(\.item.path)).count
-        return [external > 0 ? "\(external) \(external == 1 ? "event" : "events")" : nil, due > 0 ? "\(due) due" : nil]
+        let repeating = repeats(on: day, in: occurrences).count
+        return [external > 0 ? "\(external) \(external == 1 ? "event" : "events")" : nil, due > 0 ? "\(due) due" : nil,
+                repeating > 0 ? "\(repeating) \(repeating == 1 ? "repeat" : "repeats")" : nil]
             .compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// The first repeating task a week's day row names, when nothing is due that day and its note has no summary.
+    func firstRepeat(on day: LocalDate, entries: [AgendaEntry], occurrences: [Occurrence]) -> Item? {
+        let hasDue = entries.contains { $0.date == day && !$0.item.properties.status.isClosed }
+        let note = index.dailyNote(for: day, names: dailyNoteNames)
+        return hasDue || note?.summary != nil ? nil : repeats(on: day, in: occurrences).first
     }
 }
