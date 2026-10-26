@@ -44,6 +44,14 @@ func parsesAndWritesCanonicalForms(_ phrase: String, _ rule: RepeatRule) {
             == "every month on the 1st until 2027-01-01 when done")
 }
 
+@Test func dayNamesAloneAreAWeekRule() {
+    #expect(RepeatRule.parse("every mon")?.phrase == "every week on Mon")
+    #expect(RepeatRule.parse("Every Monday, Thu until 2027-01-01 when done")?.phrase == "every week on Mon, Thu until 2027-01-01 when done")
+    #expect(RepeatRule.parse("every 2 mon") == nil)
+    #expect(RepeatRule.parse("every mon on tue") == nil)
+    #expect(RepeatRule.parse("every mon funday") == nil)
+}
+
 @Test func readsCaseDayNamesAndSpacing() {
     #expect(RepeatRule.parse("Every Week On Monday, THU")?.weekdays == [mon, thu])
     #expect(RepeatRule.parse("  every   week \t on  Mon,Thu  ")?.weekdays == [mon, thu])

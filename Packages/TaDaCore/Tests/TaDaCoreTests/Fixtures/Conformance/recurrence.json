@@ -4124,6 +4124,83 @@
       }
     },
     {
+      "input" : "every mon",
+      "phrase" : "every week on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every Monday",
+      "phrase" : "every week on Mon",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every mon, thu",
+      "phrase" : "every week on Mon, Thu",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          2,
+          5
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every Tue Fri when done",
+      "phrase" : "every week on Tue, Fri when done",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : null,
+        "weekdays" : [
+          3,
+          6
+        ],
+        "whenDone" : true,
+        "yearDate" : null
+      }
+    },
+    {
+      "input" : "every sun until 2026-12-31",
+      "phrase" : "every week on Sun until 2026-12-31",
+      "rule" : {
+        "frequency" : "week",
+        "interval" : 1,
+        "monthDay" : null,
+        "until" : "2026-12-31",
+        "weekdays" : [
+          1
+        ],
+        "whenDone" : false,
+        "yearDate" : null
+      }
+    },
+    {
       "input" : "every week, on Mon",
       "phrase" : "every week on Mon",
       "rule" : {
@@ -4581,6 +4658,26 @@
     },
     {
       "input" : "every week on",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every 2 mon",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every mon on tue",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every mon funday",
+      "phrase" : null,
+      "rule" : null
+    },
+    {
+      "input" : "every mon until",
       "phrase" : null,
       "rule" : null
     },

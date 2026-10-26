@@ -148,7 +148,7 @@ A task with a `repeat` rule comes back after it's completed, in the same file: i
 
 - **Rule**: an English phrase, read case-insensitively, with day and month names in full or three letters:
   - `every day` | `every N days` | `every weekday` (Monday to Friday)
-  - `every week` | `every N weeks`, optionally `on Mon, Thu`
+  - `every week` | `every N weeks`, optionally `on Mon, Thu`; `every Mon, Thu` is short for `every week on Mon, Thu`
   - `every month` | `every N months`, optionally `on the 15th` | `on the last day` | `on the 2nd Tuesday` | `on the last Friday`
   - `every year` | `every N years`, optionally `on Oct 26`
   - then optionally `until YYYY-MM-DD` and `when done`, in either order.

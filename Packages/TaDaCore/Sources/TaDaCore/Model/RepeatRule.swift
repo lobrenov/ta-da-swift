@@ -86,6 +86,7 @@ extension RepeatRule {
             interval = number
             unit = next
         }
+        var weekdays: Set<Int> = []
         let frequency: Frequency
         switch unit {
         case "day", "days": frequency = .day
@@ -93,9 +94,17 @@ extension RepeatRule {
         case "week", "weeks": frequency = .week
         case "month", "months": frequency = .month
         case "year", "years": frequency = .year
-        default: return nil
+        default:
+            // `every mon, thu` is `every week on mon, thu`.
+            guard interval == 1, let first = weekday(unit) else { return nil }
+            frequency = .week
+            weekdays.insert(first)
+            while let token = tokens.first, token != "until", token != "when" {
+                guard let day = weekday(token) else { return nil }
+                weekdays.insert(day)
+                tokens.removeFirst()
+            }
         }
-        var weekdays: Set<Int> = []
         var monthDay: MonthDay?
         var yearDate: YearDate?
         var until: LocalDate?
