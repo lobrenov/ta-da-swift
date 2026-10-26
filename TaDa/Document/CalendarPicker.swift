@@ -114,8 +114,32 @@ final class CalendarPickerModel {
         let set: (_ rule: RepeatRule?, _ closing: Bool) -> Void
 
         init(items: [Item], index: VaultIndex, set: @escaping (_ rule: RepeatRule?, _ closing: Bool) -> Void) {
+            self.init(items: items, index: index, rule: Self.sharedRule(of: items), set: set)
+        }
+
+        /// The rule every item has; nil when they have none or differ.
+        static func sharedRule(of items: [Item]) -> RepeatRule? {
             let rules = Set(items.map { $0.properties.repeatRule?.rule })
-            self.init(items: items, index: index, rule: rules.count == 1 ? rules.first ?? nil : nil, set: set)
+            return rules.count == 1 ? rules.first ?? nil : nil
+        }
+
+        /// Copies of `items` with the dates the iPhone date sheet has staged: those of the `changed` kinds.
+        static func staged(_ items: [Item], days: [AgendaEntry.Kind: LocalDate?], changed: Set<AgendaEntry.Kind>) -> [Item] {
+            items.map { item in
+                var item = item
+                if changed.contains(.due) { item.properties.dueDate = days[.due] ?? nil }
+                if changed.contains(.deadline) { item.properties.deadline = days[.deadline] ?? nil }
+                return item
+            }
+        }
+
+        /// The rule change the iPhone date sheet holds, without an end before any of the `staged` files' start (their due
+        /// date, else their deadline), so the rule keeps repeating.
+        static func held(_ change: RepeatRule??, staged: [Item]) -> RepeatRule?? {
+            guard case let .some(.some(rule)) = change, let until = rule.until,
+                  staged.contains(where: { ($0.properties.dueDate ?? $0.properties.deadline).map { $0 > until } ?? false })
+            else { return change }
+            return .some(rule.ending(on: nil))
         }
 
         /// With the `rule` to show in place of the files' own, for a rule the iPhone sheet holds until ✓.
@@ -161,6 +185,11 @@ final class CalendarPickerModel {
         setRepeat = repeating?.set ?? { _, _ in }
         laidOut = shape
         occurrenceCache = nil
+    }
+
+    /// The Ends view's quick days: never, in 4 weeks and the end of the year.
+    var endChoices: [(title: String, day: LocalDate?)] {
+        [("Never", nil), ("In 4 weeks", today.adding(days: 28)), ("End of year", LocalDate(year: today.year, month: 12, day: 31))]
     }
 
     /// The date typed so far. Each change moves the cursor to the day it gives, if any; emptying it moves the
@@ -402,9 +431,7 @@ private struct CalendarPickerView: View {
                 header
                 HStack(spacing: 6) {
                     if model.isEnds {
-                        QuickDayButton(title: "Never", day: nil, model: model)
-                        QuickDayButton(title: "In 4 weeks", day: model.today.adding(days: 28), model: model)
-                        QuickDayButton(title: "End of year", day: LocalDate(year: model.today.year, month: 12, day: 31), model: model)
+                        ForEach(model.endChoices, id: \.title) { QuickDayButton(title: $0.title, day: $0.day, model: model) }
                     } else {
                         QuickDayButton(title: "Today", day: model.today, model: model)
                         QuickDayButton(title: "Tomorrow", day: model.today.adding(days: 1), model: model)

@@ -32,8 +32,7 @@ struct PhoneDateSheet: View {
             return dates.count == 1 ? dates.first ?? nil : nil
         }
         let due = agreed(\.dueDate), deadline = agreed(\.deadline)
-        let rules = Set(items.map { $0.properties.repeatRule?.rule })
-        sharedRule = rules.count == 1 ? rules.first ?? nil : nil
+        sharedRule = CalendarPickerModel.Repeating.sharedRule(of: items)
         _kind = State(initialValue: kind)
         _days = State(initialValue: [.due: due, .deadline: deadline])
         _month = State(initialValue: ((kind == .due ? due : deadline) ?? model.today).startOfMonth)
@@ -41,11 +40,14 @@ struct PhoneDateSheet: View {
 
     private var day: LocalDate? { days[kind] ?? nil }
 
-    /// Whether the sheet has the Repeat row and page: the due date of tasks.
-    private var isRepeatable: Bool {
+    /// Whether the files are all tasks, which can repeat.
+    private var areTasks: Bool {
         let items = paths.compactMap { model.index[$0] }
-        return kind == .due && !items.isEmpty && items.allSatisfy { $0.properties.kind == .task }
+        return !items.isEmpty && items.allSatisfy { $0.properties.kind == .task }
     }
+
+    /// Whether the sheet has the Repeat row and page: the due date of tasks.
+    private var isRepeatable: Bool { kind == .due && areTasks }
 
     /// The rule the files will have: the one set here, else the one they share.
     private var shownRule: RepeatRule? { repeatChange ?? sharedRule }
@@ -88,19 +90,23 @@ struct PhoneDateSheet: View {
         }
         .presentationDetents([.medium, .large])
         .onAppear { configureRepeat() }
-        .onChange(of: kind) { month = (day ?? model.today).startOfMonth }
+        .onChange(of: kind) {
+            month = (day ?? model.today).startOfMonth
+            configureRepeat()
+        }
     }
 
     private var repeatRow: some View {
         Button { showsRepeat = true } label: {
             HStack(spacing: 10) {
-                Image(systemName: "repeat").foregroundStyle(theme.color(\.muted))
+                Image(systemName: "repeat").foregroundStyle(theme.color(\.muted)).accessibilityHidden(true)
                 Text("Repeat").foregroundStyle(theme.color(\.fg))
                 Spacer()
                 Text(shownRule?.frequencyLabel ?? "Never").foregroundStyle(theme.color(\.muted))
                 Image(systemName: "chevron.right")
                     .scaledFont(size: 14, weight: .semibold)
                     .foregroundStyle(theme.color(\.muted))
+                    .accessibilityHidden(true)
             }
             .scaledFont(size: 17)
             .padding(.horizontal, 14)
@@ -110,6 +116,7 @@ struct PhoneDateSheet: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Repeat")
         .accessibilityValue(shownRule?.frequencyLabel ?? "Never")
     }
 
@@ -158,13 +165,8 @@ struct PhoneDateSheet: View {
     /// Gives the Repeat page the files as the dates here will leave them, and the rule they will have. Setting a rule, its
     /// end or When done, or stopping it, there holds the change until ✓.
     private func configureRepeat() {
-        guard isRepeatable else { return }
-        let items = paths.compactMap { model.index[$0] }.map { item in
-            var item = item
-            if changed.contains(.due) { item.properties.dueDate = days[.due] ?? nil }
-            if changed.contains(.deadline) { item.properties.deadline = days[.deadline] ?? nil }
-            return item
-        }
+        guard areTasks else { return }
+        let items = stagedItems
         picker.today = model.today
         picker.firstWeekday = Calendar.current.firstWeekday
         picker.selected = days[.due] ?? nil
@@ -176,9 +178,13 @@ struct PhoneDateSheet: View {
         })
     }
 
+    private var stagedItems: [Item] {
+        CalendarPickerModel.Repeating.staged(paths.compactMap { model.index[$0] }, days: days, changed: changed)
+    }
+
     private func apply() {
         let changes = AgendaEntry.Kind.changes(changed, in: days)
-        let change = repeatChange
+        let change = CalendarPickerModel.Repeating.held(repeatChange, staged: stagedItems)
         let paths = paths
         nav.endPicking()
         dismiss()
@@ -273,7 +279,8 @@ private struct PhoneMonthCalendar: View {
 }
 
 /// The Repeat page: the rule typed in a field and spelled out under it, When done, Ends and Stop Repeating. Each sets
-/// its change on the date sheet, which writes it with ✓.
+/// its change on the date sheet, which writes it with ✓. Going back sets a typed rule that can start, and drops one that
+/// can't.
 private struct PhoneRepeatPage: View {
     let picker: CalendarPickerModel
     @State private var text = ""
@@ -288,7 +295,7 @@ private struct PhoneRepeatPage: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 10) {
                         Image(systemName: "repeat").foregroundStyle(theme.color(\.muted))
-                        TextField("", text: $text, prompt: Text("every 2 weeks on mon"))
+                        TextField("", text: Binding { text } set: { text = $0; picker.phrase = $0 }, prompt: Text("every 2 weeks on mon"))
                             .foregroundStyle(theme.color(\.strong))
                             .focused($isFocused)
                             .textInputAutocapitalization(.never)
@@ -359,8 +366,15 @@ private struct PhoneRepeatPage: View {
         .navigationTitle("Repeat")
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $showsEnds) { PhoneRepeatEndsPage(picker: picker) }
-        .onAppear { text = picker.current?.phrase ?? "" }
-        .onChange(of: text) { picker.phrase = text }
+        .onAppear {
+            picker.phrase = ""
+            text = picker.current?.phrase ?? ""
+        }
+        .onDisappear {
+            guard !showsEnds else { return }
+            if picker.typedRule != nil { picker.confirm() }
+            picker.phrase = ""
+        }
     }
 }
 
@@ -379,16 +393,11 @@ private struct PhoneRepeatEndsPage: View {
 
     var body: some View {
         let today = picker.today
-        let choices: [(String, LocalDate?)] = [
-            ("Never", nil),
-            ("In 4 weeks", today.adding(days: 28)),
-            ("End of year", LocalDate(year: today.year, month: 12, day: 31)),
-        ]
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
-                        ForEach(choices, id: \.0) { title, date in
+                        ForEach(picker.endChoices, id: \.title) { title, date in
                             Button { end(on: date) } label: {
                                 Text(title)
                                     .scaledFont(size: 15, weight: .semibold)
@@ -402,6 +411,7 @@ private struct PhoneRepeatEndsPage: View {
                             .disabled(!picker.canPick(date))
                             .opacity(picker.canPick(date) ? 1 : 0.4)
                             .accessibilityValue(date?.formatted(.weekdayDayMonth) ?? "No end date")
+                            .accessibilityAddTraits(picker.shownDate == date ? .isSelected : [])
                         }
                     }
                 }
