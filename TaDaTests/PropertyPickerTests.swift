@@ -308,6 +308,17 @@ struct PropertyPickerTests {
         #expect(writes.rules == [RepeatRule.parse("every week until 2026-12-20")])
     }
 
+    @Test func aHeldRuleReplacesTheFilesOwn() throws {
+        let item = try #require(Item(parsing: plain, path: "Ta Da/tasks/T0.md"))
+        let held = RepeatRule.parse("every week on Mon")
+        let model = CalendarPickerModel()
+        model.today = LocalDate("2026-10-26")!
+        model.selected = LocalDate("2026-11-02")!
+        model.configure(CalendarPickerModel.Repeating(items: [item], index: VaultIndex([item]), rule: held) { _, _ in })
+        #expect(model.current == held && model.displayedRule == held)
+        #expect(model.occurrenceDays(in: LocalDate("2026-11-01")!).contains(LocalDate("2026-11-09")!))
+    }
+
     @Test func aDeadlineOnlyTaskPreviewsFromItsDeadline() {
         let (model, _) = repeatMenu(["---\ntype: task\ndeadline: 2026-11-15\n---\n"])
         model.phrase = "every month"

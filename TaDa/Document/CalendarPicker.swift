@@ -1,7 +1,7 @@
 // The calendar under a dueDate or deadline chip: its month in a popup panel, with
 // Today, Tomorrow, Next week and Clear. A date typed in its field ("fri", "3d", "25/12") moves a cursor to it,
 // and ↵ sets it. A task's due date menu also takes a repeat rule ("every mon") and has a Repeat section under the
-// month, whose Ends row swaps the menu to the date the repeat ends.
+// month, whose Ends row swaps the menu to the date the repeat ends. The iPhone date sheet shares the model.
 import SwiftUI
 import TaDaCore
 #if os(macOS)
@@ -115,9 +115,14 @@ final class CalendarPickerModel {
 
         init(items: [Item], index: VaultIndex, set: @escaping (_ rule: RepeatRule?, _ closing: Bool) -> Void) {
             let rules = Set(items.map { $0.properties.repeatRule?.rule })
+            self.init(items: items, index: index, rule: rules.count == 1 ? rules.first ?? nil : nil, set: set)
+        }
+
+        /// With the `rule` to show in place of the files' own, for a rule the iPhone sheet holds until ✓.
+        init(items: [Item], index: VaultIndex, rule: RepeatRule?, set: @escaping (_ rule: RepeatRule?, _ closing: Bool) -> Void) {
             self.items = items
             self.index = index
-            rule = rules.count == 1 ? rules.first ?? nil : nil
+            self.rule = rule
             self.set = set
         }
     }
