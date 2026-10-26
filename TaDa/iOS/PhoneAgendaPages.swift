@@ -241,18 +241,16 @@ private struct AgendaRepeats: View {
 
     private func row(_ occurrence: Occurrence) -> some View {
         let item = occurrence.item
-        let help = RepeatWording.occurrenceHelp(occurrence, today: model.today)
-        let place = model.index.parent(of: item)?.title ?? "Loose task"
+        let place = model.occurrencePlace(occurrence) ?? "Loose task"
         return VStack(spacing: 0) {
             HStack(spacing: 12) {
                 RoundedRectangle(cornerRadius: 6)
                     .strokeBorder(theme.color(\.muted).opacity(0.7), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
                     .frame(width: 22, height: 22)
                     .accessibilityHidden(true)
-                Button { nav.push(.file(item.path)) } label: {
+                Button { if !nav.isPicking { nav.push(.file(item.path)) } } label: {
                     HStack(spacing: 8) {
-                        if occurrence.estimated { pill("≈") }
-                        if occurrence.kind == .deadline { pill("Deadline", tint: \.deadline) }
+                        OccurrencePills(occurrence: occurrence)
                         Text(item.title).scaledFont(size: 17).lineLimit(1).layoutPriority(1)
                         Image(systemName: "repeat").scaledFont(size: 14).accessibilityHidden(true)
                         Spacer(minLength: 8)
@@ -263,23 +261,13 @@ private struct AgendaRepeats: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(item.title), \(help)")
+                .accessibilityLabel(model.occurrenceLabel(occurrence, place: place))
+                .accessibilityHint("Opens the task")
             }
             .padding(.horizontal, 16)
             .scaledMinHeight(46)
             PhoneRowSeparator()
         }
-    }
-
-    private func pill(_ text: String, tint: KeyPath<Theme, PlatformColor> = \.muted) -> some View {
-        Text(text)
-            .scaledFont(size: 15)
-            .foregroundStyle(theme.color(\.muted))
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
-            .background(theme.color(tint).opacity(theme.isDark ? 0.2 : 0.12), in: .capsule)
-            .fixedSize()
-            .accessibilityHidden(true)
     }
 }
 

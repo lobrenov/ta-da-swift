@@ -95,6 +95,45 @@ struct AgendaModelTests {
         #expect(model.firstRepeat(on: LocalDate("2026-10-21")!, entries: [], occurrences: model.agendaOccurrences)?.title == "Monthly")
     }
 
+    @Test func anOverdueRepeatingTaskWithADeadlineListsNothingTodayAndItsNextDatesFromTomorrow() async throws {
+        let folder = try TestFolder([
+            "tasks/Overdue.md": "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-21\ndeadline: 2026-10-24\nrepeat: every day\n---\n",
+        ])
+        let model = await folder.model(today: LocalDate("2026-10-26")!)
+        #expect(model.agendaOccurrences.isEmpty)
+        model.agendaSelection = .day(LocalDate("2026-10-29")!)
+        #expect(model.agendaOccurrences.map(\.kind) == [.due])
+        model.agendaSelection = .day(LocalDate("2026-10-30")!)
+        #expect(model.agendaOccurrences.map(\.kind) == [.due, .deadline])
+    }
+
+    @Test func editingARepeatOrADueDateRefreshesTheOccurrences() async throws {
+        let folder = try TestFolder(["tasks/Task.md": "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\n---\n"])
+        let model = await folder.model(today: LocalDate("2026-10-03")!)
+        let (path, twelfth) = ("tasks/Task.md", LocalDate("2026-10-12")!)
+        model.agendaSelection = .day(twelfth)
+        #expect(model.agendaOccurrences.isEmpty)
+        await model.setProperty("repeat", to: .text("every week"), in: path)
+        #expect(model.agendaOccurrences.map(\.date) == [twelfth])
+        await model.setProperty("dueDate", to: .date(LocalDate("2026-10-06")!), in: path)
+        #expect(model.agendaOccurrences.isEmpty)
+        await model.setProperty("dueDate", to: .date(LocalDate("2026-10-05")!), in: path)
+        #expect(model.agendaOccurrences.map(\.date) == [twelfth])
+        await model.setProperty("repeat", to: nil, in: path)
+        #expect(model.agendaOccurrences.isEmpty)
+    }
+
+    @Test func movingTodayForwardMovesTheOccurrences() async throws {
+        let folder = try TestFolder(["tasks/Task.md": "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nrepeat: every week\n---\n"])
+        let model = await folder.model(today: LocalDate("2026-10-03")!)
+        model.agendaSelection = .day(LocalDate("2026-10-12")!)
+        #expect(model.agendaOccurrences.map(\.date) == [LocalDate("2026-10-12")!])
+        model.today = LocalDate("2026-10-12")!
+        #expect(model.agendaOccurrences.isEmpty, "the task is overdue by then, and lists itself")
+        model.agendaSelection = .day(LocalDate("2026-10-19")!)
+        #expect(model.agendaOccurrences.map(\.date) == [LocalDate("2026-10-19")!])
+    }
+
     @Test func aNewTaskIsDueOnTheSelectedDayOrTodayForAWeek() async throws {
         let model = await folder.model(today: LocalDate("2026-10-03")!)
         model.agendaSelection = .day(LocalDate("2026-10-09")!)

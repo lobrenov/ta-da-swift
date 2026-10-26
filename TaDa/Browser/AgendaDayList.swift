@@ -22,9 +22,8 @@ struct AgendaDayList: View {
         let occurrences = model.agendaOccurrences.filter { filter.matches($0.item) }
         let shownPaths = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : TaskSections.shown(sections, by: grouping, in: list.foldKey, model: model)
-        let paths = shownPaths + model.repeats(on: day, in: occurrences).map(\.path).filter { !shownPaths.contains($0) }
 
-        BrowserColumn(model: model, paths: paths, spacing: 22) {
+        BrowserColumn(model: model, paths: shownPaths, spacing: 22) {
             AgendaStrip(model: model)
         } content: {
             VStack(alignment: .leading, spacing: 8) {
@@ -81,7 +80,8 @@ struct AgendaDayList: View {
     }
 }
 
-/// The Repeats group: a muted row for each occurrence on the day, with a box that can't be ticked. A click opens the task.
+/// The Repeats group: a muted row for each occurrence on the day, with a box that can't be ticked. A click opens the task
+/// alone; the rows stay out of the list's keys and picks.
 private struct AgendaRepeats: View {
     let model: AppModel
     let occurrences: [Occurrence]
@@ -110,16 +110,15 @@ private struct AgendaRepeats: View {
         let item = occurrence.item
         let selected = model.isSelected(item.path)
         let help = RepeatWording.occurrenceHelp(occurrence, today: model.today)
-        let place = model.index.parent(of: item)?.title
+        let place = model.occurrencePlace(occurrence)
         return HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 4)
                 .strokeBorder(theme.color(\.muted).opacity(0.7), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2.5]))
                 .frame(width: 16, height: 16)
                 .accessibilityHidden(true)
-            Button { model.click(item.path) } label: {
+            Button { model.selectOnly(item.path) } label: {
                 HStack(spacing: 8) {
-                    if occurrence.estimated { pill("≈") }
-                    if occurrence.kind == .deadline { pill("Deadline", tint: \.deadline) }
+                    OccurrencePills(occurrence: occurrence)
                     Text(item.title)
                         .font(.system(size: 13.5))
                         .foregroundStyle(theme.color(\.muted))
@@ -135,24 +134,13 @@ private struct AgendaRepeats: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("\(item.title), \(help)")
+            .accessibilityLabel(model.occurrenceLabel(occurrence, place: place))
             .accessibilityAddTraits(selected ? .isSelected : [])
         }
         .padding(.horizontal, 10)
         .frame(height: 32)
         .background(selected ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
         .help(help)
-    }
-
-    private func pill(_ text: String, tint: KeyPath<Theme, PlatformColor> = \.muted) -> some View {
-        Text(text)
-            .font(.system(size: 12))
-            .foregroundStyle(theme.color(\.muted))
-            .padding(.horizontal, 7)
-            .padding(.vertical, 2)
-            .background(theme.color(tint).opacity(theme.isDark ? 0.2 : 0.12), in: .capsule)
-            .fixedSize()
-            .accessibilityHidden(true)
     }
 }
 

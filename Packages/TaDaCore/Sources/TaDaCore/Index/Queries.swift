@@ -193,7 +193,7 @@ extension VaultIndex {
         } else {
             dates += rule.dates(after: anchor, from: low, through: high)
         }
-        let found = dates.filter { $0 >= low && $0 <= high }.flatMap { date -> [Occurrence] in
+        let found = dates.filter { $0 >= low && $0 <= high && (p.status.isClosed || $0 > today) }.flatMap { date -> [Occurrence] in
             let estimated = rule.whenDone && date != known
             var entries: [Occurrence] = []
             if hasDue { entries.append(Occurrence(item: item, date: date, kind: .due, estimated: estimated)) }

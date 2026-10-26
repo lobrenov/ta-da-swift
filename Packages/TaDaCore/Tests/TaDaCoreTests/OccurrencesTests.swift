@@ -131,3 +131,9 @@ private func occurrences(_ frontmatter: String, _ from: String, _ through: Strin
                       "2026-10-19 B", "2026-10-19 C", "2026-10-19 A deadline"])
     #expect(VaultIndex(items).occurrences(from: LocalDate("2026-10-19")!, through: LocalDate("2026-10-10")!, today: today).isEmpty)
 }
+
+@Test func anOverdueTaskWithADeadlineListsOnlyOccurrencesFromItsNextDueDate() {
+    let overdue = "status: Doing\ndueDate: 2026-09-28\ndeadline: 2026-10-01\nrepeat: every day"
+    #expect(occurrences(overdue, "2026-10-02", "2026-10-02").isEmpty)
+    #expect(occurrences(overdue, "2026-10-02", "2026-10-06") == ["2026-10-03", "2026-10-04", "2026-10-05", "2026-10-06", "2026-10-06 deadline"])
+}
