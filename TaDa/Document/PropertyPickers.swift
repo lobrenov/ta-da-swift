@@ -71,7 +71,12 @@ final class PropertyPicker {
     func pickStatus(of item: Item, model: AppModel, anchor: ScreenAnchor) {
         guard let window = anchor.window, toggle(item.path, "status", anchor: anchor.rect) else { return }
         let current = item.properties.status
-        let choices = Status.choices(for: item.properties.kind).map { StatusChoice(status: $0, isCurrent: $0 == current) }
+        let repeating = item.properties.kind == .task && item.properties.repeatRule?.rule != nil
+        let move = model.index.repeatMove(of: item, today: model.today, completing: true)
+        let choices = Status.choices(for: item.properties.kind).map {
+            StatusChoice(status: $0, isCurrent: $0 == current, repeating: repeating,
+                         note: repeating && $0.isClosed ? move.map { RepeatWording.note($0, today: model.today) } : nil)
+        }
         statusMenu.show([PopupMenuSection(label: "Status", items: choices)], highlight: choices.firstIndex(where: \.isCurrent),
                         theme: model.theme, below: anchor.rect, inset: 0, gap: 6, in: window) { [weak self] choice in
             self?.close()
@@ -359,12 +364,17 @@ struct ScreenAnchorReader: NSViewRepresentable {
 struct StatusChoice: PopupMenuItem {
     let status: Status
     let isCurrent: Bool
+    /// Whether the file is a repeating task, whose Cancelled reads "Skip this time".
+    var repeating = false
+    /// What Done and Skip do to a repeating task ("moves to Mon 9 Nov"), instead of "sets completedDate".
+    var note: String?
 
-    var title: String { status.rawValue }
-    var accessibilityValue: String { isCurrent ? "Current" : status.isClosed ? "Sets completedDate" : "" }
+    var title: String { RepeatWording.title(of: status, repeating: repeating) }
+    var accessibilityValue: String { isCurrent ? "Current" : status.isClosed ? note?.capitalizedFirst ?? "Sets completedDate" : "" }
 }
 
-/// The status's checkbox, its name, and a tick on the current one. Done and Cancelled say they also set completedDate.
+/// The status's checkbox, its name, and a tick on the current one. Done and Cancelled say they also set completedDate,
+/// or on a repeating task where it moves.
 private struct StatusChoiceRow: View {
     let choice: StatusChoice
     let isHighlighted: Bool
@@ -380,7 +390,7 @@ private struct StatusChoiceRow: View {
                 .lineLimit(1)
             Spacer(minLength: 8)
             if choice.status.isClosed, !choice.isCurrent {
-                Text("sets completedDate")
+                Text(choice.note ?? "sets completedDate")
                     .font(.system(size: 11))
                     .foregroundStyle(theme.color(\.muted))
             }

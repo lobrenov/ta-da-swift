@@ -53,6 +53,7 @@ struct ProjectGroups: View {
                     header(group)
                     ForEach(group.tasks) { task in
                         TaskRow(item: task, selected: model.isSelected(task.path), today: model.today, dates: dates,
+                                move: model.index.repeatMove(of: task, today: model.today),
                                 onToggle: { Task { await model.toggleCompletion(task) } },
                                 onSelect: { model.click(task.path) })
                         .fileMenu(model, path: task.path)

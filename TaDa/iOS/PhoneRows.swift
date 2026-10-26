@@ -96,7 +96,8 @@ struct PhoneTaskRow: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .layoutPriority(1)
-            RowGlyphs(item: item, iconSize: 14)
+            RowGlyphs(item: item, today: model.today,
+                      move: model.index.repeatMove(of: item, today: model.today), iconSize: 14)
             Spacer(minLength: 8)
             if let place {
                 Text(place)
@@ -387,11 +388,14 @@ struct PhoneFileMenu: View {
                 Label("Tomorrow", systemImage: "sun.max")
             }
         }
+        let (repeating, move) = RepeatWording.statusContext(of: [item], index: model.index, today: model.today)
         Picker(selection: Binding { item.properties.status } set: { status in
             nav.play(.pick)
             Task { await model.setStatus(status, in: path) }
         }) {
-            ForEach(Status.choices(for: item.properties.kind), id: \.self) { Text($0.rawValue).tag($0) }
+            ForEach(Status.choices(for: item.properties.kind), id: \.self) {
+                Text(RepeatWording.statusHelp($0, repeating: repeating, move: move, today: model.today)).tag($0)
+            }
         } label: {
             Label("Status", systemImage: "circle.dashed")
         }

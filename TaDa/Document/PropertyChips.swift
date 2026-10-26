@@ -1,7 +1,8 @@
 // A file's properties under its title, as the canvas's Properties page draws them: status, the parent (a task's
 // project or area, a project's area), due date and deadline as chips that open pickers, with a dashed chip for a
 // missing one; the Tags row; then the type, a task's area through its project, and the days the file was created and
-// completed in a quiet line. An area has the quiet line, then the Tags row. Repeat isn't shown.
+// completed in a quiet line. An area has the quiet line, then the Tags row. A task's repeat rule rides on its due chip (its
+// deadline chip when it has no due date).
 import SwiftUI
 import TaDaCore
 #if os(macOS)
@@ -322,9 +323,13 @@ private struct DatePropertyChip: View {
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(theme.color(isDone ? \.muted : kind.tint))
                     Text(date.relativeLabel(today: model.today).capitalizedFirst)
+                    repeatSuffix
                 }
             } else {
-                MissingKeyLabel(name: kind.name)
+                HStack(spacing: 6) {
+                    MissingKeyLabel(name: kind.name)
+                    repeatSuffix
+                }
             }
         }
         .buttonStyle(PropertyChipStyle(text: isDone ? \.muted : isOverdue ? \.deadline : \.fg, isMissing: date == nil,
@@ -335,6 +340,8 @@ private struct DatePropertyChip: View {
             model.propertyMenuRequest = nil
             PropertyPicker.shared.pickDate(kind, of: [item], model: model, anchor: anchor)
         }
+        .help(rule.map { RepeatWording.chipHelp($0, next: model.index.repeatMove(of: item, today: model.today, completing: true),
+                                                 today: model.today) } ?? "")
         .accessibilityLabel(kind.name)
         .accessibilityValue(date.map { $0.formatted(.weekdayDayMonthYear) + (isOverdue ? ", overdue" : "") } ?? "None")
         .accessibilityActions {
@@ -345,6 +352,13 @@ private struct DatePropertyChip: View {
                 Button("Clear") { set(nil) }
             }
         }
+    }
+
+    /// The task's rule when this chip carries it.
+    private var rule: Repeat? { RepeatWording.chipKind(of: item.properties) == kind ? item.properties.repeatRule : nil }
+
+    @ViewBuilder private var repeatSuffix: some View {
+        if let rule { RepeatChipSuffix(rule: rule, iconSize: 10) }
     }
 
     private func set(_ date: LocalDate?) {

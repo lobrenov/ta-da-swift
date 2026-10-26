@@ -18,6 +18,8 @@ struct TaskRow: View {
     var place: String? = nil
     /// An Agenda week entry whose date the row shows.
     var entry: AgendaEntry? = nil
+    /// Where a done or skipped repeating task moves.
+    var move: RepeatMove? = nil
     let onToggle: () -> Void
     let onSelect: () -> Void
 
@@ -25,7 +27,7 @@ struct TaskRow: View {
         SelectableRow(item: item, selected: selected, onToggle: onToggle, onSelect: onSelect) {
             RowDate(item: item, today: today, inAgenda: dates == .agenda, entry: entry)
         } trailing: {
-            RowGlyphs(item: item)
+            RowGlyphs(item: item, today: today, move: move)
             Spacer(minLength: 8)
             if let place {
                 Text(place)
@@ -39,9 +41,11 @@ struct TaskRow: View {
 }
 
 /// A task row's quiet glyphs, icon only: a note, subtasks, a repeat rule and tags. Each says its detail on hover and
-/// to VoiceOver.
+/// to VoiceOver. A done or skipped repeating task's glyph is followed by where it moves ("Tomorrow") or "Ended".
 struct RowGlyphs: View {
     let item: Item
+    let today: LocalDate
+    var move: RepeatMove? = nil
     var iconSize: CGFloat = 11.5
     @Environment(\.theme) private var theme
 
@@ -51,11 +55,14 @@ struct RowGlyphs: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 6) {
                 ForEach(glyphs, id: \.systemImage) { glyph in
-                    Image(systemName: glyph.systemImage)
-                        .rowFont(iconSize)
-                        .foregroundStyle(theme.color(glyph.tint))
-                        .help(glyph.help ?? glyph.spoken)
-                        .accessibilityLabel(glyph.spoken)
+                    HStack(spacing: 4) {
+                        Image(systemName: glyph.systemImage)
+                        if let text = glyph.text { Text(text) }
+                    }
+                    .rowFont(iconSize)
+                    .foregroundStyle(theme.color(glyph.tint))
+                    .help(glyph.help ?? glyph.spoken)
+                    .accessibilityLabel(glyph.spoken)
                 }
             }
             .fixedSize()
@@ -65,21 +72,22 @@ struct RowGlyphs: View {
         }
     }
 
-    private var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?)] {
+    private var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?, text: String?)] {
         let subtasks = item.subtasks
-        var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?)] = []
+        var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?, text: String?)] = []
         if item.hasNote {
-            glyphs.append(("doc.text", "Has a note", \.muted, nil))
+            glyphs.append(("doc.text", "Has a note", \.muted, nil, nil))
         }
         if subtasks.total > 0 {
-            glyphs.append(("checklist", "\(subtasks.done) of \(subtasks.total) subtasks done", \.muted, nil))
+            glyphs.append(("checklist", "\(subtasks.done) of \(subtasks.total) subtasks done", \.muted, nil, nil))
         }
         if let rule = item.properties.repeatRule {
-            glyphs.append(("repeat", "Repeats \(rule.text)", \.muted, nil))
+            glyphs.append(("repeat", RepeatWording.rowHelp(rule, move: move, today: today), \.muted, nil,
+                           move.map { RepeatWording.rowNext($0, today: today) }))
         }
         if !item.tags.isEmpty {
             glyphs.append(("tag", item.tags.count == 1 ? "1 tag" : "\(item.tags.count) tags", \.accent,
-                           item.tags.map { "#\($0.tag.name)  \($0.inFrontmatter ? "tags:" : "in text")" }.joined(separator: "\n")))
+                           item.tags.map { "#\($0.tag.name)  \($0.inFrontmatter ? "tags:" : "in text")" }.joined(separator: "\n"), nil))
         }
         return glyphs
     }

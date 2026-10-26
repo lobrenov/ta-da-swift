@@ -167,7 +167,7 @@ extension VaultIndex {
         var offset = p.dueDate.flatMap { due in p.deadline.map { due.days(to: $0) } } ?? 0
         var earliest = from
         if p.status.isClosed {
-            let rollover = (p.completedDate.map { $0 < today } ?? true) ? today : today.adding(days: 1)
+            let rollover = Self.rolloverDay(completedDate: p.completedDate, today: today)
             let closed = project(of: item)?.properties.status.isClosed == true
             guard let next = Recurrence.next(for: item, today: rollover, projectClosed: closed),
                   let date = next.dueDate ?? next.deadline else { return [] }

@@ -127,6 +127,7 @@ struct AreaBrowserView: View {
 
     private func taskRow(_ task: Item) -> some View {
         TaskRow(item: task, selected: model.isSelected(task.path), today: model.today, dates: .elsewhere,
+                move: model.index.repeatMove(of: task, today: model.today),
                 onToggle: { Task { await model.toggleCompletion(task) } },
                 onSelect: { model.click(task.path) })
         .fileMenu(model, path: task.path)

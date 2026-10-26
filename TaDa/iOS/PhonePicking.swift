@@ -198,6 +198,11 @@ private struct PickingBars: ViewModifier {
 
     private var tasks: [String] { nav.picked.filter { model.index[$0]?.properties.kind == .task } }
 
+    /// How the status menu words the picked files.
+    private var statusWording: (repeating: Bool, move: RepeatMove?) {
+        RepeatWording.statusContext(of: nav.picked.compactMap { model.index[$0] }, index: model.index, today: model.today)
+    }
+
     private var actions: some View {
         let paths = nav.picked
         return HStack(spacing: 0) {
@@ -217,7 +222,10 @@ private struct PickingBars: ViewModifier {
                     nav.endPicking()
                     Task { for path in paths { await model.setStatus(status, in: path) } }
                 }) {
-                    ForEach(Status.choices(for: tasks.isEmpty ? .project : .task), id: \.self) { Text($0.rawValue).tag(Optional($0)) }
+                    ForEach(Status.choices(for: tasks.isEmpty ? .project : .task), id: \.self) {
+                        Text(RepeatWording.statusHelp($0, repeating: statusWording.repeating, move: statusWording.move,
+                                                      today: model.today)).tag(Optional($0))
+                    }
                 } label: {
                     Label("Status", systemImage: "circle.dashed")
                 }

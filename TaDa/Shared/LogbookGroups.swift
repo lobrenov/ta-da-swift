@@ -16,13 +16,17 @@ struct LogbookGroup: Identifiable {
     var isWaiting: Bool { kind != .logged }
 
     /// Newest first, then by title. Files not logged yet come first: those that log tonight, then those `index` holds
-    /// back for a project's open tasks. A file without a `completedDate` goes in `today`'s group.
+    /// back for a project's open tasks. A file without a `completedDate` goes in `today`'s group. A repeating task that
+    /// logging moves forward isn't logged, so it's left out; one whose series ends stays.
     static func groups(_ items: [Item], index: VaultIndex, today: LocalDate) -> [LogbookGroup] {
         func date(_ item: Item) -> LocalDate { item.properties.completedDate ?? today }
         let sorted = items.sorted { date($0) != date($1) ? date($0) > date($1) : VaultIndex.byTitle($0, $1) }
         let live = sorted.filter { !$0.isLogged }
         let held = live.filter(index.waitsForOpenTasks)
-        let tonight = live.filter { !index.waitsForOpenTasks($0) }
+        let tonight = live.filter {
+            if case .moves = index.repeatMove(of: $0, today: today) { return false }
+            return !index.waitsForOpenTasks($0)
+        }
         var groups: [LogbookGroup] = []
         if !tonight.isEmpty { groups.append(LogbookGroup(title: "Completed today", kind: .logsTonight, items: tonight)) }
         if !held.isEmpty { groups.append(LogbookGroup(title: "Waiting for open tasks", kind: .waitsForOpenTasks, items: held)) }

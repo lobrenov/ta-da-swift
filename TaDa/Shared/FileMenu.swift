@@ -283,6 +283,11 @@ struct FileMenuStatuses: View {
     let choices: [Status]
     let current: Status?
     let pick: (Status) -> Void
+    /// Whether every file is a repeating task, whose Cancelled box reads "Skip this time".
+    let repeating: Bool
+    /// Where the files move when they all move to the same place, or all end.
+    let move: RepeatMove?
+    let today: LocalDate
     @State private var hovered: Status?
     @Environment(\.theme) private var theme
 
@@ -294,6 +299,8 @@ struct FileMenuStatuses: View {
         let statuses = Set(items.map(\.properties.status))
         choices = Status.choices(for: items.allSatisfy { $0.properties.kind == .project } ? .project : .task)
         current = statuses.count == 1 ? statuses.first : nil
+        today = model.today
+        (repeating, move) = RepeatWording.statusContext(of: items, index: model.index, today: model.today)
         pick = { status in
             FileMenu.shared.hide()
             Task {
@@ -316,13 +323,17 @@ struct FileMenuStatuses: View {
                         if inside { hovered = status } else if hovered == status { hovered = nil }
                     }
                     .onTapGesture { pick(status) }
-                    .help(status.rawValue)
+                    .help(help(status))
                     .accessibilityElement()
-                    .accessibilityLabel(status.rawValue)
+                    .accessibilityLabel(help(status))
                     .accessibilityAddTraits(status == current ? [.isButton, .isSelected] : .isButton)
                     .accessibilityAction { pick(status) }
             }
         }
+    }
+
+    private func help(_ status: Status) -> String {
+        RepeatWording.statusHelp(status, repeating: repeating, move: move, today: today)
     }
 
     /// The current status in an `accent` tint, the hovered one in `surface`.

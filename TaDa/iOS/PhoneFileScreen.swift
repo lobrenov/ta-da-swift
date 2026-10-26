@@ -152,6 +152,10 @@ struct PhoneFileScreen: View {
             ToolbarItemGroup(placement: .bottomBar) {
                 if item.properties.kind == .task || item.properties.kind == .project {
                     let status = item.properties.status
+                    let (repeating, move) = RepeatWording.statusContext(of: [item], index: model.index, today: model.today)
+                    let name = { (option: Status) in
+                        RepeatWording.statusHelp(option, repeating: repeating, move: move, today: model.today)
+                    }
                     let setStatus = { (status: Status) in
                         nav.play(.pick)
                         Task { await model.setStatus(status, in: item.path) }
@@ -160,7 +164,7 @@ struct PhoneFileScreen: View {
                     Menu {
                         Picker("Status", selection: Binding(get: { status }, set: setStatus)) {
                             ForEach(Status.choices(for: item.properties.kind), id: \.self) { option in
-                                Label { Text(option.rawValue) } icon: { Image(uiImage: statusImage(option)) }
+                                Label { Text(name(option)) } icon: { Image(uiImage: statusImage(option)) }
                                     .tag(option)
                             }
                         }
@@ -173,7 +177,7 @@ struct PhoneFileScreen: View {
                     .accessibilityValue(status.rawValue)
                     .accessibilityActions {
                         ForEach(Status.choices(for: item.properties.kind).filter { $0 != status }, id: \.self) { option in
-                            Button(option.rawValue) { setStatus(option) }
+                            Button(name(option)) { setStatus(option) }
                         }
                     }
                     Button("Schedule", systemImage: "calendar") { nav.sheet = .date(.due, paths: [item.path]) }
@@ -335,21 +339,35 @@ struct PhoneChips: View {
                     Image(systemName: kind.systemImage).scaledFont(size: 13, weight: .semibold)
                         .foregroundStyle(theme.color(isDone ? \.muted : kind.tint))
                     Text(date.relativeLabel(today: model.today).capitalizedFirst)
+                    repeatSuffix(for: kind)
                 }
             } else {
-                missing(kind.name)
+                missing(kind.name, suffixOf: kind)
             }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(kind.name)
-        .accessibilityValue(date.map { $0.formatted(.weekdayDayMonthYear) + (isOverdue ? ", overdue" : "") } ?? "None")
+        .accessibilityValue((date.map { $0.formatted(.weekdayDayMonthYear) + (isOverdue ? ", overdue" : "") } ?? "None")
+                            + (hostedRule(of: kind).map { ", " + RepeatWording.chipHelp($0, next: nextMove, today: model.today) } ?? ""))
     }
 
-    private func missing(_ name: String) -> some View {
+    private func missing(_ name: String, suffixOf kind: AgendaEntry.Kind? = nil) -> some View {
         chip(missing: true, text: \.muted) {
             Image(systemName: "plus").scaledFont(size: 12, weight: .semibold)
             Text(name)
+            if let kind { repeatSuffix(for: kind) }
         }
+    }
+
+    /// The task's rule when the `kind` chip carries it.
+    private func hostedRule(of kind: AgendaEntry.Kind) -> Repeat? {
+        RepeatWording.chipKind(of: item.properties) == kind ? item.properties.repeatRule : nil
+    }
+
+    private var nextMove: RepeatMove? { model.index.repeatMove(of: item, today: model.today, completing: true) }
+
+    @ViewBuilder private func repeatSuffix(for kind: AgendaEntry.Kind) -> some View {
+        if let rule = hostedRule(of: kind) { RepeatChipSuffix(rule: rule, iconSize: 12) }
     }
 
     private func chip(missing: Bool, text: KeyPath<Theme, PlatformColor> = \.fg, @ViewBuilder _ label: () -> some View) -> some View {

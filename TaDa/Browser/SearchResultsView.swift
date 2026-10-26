@@ -24,6 +24,7 @@ struct SearchResultsView: View {
                         NoteRow(item: item, selected: model.isSelected(item.path), showsFolder: true) { model.click(item.path) }
                     } else {
                         TaskRow(item: item, selected: model.isSelected(item.path), today: model.today,
+                                move: model.index.repeatMove(of: item, today: model.today),
                                 onToggle: { Task { await model.toggleCompletion(item) } },
                                 onSelect: { model.click(item.path) })
                         .taskDrag(model, path: item.path)

@@ -49,6 +49,7 @@ struct AgendaWeekList: View {
                     ForEach(entries) { entry in
                         TaskRow(item: entry.item, selected: model.isSelected(entry.item.path), today: model.today, dates: .agenda,
                                 place: model.index.parent(of: entry.item)?.title, entry: entry,
+                                move: model.index.repeatMove(of: entry.item, today: model.today),
                                 onToggle: { Task { await model.toggleCompletion(entry.item) } },
                                 onSelect: { model.click(entry.item.path) })
                         .fileMenu(model, path: entry.item.path)
