@@ -14357,6 +14357,2501 @@
       "input" : null,
       "name" : "DatePhrase.parse \"fri 3 pm\" monthDay Monday",
       "op" : "DatePhrase.parse"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          6,
+          16
+        ],
+        "status" : "Not Started",
+        "title" : "Buy milk"
+      },
+      "input" : "Intro\n- [ ] Buy milk \n- [x] Done\n",
+      "name" : "SubtaskExtraction.extract open box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          7,
+          17
+        ],
+        "status" : "Not Started",
+        "title" : "Buy milk"
+      },
+      "input" : "Intro\r\n- [ ] Buy milk \r\n- [x] Done\r\n",
+      "name" : "SubtaskExtraction.extract open box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          15
+        ],
+        "status" : "Doing",
+        "title" : "Doing it"
+      },
+      "input" : "- [/] Doing it\n",
+      "name" : "SubtaskExtraction.extract doing box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          16
+        ],
+        "status" : "Doing",
+        "title" : "Doing it"
+      },
+      "input" : "- [/] Doing it\r\n",
+      "name" : "SubtaskExtraction.extract doing box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          14
+        ],
+        "status" : "Done",
+        "title" : "Done it"
+      },
+      "input" : "- [x] Done it\n",
+      "name" : "SubtaskExtraction.extract done box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          15
+        ],
+        "status" : "Done",
+        "title" : "Done it"
+      },
+      "input" : "- [x] Done it\r\n",
+      "name" : "SubtaskExtraction.extract done box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          14
+        ],
+        "status" : "Done",
+        "title" : "Done it"
+      },
+      "input" : "- [X] Done it\n",
+      "name" : "SubtaskExtraction.extract capital X box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          15
+        ],
+        "status" : "Done",
+        "title" : "Done it"
+      },
+      "input" : "- [X] Done it\r\n",
+      "name" : "SubtaskExtraction.extract capital X box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          14
+        ],
+        "status" : "Cancelled",
+        "title" : "Dropped"
+      },
+      "input" : "- [-] Dropped\n",
+      "name" : "SubtaskExtraction.extract cancelled box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          15
+        ],
+        "status" : "Cancelled",
+        "title" : "Dropped"
+      },
+      "input" : "- [-] Dropped\r\n",
+      "name" : "SubtaskExtraction.extract cancelled box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          16
+        ],
+        "status" : "Not Started",
+        "title" : "Forwarded"
+      },
+      "input" : "- [>] Forwarded\n",
+      "name" : "SubtaskExtraction.extract forwarded box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          17
+        ],
+        "status" : "Not Started",
+        "title" : "Forwarded"
+      },
+      "input" : "- [>] Forwarded\r\n",
+      "name" : "SubtaskExtraction.extract forwarded box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          16
+        ],
+        "status" : "Not Started",
+        "title" : "Scheduled"
+      },
+      "input" : "- [<] Scheduled\n",
+      "name" : "SubtaskExtraction.extract scheduled box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          17
+        ],
+        "status" : "Not Started",
+        "title" : "Scheduled"
+      },
+      "input" : "- [<] Scheduled\r\n",
+      "name" : "SubtaskExtraction.extract scheduled box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [?] Question\n",
+      "name" : "SubtaskExtraction.extract question box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [?] Question\r\n",
+      "name" : "SubtaskExtraction.extract question box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [!] Important\n",
+      "name" : "SubtaskExtraction.extract icon box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [!] Important\r\n",
+      "name" : "SubtaskExtraction.extract icon box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- Plain item\n",
+      "name" : "SubtaskExtraction.extract plain bullet (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- Plain item\r\n",
+      "name" : "SubtaskExtraction.extract plain bullet (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "Plain line\n",
+      "name" : "SubtaskExtraction.extract plain line (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "Plain line\r\n",
+      "name" : "SubtaskExtraction.extract plain line (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [ ] \n- [ ] next\n",
+      "name" : "SubtaskExtraction.extract no text after box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [ ] \r\n- [ ] next\r\n",
+      "name" : "SubtaskExtraction.extract no text after box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          16
+        ],
+        "status" : "Not Started",
+        "title" : "Numbered"
+      },
+      "input" : "1. [ ] Numbered\n",
+      "name" : "SubtaskExtraction.extract numbered (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          0,
+          17
+        ],
+        "status" : "Not Started",
+        "title" : "Numbered"
+      },
+      "input" : "1. [ ] Numbered\r\n",
+      "name" : "SubtaskExtraction.extract numbered (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          11,
+          11
+        ],
+        "status" : "Not Started",
+        "title" : "Plus"
+      },
+      "input" : "* [x] Star\n+ [ ] Plus\n",
+      "name" : "SubtaskExtraction.extract star and plus (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          12,
+          12
+        ],
+        "status" : "Not Started",
+        "title" : "Plus"
+      },
+      "input" : "* [x] Star\r\n+ [ ] Plus\r\n",
+      "name" : "SubtaskExtraction.extract star and plus (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [ ]no space\n",
+      "name" : "SubtaskExtraction.extract no space after box (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [ ]no space\r\n",
+      "name" : "SubtaskExtraction.extract no space after box (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "> [!todo]\n> - [ ] A\n> \t- [ ] B\n",
+      "name" : "SubtaskExtraction.extract in callout (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "> [!todo]\r\n> - [ ] A\r\n> \t- [ ] B\r\n",
+      "name" : "SubtaskExtraction.extract in callout (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "> quote\n> - [ ] A\n",
+      "name" : "SubtaskExtraction.extract in quote (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "> quote\r\n> - [ ] A\r\n",
+      "name" : "SubtaskExtraction.extract in quote (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "```\n- [ ] Example\n```\n",
+      "name" : "SubtaskExtraction.extract in backtick fence (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "```\r\n- [ ] Example\r\n```\r\n",
+      "name" : "SubtaskExtraction.extract in backtick fence (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "~~~\n- [ ] Example\n~~~\n",
+      "name" : "SubtaskExtraction.extract in tilde fence (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "~~~\r\n- [ ] Example\r\n~~~\r\n",
+      "name" : "SubtaskExtraction.extract in tilde fence (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 2
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          8,
+          12
+        ],
+        "status" : "Not Started",
+        "title" : "After"
+      },
+      "input" : "~~~\n~~~\n- [ ] After\n",
+      "name" : "SubtaskExtraction.extract after closed fence (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 2
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          10,
+          13
+        ],
+        "status" : "Not Started",
+        "title" : "After"
+      },
+      "input" : "~~~\r\n~~~\r\n- [ ] After\r\n",
+      "name" : "SubtaskExtraction.extract after closed fence (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "```\n- [ ] A\n    code\n```\n",
+      "name" : "SubtaskExtraction.extract fence line (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : null,
+      "input" : "```\r\n- [ ] A\r\n    code\r\n```\r\n",
+      "name" : "SubtaskExtraction.extract fence line (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "- [ ] Child\n  - [ ] Grandchild\ntext",
+        "range" : [
+          0,
+          55
+        ],
+        "status" : "Not Started",
+        "title" : "Parent"
+      },
+      "input" : "- [ ] Parent\n  - [ ] Child\n    - [ ] Grandchild\n  text\n- [ ] Next\n",
+      "name" : "SubtaskExtraction.extract space children (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "- [ ] Child\n  - [ ] Grandchild\ntext",
+        "range" : [
+          0,
+          59
+        ],
+        "status" : "Not Started",
+        "title" : "Parent"
+      },
+      "input" : "- [ ] Parent\r\n  - [ ] Child\r\n    - [ ] Grandchild\r\n  text\r\n- [ ] Next\r\n",
+      "name" : "SubtaskExtraction.extract space children (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : {
+        "body" : "- [ ] Grandchild",
+        "range" : [
+          13,
+          32
+        ],
+        "status" : "Not Started",
+        "title" : "Child"
+      },
+      "input" : "- [ ] Parent\n\t- [ ] Child\n\t\t- [ ] Grandchild\n\t- [ ] Next\n\nAfter\n",
+      "name" : "SubtaskExtraction.extract nested child (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : {
+        "body" : "- [ ] Grandchild",
+        "range" : [
+          14,
+          34
+        ],
+        "status" : "Not Started",
+        "title" : "Child"
+      },
+      "input" : "- [ ] Parent\r\n\t- [ ] Child\r\n\t\t- [ ] Grandchild\r\n\t- [ ] Next\r\n\r\nAfter\r\n",
+      "name" : "SubtaskExtraction.extract nested child (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "- [ ] Tag it\n\tdeeper\nmore",
+        "range" : [
+          0,
+          40
+        ],
+        "status" : "Done",
+        "title" : "Ship"
+      },
+      "input" : "- [x] Ship\n\t- [ ] Tag it\n\t\tdeeper\n\tmore\n",
+      "name" : "SubtaskExtraction.extract tab children (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "- [ ] Tag it\n\tdeeper\nmore",
+        "range" : [
+          0,
+          44
+        ],
+        "status" : "Done",
+        "title" : "Ship"
+      },
+      "input" : "- [x] Ship\r\n\t- [ ] Tag it\r\n\t\tdeeper\r\n\tmore\r\n",
+      "name" : "SubtaskExtraction.extract tab children (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "- [ ] B",
+        "range" : [
+          0,
+          22
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "    - [ ] A\n\t\t- [ ] B\n\t- [ ] C\n",
+      "name" : "SubtaskExtraction.extract mixed indent (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "- [ ] B",
+        "range" : [
+          0,
+          24
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "    - [ ] A\r\n\t\t- [ ] B\r\n\t- [ ] C\r\n",
+      "name" : "SubtaskExtraction.extract mixed indent (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "one\n\ntwo",
+        "range" : [
+          0,
+          21
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "- [ ] A\n  one\n\n  two\n\n- [ ] B\n",
+      "name" : "SubtaskExtraction.extract blank lines in children (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "one\n\ntwo",
+        "range" : [
+          0,
+          25
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "- [ ] A\r\n  one\r\n\r\n  two\r\n\r\n- [ ] B\r\n",
+      "name" : "SubtaskExtraction.extract blank lines in children (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "one",
+        "range" : [
+          0,
+          14
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "- [ ] A\n  one\n\n\nAfter\n",
+      "name" : "SubtaskExtraction.extract trailing blank lines (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "one",
+        "range" : [
+          0,
+          16
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "- [ ] A\r\n  one\r\n\r\n\r\nAfter\r\n",
+      "name" : "SubtaskExtraction.extract trailing blank lines (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          6,
+          10
+        ],
+        "status" : "Not Started",
+        "title" : "Last"
+      },
+      "input" : "Intro\n- [ ] Last",
+      "name" : "SubtaskExtraction.extract last line (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 1
+      },
+      "expected" : {
+        "body" : "",
+        "range" : [
+          7,
+          10
+        ],
+        "status" : "Not Started",
+        "title" : "Last"
+      },
+      "input" : "Intro\r\n- [ ] Last",
+      "name" : "SubtaskExtraction.extract last line (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "child",
+        "range" : [
+          0,
+          15
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "- [ ] A\n  child",
+      "name" : "SubtaskExtraction.extract last line with child (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "child",
+        "range" : [
+          0,
+          16
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "- [ ] A\r\n  child",
+      "name" : "SubtaskExtraction.extract last line with child (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 3
+      },
+      "expected" : {
+        "body" : "b",
+        "range" : [
+          19,
+          12
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "---\ntype: task\n---\n- [ ] A\n  b\n",
+      "name" : "SubtaskExtraction.extract with frontmatter (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 3
+      },
+      "expected" : {
+        "body" : "b",
+        "range" : [
+          22,
+          14
+        ],
+        "status" : "Not Started",
+        "title" : "A"
+      },
+      "input" : "---\r\ntype: task\r\n---\r\n- [ ] A\r\n  b\r\n",
+      "name" : "SubtaskExtraction.extract with frontmatter (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "naïve",
+        "range" : [
+          0,
+          25
+        ],
+        "status" : "Not Started",
+        "title" : "Café ☕️ 日本"
+      },
+      "input" : "- [ ] Café ☕️ 日本\n  naïve\n",
+      "name" : "SubtaskExtraction.extract emoji title (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "naïve",
+        "range" : [
+          0,
+          27
+        ],
+        "status" : "Not Started",
+        "title" : "Café ☕️ 日本"
+      },
+      "input" : "- [ ] Café ☕️ 日本\r\n  naïve\r\n",
+      "name" : "SubtaskExtraction.extract emoji title (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "range" : [
+              6,
+              8
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "range" : [
+              6,
+              8
+            ],
+            "status" : "Done",
+            "title" : "B"
+          },
+          {
+            "body" : "",
+            "range" : [
+              6,
+              8
+            ],
+            "status" : "Doing",
+            "title" : "C"
+          }
+        ],
+        "text" : "Intro\nOutro\n"
+      },
+      "input" : "Intro\n- [ ] A\n- [x] B\n- [/] C\nOutro\n",
+      "name" : "SubtaskExtraction.extractAll flat (LF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "range" : [
+              7,
+              9
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "range" : [
+              7,
+              9
+            ],
+            "status" : "Done",
+            "title" : "B"
+          },
+          {
+            "body" : "",
+            "range" : [
+              7,
+              9
+            ],
+            "status" : "Doing",
+            "title" : "C"
+          }
+        ],
+        "text" : "Intro\r\nOutro\r\n"
+      },
+      "input" : "Intro\r\n- [ ] A\r\n- [x] B\r\n- [/] C\r\nOutro\r\n",
+      "name" : "SubtaskExtraction.extractAll flat (CRLF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "- [ ] A1\n- [x] A2",
+            "range" : [
+              0,
+              30
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "text",
+            "range" : [
+              0,
+              14
+            ],
+            "status" : "Cancelled",
+            "title" : "B"
+          }
+        ],
+        "text" : ""
+      },
+      "input" : "- [ ] A\n  - [ ] A1\n  - [x] A2\n- [-] B\n\ttext\n",
+      "name" : "SubtaskExtraction.extractAll nested (LF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "- [ ] A1\n- [x] A2",
+            "range" : [
+              0,
+              33
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "text",
+            "range" : [
+              0,
+              16
+            ],
+            "status" : "Cancelled",
+            "title" : "B"
+          }
+        ],
+        "text" : ""
+      },
+      "input" : "- [ ] A\r\n  - [ ] A1\r\n  - [x] A2\r\n- [-] B\r\n\ttext\r\n",
+      "name" : "SubtaskExtraction.extractAll nested (CRLF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+
+        ],
+        "text" : "Just text\n- plain\n- [!] icon\n"
+      },
+      "input" : "Just text\n- plain\n- [!] icon\n",
+      "name" : "SubtaskExtraction.extractAll none (LF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+
+        ],
+        "text" : "Just text\r\n- plain\r\n- [!] icon\r\n"
+      },
+      "input" : "Just text\r\n- plain\r\n- [!] icon\r\n",
+      "name" : "SubtaskExtraction.extractAll none (CRLF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "range" : [
+              34,
+              11
+            ],
+            "status" : "Not Started",
+            "title" : "real"
+          }
+        ],
+        "text" : "> - [ ] quoted\n```\n- [ ] code\n```\n"
+      },
+      "input" : "> - [ ] quoted\n```\n- [ ] code\n```\n- [ ] real\n",
+      "name" : "SubtaskExtraction.extractAll quote and fence (LF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "range" : [
+              38,
+              12
+            ],
+            "status" : "Not Started",
+            "title" : "real"
+          }
+        ],
+        "text" : "> - [ ] quoted\r\n```\r\n- [ ] code\r\n```\r\n"
+      },
+      "input" : "> - [ ] quoted\r\n```\r\n- [ ] code\r\n```\r\n- [ ] real\r\n",
+      "name" : "SubtaskExtraction.extractAll quote and fence (CRLF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "range" : [
+              0,
+              8
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "range" : [
+              0,
+              7
+            ],
+            "status" : "Not Started",
+            "title" : "B"
+          }
+        ],
+        "text" : ""
+      },
+      "input" : "- [ ] A\n- [ ] B",
+      "name" : "SubtaskExtraction.extractAll no trailing newline (LF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "range" : [
+              0,
+              9
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "range" : [
+              0,
+              7
+            ],
+            "status" : "Not Started",
+            "title" : "B"
+          }
+        ],
+        "text" : ""
+      },
+      "input" : "- [ ] A\r\n- [ ] B",
+      "name" : "SubtaskExtraction.extractAll no trailing newline (CRLF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "range" : [
+              0,
+              8
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "range" : [
+              0,
+              8
+            ],
+            "status" : "Not Started",
+            "title" : "B"
+          }
+        ],
+        "text" : ""
+      },
+      "input" : "- [ ] A\n- [ ] B\n",
+      "name" : "SubtaskExtraction.extractAll all lines (LF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "range" : [
+              0,
+              9
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "range" : [
+              0,
+              9
+            ],
+            "status" : "Not Started",
+            "title" : "B"
+          }
+        ],
+        "text" : ""
+      },
+      "input" : "- [ ] A\r\n- [ ] B\r\n",
+      "name" : "SubtaskExtraction.extractAll all lines (CRLF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "note",
+            "range" : [
+              29,
+              15
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "range" : [
+              30,
+              8
+            ],
+            "status" : "Not Started",
+            "title" : "B"
+          }
+        ],
+        "text" : "---\ntype: project\n---\n# Plan\n\n"
+      },
+      "input" : "---\ntype: project\n---\n# Plan\n- [ ] A\n  note\n\n- [>] B\n",
+      "name" : "SubtaskExtraction.extractAll with frontmatter (LF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "note",
+            "range" : [
+              33,
+              17
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "range" : [
+              35,
+              9
+            ],
+            "status" : "Not Started",
+            "title" : "B"
+          }
+        ],
+        "text" : "---\r\ntype: project\r\n---\r\n# Plan\r\n\r\n"
+      },
+      "input" : "---\r\ntype: project\r\n---\r\n# Plan\r\n- [ ] A\r\n  note\r\n\r\n- [>] B\r\n",
+      "name" : "SubtaskExtraction.extractAll with frontmatter (CRLF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+        "area" : null,
+        "body" : "",
+        "project" : null,
+        "status" : "Not Started",
+        "title" : "Buy milk"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-10-02\n---\n",
+      "input" : null,
+      "name" : "SubtaskExtraction.taskText Buy milk Not Started project nil area nil",
+      "op" : "SubtaskExtraction.taskText"
+    },
+    {
+      "args" : {
+        "area" : null,
+        "body" : "- [ ] Tag it\n  deeper",
+        "project" : "Ark",
+        "status" : "Done",
+        "title" : "Ship"
+      },
+      "expected" : "---\ntype: task\nstatus: Done\nproject: \"[[Ark]]\"\ncreatedDate: 2026-10-02\ncompletedDate: 2026-10-02\n---\n- [ ] Tag it\n  deeper\n",
+      "input" : null,
+      "name" : "SubtaskExtraction.taskText Ship Done project Ark area nil",
+      "op" : "SubtaskExtraction.taskText"
+    },
+    {
+      "args" : {
+        "area" : "Home",
+        "body" : "",
+        "project" : null,
+        "status" : "Doing",
+        "title" : "Dig"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\n---\n",
+      "input" : null,
+      "name" : "SubtaskExtraction.taskText Dig Doing project nil area Home",
+      "op" : "SubtaskExtraction.taskText"
+    },
+    {
+      "args" : {
+        "area" : "Home",
+        "body" : "text",
+        "project" : "Ark",
+        "status" : "Cancelled",
+        "title" : "Dropped"
+      },
+      "expected" : "---\ntype: task\nstatus: Cancelled\nproject: \"[[Ark]]\"\ncreatedDate: 2026-10-02\ncompletedDate: 2026-10-02\n---\ntext\n",
+      "input" : null,
+      "name" : "SubtaskExtraction.taskText Dropped Cancelled project Ark area Home",
+      "op" : "SubtaskExtraction.taskText"
+    },
+    {
+      "args" : {
+        "area" : null,
+        "body" : "line one\n\nline two",
+        "project" : "Say \"hi\": now",
+        "status" : "Not Started",
+        "title" : "Say \"hi\": now"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Say \\\"hi\\\": now]]\"\ncreatedDate: 2026-10-02\n---\nline one\n\nline two\n",
+      "input" : null,
+      "name" : "SubtaskExtraction.taskText Say \"hi\": now Not Started project Say \"hi\": now area nil",
+      "op" : "SubtaskExtraction.taskText"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "NoteConversion.text task to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "NoteConversion.text task to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\ntype: project\nstatus: Doing\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "NoteConversion.text task to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Doing\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "NoteConversion.text task to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Done\ncompletedDate: 2026-10-02\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "NoteConversion.text task to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Done\r\ncompletedDate: 2026-10-02\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "NoteConversion.text task to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Not Started\ndueDate: 2026-10-05\nproject:\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "NoteConversion.text task with body to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Not Started\r\ndueDate: 2026-10-05\r\nproject:\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "NoteConversion.text task with body to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\ntype: project\nstatus: Doing\ndueDate: 2026-10-05\nproject:\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "NoteConversion.text task with body to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject:\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "NoteConversion.text task with body to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Done\ndueDate: 2026-10-05\nproject:\ncompletedDate: 2026-10-02\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "NoteConversion.text task with body to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Done\r\ndueDate: 2026-10-05\r\nproject:\r\ncompletedDate: 2026-10-02\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "NoteConversion.text task with body to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\n# a comment\ntype: project\nstatus: Not Started\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "NoteConversion.text comments to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\n# a comment\r\ntype: project\r\nstatus: Not Started\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "NoteConversion.text comments to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\n# a comment\ntype: project\nstatus: Doing\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "NoteConversion.text comments to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-10-02\r\n# a comment\r\ntype: project\r\nstatus: Doing\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "NoteConversion.text comments to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\n# a comment\ntype: project\nstatus: Done\ndueDate: 2026-10-05 # d\n# end\ncompletedDate: 2026-10-02\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "NoteConversion.text comments to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\n# a comment\r\ntype: project\r\nstatus: Done\r\ndueDate: 2026-10-05 # d\r\n# end\r\ncompletedDate: 2026-10-02\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "NoteConversion.text comments to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Not Started\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "NoteConversion.text no trailing newline to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Not Started\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "NoteConversion.text no trailing newline to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\ntype: project\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "NoteConversion.text no trailing newline to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "NoteConversion.text no trailing newline to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Done\ncompletedDate: 2026-10-02\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "NoteConversion.text no trailing newline to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Done\r\ncompletedDate: 2026-10-02\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "NoteConversion.text no trailing newline to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-02\n---\nJust text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "NoteConversion.text no frontmatter to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Not Started\r\ncreatedDate: 2026-10-02\r\n---\r\nJust text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "NoteConversion.text no frontmatter to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\n---\nJust text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "NoteConversion.text no frontmatter to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Doing\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-10-02\r\n---\r\nJust text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "NoteConversion.text no frontmatter to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ntype: project\nstatus: Done\ncreatedDate: 2026-10-02\ncompletedDate: 2026-10-02\n---\nJust text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "NoteConversion.text no frontmatter to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Done\r\ncreatedDate: 2026-10-02\r\ncompletedDate: 2026-10-02\r\n---\r\nJust text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "NoteConversion.text no frontmatter to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-02\n---\n",
+      "input" : "",
+      "name" : "NoteConversion.text empty file to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-10-02\n---\n",
+      "input" : "",
+      "name" : "NoteConversion.text empty file to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\n---\n",
+      "input" : "",
+      "name" : "NoteConversion.text empty file to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\n---\n",
+      "input" : "",
+      "name" : "NoteConversion.text empty file to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ntype: project\nstatus: Done\ncreatedDate: 2026-10-02\ncompletedDate: 2026-10-02\n---\n",
+      "input" : "",
+      "name" : "NoteConversion.text empty file to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ntype: project\nstatus: Done\ncreatedDate: 2026-10-02\ncompletedDate: 2026-10-02\n---\n",
+      "input" : "",
+      "name" : "NoteConversion.text empty file to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Not Started\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "NoteConversion.text empty keys to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Not Started\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "NoteConversion.text empty keys to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\ntype: project\nstatus: Doing\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "NoteConversion.text empty keys to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Doing\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "NoteConversion.text empty keys to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Done\nproject:\ncompletedDate: 2026-10-02\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "NoteConversion.text empty keys to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Done\r\nproject:\r\ncompletedDate: 2026-10-02\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "NoteConversion.text empty keys to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "NoteConversion.text flow tags to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Not Started\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "NoteConversion.text flow tags to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\narea: \"[[Home]]\"\ntype: project\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "NoteConversion.text flow tags to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\narea: \"[[Home]]\"\r\ntype: project\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "NoteConversion.text flow tags to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ntype: project\nstatus: Done\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\ncompletedDate: 2026-10-02\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "NoteConversion.text flow tags to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Done\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\ncompletedDate: 2026-10-02\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "NoteConversion.text flow tags to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\nstatus: Not Started\ntype: project\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "NoteConversion.text block tags to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\nstatus: Not Started\r\ntype: project\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "NoteConversion.text block tags to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\nstatus: Doing\narea: \"[[Home]]\"\ntype: project\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "NoteConversion.text block tags to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\nstatus: Doing\r\narea: \"[[Home]]\"\r\ntype: project\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "NoteConversion.text block tags to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\nstatus: Done\ntype: project\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\ncompletedDate: 2026-10-02\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "NoteConversion.text block tags to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\nstatus: Done\r\ntype: project\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\ncompletedDate: 2026-10-02\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "NoteConversion.text block tags to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\nstatus: Not Started\ncreatedDate: 2026-10-02\ntype: project\ntags: a, b\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "NoteConversion.text string tags to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\nstatus: Not Started\r\ncreatedDate: 2026-10-02\r\ntype: project\r\ntags: a, b\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "NoteConversion.text string tags to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\nstatus: Doing\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\ntype: project\ntags: a, b\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "NoteConversion.text string tags to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\nstatus: Doing\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-10-02\r\ntype: project\r\ntags: a, b\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "NoteConversion.text string tags to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\nstatus: Done\ncreatedDate: 2026-10-02\ntype: project\ntags: a, b\ncompletedDate: 2026-10-02\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "NoteConversion.text string tags to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\nstatus: Done\r\ncreatedDate: 2026-10-02\r\ntype: project\r\ntags: a, b\r\ncompletedDate: 2026-10-02\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "NoteConversion.text string tags to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\nstatus: Not Started\ncreatedDate: 2026-10-02\ntype: project\ntags: [a, # c\n  b]\n---\n",
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "NoteConversion.text tags with comment to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\nstatus: Not Started\r\ncreatedDate: 2026-10-02\r\ntype: project\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "NoteConversion.text tags with comment to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\nstatus: Doing\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\ntype: project\ntags: [a, # c\n  b]\n---\n",
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "NoteConversion.text tags with comment to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\nstatus: Doing\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-10-02\r\ntype: project\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "NoteConversion.text tags with comment to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\nstatus: Done\ncreatedDate: 2026-10-02\ntype: project\ntags: [a, # c\n  b]\ncompletedDate: 2026-10-02\n---\n",
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "NoteConversion.text tags with comment to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\nstatus: Done\r\ncreatedDate: 2026-10-02\r\ntype: project\r\ntags: [a, # c\r\n  b]\r\ncompletedDate: 2026-10-02\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "NoteConversion.text tags with comment to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Not Started\nproject:\narea:\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "NoteConversion.text both parents to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Not Started\r\nproject:\r\narea:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "NoteConversion.text both parents to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Doing\nproject:\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "NoteConversion.text both parents to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Doing\r\nproject:\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "NoteConversion.text both parents to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ncreatedDate: 2026-10-02\ntype: project\nstatus: Done\nproject:\narea:\ncompletedDate: 2026-10-02\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "NoteConversion.text both parents to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-10-02\r\ntype: project\r\nstatus: Done\r\nproject:\r\narea:\r\ncompletedDate: 2026-10-02\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "NoteConversion.text both parents to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ntype: project\nstatus: Not Started\nproject:\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "NoteConversion.text home buy seed to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Not Started\r\nproject:\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "NoteConversion.text home buy seed to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\narea: \"[[Home]]\"\ntype: project\nstatus: Doing\nproject:\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "NoteConversion.text home buy seed to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\narea: \"[[Home]]\"\r\ntype: project\r\nstatus: Doing\r\nproject:\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "NoteConversion.text home buy seed to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ntype: project\nstatus: Done\nproject:\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\ncompletedDate: 2026-10-02\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "NoteConversion.text home buy seed to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Done\r\nproject:\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\ncompletedDate: 2026-10-02\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "NoteConversion.text home buy seed to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ntype: project\nstatus: Not Started\nproject:\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "NoteConversion.text home odd status to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Not Started\r\nproject:\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "NoteConversion.text home odd status to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\narea: \"[[Home]]\"\ntype: project\nstatus: Doing\nproject:\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "NoteConversion.text home odd status to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\narea: \"[[Home]]\"\r\ntype: project\r\nstatus: Doing\r\nproject:\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "NoteConversion.text home odd status to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ntype: project\nstatus: Done\nproject:\ncreatedDate: 2026-09-29\ndueDate: soon\ncompletedDate: 2026-10-02\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "NoteConversion.text home odd status to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Done\r\nproject:\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\ncompletedDate: 2026-10-02\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "NoteConversion.text home odd status to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ntype: project\nstatus: Not Started\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "NoteConversion.text home inbox to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Not Started\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "NoteConversion.text home inbox to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "NoteConversion.text home inbox to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Doing\r\narea: \"[[Home]]\"\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "NoteConversion.text home inbox to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ntype: project\nstatus: Done\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\ncompletedDate: 2026-10-02\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "NoteConversion.text home inbox to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Done\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\ncompletedDate: 2026-10-02\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "NoteConversion.text home inbox to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\ntype: project\nstatus: Not Started\narea:\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "NoteConversion.text design resolve cabin to project Not Started parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Not Started"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Not Started\r\narea:\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "NoteConversion.text design resolve cabin to project Not Started parent nil (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\ntype: project\nstatus: Doing\narea: \"[[Home]]\"\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "NoteConversion.text design resolve cabin to project Doing parent area (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        },
+        "status" : "Doing"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Doing\r\narea: \"[[Home]]\"\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "NoteConversion.text design resolve cabin to project Doing parent area (CRLF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\ntype: project\nstatus: Done\narea:\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\ncompletedDate: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "NoteConversion.text design resolve cabin to project Done parent nil (LF)",
+      "op" : "NoteConversion.text"
+    },
+    {
+      "args" : {
+        "kind" : "project",
+        "parent" : null,
+        "status" : "Done"
+      },
+      "expected" : "---\r\ntype: project\r\nstatus: Done\r\narea:\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\ncompletedDate: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "NoteConversion.text design resolve cabin to project Done parent nil (CRLF)",
+      "op" : "NoteConversion.text"
     }
   ],
   "today" : "2026-10-02"

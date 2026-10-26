@@ -444,6 +444,99 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         }
     }
 
+    // SubtaskExtraction
+    func json(_ extract: SubtaskExtraction.Extract) -> [String: Any] {
+        ["title": extract.title, "status": extract.status.rawValue, "body": extract.body,
+         "range": [extract.range.location, extract.range.length]]
+    }
+    func lineStart(_ line: Int, in text: String) -> Int {
+        var location = 0
+        for _ in 0..<line { location = NSMaxRange((text as NSString).lineRange(for: NSRange(location: location, length: 0))) }
+        return location
+    }
+    let extractInputs: [(label: String, text: String, line: Int)] = [
+        ("open box", "Intro\n- [ ] Buy milk \n- [x] Done\n", 1),
+        ("doing box", "- [/] Doing it\n", 0),
+        ("done box", "- [x] Done it\n", 0),
+        ("capital X box", "- [X] Done it\n", 0),
+        ("cancelled box", "- [-] Dropped\n", 0),
+        ("forwarded box", "- [>] Forwarded\n", 0),
+        ("scheduled box", "- [<] Scheduled\n", 0),
+        ("question box", "- [?] Question\n", 0),
+        ("icon box", "- [!] Important\n", 0),
+        ("plain bullet", "- Plain item\n", 0),
+        ("plain line", "Plain line\n", 0),
+        ("no text after box", "- [ ] \n- [ ] next\n", 0),
+        ("numbered", "1. [ ] Numbered\n", 0),
+        ("star and plus", "* [x] Star\n+ [ ] Plus\n", 1),
+        ("no space after box", "- [ ]no space\n", 0),
+        ("in callout", "> [!todo]\n> - [ ] A\n> \t- [ ] B\n", 1),
+        ("in quote", "> quote\n> - [ ] A\n", 1),
+        ("in backtick fence", "```\n- [ ] Example\n```\n", 1),
+        ("in tilde fence", "~~~\n- [ ] Example\n~~~\n", 1),
+        ("after closed fence", "~~~\n~~~\n- [ ] After\n", 2),
+        ("fence line", "```\n- [ ] A\n    code\n```\n", 1),
+        ("space children", "- [ ] Parent\n  - [ ] Child\n    - [ ] Grandchild\n  text\n- [ ] Next\n", 0),
+        ("nested child", "- [ ] Parent\n\t- [ ] Child\n\t\t- [ ] Grandchild\n\t- [ ] Next\n\nAfter\n", 1),
+        ("tab children", "- [x] Ship\n\t- [ ] Tag it\n\t\tdeeper\n\tmore\n", 0),
+        ("mixed indent", "    - [ ] A\n\t\t- [ ] B\n\t- [ ] C\n", 0),
+        ("blank lines in children", "- [ ] A\n  one\n\n  two\n\n- [ ] B\n", 0),
+        ("trailing blank lines", "- [ ] A\n  one\n\n\nAfter\n", 0),
+        ("last line", "Intro\n- [ ] Last", 1),
+        ("last line with child", "- [ ] A\n  child", 0),
+        ("with frontmatter", "---\ntype: task\n---\n- [ ] A\n  b\n", 3),
+        ("emoji title", "- [ ] Café ☕️ 日本\n  naïve\n", 0),
+    ]
+    for (label, text, line) in extractInputs {
+        add("SubtaskExtraction.extract", label, ["lineIndex": line], input: text) { text in
+            SubtaskExtraction.extract(lineAt: lineStart(line, in: text), in: text).map(json)
+        }
+    }
+    let extractAllInputs: [(label: String, text: String)] = [
+        ("flat", "Intro\n- [ ] A\n- [x] B\n- [/] C\nOutro\n"),
+        ("nested", "- [ ] A\n  - [ ] A1\n  - [x] A2\n- [-] B\n\ttext\n"),
+        ("none", "Just text\n- plain\n- [!] icon\n"),
+        ("quote and fence", "> - [ ] quoted\n```\n- [ ] code\n```\n- [ ] real\n"),
+        ("no trailing newline", "- [ ] A\n- [ ] B"),
+        ("all lines", "- [ ] A\n- [ ] B\n"),
+        ("with frontmatter", "---\ntype: project\n---\n# Plan\n- [ ] A\n  note\n\n- [>] B\n"),
+    ]
+    for (label, text) in extractAllInputs {
+        add("SubtaskExtraction.extractAll", label, [:], input: text) { text in
+            let result = SubtaskExtraction.extractAll(from: text)
+            return ["text": result.text, "extracts": result.extracts.map(json)] as [String: Any]
+        }
+    }
+    let taskTexts: [(title: String, status: Status, body: String, project: String?, area: String?)] = [
+        ("Buy milk", .notStarted, "", nil, nil),
+        ("Ship", .done, "- [ ] Tag it\n  deeper", "Ark", nil),
+        ("Dig", .doing, "", nil, "Home"),
+        ("Dropped", .cancelled, "text", "Ark", "Home"),
+        ("Say \"hi\": now", .notStarted, "line one\n\nline two", "Say \"hi\": now", nil),
+    ]
+    for (title, status, body, project, area) in taskTexts {
+        let extract = SubtaskExtraction.Extract(title: title, status: status, body: body, range: NSRange(location: 0, length: 0))
+        add("SubtaskExtraction.taskText", "\(title) \(status.rawValue) project \(project ?? "nil") area \(area ?? "nil")",
+            ["title": title, "status": status.rawValue, "body": body, "project": orNull(project), "area": orNull(area)], input: nil) { _ in
+            SubtaskExtraction.taskText(extract, project: project, area: area, today: today)
+        }
+    }
+
+    // NoteConversion
+    let conversions: [(status: Status, parent: Parent?, parentArg: Any)] = [
+        (.notStarted, nil, NSNull()),
+        (.doing, .area("Home"), ["kind": "area", "title": "Home"]),
+        (.done, nil, NSNull()),
+    ]
+    for (label, text) in core {
+        for (status, parent, parentArg) in conversions {
+            add("NoteConversion.text", "\(label) to project \(status.rawValue) parent \(parent == nil ? "nil" : "area")",
+                ["kind": "project", "status": status.rawValue, "parent": parentArg], input: text) {
+                NoteConversion.text($0, to: .project, status: status, parent: parent, today: today)
+            }
+        }
+    }
+
     let names = cases.map { $0["name"] as! String }
     #expect(Set(names).count == names.count, "duplicate case names")
     try write(["today": today.description, "cases": cases] as [String: Any], to: "writes.json")
