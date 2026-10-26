@@ -21,8 +21,8 @@ struct LogbookGroup: Identifiable {
         func date(_ item: Item) -> LocalDate { item.properties.completedDate ?? today }
         let sorted = items.sorted { date($0) != date($1) ? date($0) > date($1) : VaultIndex.byTitle($0, $1) }
         let live = sorted.filter { !$0.isLogged }
-        let held = live.filter(index.waitsForOpenTasks)
-        let tonight = live.filter { !index.waitsForOpenTasks($0) }
+        let held = live.filter { index.waitsForOpenTasks($0, today: today) }
+        let tonight = live.filter { !index.waitsForOpenTasks($0, today: today) }
         var groups: [LogbookGroup] = []
         if !tonight.isEmpty { groups.append(LogbookGroup(title: "Completed today", kind: .logsTonight, items: tonight)) }
         if !held.isEmpty { groups.append(LogbookGroup(title: "Waiting for open tasks", kind: .waitsForOpenTasks, items: held)) }
