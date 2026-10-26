@@ -6,6 +6,7 @@ Capsule controls 26px tall: `td-chip` shows and edits one frontmatter key, `td-t
 
 - `td-chip` — `size-chip` (26px), `radius-full`, padding 0 10px, 12.5px `fg`, 5–7px from its glyph. `code` fill inside a 1px `border` ring; `surface` under the pointer.
 - One per key under a file's title, 6px apart, wrapping: status (its 7px dot, the name, a `muted` chevron), the parent (a task's project with its ring or area with its cube, a project's area) in `link` (`is-link`), then due date (calendar in `due`) and deadline (flag in `deadline`). A date that has passed is `deadline`; a done file's dates are all `muted`.
+- A repeating task's due chip (its deadline chip when it has no due date, the dashed due chip when it has neither) ends with `·`, the `repeat` glyph and the rule's frequency ("Weekly", "Every 2 weeks when done") in `muted`; its tooltip gives the rule, its end and the next date. A rule Ta Da can't read shows as written after a `blocked` warning glyph.
 - `is-missing` — a key the file doesn't have: no fill, a dashed 1px `surface` ring (`muted` under the pointer), a `plus` and the key's name in `muted`.
 - `is-open` — while its menu is open: `surface`, `strong` text and a 2px `accent` ring outside the chip.
 - `is-unresolved` — a parent no file has: struck through in `muted`.

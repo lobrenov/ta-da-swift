@@ -1,7 +1,7 @@
 # Ta Da for Obsidian — Recurrence
 
 ## Context
-Ta Da's recurrence (`docs/build plans/recurrence v1.md`) gives a task a `repeat` rule; Ta Da's daily logging moves a completed repeating task forward instead of logging it. Its R6 ports the rule, the next date, the occurrences query and `dayMarks` to the plugin's core. This plan brings the app's recurrence UI to the plugin, as designed on the canvas's Repeating tasks page, and pairs with the Ta Da version that ships recurrence.
+Ta Da's recurrence (`docs/archive/build plans/recurrence v1.md`) gives a task a `repeat` rule; Ta Da's daily logging moves a completed repeating task forward instead of logging it. Its R6 ports the rule, the next date, the occurrences query and `dayMarks` to the plugin's core. This plan brings the app's recurrence UI to the plugin, as designed on the canvas's Repeating tasks page, and pairs with the Ta Da version that ships recurrence.
 
 ## Decisions
 - **No rollover in the plugin.** A repeating task completed in Obsidian stays Done until Ta Da's next logging run moves it forward. The plugin shows where it will move.

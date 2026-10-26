@@ -22,10 +22,16 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 ## File menu
 
 - Opens at the pointer on a right-click or control-click; the right-clicked row gets a 2px `accent` inset ring (`td-row.is-target`, `td-nav-item.is-target`) while it's open.
-- A task's or project's menu starts with its status boxes in a row spread across its width: Not Started, Doing, Ongoing (projects only), Blocked, Done and Cancelled, each 16px in a 28px square (`radius-sm`), then a separator. The current status has an `accent` tint (14% light, 22% dark), the hovered box `surface`; each says its status in a tooltip. A click sets it and closes the menu. On picked rows the boxes set every picked file; Ongoing shows only when they're all projects, and the tint only when they share a status.
+- A task's or project's menu starts with its status boxes in a row spread across its width: Not Started, Doing, Ongoing (projects only), Blocked, Done and Cancelled, each 16px in a 28px square (`radius-sm`), then a separator. The current status has an `accent` tint (14% light, 22% dark), the hovered box `surface`; each says its status in a tooltip; on a repeating task Cancelled's says "Skip this time", and Done's and Skip's where it moves ("moves to Mon 9 Nov", or "ends the repeat"). A click sets it and closes the menu. On picked rows the boxes set every picked file; Ongoing shows only when they're all projects, and the tint only when they share a status.
 - Items for a task or project: Move (⌘P; the area menu for a project), Schedule (⌘S), Set Deadline… (⌘D), Tags… (⌘T, one file only), Reveal in Finder (no shortcut) and Delete (⌘⌫). For an area: New Task in and New Project in it, Open Area File, Tags…, Reveal in Finder and Delete. For a note: Task…, Project… and Area… (converting it, the folder each goes to on the right), Tags…, Move to Folder…, Reveal in Finder and Move to Trash. In Trash: Restore (⌘⌫), Reveal in Finder and, after a separator, Delete Forever (⌥⌘⌫).
 - A right-click on a picked row acts on every picked row, and Move, Schedule and Delete name the count: "Move 3 Tasks", "Schedule 3 Tasks", "Delete 3 Tasks". Reveal in Finder selects every picked file in one Finder window. A right-click on any other row acts on that row only.
 - Move opens the project menu, Schedule and Set Deadline… the date menu, and Tags… tagMenu, at the pointer in the file menu's place; the row stays ringed until it closes. For several files the date menu fills a date only when they all share it.
+
+## Date menu
+
+- A task's due date menu reads a phrase starting with `every` as a repeat rule as it's typed; ↵ sets it. The month shows the rule's coming occurrences on a faint `due` fill (30%, 26% on dark schemes).
+- Its Repeat section sits under the month after a hairline: a REPEAT label (Stop on the right once a rule is set), the rule spelled out (`muted` while only typed), the helper text, then When done (a switch) and Ends ("Never" or the date).
+- Ends swaps the menu to the end date: a "‹ Repeat ends" label, the field, Never, In 4 weeks and End of year, the month, and a line giving the rule with its end.
 
 ## Link menu
 

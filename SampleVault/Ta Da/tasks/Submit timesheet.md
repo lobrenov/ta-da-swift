@@ -9,6 +9,6 @@ tags:
   - admin
   - work/billing
 dueDate: 2026-10-02
-repeat: Weekly · Fri
+repeat: every week on Fri
 ---
 Hours for the week ending Friday 2 October.

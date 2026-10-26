@@ -146,13 +146,13 @@ The settings that belong to the folder, not the device, are in `Ta Da/settings.j
 
 A task with a `repeat` rule comes back after it's completed, in the same file: its dates move to the next occurrence and it reopens. No file is made per occurrence, and none is logged per completion.
 
-- **Rule**: an English phrase, read case-insensitively, with day names in full or three letters:
+- **Rule**: an English phrase, read case-insensitively, with day and month names in full or three letters:
   - `every day` | `every N days` | `every weekday` (Monday to Friday)
   - `every week` | `every N weeks`, optionally `on Mon, Thu`
   - `every month` | `every N months`, optionally `on the 15th` | `on the last day` | `on the 2nd Tuesday` | `on the last Friday`
   - `every year` | `every N years`, optionally `on Oct 26`
   - then optionally `until YYYY-MM-DD` and `when done`, in either order.
-- **Writing**: Ta Da writes the rule in this form, `until` before `when done`, with numbers as digits, days as three letters and ordinals as `1st`…`5th`. A month or year rule is always written with its day (`every month on the 31st`). `N` is 1 or more; `every 1 week` is written `every week`.
+- **Writing**: Ta Da writes the rule in this form, `until` before `when done`, with numbers as digits, days and months as three letters and ordinals as `1st`…`5th`. A month or year rule is always written with its day (`every month on the 31st`). `N` is 1 to 999; `every 1 week` is written `every week`.
 - A rule that can't be read (`Weekly · Fri`) is shown as written, with a warning, and the task doesn't repeat.
 - **Next date** is worked out from the rule, the task's dates and the day the task moves forward (the logging run's day, or the day after `completedDate` for a task completed that day):
   - A regular schedule moves to the first date of the rule after the current `dueDate` that is on or after that day, so missed occurrences are skipped.
@@ -163,7 +163,7 @@ A task with a `repeat` rule comes back after it's completed, in the same file: i
   - `every N` counts its periods from the current date's day, week, month or year; weeks run Monday to Sunday.
 - **End**: `until` is inclusive. When the next date would be after it, the task isn't moved forward; it logs as any completed task.
 - **Moving forward** happens in logging (see Behaviour rules), not when the task is completed. In one write: `status: Not Started`, `completedDate` emptied, `dueDate` and `deadline` set to the next date, and subtasks `[x]` (or `[X]`), `[/]` and `[-]` reset to `[ ]`; other markers stay. Done and Cancelled (a skipped occurrence) both move forward. Clearing `repeat` ends the series, as does completing the task's project: the task then logs with it.
-- **Occurrences**: a task's coming dates in a range, as logging would move it, each assumed done on its day. A completed task's start at the date it will move to; an open task's at the first date after its current date that's after today (missed dates are skipped, as in moving forward). They stop at `until`. A `when done` rule's are estimates, except the date a completed task will move to.
+- **Occurrences**: a task's coming dates in a range, as logging would move it, each assumed done on its day. A completed task's start at the date it will move to; an open task's at the first date after its current date that's after today (missed dates are skipped, as in moving forward). They stop at `until`. A `when done` rule's are estimates, except the date a completed task will move to. They mark their days in the Agenda as open tasks do, except those of `every day` and `every weekday` rules.
 - Projects, areas and notes don't repeat.
 
 ## Behaviour rules

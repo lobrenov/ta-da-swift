@@ -4,7 +4,6 @@ Work not yet built.
 
 ## Features
 
-- Recurrence: acting on `repeat` (it is parsed and shown in task rows only), and showing it in Live mode.
 - `.itermcolors` import into a theme.
 - Developer ID signing and notarisation, or TestFlight for Mac, if Ta Da joins the paid Apple Developer Program: testers would no longer unblock each beta build (`docs/beta-builds.md`).
 - Per-file iCloud sync state.
