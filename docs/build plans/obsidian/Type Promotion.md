@@ -27,6 +27,6 @@ Ta Da 0.34.5 and 0.34.6 promote items up the task hierarchy: Extract to Task mak
 6. **Docs and version**: `CLAUDE.md`'s layout and commands lines in the plugin; Ta Da's `docs/architecture.md` (Obsidian section); the canvas's Obsidian page gets the modal and menus. Version 0.3.0 (`manifest.json`, `package.json`, `versions.json`), tagged, and its row in `docs/versioning.md`'s pairing table (0.3.0 | 0.34.6). Check: `npm run build` passes; the plugin installed in SampleVault matches the apps on the same files.
 
 ## Risks
-- Obsidian's link updating is a user setting: with it off, links to a converted task keep its old path until fixed by hand. The modal says so when it's off.
+- Obsidian's link updating is a user setting, off by default: Obsidian then asks whether to update links when the file moves, and with "Don't update" links to a converted task keep its old path.
 - Obsidian's mobile menu may draw `setSubmenu` differently, or not at all; check on iPhone in step 4.
 - An `editor-menu` right-click lands on the caret's line, not necessarily the box clicked; the item acts on the line the menu was opened on.
