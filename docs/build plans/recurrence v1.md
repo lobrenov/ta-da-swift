@@ -32,7 +32,7 @@ Starting point, as checked on 2026-10-26:
 - **End date**: `until` is inclusive. When the next date would pass it, the task isn't moved forward; it logs as any completed task.
 - **Occurrences**: a TaDaCore query gives a task's occurrences in a date range, with an injected `today`. When-done occurrences are estimates (each assumed done on its due date). A completed task not yet moved forward projects from the date it will move to. Occurrences stop at `until`.
 - No counts, no completion history, no repeating projects.
-- **Obsidian plugin**: ports the rule, the next date, rollover in its logging, and the occurrences query, against the conformance fixtures.
+- **Obsidian plugin**: ports the rule, the next date and the occurrences query, against the conformance fixtures. It doesn't roll tasks forward; only Ta Da's logging does. Its recurrence UI is its own plan, `docs/build plans/obsidian/Recurrence.md`.
 - **Versions**: each stage is a `z`; the plan ships as the next `y` once completed. The plugin's port is its next `y`, paired per `docs/versioning.md`.
 
 ## Stages
@@ -58,10 +58,11 @@ Each stage: swift-expert builds it, commit, code-reviewer reviews the commit (up
 
 ### R5 — Occurrences (TaDaCore)
 - `Queries.occurrences(of:from:through:today:)`, each with its date, kind (due or deadline) and an estimated flag.
-- Check: tests for regular and when-done rules, a completed task before rollover, `until`, ranges before `today`, and `LargeVaultTests` timings no worse than now.
+- `Queries.dayMarks`: an occurrence marks its day as an open task does, except for every day and every weekday rules.
+- Check: tests for regular and when-done rules, a completed task before rollover, `until`, ranges before `today`, `dayMarks` with occurrences, and `LargeVaultTests` timings no worse than now.
 
-### R6 — Obsidian plugin
-- `writeConformance` fixtures for rules, next dates, rollover output and occurrences; the plugin's core port of R2–R5; rollover in its logging.
+### R6 — Obsidian plugin core
+- `writeConformance` fixtures for rules, next dates, occurrences and `dayMarks`; the plugin's core port of R2, R3 and R5. No rollover: the plugin reads and writes `repeat` but never moves a task forward.
 - Check: plugin `npm test` against the new fixtures, `npm run build`.
 
 ### R7 — Date menu (Mac)
@@ -78,14 +79,15 @@ The design is the canvas's Repeating tasks page (Date menu · Repeat).
 - **Due chip** (`DatePropertyChip`, `TaDa/Document/PropertyChips.swift`): after the date, `·`, the repeat glyph and the rule's frequency ("Weekly", "Every 2 weeks when done") in `muted`; the tooltip gives the rule, its end and the next date. On the deadline chip when there's no due date; on the dashed due chip when there's no date. An unreadable rule shows as written after a `blocked` warning glyph, with "Ta Da can't read this rule, so the task doesn't repeat". The iPhone chips match.
 - **Rows** (`RowGlyphs`, `TaDa/Browser/TaskRow.swift`, and `PhoneTaskRow`): the repeat glyph stays `muted`; its tooltip and spoken label give the rule. A done or skipped repeating task waiting to move shows "↻ <date it moves to>" instead of the date pill, or "↻ Ended" when `until` ends it.
 - **Status menu** (`StatusChoiceRow`, `TaDa/Document/PropertyPickers.swift`) on a repeating task: Cancelled reads "Skip this time"; Done and Skip say "moves to <date>" (Done: "ends the repeat" on the last occurrence) instead of "sets completedDate". The file menu's Cancelled box (`TaDa/Shared/FileMenu.swift`) and the iPhone status menu use the same wording.
+- **Logbook** (`TaDa/Shared/LogbookGroups.swift`): Completed today leaves out repeating tasks that will move forward; one whose `until` ends it stays.
 - Check: tests for the chip label, tooltip and the rows' next-date text; the views in the running app on Mac and iPhone.
 
 ### R9 — Agenda
 - **Day list** (`AgendaDayList`): days after a task's current date list its occurrences in a Repeats group (repeat glyph, `muted` heading) under the day's tasks: `muted` titles, the repeat glyph, a dashed box that can't be ticked, a click opening the task. "≈" marks a when-done estimate; a deadline occurrence has a Deadline pill. Today, Loose tasks, project and area pages and Search are unchanged.
 - **Week list** (`AgendaWeekList`): a day counts its repeats ("2 tasks · 4 repeats"); a day with only repeats shows the first in `muted` with the glyph.
-- **Marks** (`Queries.dayMarks`, `AgendaStrip`): an occurrence marks its day with the solid due dot, except every day and every weekday rules, which mark none.
+- **Marks** (`AgendaStrip`): R5's `dayMarks` gives occurrences the solid due dot.
 - iPhone's Agenda pages match.
-- Check: tests for `dayMarks` with occurrences; `LargeVaultUITimingTests` no worse than now; the views in the running app.
+- Check: `LargeVaultUITimingTests` no worse than now; the views in the running app.
 
 ### R10 — iPhone date sheet
 - `PhoneDateSheet` (`TaDa/iOS/PhoneSheets.swift`): the due date's month shows occurrences on the faint `due` fill; a Repeat row (glyph, "Repeat", the frequency, chevron) over Clear Due Date pushes a Repeat page in the sheet.
