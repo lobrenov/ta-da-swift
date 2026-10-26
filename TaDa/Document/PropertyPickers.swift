@@ -71,11 +71,10 @@ final class PropertyPicker {
     func pickStatus(of item: Item, model: AppModel, anchor: ScreenAnchor) {
         guard let window = anchor.window, toggle(item.path, "status", anchor: anchor.rect) else { return }
         let current = item.properties.status
-        let repeating = item.properties.kind == .task && item.properties.repeatRule?.rule != nil
-        let move = model.index.repeatMove(of: item, today: model.today, completing: true)
+        let (repeating, move) = RepeatWording.statusContext(of: [item], index: model.index, today: model.today)
         let choices = Status.choices(for: item.properties.kind).map {
             StatusChoice(status: $0, isCurrent: $0 == current, repeating: repeating,
-                         note: repeating && $0.isClosed ? move.map { RepeatWording.note($0, today: model.today) } : nil)
+                         note: repeating && $0.isClosed && $0 != current ? move.map { RepeatWording.note($0, today: model.today) } : nil)
         }
         statusMenu.show([PopupMenuSection(label: "Status", items: choices)], highlight: choices.firstIndex(where: \.isCurrent),
                         theme: model.theme, below: anchor.rect, inset: 0, gap: 6, in: window) { [weak self] choice in

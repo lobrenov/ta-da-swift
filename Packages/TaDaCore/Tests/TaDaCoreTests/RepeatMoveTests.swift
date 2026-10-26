@@ -30,3 +30,8 @@ private func move(_ frontmatter: String, completing: Bool = false, project: Stri
     #expect(move("status: Done\ncompletedDate: 2026-10-02\ndueDate: 2026-10-02\nrepeat: every day", project: "Doing")
             == .moves(to: LocalDate("2026-10-03")!))
 }
+
+@Test func completingAlwaysCountsAsCompletedToday() {
+    #expect(move("status: Done\ncompletedDate: 2026-09-20\ndueDate: 2026-09-20\nrepeat: every day", completing: true)
+            == .moves(to: LocalDate("2026-10-03")!))
+}

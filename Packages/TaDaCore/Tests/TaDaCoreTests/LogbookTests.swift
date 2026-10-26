@@ -223,3 +223,16 @@ private func project(_ status: String, completed: String? = nil) -> String {
         #expect(try vault.read("Ta Da/tasks/Restore me.md").contains("project: \"[[Gone 2]]\""))
     }
 }
+
+@Test func loggingATaskCompletedTodayMovesItForwardFromTomorrow() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-02\ndueDate: 2026-09-28\nrepeat: every day\n---\n",
+                      "Ta Da/tasks/Stretch.md", in: folder)
+        let index = await vault.loadIndex()
+        let moved = try vault.log(["Ta Da/tasks/Stretch.md"], index: index, today: today)
+        #expect(moved.isEmpty)
+        let text = try vault.read("Ta Da/tasks/Stretch.md")
+        #expect(text.contains("dueDate: 2026-10-03") && text.contains("status: Not Started"))
+    }
+}

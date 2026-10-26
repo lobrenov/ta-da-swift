@@ -14,13 +14,13 @@ extension VaultIndex {
     }
 
     /// What logging does to a repeating task: nil unless it's a task whose rule reads and that is Done or Cancelled.
-    /// With `completing`, an open task counts as completed today, so this is where it would move. Uses the same
+    /// With `completing`, the task counts as completed today, so this is where it would move. Uses the same
     /// decision as the logging run, including a closed project ending the series.
     public func repeatMove(of item: Item, today: LocalDate, completing: Bool = false) -> RepeatMove? {
         var item = item
         guard item.properties.kind == .task, item.properties.repeatRule?.rule != nil else { return nil }
-        if completing, !item.properties.status.isClosed {
-            item.properties.status = .done
+        if completing {
+            if !item.properties.status.isClosed { item.properties.status = .done }
             item.properties.completedDate = today
         }
         guard item.properties.status.isClosed else { return nil }

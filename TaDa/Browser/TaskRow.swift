@@ -53,23 +53,34 @@ struct RowGlyphs: View {
         let glyphs = glyphs
         // The glyphs drop, keeping their spoken labels, when the row's title would otherwise truncate.
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 6) {
-                ForEach(glyphs, id: \.systemImage) { glyph in
-                    HStack(spacing: 4) {
-                        Image(systemName: glyph.systemImage)
-                        if let text = glyph.text { Text(text) }
-                    }
-                    .rowFont(iconSize)
-                    .foregroundStyle(theme.color(glyph.tint))
-                    .help(glyph.help ?? glyph.spoken)
-                    .accessibilityLabel(glyph.spoken)
-                }
+            glyphRow(glyphs)
+            // A repeat glyph keeps its text; the other glyphs drop.
+            if let repeating = glyphs.first(where: { $0.systemImage == "repeat" && $0.text != nil }) {
+                glyphRow([repeating])
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(glyphs.map(\.spoken).joined(separator: ", "))
             }
-            .fixedSize()
             Color.clear.frame(width: 0)
                 .accessibilityElement()
                 .accessibilityLabel(glyphs.map(\.spoken).joined(separator: ", "))
         }
+    }
+
+    private func glyphRow(_ glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?, text: String?)]) -> some View {
+        HStack(spacing: 6) {
+            ForEach(glyphs, id: \.systemImage) { glyph in
+                HStack(spacing: 4) {
+                    Image(systemName: glyph.systemImage)
+                    if let text = glyph.text { Text(text) }
+                }
+                .rowFont(iconSize)
+                .foregroundStyle(theme.color(glyph.tint))
+                .help(glyph.help ?? glyph.spoken)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(glyph.spoken)
+            }
+        }
+        .fixedSize()
     }
 
     private var glyphs: [(systemImage: String, spoken: String, tint: KeyPath<Theme, PlatformColor>, help: String?, text: String?)] {

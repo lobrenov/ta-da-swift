@@ -33,10 +33,11 @@ enum RepeatWording {
         return (repeating, repeating && moves.count == 1 ? moves.first ?? nil : nil)
     }
 
-    /// A status box's tooltip and spoken name: "Skip this time · moves to Mon 9 Nov". Without a `move` only the name.
-    static func statusHelp(_ status: Status, repeating: Bool, move: RepeatMove?, today: LocalDate) -> String {
+    /// A status box's tooltip and spoken name: "Skip this time · moves to Mon 9 Nov". Without a `move`, or for the
+    /// `current` status, only the name.
+    static func statusHelp(_ status: Status, repeating: Bool, move: RepeatMove?, current: Status? = nil, today: LocalDate) -> String {
         let name = title(of: status, repeating: repeating)
-        guard repeating, status.isClosed, let move else { return name }
+        guard repeating, status.isClosed, status != current, let move else { return name }
         return "\(name) · \(note(move, today: today))"
     }
 
@@ -60,7 +61,7 @@ enum RepeatWording {
         let spelled = ruleText(readable, today: today)
         switch move {
         case .moves(let date)?: return "\(spelled) · moves to \(day(date, today: today)) when the day changes"
-        case .ends?: return "\(spelled) · the repeat ends, logged when the day changes"
+        case .ends?: return "\(spelled) · the repeat ends"
         case nil: return spelled
         }
     }
@@ -76,7 +77,7 @@ enum RepeatWording {
         guard let readable = rule.rule else { return "Ta Da can't read this rule, so the task doesn't repeat" }
         let spelled = ruleText(readable, today: today)
         guard case .moves(let date)? = next else { return spelled }
-        return "\(spelled) · next \(date.relativeLabel(today: today))"
+        return "\(spelled) · next \(day(date, today: today))"
     }
 }
 

@@ -394,7 +394,8 @@ struct PhoneFileMenu: View {
             Task { await model.setStatus(status, in: path) }
         }) {
             ForEach(Status.choices(for: item.properties.kind), id: \.self) {
-                Text(RepeatWording.statusHelp($0, repeating: repeating, move: move, today: model.today)).tag($0)
+                Text(RepeatWording.statusHelp($0, repeating: repeating, move: move, current: item.properties.status,
+                                              today: model.today)).tag($0)
             }
         } label: {
             Label("Status", systemImage: "circle.dashed")

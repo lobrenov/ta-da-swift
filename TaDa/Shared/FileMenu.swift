@@ -333,7 +333,7 @@ struct FileMenuStatuses: View {
     }
 
     private func help(_ status: Status) -> String {
-        RepeatWording.statusHelp(status, repeating: repeating, move: move, today: today)
+        RepeatWording.statusHelp(status, repeating: repeating, move: move, current: current, today: today)
     }
 
     /// The current status in an `accent` tint, the hovered one in `surface`.

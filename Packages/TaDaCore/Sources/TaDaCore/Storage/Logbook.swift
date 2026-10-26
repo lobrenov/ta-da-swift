@@ -16,7 +16,7 @@ extension Vault {
     /// Moves files into their month's folder in the Logbook, creating it if needed and numbering names that are taken
     /// there, or by another project for a project. A file without a `completedDate` goes in `today`'s month. A file no
     /// longer at its path (another device logged it) is skipped. A completed repeating task with a next date moves
-    /// forward in place instead (`Recurrence`), so it isn't in the result; one whose file no longer moves forward is
+    /// forward in place instead (`Recurrence`, from the day after its `completedDate` when that is `today`), so it isn't in the result; one whose file no longer moves forward is
     /// logged. A file that can't be moved doesn't stop the
     /// rest; the first error is thrown only when nothing moved. When a project's
     /// name had to change, its tasks' links follow it. Returns each moved file's new path by its old one.
@@ -29,8 +29,9 @@ extension Vault {
         for item in items where moved[item.path] == nil {
             do {
                 let closed = index.project(of: item)?.properties.status.isClosed == true
-                if Recurrence.next(for: item, today: today, projectClosed: closed) != nil {
-                    let now = try update(item.path) { Recurrence.moveForward($0, path: item.path, today: today, projectClosed: closed) }
+                let rollover = VaultIndex.rolloverDay(completedDate: item.properties.completedDate, today: today)
+                if Recurrence.next(for: item, today: rollover, projectClosed: closed) != nil {
+                    let now = try update(item.path) { Recurrence.moveForward($0, path: item.path, today: rollover, projectClosed: closed) }
                     if let now, !now.properties.status.isClosed {
                         rolled = true
                         continue

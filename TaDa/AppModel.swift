@@ -1723,8 +1723,11 @@ import UIKit
         await log(index.filesToLog(completedBefore: nil).map(\.path))
     }
 
-    /// Whether Log Now has anything to log or ask about.
-    var hasFilesToLog: Bool { logbook.contains { !$0.isLogged } }
+    /// Whether Log Now has anything to log or ask about: the Logbook lists a file not logged yet. A repeating task that
+    /// only moves forward isn't listed, and moves at the daily run.
+    var hasFilesToLog: Bool {
+        LogbookGroup.groups(logbook, index: index, today: today).contains(where: \.isWaiting)
+    }
 
     /// Moves files to the Logbook. Returns false when that failed.
     @discardableResult

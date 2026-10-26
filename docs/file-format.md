@@ -154,7 +154,7 @@ A task with a `repeat` rule comes back after it's completed, in the same file: i
   - then optionally `until YYYY-MM-DD` and `when done`, in either order.
 - **Writing**: Ta Da writes the rule in this form, `until` before `when done`, with numbers as digits, days as three letters and ordinals as `1st`…`5th`. A month or year rule is always written with its day (`every month on the 31st`). `N` is 1 or more; `every 1 week` is written `every week`.
 - A rule that can't be read (`Weekly · Fri`) is shown as written, with a warning, and the task doesn't repeat.
-- **Next date** is worked out from the rule, the task's dates and the day the task moves forward:
+- **Next date** is worked out from the rule, the task's dates and the day the task moves forward (the logging run's day, or the day after `completedDate` for a task completed that day):
   - A regular schedule moves to the first date of the rule after the current `dueDate` that is on or after that day, so missed occurrences are skipped.
   - `when done` moves to `completedDate` plus the interval. A rule with `on …` moves to its first day after `completedDate`, then on by the interval less one (`every 2 weeks on Mon when done`, done on a Tuesday: the Monday a week after next).
   - A rule without `on …` takes its day from the current `dueDate` (its weekday, day of the month or date). A day the month doesn't have is its last day. With `on …` the day doesn't drift (`every month on the 31st`: Jan 31, Feb 28, Mar 31); without it, the next date takes the clamped day (`every month` from Jan 31: Feb 28, Mar 28).

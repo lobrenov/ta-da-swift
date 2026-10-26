@@ -154,7 +154,7 @@ struct PhoneFileScreen: View {
                     let status = item.properties.status
                     let (repeating, move) = RepeatWording.statusContext(of: [item], index: model.index, today: model.today)
                     let name = { (option: Status) in
-                        RepeatWording.statusHelp(option, repeating: repeating, move: move, today: model.today)
+                        RepeatWording.statusHelp(option, repeating: repeating, move: move, current: status, today: model.today)
                     }
                     let setStatus = { (status: Status) in
                         nav.play(.pick)

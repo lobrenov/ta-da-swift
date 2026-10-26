@@ -71,6 +71,9 @@ import TaDaCore
         #expect(RepeatWording.statusHelp(.cancelled, repeating: repeating, move: move, today: today) == "Skip this time · moves to \(day("2026-10-12"))")
         #expect(RepeatWording.statusHelp(.done, repeating: repeating, move: move, today: today) == "Done · moves to \(day("2026-10-12"))")
         #expect(RepeatWording.statusHelp(.doing, repeating: repeating, move: move, today: today) == "Doing")
+        #expect(RepeatWording.statusHelp(.done, repeating: repeating, move: move, current: .done, today: today) == "Done")
+        #expect(RepeatWording.statusHelp(.cancelled, repeating: repeating, move: move, current: .done, today: today)
+                == "Skip this time · moves to \(day("2026-10-12"))")
         #expect(RepeatWording.note(.ends, today: today) == "ends the repeat")
     }
 

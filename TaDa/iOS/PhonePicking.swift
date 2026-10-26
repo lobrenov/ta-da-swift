@@ -198,13 +198,9 @@ private struct PickingBars: ViewModifier {
 
     private var tasks: [String] { nav.picked.filter { model.index[$0]?.properties.kind == .task } }
 
-    /// How the status menu words the picked files.
-    private var statusWording: (repeating: Bool, move: RepeatMove?) {
-        RepeatWording.statusContext(of: nav.picked.compactMap { model.index[$0] }, index: model.index, today: model.today)
-    }
-
     private var actions: some View {
         let paths = nav.picked
+        let wording = RepeatWording.statusContext(of: paths.compactMap { model.index[$0] }, index: model.index, today: model.today)
         return HStack(spacing: 0) {
             action("Complete", "checkmark.circle", tint: \.done) {
                 nav.play(.complete)
@@ -223,7 +219,7 @@ private struct PickingBars: ViewModifier {
                     Task { for path in paths { await model.setStatus(status, in: path) } }
                 }) {
                     ForEach(Status.choices(for: tasks.isEmpty ? .project : .task), id: \.self) {
-                        Text(RepeatWording.statusHelp($0, repeating: statusWording.repeating, move: statusWording.move,
+                        Text(RepeatWording.statusHelp($0, repeating: wording.repeating, move: wording.move,
                                                       today: model.today)).tag(Optional($0))
                     }
                 } label: {
