@@ -147,7 +147,7 @@ struct PhoneAgendaStrip: View {
         // The weeks beside the selected one are drawn while a swipe settles, so they need their own marks.
         let selected = model.agendaSelection
         let first = AgendaPaging.week(forKey: AgendaPaging.weekKey(of: selected) - 1).firstDay
-        let marks = model.agendaMarks.merging(model.index.dayMarks(from: first, through: first.adding(days: 20), names: model.dailyNoteNames)) { current, _ in current }
+        let marks = model.agendaMarks.merging(model.index.dayMarks(from: first, through: first.adding(days: 20), today: model.today, names: model.dailyNoteNames)) { current, _ in current }
         let range = AgendaMonthDrag.range(weeks: model.agendaAnchor.isoWeeksOfMonth.count, rowHeight: rowHeight)
         VStack(spacing: 0) {
             HStack(spacing: 0) {

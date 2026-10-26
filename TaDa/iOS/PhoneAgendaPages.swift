@@ -171,7 +171,7 @@ private struct PhoneAgendaWeek: View {
     private func dayRow(_ day: LocalDate, entries: [AgendaEntry]) -> some View {
         let note = model.index.dailyNote(for: day, names: model.dailyNoteNames)
         let counts = model.agendaDaySummary(day, entries: entries)
-        let marks = model.index.dayMarks(from: day, through: day, names: model.dailyNoteNames)[day]
+        let marks = model.index.dayMarks(from: day, through: day, today: model.today, names: model.dailyNoteNames)[day]
         return Button { withAnimation { model.agendaSelection = .day(day) } } label: {
             HStack(spacing: 12) {
                 Text(day.formatted(.weekdayDay))

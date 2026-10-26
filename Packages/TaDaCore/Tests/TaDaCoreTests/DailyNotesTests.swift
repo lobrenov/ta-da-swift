@@ -92,18 +92,18 @@ private func daily(_ path: String, body: String = "") -> Item {
         daily("Periodic Notes/Daily Notes/2026-10-06.md", body: "- [-] a\n"),
         daily("Periodic Notes/Daily Notes/2026-10-07.md"),
     ])
-    let marks = index.dayMarks(from: date, through: LocalDate("2026-10-08")!)
+    let marks = index.dayMarks(from: date, through: LocalDate("2026-10-08")!, today: date)
     #expect(marks == [
         date: DayMarks(hasOpenTasks: true, hasOpenBoxes: true),
         LocalDate("2026-10-03")!: DayMarks(hasOpenTasks: false, hasOpenBoxes: true),
         LocalDate("2026-10-04")!: DayMarks(hasOpenTasks: true, hasOpenBoxes: false),
     ])
-    #expect(index.dayMarks(from: date, through: date.adding(days: -1)).isEmpty)
+    #expect(index.dayMarks(from: date, through: date.adding(days: -1), today: date).isEmpty)
 }
 
 @Test func marksOnTheDesignVault() async {
     let index = await Vault(root: sampleVault).loadIndex()
-    let marks = index.dayMarks(from: date, through: date.adding(days: 6))
+    let marks = index.dayMarks(from: date, through: date.adding(days: 6), today: date)
     #expect(marks[date]?.hasOpenTasks == true)
     #expect(marks[date]?.hasOpenBoxes == true, "2026-10-02's note has a box to do")
     #expect(marks.filter { $0.value.hasOpenBoxes }.keys.sorted() == [date])

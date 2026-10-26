@@ -2482,7 +2482,7 @@ import UIKit
 
     private func updateAgendaMarks() {
         let range = agendaMarksRange
-        agendaMarks = index.dayMarks(from: range.lowerBound, through: range.upperBound, names: dailyNoteNames)
+        agendaMarks = index.dayMarks(from: range.lowerBound, through: range.upperBound, today: today, names: dailyNoteNames)
     }
 
     /// The days the Agenda shows: the selected week, or when the month is open, every week of its month.

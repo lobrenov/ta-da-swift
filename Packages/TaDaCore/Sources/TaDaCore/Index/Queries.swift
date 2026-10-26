@@ -11,6 +11,15 @@ public struct AgendaEntry: Hashable, Sendable, Identifiable {
     public var id: String { "\(item.path)#\(kind)" }
 }
 
+/// A coming date of a repeating task, not yet in its file. `estimated` when a `when done` rule's date assumes
+/// each task is done on its day.
+public struct Occurrence: Hashable, Sendable {
+    public var item: Item
+    public var date: LocalDate
+    public var kind: AgendaEntry.Kind
+    public var estimated: Bool
+}
+
 /// A sidebar project: done/total of its linked tasks, Cancelled tasks left out of the total.
 public struct ProjectProgress: Hashable, Sendable, Identifiable {
     public var project: Item
@@ -84,14 +93,22 @@ extension VaultIndex {
         tasks.flatMap { agendaEntries(of: $0, on: Set(week.days)) }.sorted(by: Self.byAgendaOrder)
     }
 
-    /// For each date from `from` through `through` that has either mark. The daily note is looked up by `names`.
-    public func dayMarks(from: LocalDate, through: LocalDate,
+    /// For each date from `from` through `through` that has either mark. An occurrence marks its day like an open task,
+    /// except those of `every day` and `every weekday` rules. The daily note is looked up by `names`.
+    public func dayMarks(from: LocalDate, through: LocalDate, today: LocalDate,
                          names: DailyNoteNames = DailyNoteNames()) -> [LocalDate: DayMarks] {
         guard from <= through else { return [:] }
         var marks: [LocalDate: DayMarks] = [:]
         for task in tasks where !task.properties.status.isClosed {
             for date in [task.properties.dueDate, task.properties.deadline].compactMap({ $0 }) where (from...through).contains(date) {
                 marks[date, default: DayMarks(hasOpenTasks: false, hasOpenBoxes: false)].hasOpenTasks = true
+            }
+        }
+        for task in tasks {
+            guard let rule = task.properties.repeatRule?.rule, rule.frequency != .weekday,
+                  rule.frequency != .day || rule.interval > 1 else { continue }
+            for occurrence in occurrences(of: task, from: from, through: through, today: today) {
+                marks[occurrence.date, default: DayMarks(hasOpenTasks: false, hasOpenBoxes: false)].hasOpenTasks = true
             }
         }
         for offset in 0...from.days(to: through) {
@@ -131,6 +148,50 @@ extension VaultIndex {
             .compactMap { $0 }
             .filter { $0.date > today }
             .sorted(by: Self.byAgendaOrder)
+    }
+
+    /// A repeating task's coming dates from `from` through `through`, by date, due before deadline. An open task's are
+    /// the rule's dates after its current date, which is its own entry. A completed task not yet moved forward lists
+    /// its next date too, as the logging run would set it: on `today`, or the day after for a task completed today.
+    /// A deadline-only task has deadline occurrences; a task with both has a due occurrence on each date and a deadline
+    /// one at the same offset. Dates before `today` are listed too. Empty without a rule that reads, or past `until`.
+    public func occurrences(of item: Item, from: LocalDate, through: LocalDate, today: LocalDate) -> [Occurrence] {
+        let p = item.properties
+        guard p.kind == .task, let rule = p.repeatRule?.rule, from <= through else { return [] }
+        var dates: [LocalDate] = []
+        var anchor: LocalDate
+        if p.status.isClosed {
+            let rollover = (p.completedDate.map { $0 < today } ?? true) ? today : today.adding(days: 1)
+            let closed = project(of: item)?.properties.status.isClosed == true
+            guard let next = Recurrence.next(for: item, today: rollover, projectClosed: closed),
+                  let date = next.dueDate ?? next.deadline else { return [] }
+            dates = [date]
+            anchor = date
+        } else {
+            guard let date = p.dueDate ?? p.deadline else { return [] }
+            anchor = date
+        }
+        let offset = p.dueDate.flatMap { due in p.deadline.map { due.days(to: $0) } } ?? 0
+        let (low, high) = (min(from, from.adding(days: -offset)), max(through, through.adding(days: -offset)))
+        if rule.whenDone {
+            while let date = rule.next(dueDate: anchor, deadline: nil, completedDate: anchor, rolloverDay: anchor)?.dueDate,
+                  date <= high {
+                dates.append(date)
+                anchor = date
+            }
+        } else {
+            dates += rule.dates(after: anchor, from: low, through: high)
+        }
+        let found = dates.filter { $0 >= low && $0 <= high }.flatMap { date -> [Occurrence] in
+            var entries: [Occurrence] = []
+            if p.dueDate != nil { entries.append(Occurrence(item: item, date: date, kind: .due, estimated: rule.whenDone)) }
+            if p.deadline != nil, let moved = date.checkedAdding(days: offset) {
+                entries.append(Occurrence(item: item, date: moved, kind: .deadline, estimated: rule.whenDone))
+            }
+            return entries
+        }
+        return found.filter { $0.date >= from && $0.date <= through }
+            .sorted { $0.date == $1.date ? $0.kind == .due && $1.kind == .deadline : $0.date < $1.date }
     }
 
     /// Open tasks without a parent that resolves, sorted by their earliest date, then title.

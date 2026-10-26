@@ -112,7 +112,7 @@ private func progress(_ list: [ProjectProgress]) -> [[String: Any]] {
         "vaults": loaded.map { vault -> [String: Any] in
             let index = vault.index
             let all = Array(index.items.values).sorted { $0.path < $1.path }
-            let marks = index.dayMarks(from: LocalDate("2026-10-01")!, through: LocalDate("2026-10-31")!)
+            let marks = index.dayMarks(from: LocalDate("2026-10-01")!, through: LocalDate("2026-10-31")!, today: LocalDate("2026-10-02")!)
             var queries: [String: Any] = [
                 "name": vault.name,
                 "liveTasks": paths(index.tasks), "projects": paths(index.projects), "areas": paths(index.areas),
