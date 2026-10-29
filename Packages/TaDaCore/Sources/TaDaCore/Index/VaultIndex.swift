@@ -227,7 +227,6 @@ public struct VaultIndex: Sendable {
     }
 
     private mutating func addTags(of item: Item) {
-        guard !item.isLogged else { return }
         for use in item.tags {
             pathsByTag[use.tag.path, default: []].insert(item.path)
             if tagsByPath[use.tag.path].map({ item.path < $0.path }) ?? true { tagsByPath[use.tag.path] = (use.tag, item.path) }
@@ -235,7 +234,6 @@ public struct VaultIndex: Sendable {
     }
 
     private mutating func removeTags(of item: Item) {
-        guard !item.isLogged else { return }
         for use in item.tags {
             Self.remove(item.path, at: use.tag.path, from: &pathsByTag)
             guard tagsByPath[use.tag.path]?.path == item.path else { continue }

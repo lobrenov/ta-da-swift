@@ -159,12 +159,13 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
     #expect(index.carriedTags.map(\.name) == ["hOme"])
 }
 
-@Test func indexLeavesLoggedFilesOutOfTags() {
+@Test func indexCountsLoggedFilesInTags() {
     let logged = makeItem("Ta Da/logbook/tasks/Old.md", "type: task\nstatus: Done\ntags: [old]")
     var index = VaultIndex([logged])
-    #expect(index.carriedTags.isEmpty)
-    index.remove(logged.path)
+    #expect(index.paths(carrying: "old") == [logged.path])
     index.update(makeItem("tasks/Old.md", "type: task\nstatus: Done\ntags: [old]"))
+    #expect(index.paths(carrying: "old") == [logged.path, "tasks/Old.md"])
+    index.remove(logged.path)
     #expect(index.paths(carrying: "old") == ["tasks/Old.md"])
 }
 

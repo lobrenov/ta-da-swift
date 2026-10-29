@@ -23,7 +23,7 @@ public struct TagBrowser: Hashable, Sendable {
     public var children: [TagNode]
 }
 
-/// The tag queries. A file is tagged by its own tags only, never its parent's. Logged files aren't counted.
+/// The tag queries. A file is tagged by its own tags only, never its parent's.
 extension VaultIndex {
     /// Every carried tag and its parents, as a tree. Each level is sorted by name, ignoring case. A parent carried by
     /// no file takes its spelling from a child.
@@ -48,7 +48,7 @@ extension VaultIndex {
         return nodes(under: "")
     }
 
-    /// Items that aren't logged and carry the tag or any child of it, sorted by title.
+    /// Items that carry the tag or any child of it, sorted by title.
     public func items(tagged tag: Tag) -> [Item] {
         carriedTags.filter { $0.path == tag.path || tag.isAncestor(of: $0) }
             .reduce(into: Set<String>()) { $0.formUnion(paths(carrying: $1.path)) }

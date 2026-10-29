@@ -352,9 +352,9 @@ summary: Not a note: it's in tasks/.
 ## NoteVault/Work/Clients/Brief.md
 summary: Notes on the brief.
 
-## TagVault/.logbook/tasks/Old errand.md
-
 ## TagVault/.trash/tasks/Trashed.md
+
+## TagVault/Ta Da/logbook/Old errand.md
 
 ## TagVault/areas/Home.md
 summary: The house and garden.

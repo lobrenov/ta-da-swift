@@ -82,7 +82,7 @@ The body's syntax is the spec in the Live editor's package, at the tag Ta Da pin
 - **Identity**: tags match ignoring case, and show as first written in the folder. Empty segments and a trailing `/` are dropped (`home/` is `home`).
 - **Nesting**: `/` nests, so `home/garden` is a child of `home`. A parent shows its children's files too, and exists whether or not any file carries it alone.
 - An area's or project's tags don't apply to its tasks.
-- **Counts**: the areas, projects, tasks and notes, completed or not, carrying the tag or a child of it. Files in `.trash/` and logged files aren't counted. **Untagged** is every area, project, task and note with no tag.
+- **Counts**: the areas, projects, tasks and notes, completed or not, carrying the tag or a child of it. Files in `.trash/` aren't counted. **Untagged** is every live (not logged) area, project, task and note with no tag.
 
 ## Notes
 

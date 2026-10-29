@@ -142,11 +142,12 @@ private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
     nodes.flatMap { [String(repeating: "  ", count: depth) + "\($0.tag.name) \($0.count)"] + describe($0.children, depth: depth + 1) }
 }
 
-@Test func tagTreeRollsUpCountsAndLeavesOutLoggedAndTrashedFiles() async {
+@Test func tagTreeRollsUpCountsAndLeavesOutTrashedFiles() async {
     #expect(describe(await tagIndex().tagTree()) == [
-        "errands 3",
+        "errands 4",
         "Home 4",
         "  home/garden 3",
+        "logged-only 1",
         "people 2",
         "  people/dan 1",
         "  People/Max 1",
@@ -160,11 +161,12 @@ private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
     let index = await tagIndex()
     #expect(index.items(tagged: try #require(Tag("home"))).map(\.title) == ["Buy mulch", "Garden", "Home", "Prune the lemon tree"])
     #expect(index.items(tagged: try #require(Tag("HOME/GARDEN"))).map(\.title) == ["Buy mulch", "Garden", "Prune the lemon tree"])
-    #expect(index.items(tagged: try #require(Tag("logged-only"))).isEmpty)
+    #expect(index.items(tagged: try #require(Tag("logged-only"))).map(\.title) == ["Old errand"])
+    #expect(index.items(tagged: try #require(Tag("errands"))).map(\.title).contains("Old errand"))
     #expect(index.items(tagged: try #require(Tag("trashed-only"))).isEmpty)
 }
 
-@Test func untaggedIsEveryFileWithoutATag() async {
+@Test func untaggedIsEveryLiveFileWithoutATag() async {
     #expect(await tagIndex().untagged().map(\.title) == ["Untagged task", "Work"])
 }
 
@@ -175,7 +177,7 @@ private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
     }
 
     let errands = index.tagBrowser(try #require(Tag("errands")))
-    #expect(errands.areasAndProjects.isEmpty && errands.completed.isEmpty && errands.children.isEmpty)
+    #expect(errands.areasAndProjects.isEmpty && errands.completed.map(\.title) == ["Old errand"] && errands.children.isEmpty)
     #expect(groups(errands) == ["Home: ", "Garden: Buy mulch, Prune the lemon tree", "Loose: Message Max"])
 
     let home = index.tagBrowser(try #require(Tag("Home")))
@@ -199,10 +201,29 @@ private func describe(_ nodes: [TagNode], depth: Int = 0) -> [String] {
     #expect(names("gar") == ["home/garden"])
     #expect(names("C") == ["Work/Clients"])
     #expect(names("w") == ["Work", "Work/Clients"])
+    #expect(names("logged") == ["logged-only"])
     #expect(names("win").isEmpty, "a space doesn't start a segment")
     #expect(names("home/g") == ["home/garden"])
-    #expect(names("") == ["Home", "errands", "home/garden", "people", "quick win", "Work", "Work/Clients", "people/dan", "People/Max"])
-    #expect(names("", limit: 2) == ["Home", "errands"])
+    #expect(names("") == ["errands", "Home", "home/garden", "people", "quick win", "Work", "Work/Clients", "logged-only", "people/dan", "People/Max"])
+    #expect(names("", limit: 2) == ["errands", "Home"])
+}
+
+@Test func loggedFilesCountAsTagCarriersAndFollowEdits() throws {
+    let logged = makeItem("Ta Da/logbook/2026-09/Done chore.md", "type: task\nstatus: Done\ntags: [chore, shared]")
+    let loggedProject = makeItem("Ta Da/logbook/2026-09/Old plan.md", "type: project\nstatus: Done\ntags: [chore]")
+    let live = makeItem("tasks/Live.md", "type: task\nstatus: Not Started\ntags: [shared]")
+    var index = VaultIndex([logged, loggedProject, live])
+    #expect(describe(index.tagTree()) == ["chore 2", "shared 2"])
+    #expect(index.tagSuggestions("ch").map(\.tag.name) == ["chore"])
+    let chore = index.tagBrowser(try #require(Tag("chore")))
+    #expect(chore.completed.map(\.title) == ["Done chore"] && chore.areasAndProjects.map(\.title) == ["Old plan"])
+    #expect(index.untagged().isEmpty)
+    #expect(index.items(tagged: try #require(Tag("shared"))).map(\.title) == ["Done chore", "Live"])
+
+    index.update(makeItem(logged.path, "type: task\nstatus: Done\ntags: [other]"))
+    #expect(describe(index.tagTree()) == ["chore 1", "other 1", "shared 1"])
+    index.remove(logged.path)
+    #expect(describe(index.tagTree()) == ["chore 1", "shared 1"])
 }
 
 @Test func agendaDayIsTodaysListForTodayAndDatedTasksOtherwise() {

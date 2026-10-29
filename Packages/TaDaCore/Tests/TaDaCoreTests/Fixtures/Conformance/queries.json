@@ -1514,6 +1514,23 @@
             "Inbox.md"
           ]
         },
+        "logged-chore" : {
+          "areasAndProjects" : [
+
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+            "Ta Da/logbook/2026-09/Old chore.md"
+          ],
+          "groups" : [
+
+          ],
+          "notes" : [
+
+          ]
+        },
         "phone" : {
           "areasAndProjects" : [
 
@@ -1887,6 +1904,9 @@
         "ideas" : [
           "Inbox.md"
         ],
+        "logged-chore" : [
+          "Ta Da/logbook/2026-09/Old chore.md"
+        ],
         "phone" : [
           "Ta Da/tasks/Call plumber.md"
         ],
@@ -1992,6 +2012,14 @@
             "count" : 1,
             "path" : "ideas",
             "tag" : "ideas"
+          },
+          {
+            "children" : [
+
+            ],
+            "count" : 1,
+            "path" : "logged-chore",
+            "tag" : "logged-chore"
           },
           {
             "children" : [
@@ -2184,6 +2212,14 @@
           "count" : 1,
           "path" : "ideas",
           "tag" : "ideas"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "path" : "logged-chore",
+          "tag" : "logged-chore"
         },
         {
           "children" : [
