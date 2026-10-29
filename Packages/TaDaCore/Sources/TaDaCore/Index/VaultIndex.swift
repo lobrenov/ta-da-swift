@@ -19,11 +19,11 @@ public struct VaultIndex: Sendable {
     private var linkersByTitle: [String: Set<String>] = [:]
     /// Lowercased image filename → the paths of the items that embed it.
     private var embeddersByName: [String: Set<String>] = [:]
-    /// Tag path → the paths of the items that aren't logged and carry it (not counting its children).
+    /// Tag path → the paths of the items that carry it (not counting its children).
     private var pathsByTag: [String: Set<String>] = [:]
     /// Folder (`""` for the top level) → the paths of the notes straight in it.
     private var notesByFolder: [String: Set<String>] = [:]
-    /// Tag path → the tag as spelled by the carrier with the first path, and that path, for each tag in `pathsByTag`.
+    /// Tag path → the tag as spelled by the first carrier (live before logged, then by path), and that path, for each tag in `pathsByTag`.
     private var tagsByPath: [String: (tag: Tag, path: String)] = [:]
 
     public init(_ items: [Item] = []) {
@@ -64,14 +64,14 @@ public struct VaultIndex: Sendable {
     /// Logged tasks and projects.
     public var logged: [Item] { items.values.filter(\.isLogged) }
 
-    /// Every tag carried by an item that isn't logged, spelled as in the carrier with the first path, in no order.
+    /// Every tag carried by an item, spelled as in the first carrier (live before logged, then by path), in no order.
     /// Parents carried by no file are left out.
     var carriedTags: [Tag] { tagsByPath.values.map(\.tag) }
 
     /// The paths of the notes straight in `folder`, by folder.
     var notePathsByFolder: [String: Set<String>] { notesByFolder }
 
-    /// The paths of the items that aren't logged and carry this tag path itself, not its children.
+    /// The paths of the items that carry this tag path itself, not its children.
     func paths(carrying path: String) -> Set<String> { pathsByTag[path] ?? [] }
 
     /// Items with this title, ignoring case: live tasks, projects and areas, then notes, then logged files, each by path.
@@ -229,15 +229,20 @@ public struct VaultIndex: Sendable {
     private mutating func addTags(of item: Item) {
         for use in item.tags {
             pathsByTag[use.tag.path, default: []].insert(item.path)
-            if tagsByPath[use.tag.path].map({ item.path < $0.path }) ?? true { tagsByPath[use.tag.path] = (use.tag, item.path) }
+            if tagsByPath[use.tag.path].map({ Self.spells(item.path, before: $0.path) }) ?? true { tagsByPath[use.tag.path] = (use.tag, item.path) }
         }
+    }
+
+    /// Whether the carrier at `a` sets a tag's spelling before the one at `b`: live files before logged ones, each by path.
+    private static func spells(_ a: String, before b: String) -> Bool {
+        (Item.isLogged(a) ? 1 : 0, a) < (Item.isLogged(b) ? 1 : 0, b)
     }
 
     private mutating func removeTags(of item: Item) {
         for use in item.tags {
             Self.remove(item.path, at: use.tag.path, from: &pathsByTag)
             guard tagsByPath[use.tag.path]?.path == item.path else { continue }
-            tagsByPath[use.tag.path] = pathsByTag[use.tag.path]?.min().flatMap { path in
+            tagsByPath[use.tag.path] = pathsByTag[use.tag.path]?.min(by: Self.spells).flatMap { path in
                 items[path]?.tags.first { $0.tag.path == use.tag.path }.map { ($0.tag, path) }
             }
         }

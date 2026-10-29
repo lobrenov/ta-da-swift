@@ -79,7 +79,7 @@ The body's syntax is the spec in the Live editor's package, at the tag Ta Da pin
 
 - A file's tags are its `tags:` items and its inline `#tags`, merged; a tag carried twice counts once.
 - **Inline tags** are the spec's (`spec/data/tags.json`): `#` where a tag can start (a paragraph's or line's start, emphasis content's start, or after whitespace), then letters, digits, `_`, `-` and `/`, with at least one character that's neither a digit nor `/` (so `#2026/10` isn't a tag). Any other character, a comma or space included, ends the tag. Code, HTML, link text, URLs and `[[…]]` links hold none, so `[[Note#Heading]]` and a heading's `# ` aren't tags.
-- **Identity**: tags match ignoring case, and show as first written in the folder. Empty segments and a trailing `/` are dropped (`home/` is `home`).
+- **Identity**: tags match ignoring case, and show as first written in the folder, live files before logged ones. Empty segments and a trailing `/` are dropped (`home/` is `home`).
 - **Nesting**: `/` nests, so `home/garden` is a child of `home`. A parent shows its children's files too, and exists whether or not any file carries it alone.
 - An area's or project's tags don't apply to its tasks.
 - **Counts**: the areas, projects, tasks and notes, completed or not, carrying the tag or a child of it. Files in `.trash/` aren't counted. **Untagged** is every live (not logged) area, project, task and note with no tag.

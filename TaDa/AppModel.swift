@@ -2593,9 +2593,8 @@ import UIKit
     /// The tag tree, the tagged and Untagged counts and the tag pages.
     private func updateTags() {
         tagTree = index.tagTree()
-        let live = index.items.values.count { !$0.isLogged }
         untaggedCount = index.items.values.count { !$0.isLogged && $0.tags.isEmpty }
-        taggedCount = live - untaggedCount
+        taggedCount = index.items.values.count { !$0.tags.isEmpty }
         updateTagPage()
         if !phoneTagPages.isEmpty {
             phoneTagPages = Dictionary(uniqueKeysWithValues: phoneTagPages.keys.map { ($0, phoneTagPage(for: $0)) })

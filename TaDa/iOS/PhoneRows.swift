@@ -162,7 +162,7 @@ struct PhoneProjectRow: View {
         let project = progress.project
         let p = project.properties
         VStack(spacing: 0) {
-            Button { nav.push(.project(project.path)) } label: {
+            Button { nav.push(project.isLogged ? .file(project.path) : .project(project.path)) } label: {
                 HStack(spacing: 12) {
                     ProgressRing(progress)
                         .scaleEffect(22 / 14)

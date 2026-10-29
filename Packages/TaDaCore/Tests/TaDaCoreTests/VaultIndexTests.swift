@@ -169,6 +169,34 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
     #expect(index.paths(carrying: "old") == ["tasks/Old.md"])
 }
 
+@Test func liveFilesSpellATagBeforeLoggedOnes() {
+    let logged = makeItem("Ta Da/logbook/tasks/Old.md", "type: task\nstatus: Done\ntags: [Home]")
+    let live = makeItem("tasks/New.md", "type: task\nstatus: Doing\ntags: [home]")
+    var index = VaultIndex([logged, live])
+    #expect(index.carriedTags.map(\.name) == ["home"])
+    index.remove(live.path)
+    #expect(index.carriedTags.map(\.name) == ["Home"])
+    index.update(live)
+    #expect(index.carriedTags.map(\.name) == ["home"])
+    index.remove(live.path)
+    index.update(makeItem("tasks/Newer.md", "type: task\nstatus: Doing\ntags: [HOME]"))
+    index.remove("tasks/Newer.md")
+    #expect(index.carriedTags.map(\.name) == ["Home"])
+}
+
+@Test func movingATaggedFileIntoTheLogbookAndBackKeepsTheTagCounts() {
+    let live = makeItem("tasks/Old.md", "type: task\nstatus: Done\ntags: [Home]")
+    let logged = makeItem("Ta Da/logbook/tasks/Old.md", "type: task\nstatus: Done\ntags: [Home]")
+    var index = VaultIndex([live, makeItem("tasks/Other.md", "type: task\nstatus: Doing\ntags: [home]")])
+    index.remove(live.path)
+    index.update(logged)
+    #expect(index.tagTree().map { [$0.tag.name, String($0.count)] } == [["home", "2"]])
+    index.remove(logged.path)
+    index.update(live)
+    #expect(index.tagTree().map { [$0.tag.name, String($0.count)] } == [["Home", "2"]])
+    #expect(index.paths(carrying: "home") == [live.path, "tasks/Other.md"])
+}
+
 @Test func titlesResolveToTaDaFilesBeforeNotes() {
     var index = VaultIndex([
         makeItem("Ark.md", "tags: []"),

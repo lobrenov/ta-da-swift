@@ -207,7 +207,7 @@ struct TagBrowserView: View {
         } else {
             model.index.projects(in: item).count == 1 ? "1 project" : "\(model.index.projects(in: item).count) projects"
         }
-        return Button { model.show(isArea ? .area(item.path) : .project(item.path)) } label: {
+        return Button { if item.isLogged { model.openLink(to: item.path) } else { model.show(isArea ? .area(item.path) : .project(item.path)) } } label: {
             HStack(spacing: 10) {
                 Group {
                     if let progress {
