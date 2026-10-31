@@ -34,7 +34,7 @@ struct LinkMarkerTests {
     }
 
     private func marker(_ target: String, in index: VaultIndex) -> Character? {
-        TitleResolver(titles: index.titles, statuses: TitleResolver.statuses(in: index))
+        TitleResolver(titles: index.titles, statuses: index.taskStatuses)
             .resolve(displayName: target, range: NSRange())?.marker
     }
 
@@ -42,6 +42,10 @@ struct LinkMarkerTests {
         let index = index()
         let expected: [(String, Character)] = [("A", "/"), ("b", ">"), ("C", "B"), ("D", "x"), ("E", "-"), ("F", " "), ("L", "x")]
         for (target, marker) in expected { #expect(self.marker(target, in: index) == marker, "\(target)") }
+    }
+
+    @Test func aliasedPathQualifiedLinksCarryTheMarker() {
+        #expect(marker("tasks/A#Goals|alias", in: index()) == "/")
     }
 
     @Test func otherLinksCarryNoMarker() {
@@ -52,11 +56,11 @@ struct LinkMarkerTests {
 
     @Test func fingerprintChangesWithStatus() {
         var index = index()
-        let before = TitleResolver(titles: index.titles, statuses: TitleResolver.statuses(in: index)).fingerprint()
+        let before = TitleResolver(titles: index.titles, statuses: index.taskStatuses).fingerprint()
         var task = index["Ta Da/tasks/A.md"]!
         task.properties.status = .done
         index.update(task)
-        let after = TitleResolver(titles: index.titles, statuses: TitleResolver.statuses(in: index)).fingerprint()
+        let after = TitleResolver(titles: index.titles, statuses: index.taskStatuses).fingerprint()
         #expect(before != after)
     }
 }

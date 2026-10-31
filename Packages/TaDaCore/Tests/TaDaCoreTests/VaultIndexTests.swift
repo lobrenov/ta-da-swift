@@ -209,6 +209,20 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
     #expect(index.items(titled: "Ark").map(\.path) == ["Ark.md", "projects/Ark.md", "Meetings/Ark.md", "Ta Da/logbook/2026-09/Ark.md"])
 }
 
+@Test func taskStatusesFollowTheItemALinkOpens() {
+    var index = VaultIndex([
+        makeItem("tasks/Live.md", "type: task\nstatus: Doing"),
+        makeItem("Ta Da/logbook/2026-09/Live.md", "type: task\nstatus: Done"),
+        makeItem("Ta Da/logbook/2026-09/Old.md", "type: task\nstatus: Cancelled"),
+        makeItem("Ark.md", "tags: []"),
+        makeItem("Ta Da/logbook/2026-09/Ark.md", "type: task\nstatus: Done"),
+        makeItem("projects/P.md", "type: project\nstatus: Doing"),
+    ])
+    #expect(index.taskStatuses == ["live": .doing, "old": .cancelled])
+    index.update(makeItem("tasks/Live.md", "type: task\nstatus: Blocked"))
+    #expect(index.taskStatuses["live"] == .blocked)
+}
+
 @Test func notesAreNeverFiledOrParents() {
     let note = makeItem("Ark.md", "project: \"[[Ta Da MVP]]\"\narea: \"[[Work]]\"")
     let area = makeItem("areas/Work.md", "type: area")

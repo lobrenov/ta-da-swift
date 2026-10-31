@@ -8,6 +8,13 @@ public struct VaultIndex: Sendable {
     public private(set) var items: [String: Item] = [:]
     /// Every item's title, lowercased.
     public private(set) var titles: Set<String> = []
+    /// Lowercased title → the status of the item `items(titled:)` lists first, for titles whose first item is a task (logged
+    /// included).
+    public var taskStatuses: [String: Status] {
+        pathsByTitle.compactMapValues { paths in
+            paths.first.flatMap { items[$0] }.flatMap { $0.properties.kind == .task ? $0.properties.status : nil }
+        }
+    }
     /// Lowercased title → paths: live tasks, projects and areas first, then notes, then logged files, each by path, so
     /// resolution is stable when titles repeat across folders and prefers a live Ta Da file.
     private var pathsByTitle: [String: [String]] = [:]

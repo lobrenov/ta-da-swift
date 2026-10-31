@@ -521,16 +521,6 @@ nonisolated struct TitleResolver: WikiLinkResolver {
     }
 
     func fingerprint() -> AnyHashable { [AnyHashable(titles), AnyHashable(statuses)] }
-
-    /// The statuses of the tasks, live or logged, that links open: the first item with each title, when it's a task.
-    static func statuses(in index: VaultIndex) -> [String: Status] {
-        var result: [String: Status] = [:]
-        for item in index.items.values where item.properties.kind == .task {
-            let title = item.title.lowercased()
-            if index.items(titled: title).first?.path == item.path { result[title] = item.properties.status }
-        }
-        return result
-    }
 }
 
 /// Draws `![[name.png]]` from the folder's images, found as `Vault.attachmentPath(for:in:)` finds them. An image keeps
