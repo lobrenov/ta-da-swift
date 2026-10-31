@@ -872,3 +872,70 @@ private let occurrenceRanges = [("2026-10-26", "2026-11-22"), ("2026-11-09", "20
                      }],
     ] as [String: Any], to: "recurrence.json")
 }
+
+// MARK: Logging
+
+private let loggingToday = LocalDate("2026-10-28")!
+
+/// Every `.md` file under `folder` by relative path, with its text.
+private func snapshot(_ folder: URL) throws -> [String: String] {
+    let base = folder.path + "/"
+    let urls = (FileManager.default.enumerator(at: folder, includingPropertiesForKeys: nil)?.allObjects ?? [])
+        .compactMap { $0 as? URL }.filter { $0.pathExtension.lowercased() == "md" }
+    return Dictionary(uniqueKeysWithValues: try urls.map { (String($0.path.dropFirst(base.count)), try String(contentsOf: $0, encoding: .utf8)) })
+}
+
+/// Runs `operation` on a temporary copy of the LoggingVault. Returns the moved map and the text of every file written
+/// or moved to, by path.
+private func loggingRun(_ operation: (Vault, VaultIndex) throws -> [String: String]) throws -> [String: Any] {
+    let temporary = FileManager.default.temporaryDirectory.appending(path: "LoggingVault-\(UUID().uuidString)")
+    defer { try? FileManager.default.removeItem(at: temporary) }
+    try FileManager.default.copyItem(at: conformanceFolder.appending(path: "LoggingVault"), to: temporary)
+    // The folder enumerator resolves /var to /private/var, so the vault's root must be the real path.
+    let copy = URL(filePath: String(cString: realpath(temporary.path, nil)))
+    let before = try snapshot(copy)
+    let vault = try loadVault("LoggingVault", at: copy)
+    let moved = try operation(Vault(root: copy), vault.index)
+    let after = try snapshot(copy)
+    return ["moved": moved, "written": after.filter { before[$0.key] != $0.value }]
+}
+
+@Test func writeConformanceLogging() throws {
+    let vault = try loadVault("LoggingVault", at: conformanceFolder.appending(path: "LoggingVault"))
+    let index = vault.index
+    let day = loggingToday
+    func logCase(_ name: String, before: LocalDate?) throws -> [String: Any] {
+        let paths = index.filesToLog(completedBefore: before).map(\.path)
+        var result = try loggingRun { try $0.log(paths, index: $1, today: day) }
+        result["name"] = name
+        result["paths"] = paths
+        return result
+    }
+    /// `settingDoing` sets each put-back file Doing afterwards, as `logIfDue` does for the projects with open tasks.
+    func unlogCase(_ name: String, _ items: [Item], settingDoing: Bool = false) throws -> [String: Any] {
+        let paths = items.map(\.path)
+        var result = try loggingRun { vault, index in
+            let moved = try vault.unlog(paths, index: index, today: day)
+            if settingDoing {
+                for path in paths { _ = try vault.update(moved[path]!) { Completion.setStatus(.doing, in: $0, today: day) } }
+            }
+            return moved
+        }
+        result["name"] = name
+        result["paths"] = paths
+        return result
+    }
+    try write([
+        "vault": "LoggingVault",
+        "today": day.description,
+        "filesToLog": [
+            ["completedBefore": day.description, "paths": paths(index.filesToLog(completedBefore: day), sorted: false)],
+            ["completedBefore": NSNull(), "paths": paths(index.filesToLog(completedBefore: nil), sorted: false)],
+        ] as [[String: Any]],
+        "log": [try logCase("daily", before: day), try logCase("logNow", before: nil)],
+        "reopenedLogged": paths(index.reopenedLogged, sorted: false),
+        "loggedProjectsWithOpenTasks": paths(index.loggedProjectsWithOpenTasks, sorted: false),
+        "unlog": [try unlogCase("reopenedLogged", index.reopenedLogged),
+                  try unlogCase("loggedProjectsWithOpenTasks", index.loggedProjectsWithOpenTasks, settingDoing: true)],
+    ] as [String: Any], to: "logging.json")
+}

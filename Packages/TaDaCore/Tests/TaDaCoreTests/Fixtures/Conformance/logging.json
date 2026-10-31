@@ -1,0 +1,155 @@
+{
+  "filesToLog" : [
+    {
+      "completedBefore" : "2026-10-28",
+      "paths" : [
+        "Ta Da/tasks/Book flights.md",
+        "Ta Da/tasks/Call bank.md",
+        "Ta Da/tasks/Fortnightly.md",
+        "Ta Da/projects/Launch.md",
+        "Ta Da/tasks/Launch: copy.md",
+        "Ta Da/tasks/Launch: sync.md",
+        "Ta Da/tasks/Pay rent.md",
+        "Ta Da/tasks/Short series.md",
+        "Ta Da/tasks/Skip bins.md",
+        "Ta Da/tasks/Water plants.md"
+      ]
+    },
+    {
+      "completedBefore" : null,
+      "paths" : [
+        "Ta Da/tasks/Book flights.md",
+        "Ta Da/tasks/Call bank.md",
+        "Ta Da/tasks/Done today.md",
+        "Ta Da/tasks/Fortnightly.md",
+        "Ta Da/projects/Launch.md",
+        "Ta Da/tasks/Launch: copy.md",
+        "Ta Da/tasks/Launch: sync.md",
+        "Ta Da/tasks/Pay rent.md",
+        "Ta Da/tasks/Short series.md",
+        "Ta Da/tasks/Skip bins.md",
+        "Ta Da/tasks/Stand-up today.md",
+        "Ta Da/tasks/Water plants.md"
+      ]
+    }
+  ],
+  "log" : [
+    {
+      "moved" : {
+        "Ta Da/projects/Launch.md" : "Ta Da/logbook/2026-10/Launch 2.md",
+        "Ta Da/tasks/Book flights.md" : "Ta Da/logbook/2026-09/Book flights.md",
+        "Ta Da/tasks/Call bank.md" : "Ta Da/logbook/2026-10/Call bank 2.md",
+        "Ta Da/tasks/Launch: copy.md" : "Ta Da/logbook/2026-10/Launch: copy.md",
+        "Ta Da/tasks/Launch: sync.md" : "Ta Da/logbook/2026-10/Launch: sync.md",
+        "Ta Da/tasks/Pay rent.md" : "Ta Da/logbook/2026-10/Pay rent.md",
+        "Ta Da/tasks/Short series.md" : "Ta Da/logbook/2026-10/Short series.md"
+      },
+      "name" : "daily",
+      "paths" : [
+        "Ta Da/tasks/Book flights.md",
+        "Ta Da/tasks/Call bank.md",
+        "Ta Da/tasks/Fortnightly.md",
+        "Ta Da/projects/Launch.md",
+        "Ta Da/tasks/Launch: copy.md",
+        "Ta Da/tasks/Launch: sync.md",
+        "Ta Da/tasks/Pay rent.md",
+        "Ta Da/tasks/Short series.md",
+        "Ta Da/tasks/Skip bins.md",
+        "Ta Da/tasks/Water plants.md"
+      ],
+      "written" : {
+        "Ta Da/logbook/2026-09/Book flights.md" : "---\ntype: task\nstatus: Cancelled\ncreatedDate: 2026-09-01\ncompletedDate: 2026-09-30\n---\n",
+        "Ta Da/logbook/2026-10/Call bank 2.md" : "---\ntype: task\nstatus: Done\ncreatedDate: 2026-10-01\n---\n",
+        "Ta Da/logbook/2026-10/Launch 2.md" : "---\ntype: project\nstatus: Done\ncreatedDate: 2026-08-01\ncompletedDate: 2026-10-15\n---\n",
+        "Ta Da/logbook/2026-10/Launch: copy.md" : "---\ntype: task\nstatus: Done\nproject: \"[[Launch 2]]\"\ncreatedDate: 2026-09-01\ncompletedDate: 2026-10-14\n---\n",
+        "Ta Da/logbook/2026-10/Launch: sync.md" : "---\ntype: task\nstatus: Done\nproject: \"[[Launch 2]]\"\ncreatedDate: 2026-09-01\ncompletedDate: 2026-10-14\ndueDate: 2026-10-14\nrepeat: every week\n---\n",
+        "Ta Da/logbook/2026-10/Pay rent.md" : "---\ntype: task\nstatus: Done\ncreatedDate: 2026-10-01\ncompletedDate: 2026-10-20\ndueDate: 2026-10-20\n---\n\nPaid by transfer.\n",
+        "Ta Da/logbook/2026-10/Short series.md" : "---\ntype: task\nstatus: Done\ncreatedDate: 2026-09-01\ncompletedDate: 2026-10-20\ndueDate: 2026-10-20\nrepeat: every week until 2026-10-25\n---\n",
+        "Ta Da/tasks/Fortnightly.md" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-09-01\ncompletedDate:\ndueDate: 2026-11-05\nrepeat: every 2 weeks when done\n---\n",
+        "Ta Da/tasks/Skip bins.md" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-09-01\ncompletedDate:\ndueDate: 2026-10-28\nrepeat: every week on Wed\n---\n",
+        "Ta Da/tasks/Water plants.md" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-09-01\ncompletedDate:\ndueDate: 2026-11-03\ndeadline: 2026-11-05\nrepeat: every week\n---\n\n- [ ] Front room\n- [ ] Balcony\n- [ ] Office\n- [ ] Hall\n"
+      }
+    },
+    {
+      "moved" : {
+        "Ta Da/projects/Launch.md" : "Ta Da/logbook/2026-10/Launch 2.md",
+        "Ta Da/tasks/Book flights.md" : "Ta Da/logbook/2026-09/Book flights.md",
+        "Ta Da/tasks/Call bank.md" : "Ta Da/logbook/2026-10/Call bank 2.md",
+        "Ta Da/tasks/Done today.md" : "Ta Da/logbook/2026-10/Done today.md",
+        "Ta Da/tasks/Launch: copy.md" : "Ta Da/logbook/2026-10/Launch: copy.md",
+        "Ta Da/tasks/Launch: sync.md" : "Ta Da/logbook/2026-10/Launch: sync.md",
+        "Ta Da/tasks/Pay rent.md" : "Ta Da/logbook/2026-10/Pay rent.md",
+        "Ta Da/tasks/Short series.md" : "Ta Da/logbook/2026-10/Short series.md"
+      },
+      "name" : "logNow",
+      "paths" : [
+        "Ta Da/tasks/Book flights.md",
+        "Ta Da/tasks/Call bank.md",
+        "Ta Da/tasks/Done today.md",
+        "Ta Da/tasks/Fortnightly.md",
+        "Ta Da/projects/Launch.md",
+        "Ta Da/tasks/Launch: copy.md",
+        "Ta Da/tasks/Launch: sync.md",
+        "Ta Da/tasks/Pay rent.md",
+        "Ta Da/tasks/Short series.md",
+        "Ta Da/tasks/Skip bins.md",
+        "Ta Da/tasks/Stand-up today.md",
+        "Ta Da/tasks/Water plants.md"
+      ],
+      "written" : {
+        "Ta Da/logbook/2026-09/Book flights.md" : "---\ntype: task\nstatus: Cancelled\ncreatedDate: 2026-09-01\ncompletedDate: 2026-09-30\n---\n",
+        "Ta Da/logbook/2026-10/Call bank 2.md" : "---\ntype: task\nstatus: Done\ncreatedDate: 2026-10-01\n---\n",
+        "Ta Da/logbook/2026-10/Done today.md" : "---\ntype: task\nstatus: Done\ncreatedDate: 2026-10-01\ncompletedDate: 2026-10-28\n---\n",
+        "Ta Da/logbook/2026-10/Launch 2.md" : "---\ntype: project\nstatus: Done\ncreatedDate: 2026-08-01\ncompletedDate: 2026-10-15\n---\n",
+        "Ta Da/logbook/2026-10/Launch: copy.md" : "---\ntype: task\nstatus: Done\nproject: \"[[Launch 2]]\"\ncreatedDate: 2026-09-01\ncompletedDate: 2026-10-14\n---\n",
+        "Ta Da/logbook/2026-10/Launch: sync.md" : "---\ntype: task\nstatus: Done\nproject: \"[[Launch 2]]\"\ncreatedDate: 2026-09-01\ncompletedDate: 2026-10-14\ndueDate: 2026-10-14\nrepeat: every week\n---\n",
+        "Ta Da/logbook/2026-10/Pay rent.md" : "---\ntype: task\nstatus: Done\ncreatedDate: 2026-10-01\ncompletedDate: 2026-10-20\ndueDate: 2026-10-20\n---\n\nPaid by transfer.\n",
+        "Ta Da/logbook/2026-10/Short series.md" : "---\ntype: task\nstatus: Done\ncreatedDate: 2026-09-01\ncompletedDate: 2026-10-20\ndueDate: 2026-10-20\nrepeat: every week until 2026-10-25\n---\n",
+        "Ta Da/tasks/Fortnightly.md" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-09-01\ncompletedDate:\ndueDate: 2026-11-05\nrepeat: every 2 weeks when done\n---\n",
+        "Ta Da/tasks/Skip bins.md" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-09-01\ncompletedDate:\ndueDate: 2026-10-28\nrepeat: every week on Wed\n---\n",
+        "Ta Da/tasks/Stand-up today.md" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-09-01\ncompletedDate:\ndueDate: 2026-10-29\nrepeat: every day\n---\n",
+        "Ta Da/tasks/Water plants.md" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-09-01\ncompletedDate:\ndueDate: 2026-11-03\ndeadline: 2026-11-05\nrepeat: every week\n---\n\n- [ ] Front room\n- [ ] Balcony\n- [ ] Office\n- [ ] Hall\n"
+      }
+    }
+  ],
+  "loggedProjectsWithOpenTasks" : [
+    "Ta Da/logbook/2026-08/Old plan.md"
+  ],
+  "reopenedLogged" : [
+    "Ta Da/logbook/2026-09/Old errand.md",
+    "Ta Da/logbook/2026-09/Old plan step.md"
+  ],
+  "today" : "2026-10-28",
+  "unlog" : [
+    {
+      "moved" : {
+        "Ta Da/logbook/2026-08/Old plan.md" : "Ta Da/projects/Old plan.md",
+        "Ta Da/logbook/2026-09/Old errand.md" : "Ta Da/tasks/Old errand 2.md",
+        "Ta Da/logbook/2026-09/Old plan step.md" : "Ta Da/tasks/Old plan step.md"
+      },
+      "name" : "reopenedLogged",
+      "paths" : [
+        "Ta Da/logbook/2026-09/Old errand.md",
+        "Ta Da/logbook/2026-09/Old plan step.md"
+      ],
+      "written" : {
+        "Ta Da/projects/Old plan.md" : "---\ntype: project\nstatus: Doing\ncreatedDate: 2026-06-01\ncompletedDate:\n---\n",
+        "Ta Da/tasks/Old errand 2.md" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-06-01\ncompletedDate: 2026-09-02\n---\n",
+        "Ta Da/tasks/Old plan step.md" : "---\ntype: task\nstatus: Doing\nproject: \"[[Old plan]]\"\ncreatedDate: 2026-06-01\ncompletedDate: 2026-09-02\n---\n"
+      }
+    },
+    {
+      "moved" : {
+        "Ta Da/logbook/2026-08/Old plan.md" : "Ta Da/projects/Old plan.md"
+      },
+      "name" : "loggedProjectsWithOpenTasks",
+      "paths" : [
+        "Ta Da/logbook/2026-08/Old plan.md"
+      ],
+      "written" : {
+        "Ta Da/projects/Old plan.md" : "---\ntype: project\nstatus: Doing\ncreatedDate: 2026-06-01\ncompletedDate:\n---\n"
+      }
+    }
+  ],
+  "vault" : "LoggingVault"
+}

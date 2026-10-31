@@ -171,6 +171,58 @@ summary: lower
 ## Conformance/HomeVault/Ta Da/tasks/Ünïcode 日本.md
 summary: non-ascii
 
+## Conformance/LoggingVault/Ta Da/logbook/2026-08/Launch.md
+
+## Conformance/LoggingVault/Ta Da/logbook/2026-08/Old plan.md
+
+## Conformance/LoggingVault/Ta Da/logbook/2026-09/Call bank.md
+
+## Conformance/LoggingVault/Ta Da/logbook/2026-09/Old errand.md
+
+## Conformance/LoggingVault/Ta Da/logbook/2026-09/Old plan step.md
+
+## Conformance/LoggingVault/Ta Da/logbook/2026-10/Call bank.md
+
+## Conformance/LoggingVault/Ta Da/projects/Launch.md
+
+## Conformance/LoggingVault/Ta Da/projects/Open project.md
+
+## Conformance/LoggingVault/Ta Da/projects/Wrap up.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Book flights.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Call bank.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Done today.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Draft report.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Final report.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Fortnightly.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Launch: copy.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Launch: sync.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Old errand.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Open task.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Pay rent.md
+summary: Paid by transfer.
+
+## Conformance/LoggingVault/Ta Da/tasks/Revive plan.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Short series.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Skip bins.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Stand-up today.md
+
+## Conformance/LoggingVault/Ta Da/tasks/Water plants.md
+checkboxes: [x]10:3 [/]11:3 [-]12:3 [ ]13:3
+
 ## Conformance/RecurrenceVault/Ta Da/projects/Running.md
 
 ## Conformance/RecurrenceVault/Ta Da/projects/Wound up.md
