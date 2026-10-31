@@ -29,7 +29,8 @@ Work not yet built.
 
 ## Obsidian
 
-- Moving tasks and notes to `.trash/` from the plugin (`Vault.trash(file, false)`); its Trash list is read only.
+- Restoring and emptying the Trash from the plugin: its Trash list is read only.
+- The attachments question in the plugin's Delete project and Delete area: embedded images stay where they are.
 - The community plugin store: the plugin is installed by hand.
 
 ## Fork Features
