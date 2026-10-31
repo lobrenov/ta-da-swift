@@ -232,6 +232,16 @@ struct AppModelTests {
                 "reloading doesn't write the file")
     }
 
+    @Test func anOutsideEditToTheTaskLinkBoxesKeyReloadsIt() async throws {
+        let model = await folder.model()
+        try folder.write("{\"editor\":{\"taskLinkBoxes\":false}}", Vault.settingsPath)
+        await model.refresh()
+        #expect(!model.taskLinkBoxes)
+        try folder.write("{\"editor\":{}}", Vault.settingsPath)
+        await model.refresh()
+        #expect(model.taskLinkBoxes)
+    }
+
     @Test func openingAFolderDoesNotCreateTheSettingsFile() async {
         folder.defaults.set("Device", forKey: "dailyFolder")
         let model = await folder.model()

@@ -76,7 +76,7 @@ public struct VaultSettings: Equatable, Sendable {
         taskLinkBoxes = Self.bool(editor["taskLinkBoxes"])
     }
 
-    /// `data` with the keys of each group given (the ones a side owns) set, and everything else kept, unknown keys and
+    /// `data` with the keys of each group and the keys given (the ones a side owns) set, and everything else kept, unknown keys and
     /// groups included. A nil key in a group isn't written. Pretty-printed JSON with a final newline.
     public static func updated(_ data: Data?, dailyNotes: DailyNotes? = nil, theme: Theme? = nil, autocomplete: Autocomplete? = nil,
                                taskLinkBoxes: Bool? = nil) -> Data {

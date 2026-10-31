@@ -127,7 +127,8 @@
             "formatting" : false,
             "tags" : false,
             "wikiLinks" : true
-          }
+          },
+          "taskLinkBoxes" : false
         },
         "theme" : {
           "darkScheme" : "Ayu Mirage",
@@ -136,7 +137,7 @@
           "usesSchemePerAppearance" : true
         }
       },
-      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}}}",
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false}}",
       "name" : "full file"
     },
     {
@@ -187,7 +188,7 @@
 
         }
       },
-      "input" : "{\"dailyNotes\": {\"dailyFolder\": 3, \"dailyTemplate\": 4, \"weekNotes\": 1, \"weekFolder\": null, \"weekTemplate\": [\"a\"]},\n \"theme\": {\"themeSet\": true, \"usesSchemePerAppearance\": \"yes\", \"lightScheme\": 5, \"darkScheme\": {}},\n \"editor\": {\"autocomplete\": {\"brackets\": 0, \"formatting\": \"no\", \"wikiLinks\": null, \"tags\": []}}}",
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": 3, \"dailyTemplate\": 4, \"weekNotes\": 1, \"weekFolder\": null, \"weekTemplate\": [\"a\"]},\n \"theme\": {\"themeSet\": true, \"usesSchemePerAppearance\": \"yes\", \"lightScheme\": 5, \"darkScheme\": {}},\n \"editor\": {\"autocomplete\": {\"brackets\": 0, \"formatting\": \"no\", \"wikiLinks\": null, \"tags\": []}, \"taskLinkBoxes\": \"no\"}}",
       "name" : "wrong types"
     },
     {
@@ -360,7 +361,8 @@
             "formatting" : false,
             "tags" : false,
             "wikiLinks" : true
-          }
+          },
+          "taskLinkBoxes" : false
         },
         "theme" : {
           "darkScheme" : "Ayu Mirage",
@@ -369,7 +371,7 @@
           "usesSchemePerAppearance" : true
         }
       },
-      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}}}",
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false}}",
       "name" : "full file"
     },
     {
@@ -394,7 +396,8 @@
             "formatting" : false,
             "tags" : false,
             "wikiLinks" : true
-          }
+          },
+          "taskLinkBoxes" : false
         },
         "theme" : {
           "darkScheme" : "Ayu Mirage",
@@ -403,7 +406,7 @@
           "usesSchemePerAppearance" : true
         }
       },
-      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}}}",
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false}}",
       "name" : "clearing templates"
     },
     {
@@ -498,6 +501,42 @@
       },
       "input" : "{\"future\": {\"a\": [1, 2]}, \"dailyNotes\": {\"dailyFolder\": \"Old\", \"extra\": true}, \"theme\": {\"font\": \"Mono\"}}",
       "name" : "unknown keys kept"
+    }
+  ],
+  "writeTaskLinkBoxes" : [
+    {
+      "expected" : {
+        "editor" : {
+          "taskLinkBoxes" : false
+        }
+      },
+      "input" : null,
+      "name" : "no file",
+      "taskLinkBoxes" : false
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "autocomplete" : {
+            "tags" : false
+          },
+          "font" : "Mono",
+          "taskLinkBoxes" : false
+        }
+      },
+      "input" : "{\"editor\": {\"autocomplete\": {\"tags\": false}, \"font\": \"Mono\"}}",
+      "name" : "editor with autocomplete and an unknown key",
+      "taskLinkBoxes" : false
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "taskLinkBoxes" : false
+        }
+      },
+      "input" : "{\"editor\": 3}",
+      "name" : "editor of the wrong type",
+      "taskLinkBoxes" : false
     }
   ]
 }

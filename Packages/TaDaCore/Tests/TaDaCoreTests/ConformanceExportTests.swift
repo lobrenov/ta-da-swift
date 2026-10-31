@@ -564,7 +564,8 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
                             "weekFolder": d.weekFolder, "weekTemplate": template(d.weekTemplate)]),
         "theme": keep(["themeSet": t.themeSet, "usesSchemePerAppearance": t.usesSchemePerAppearance,
                        "lightScheme": t.lightScheme, "darkScheme": t.darkScheme]),
-        "editor": ["autocomplete": keep(["brackets": a.brackets, "formatting": a.formatting, "wikiLinks": a.wikiLinks, "tags": a.tags])],
+        "editor": keep(["autocomplete": keep(["brackets": a.brackets, "formatting": a.formatting, "wikiLinks": a.wikiLinks, "tags": a.tags]),
+                        "taskLinkBoxes": settings.taskLinkBoxes]),
     ]
 }
 
@@ -572,14 +573,14 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
     let full = """
     {"dailyNotes": {"dailyFolder": "Journal", "dailyTemplate": "Templates/Daily.md", "weekNotes": false, "weekFolder": "", "weekTemplate": null},
      "theme": {"themeSet": "Ayu", "usesSchemePerAppearance": true, "lightScheme": "Ayu Light", "darkScheme": "Ayu Mirage"},
-     "editor": {"autocomplete": {"brackets": true, "formatting": false, "wikiLinks": true, "tags": false}}}
+     "editor": {"autocomplete": {"brackets": true, "formatting": false, "wikiLinks": true, "tags": false}, "taskLinkBoxes": false}}
     """
     let reads: [(name: String, input: String?)] = [
         ("no file", nil), ("empty file", ""), ("empty object", "{}"), ("full file", full), ("not an object", "[1, 2]"), ("not json", "nope"),
         ("wrong types", """
          {"dailyNotes": {"dailyFolder": 3, "dailyTemplate": 4, "weekNotes": 1, "weekFolder": null, "weekTemplate": ["a"]},
           "theme": {"themeSet": true, "usesSchemePerAppearance": "yes", "lightScheme": 5, "darkScheme": {}},
-          "editor": {"autocomplete": {"brackets": 0, "formatting": "no", "wikiLinks": null, "tags": []}}}
+          "editor": {"autocomplete": {"brackets": 0, "formatting": "no", "wikiLinks": null, "tags": []}, "taskLinkBoxes": "no"}}
          """),
         ("groups of the wrong type", "{\"dailyNotes\": 3, \"theme\": [], \"editor\": {\"autocomplete\": \"x\"}}"),
         ("null template", "{\"dailyNotes\": {\"dailyTemplate\": null, \"weekTemplate\": null}}"),
@@ -608,9 +609,14 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
         ("only theme", "{\"theme\": {\"themeSet\": \"Nord\"}}", daily),
         ("unknown keys kept", "{\"future\": {\"a\": [1, 2]}, \"dailyNotes\": {\"dailyFolder\": \"Old\", \"extra\": true}, \"theme\": {\"font\": \"Mono\"}}", daily),
     ]
-    let names = reads.map(\.name) + obsidian.map(\.name) + writes.map(\.name)
+    let boxWrites: [(name: String, input: String?)] = [
+        ("no file", nil),
+        ("editor with autocomplete and an unknown key", "{\"editor\": {\"autocomplete\": {\"tags\": false}, \"font\": \"Mono\"}}"),
+        ("editor of the wrong type", "{\"editor\": 3}"),
+    ]
+    let names = reads.map(\.name) + obsidian.map(\.name) + writes.map(\.name) + boxWrites.map(\.name)
     #expect(Set(reads.map(\.name)).count == reads.count && Set(obsidian.map(\.name)).count == obsidian.count
-            && Set(writes.map(\.name)).count == writes.count, "duplicate case names in \(names)")
+            && Set(writes.map(\.name)).count == writes.count && Set(boxWrites.map(\.name)).count == boxWrites.count, "duplicate case names in \(names)")
 
     try write([
         "read": reads.map { ["name": $0.name, "input": orNull($0.input), "expected": json(VaultSettings(data: $0.input.map { Data($0.utf8) }))] as [String: Any] },
@@ -628,6 +634,11 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
             let expected = try JSONSerialization.jsonObject(with: result)
             return ["name": $0.name, "input": orNull($0.input), "dailyNotes": json(settings)["dailyNotes"] as Any,
                     "expected": expected] as [String: Any]
+        },
+        "writeTaskLinkBoxes": try boxWrites.map {
+            let result = VaultSettings.updated($0.input.map { Data($0.utf8) }, taskLinkBoxes: false)
+            return ["name": $0.name, "input": orNull($0.input), "taskLinkBoxes": false,
+                    "expected": try JSONSerialization.jsonObject(with: result)] as [String: Any]
         },
     ] as [String: Any], to: "settings.json")
 }
