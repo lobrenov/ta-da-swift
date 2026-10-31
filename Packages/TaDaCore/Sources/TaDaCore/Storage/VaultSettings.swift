@@ -52,6 +52,7 @@ public struct VaultSettings: Equatable, Sendable {
     public var dailyNotes = DailyNotes()
     public var theme = Theme()
     public var autocomplete = Autocomplete()
+    public var taskLinkBoxes: Bool?
 
     public init() {}
 
@@ -72,11 +73,13 @@ public struct VaultSettings: Equatable, Sendable {
         self.autocomplete = Autocomplete(
             brackets: Self.bool(autocomplete["brackets"]), formatting: Self.bool(autocomplete["formatting"]),
             wikiLinks: Self.bool(autocomplete["wikiLinks"]), tags: Self.bool(autocomplete["tags"]))
+        taskLinkBoxes = Self.bool(editor["taskLinkBoxes"])
     }
 
     /// `data` with the keys of each group given (the ones a side owns) set, and everything else kept, unknown keys and
     /// groups included. A nil key in a group isn't written. Pretty-printed JSON with a final newline.
-    public static func updated(_ data: Data?, dailyNotes: DailyNotes? = nil, theme: Theme? = nil, autocomplete: Autocomplete? = nil) -> Data {
+    public static func updated(_ data: Data?, dailyNotes: DailyNotes? = nil, theme: Theme? = nil, autocomplete: Autocomplete? = nil,
+                               taskLinkBoxes: Bool? = nil) -> Data {
         var root = object(data)
         if let dailyNotes {
             root["dailyNotes"] = set(root["dailyNotes"], [
@@ -90,12 +93,15 @@ public struct VaultSettings: Equatable, Sendable {
                 "lightScheme": theme.lightScheme, "darkScheme": theme.darkScheme,
             ])
         }
-        if let autocomplete {
+        if autocomplete != nil || taskLinkBoxes != nil {
             var editor = root["editor"] as? [String: Any] ?? [:]
-            editor["autocomplete"] = set(editor["autocomplete"], [
-                "brackets": autocomplete.brackets, "formatting": autocomplete.formatting,
-                "wikiLinks": autocomplete.wikiLinks, "tags": autocomplete.tags,
-            ])
+            if let taskLinkBoxes { editor["taskLinkBoxes"] = taskLinkBoxes }
+            if let autocomplete {
+                editor["autocomplete"] = set(editor["autocomplete"], [
+                    "brackets": autocomplete.brackets, "formatting": autocomplete.formatting,
+                    "wikiLinks": autocomplete.wikiLinks, "tags": autocomplete.tags,
+                ])
+            }
             root["editor"] = editor
         }
         let json = (try? JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes])) ?? Data("{}".utf8)
@@ -167,10 +173,11 @@ extension Vault {
     /// Sets the keys of the groups given in the settings file, creating it if needed (see `VaultSettings.updated`), in
     /// one coordinated access.
     public func writeSettings(dailyNotes: VaultSettings.DailyNotes? = nil, theme: VaultSettings.Theme? = nil,
-                              autocomplete: VaultSettings.Autocomplete? = nil) throws {
+                              autocomplete: VaultSettings.Autocomplete? = nil, taskLinkBoxes: Bool? = nil) throws {
         let url = url(for: Self.settingsPath)
         func updated(_ data: Data?) -> Data {
-            VaultSettings.updated(data, dailyNotes: dailyNotes, theme: theme, autocomplete: autocomplete)
+            VaultSettings.updated(data, dailyNotes: dailyNotes, theme: theme, autocomplete: autocomplete,
+                                  taskLinkBoxes: taskLinkBoxes)
         }
         do {
             try CoordinatedFileIO.create(updated(nil), at: url)

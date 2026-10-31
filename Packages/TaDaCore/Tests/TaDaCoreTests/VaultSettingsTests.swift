@@ -15,11 +15,12 @@ private let daily = VaultSettings.DailyNotes(dailyFolder: "Journal", dailyTempla
     let settings = VaultSettings(data: data("""
     {"dailyNotes": {"dailyFolder": "Journal", "dailyTemplate": "Templates/Day.md", "weekNotes": false, "weekFolder": "", "weekTemplate": null},
      "theme": {"themeSet": "Ayu", "usesSchemePerAppearance": true, "lightScheme": "Ayu Light", "darkScheme": "Ayu Mirage"},
-     "editor": {"autocomplete": {"brackets": true, "formatting": false, "wikiLinks": true, "tags": false}}}
+     "editor": {"taskLinkBoxes": false, "autocomplete": {"brackets": true, "formatting": false, "wikiLinks": true, "tags": false}}}
     """))
     #expect(settings.dailyNotes == .init(dailyFolder: "Journal", dailyTemplate: "Templates/Day.md", weekNotes: false, weekFolder: "", weekTemplate: .some(nil)))
     #expect(settings.theme == .init(themeSet: "Ayu", usesSchemePerAppearance: true, lightScheme: "Ayu Light", darkScheme: "Ayu Mirage"))
     #expect(settings.autocomplete == .init(brackets: true, formatting: false, wikiLinks: true, tags: false))
+    #expect(settings.taskLinkBoxes == false)
 }
 
 @Test func noFileAnEmptyFileAndGarbageReadAsEveryKeyMissing() {
@@ -32,11 +33,11 @@ private let daily = VaultSettings.DailyNotes(dailyFolder: "Journal", dailyTempla
     let settings = VaultSettings(data: data("""
     {"dailyNotes": {"dailyFolder": 3, "dailyTemplate": 4, "weekNotes": 1, "weekFolder": "Weeks"},
      "theme": {"themeSet": true, "usesSchemePerAppearance": "yes", "lightScheme": "Ayu Light"},
-     "editor": {"autocomplete": {"brackets": 0, "tags": false}}}
+     "editor": {"taskLinkBoxes": "no", "autocomplete": {"brackets": 0, "tags": false}}}
     """))
     #expect(settings.dailyNotes == .init(weekFolder: "Weeks"))
     #expect(settings.theme == .init(lightScheme: "Ayu Light"))
-    #expect(settings.autocomplete == .init(tags: false))
+    #expect(settings.autocomplete == .init(tags: false) && settings.taskLinkBoxes == nil)
 }
 
 @Test func writingSetsTheGroupsAndKeepsEverythingElse() throws {
@@ -56,6 +57,15 @@ private let daily = VaultSettings.DailyNotes(dailyFolder: "Journal", dailyTempla
     #expect(editor["font"] as? String == "Mono")
     let autocomplete = try #require(editor["autocomplete"] as? [String: Any])
     #expect(autocomplete["brackets"] as? Bool == true && autocomplete["tags"] as? Bool == false && autocomplete["extra"] as? Int == 1)
+}
+
+@Test func writingTheTaskLinkBoxesKeepsTheEditorsOtherKeys() throws {
+    let existing = data("{\"editor\": {\"font\": \"Mono\", \"autocomplete\": {\"tags\": false}}}")
+    let editor = try #require(parsed(VaultSettings.updated(existing, taskLinkBoxes: false))["editor"] as? [String: Any])
+    #expect(editor["taskLinkBoxes"] as? Bool == false && editor["font"] as? String == "Mono")
+    #expect((editor["autocomplete"] as? [String: Bool]) == ["tags": false])
+    let both = VaultSettings(data: VaultSettings.updated(existing, autocomplete: .init(brackets: true), taskLinkBoxes: true))
+    #expect(both.taskLinkBoxes == true && both.autocomplete == .init(brackets: true, tags: false))
 }
 
 @Test func writingOnlyOneGroupLeavesTheOthersAlone() throws {

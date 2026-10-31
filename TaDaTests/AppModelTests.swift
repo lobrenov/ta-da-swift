@@ -169,6 +169,15 @@ struct AppModelTests {
         #expect(!second.autocomplete.tags)
     }
 
+    @Test func taskLinkBoxesAreOnUntilTheSwitchIsTurnedOff() async {
+        let first = await folder.model()
+        #expect(first.taskLinkBoxes)
+        first.taskLinkBoxes = false
+        await first.finishSavingSettings()
+        let second = await folder.model()
+        #expect(!second.taskLinkBoxes)
+    }
+
     @Test func changingASettingWritesTheFileAndKeepsItsOtherKeys() async throws {
         try folder.write("{\"future\": {\"a\": 1}, \"theme\": {\"font\": \"Mono\"}}", Vault.settingsPath)
         let model = await folder.model()

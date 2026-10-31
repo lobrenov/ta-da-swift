@@ -263,6 +263,10 @@ import UIKit
     var autocomplete: Autocomplete {
         didSet { saveSettings() }
     }
+    /// A wikilink to a task draws its status box in the Live editor.
+    var taskLinkBoxes = true {
+        didSet { saveSettings() }
+    }
     /// Haptic feedback on iOS; Settings ▸ Haptics turns it off.
     var haptics: Bool {
         didSet { defaults.set(!haptics, forKey: Keys.hapticsOff) }
@@ -689,6 +693,7 @@ import UIKit
         autocomplete.wikiLinks = typed.wikiLinks ?? autocomplete.wikiLinks
         autocomplete.tags = typed.tags ?? autocomplete.tags
         self.autocomplete = autocomplete
+        taskLinkBoxes = file.taskLinkBoxes ?? true
         dailyFolder = daily.dailyFolder ?? defaults.string(forKey: Keys.dailyFolder) ?? obsidian.dailyFolder ?? names.dailyFolder
         weekFolder = daily.weekFolder ?? defaults.string(forKey: Keys.weekFolder) ?? names.weekFolder
         weekNotes = daily.weekNotes ?? !defaults.bool(forKey: Keys.weekNotesOff)
@@ -696,7 +701,7 @@ import UIKit
         weekTemplate = daily.weekTemplate ?? defaults.string(forKey: Keys.weekTemplate)
     }
 
-    /// Writes all three settings groups to the folder's file, keeping its other keys. Does nothing while the file is being
+    /// Writes all the settings to the folder's file, keeping its other keys. Does nothing while the file is being
     /// loaded or without a folder.
     private func saveSettings() {
         guard !isApplyingSettings, let vault else { return }
@@ -706,13 +711,14 @@ import UIKit
                                         lightScheme: lightScheme.name, darkScheme: darkScheme.name)
         let typed = VaultSettings.Autocomplete(brackets: autocomplete.brackets, formatting: autocomplete.formatting,
                                                wikiLinks: autocomplete.wikiLinks, tags: autocomplete.tags)
+        let boxes = taskLinkBoxes
         let previous = settingsSaving
         pendingSettingsWrites += 1
         settingsSaving = Task {
             await previous?.value
             do {
                 let date = try await Self.run {
-                    try vault.writeSettings(dailyNotes: daily, theme: theme, autocomplete: typed)
+                    try vault.writeSettings(dailyNotes: daily, theme: theme, autocomplete: typed, taskLinkBoxes: boxes)
                     return vault.modificationDate(of: Vault.settingsPath)
                 }
                 if self.vault?.root == vault.root, pendingSettingsWrites == 1 { settingsDate = date }

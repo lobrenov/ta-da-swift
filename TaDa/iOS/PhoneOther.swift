@@ -139,6 +139,9 @@ struct PhoneSettingsScreen: View {
                         toggle("Wikilinks", "[[ ![[", \.wikiLinks)
                         toggle("Tags", "#", \.tags)
                     }
+                    Section("Links") {
+                        Toggle("Task checkboxes on links", isOn: $model.taskLinkBoxes)
+                    }
                 case .dailyNotes:
                     dailyNotes
                 case .notifications:

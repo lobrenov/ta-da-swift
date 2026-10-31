@@ -121,12 +121,14 @@ The settings that belong to the folder, not the device, are in `Ta Da/settings.j
     "darkScheme": "Ayu Mirage"
   },
   "editor": {
-    "autocomplete": { "brackets": true, "formatting": true, "wikiLinks": true, "tags": true }
+    "autocomplete": { "brackets": true, "formatting": true, "wikiLinks": true, "tags": true },
+    "taskLinkBoxes": true
   }
 }
 ```
 
 - **Groups**: `dailyNotes` (Settings ▸ Daily notes) is read and written by Ta Da and the plugin. `theme` (Settings ▸ Themes, less Appearance) and `editor` (Settings ▸ Editor) are Ta Da's only. Folders and templates are paths from the folder's top level, without surrounding slashes; `""` is the top level. A template is a note's path or `null` for none. Theme and scheme values are names.
+- **Task link boxes**: `editor.taskLinkBoxes` (default `true`) draws a status box on a wikilink to a task in the Live editor.
 - **Reading**: each key is read on its own. A missing key, or a value of the wrong type, takes the device's earlier value (from before the setting moved into the folder), else, for `dailyFolder` and `dailyTemplate` only, Obsidian's Daily notes setting (`folder` and `template` in `.obsidian/daily-notes.json`, `.md` added to a template without it), else the default above. A missing or unreadable file reads as all keys missing. A name that isn't a theme takes the default.
 - **Writing**: the file is written only when a setting in it changes, never on opening. A write sets every key of the groups that side owns (Ta Da: all three; the plugin: `dailyNotes`) to its current value and keeps every other key and group as it was, unknown ones included. It's JSON with two-space indents and a final newline; key order doesn't matter.
 - **Changes** from another device or app are picked up as the file changes, as other files are.

@@ -1,4 +1,4 @@
-// Settings ▸ Editor: the Autocomplete switches for brackets, text formatting, wikilinks and embeds, and tags.
+// Settings ▸ Editor: the Autocomplete switches for brackets, text formatting, wikilinks and embeds, and tags, and the task checkboxes on links.
 #if os(macOS)
 import SwiftUI
 
@@ -21,26 +21,33 @@ struct EditorSettingsView: View {
                 }
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
             }
+            VStack(alignment: .leading, spacing: 8) {
+                SectionLabel(title: "Links")
+                row("Task checkboxes on links", isOn: $model.taskLinkBoxes)
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
+            }
         }
     }
 
-    private func row(_ title: String, markers: [String], isOn: Binding<Bool>) -> some View {
+    private func row(_ title: String, markers: [String] = [], isOn: Binding<Bool>) -> some View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .fontWeight(.semibold)
                     .foregroundStyle(theme.color(\.strong))
-                HStack(spacing: 6) {
-                    ForEach(markers, id: \.self) { marker in
-                        Text(marker)
-                            .font(.system(size: 11.5).monospaced())
-                            .foregroundStyle(theme.color(\.accent))
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 1)
-                            .background(theme.color(\.code), in: .rect(cornerRadius: 5))
+                if !markers.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(markers, id: \.self) { marker in
+                            Text(marker)
+                                .font(.system(size: 11.5).monospaced())
+                                .foregroundStyle(theme.color(\.accent))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 1)
+                                .background(theme.color(\.code), in: .rect(cornerRadius: 5))
+                        }
                     }
+                    .accessibilityHidden(true)
                 }
-                .accessibilityHidden(true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Toggle(title, isOn: isOn)
