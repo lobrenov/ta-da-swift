@@ -16,13 +16,17 @@ private struct LoadedVault {
     let index: VaultIndex
 }
 
-private func loadVault(_ name: String, at folder: URL) throws -> LoadedVault {
+/// Every `.md` file under `folder`, by path relative to it.
+private func markdownFiles(_ folder: URL) -> [(path: String, url: URL)] {
     let base = folder.path + "/"
-    let urls = (FileManager.default.enumerator(at: folder, includingPropertiesForKeys: nil)?.allObjects ?? [])
+    return (FileManager.default.enumerator(at: folder, includingPropertiesForKeys: nil)?.allObjects ?? [])
         .compactMap { $0 as? URL }.filter { $0.pathExtension.lowercased() == "md" }
-    let files = try urls.map { url in
-        let path = String(url.path.dropFirst(base.count))
-        return (path: path, item: Item(parsing: try String(contentsOf: url, encoding: .utf8), path: path))
+        .map { (path: String($0.path.dropFirst(base.count)), url: $0) }
+}
+
+private func loadVault(_ name: String, at folder: URL) throws -> LoadedVault {
+    let files = try markdownFiles(folder).map { file in
+        (path: file.path, item: Item(parsing: try String(contentsOf: file.url, encoding: .utf8), path: file.path))
     }.sorted { $0.path < $1.path }
     let indexed = Set(Vault(root: folder).markdownPaths())
     return LoadedVault(name: name, files: files, folder: folder, index: VaultIndex(files.filter { indexed.contains($0.path) }.compactMap(\.item)))
@@ -879,52 +883,108 @@ private let loggingToday = LocalDate("2026-10-28")!
 
 /// Every `.md` file under `folder` by relative path, with its text.
 private func snapshot(_ folder: URL) throws -> [String: String] {
-    let base = folder.path + "/"
-    let urls = (FileManager.default.enumerator(at: folder, includingPropertiesForKeys: nil)?.allObjects ?? [])
-        .compactMap { $0 as? URL }.filter { $0.pathExtension.lowercased() == "md" }
-    return Dictionary(uniqueKeysWithValues: try urls.map { (String($0.path.dropFirst(base.count)), try String(contentsOf: $0, encoding: .utf8)) })
+    Dictionary(uniqueKeysWithValues: try markdownFiles(folder).map { ($0.path, try String(contentsOf: $0.url, encoding: .utf8)) })
 }
 
-/// Runs `operation` on a temporary copy of the LoggingVault. Returns the moved map and the text of every file written
-/// or moved to, by path.
-private func loggingRun(_ operation: (Vault, VaultIndex) throws -> [String: String]) throws -> [String: Any] {
+/// Runs `operation` on a temporary copy of the LoggingVault, given the copy's folder. Returns what it returns and the
+/// text of every file written or moved to, by path.
+private func onLoggingCopy<T>(_ operation: (URL) throws -> T) throws -> (result: T, written: [String: String]) {
     let temporary = FileManager.default.temporaryDirectory.appending(path: "LoggingVault-\(UUID().uuidString)")
     defer { try? FileManager.default.removeItem(at: temporary) }
     try FileManager.default.copyItem(at: conformanceFolder.appending(path: "LoggingVault"), to: temporary)
-    // The folder enumerator resolves /var to /private/var, so the vault's root must be the real path.
-    let copy = URL(filePath: String(cString: realpath(temporary.path, nil)))
+    let resolved = realpath(temporary.path, nil)!
+    defer { free(resolved) }
+    let copy = URL(filePath: String(cString: resolved))
     let before = try snapshot(copy)
-    let vault = try loadVault("LoggingVault", at: copy)
-    let moved = try operation(Vault(root: copy), vault.index)
-    let after = try snapshot(copy)
-    return ["moved": moved, "written": after.filter { before[$0.key] != $0.value }]
+    let result = try operation(copy)
+    return (result, try snapshot(copy).filter { before[$0.key] != $0.value })
+}
+
+private func loggingIndex(_ folder: URL) throws -> VaultIndex { try loadVault("LoggingVault", at: folder).index }
+
+/// One step of `AppModel.logIfDue`: the paths it acts on, and what moved. `threw` when the step failed.
+private struct LoggingStep {
+    let name: String
+    let paths: [String]
+    var moved: [String: String] = [:]
+    var threw = false
+
+    var json: [String: Any] { ["step": name, "paths": paths, "moved": moved, "threw": threw] }
+}
+
+private let loggingStepNames = ["log", "unlogReopened", "unlogWaiting"]
+
+/// The paths each `logIfDue` step acts on in `index`.
+private func loggingPaths(_ step: String, _ index: VaultIndex, day: LocalDate) -> [String] {
+    switch step {
+    case "log": index.filesToLog(completedBefore: day).map(\.path)
+    case "unlogReopened": index.reopenedLogged.map(\.path)
+    default: index.loggedProjectsWithOpenTasks.map(\.path)
+    }
+}
+
+/// Runs `logIfDue`'s steps on `vault`. `indexes` and `paths` are used as given, or taken from a fresh index before each
+/// step when nil. Returns the steps and the indexes used.
+private func logIfDueSteps(_ folder: URL, day: LocalDate, indexes: [VaultIndex]? = nil, paths: [[String]]? = nil)
+    throws -> (steps: [LoggingStep], indexes: [VaultIndex]) {
+    let vault = Vault(root: folder)
+    var steps: [LoggingStep] = [], used: [VaultIndex] = []
+    for (n, name) in loggingStepNames.enumerated() {
+        let index = try indexes?[n] ?? loggingIndex(folder)
+        used.append(index)
+        var step = LoggingStep(name: name, paths: paths?[n] ?? loggingPaths(name, index, day: day))
+        if !step.paths.isEmpty {
+            do {
+                switch name {
+                case "log":
+                    step.moved = try vault.log(step.paths, index: index, today: day)
+                case "unlogReopened":
+                    step.moved = try vault.unlog(step.paths, index: index, today: day)
+                default:
+                    step.moved = try vault.unlog(step.paths, index: index, today: day)
+                    for path in step.paths { if let back = step.moved[path] {
+                        _ = try vault.update(back) { Completion.setStatus(.doing, in: $0, today: day) }
+                    } }
+                }
+            } catch { step.threw = true }
+        }
+        steps.append(step)
+    }
+    return (steps, used)
 }
 
 @Test func writeConformanceLogging() throws {
     let vault = try loadVault("LoggingVault", at: conformanceFolder.appending(path: "LoggingVault"))
     let index = vault.index
     let day = loggingToday
+    /// `Vault.log` of `filesToLog(completedBefore: before)` on one copy.
     func logCase(_ name: String, before: LocalDate?) throws -> [String: Any] {
         let paths = index.filesToLog(completedBefore: before).map(\.path)
-        var result = try loggingRun { try $0.log(paths, index: $1, today: day) }
-        result["name"] = name
-        result["paths"] = paths
-        return result
-    }
-    /// `settingDoing` sets each put-back file Doing afterwards, as `logIfDue` does for the projects with open tasks.
-    func unlogCase(_ name: String, _ items: [Item], settingDoing: Bool = false) throws -> [String: Any] {
-        let paths = items.map(\.path)
-        var result = try loggingRun { vault, index in
-            let moved = try vault.unlog(paths, index: index, today: day)
-            if settingDoing {
-                for path in paths { _ = try vault.update(moved[path]!) { Completion.setStatus(.doing, in: $0, today: day) } }
-            }
-            return moved
+        let run = try onLoggingCopy { folder in
+            let copyIndex = try loggingIndex(folder)
+            return try Vault(root: folder).log(paths, index: copyIndex, today: day)
         }
-        result["name"] = name
-        result["paths"] = paths
-        return result
+        return ["name": name, "paths": paths, "moved": run.result, "written": run.written]
     }
+    /// The three steps in order, then again on the same copy with the first run's indexes and paths (another device
+    /// that read the folder before the first run wrote), and again with fresh ones.
+    let daily = try onLoggingCopy { folder -> [String: Any] in
+        let first = try logIfDueSteps(folder, day: day)
+        let afterFirst = try snapshot(folder)
+        let stale = try logIfDueSteps(folder, day: day, indexes: first.indexes, paths: first.steps.map(\.paths))
+        let staleWritten = try snapshot(folder).filter { afterFirst[$0.key] != $0.value }
+        let afterStale = try snapshot(folder)
+        let fresh = try logIfDueSteps(folder, day: day)
+        return ["steps": first.steps.map(\.json),
+                "again": [
+                    ["name": "stale", "steps": stale.steps.map(\.json), "written": staleWritten],
+                    ["name": "fresh", "steps": fresh.steps.map(\.json),
+                     "written": try snapshot(folder).filter { afterStale[$0.key] != $0.value }],
+                ] as [[String: Any]]]
+    }
+    var dailyRun = daily.result
+    dailyRun["name"] = "dailyRun"
+    dailyRun["written"] = daily.written
     try write([
         "vault": "LoggingVault",
         "today": day.description,
@@ -932,10 +992,9 @@ private func loggingRun(_ operation: (Vault, VaultIndex) throws -> [String: Stri
             ["completedBefore": day.description, "paths": paths(index.filesToLog(completedBefore: day), sorted: false)],
             ["completedBefore": NSNull(), "paths": paths(index.filesToLog(completedBefore: nil), sorted: false)],
         ] as [[String: Any]],
-        "log": [try logCase("daily", before: day), try logCase("logNow", before: nil)],
         "reopenedLogged": paths(index.reopenedLogged, sorted: false),
         "loggedProjectsWithOpenTasks": paths(index.loggedProjectsWithOpenTasks, sorted: false),
-        "unlog": [try unlogCase("reopenedLogged", index.reopenedLogged),
-                  try unlogCase("loggedProjectsWithOpenTasks", index.loggedProjectsWithOpenTasks, settingDoing: true)],
+        "log": [try logCase("daily", before: day), try logCase("logAll", before: nil)],
+        "dailyRun": dailyRun,
     ] as [String: Any], to: "logging.json")
 }

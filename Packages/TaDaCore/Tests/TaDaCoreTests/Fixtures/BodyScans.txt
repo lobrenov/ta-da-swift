@@ -173,6 +173,8 @@ summary: non-ascii
 
 ## Conformance/LoggingVault/Ta Da/logbook/2026-08/Launch.md
 
+## Conformance/LoggingVault/Ta Da/logbook/2026-08/Old idea.md
+
 ## Conformance/LoggingVault/Ta Da/logbook/2026-08/Old plan.md
 
 ## Conformance/LoggingVault/Ta Da/logbook/2026-09/Call bank.md
@@ -211,6 +213,8 @@ summary: non-ascii
 
 ## Conformance/LoggingVault/Ta Da/tasks/Pay rent.md
 summary: Paid by transfer.
+
+## Conformance/LoggingVault/Ta Da/tasks/Renew passport.md
 
 ## Conformance/LoggingVault/Ta Da/tasks/Revive plan.md
 
