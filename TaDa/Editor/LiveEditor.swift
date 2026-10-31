@@ -16,6 +16,8 @@ struct LiveEditor: View {
     let documentID: String
     /// Titles that links can resolve to, matched case-insensitively.
     var linkTargets: Set<String> = []
+    /// The status of the task each lowercased title resolves to (`TitleResolver`).
+    var linkStatuses: [String: Status] = [:]
     var fitsContent = false
     var autocomplete = Autocomplete()
     /// Plays a light tap when a task box is toggled (iOS).
@@ -442,7 +444,7 @@ struct LiveEditor: View {
             fillOpacity: theme.isDark ? 0.14 : 0.09, ringOpacity: theme.isDark ? 0.3 : 0.24
         )
         config.services = MarkdownEditorServices(
-            wikiLinks: TitleResolver(titles: linkTargets),
+            wikiLinks: TitleResolver(titles: linkTargets, statuses: linkStatuses),
             images: AttachmentImages(root: links?.vault?.root, paths: links?.attachments ?? []),
             syntaxHighlighter: CodeBlockStyle(background: theme.code)
         )
@@ -505,16 +507,30 @@ nonisolated private struct HighlightBubble: MarkdownExtension {
     func bubble(theme: MarkdownEditorTheme) -> InlineBubble? { bubble }
 }
 
-/// Resolves a link by its title, as `WikiLink` reads it, against the lowercased titles of the folder's files.
+/// Resolves a link by its title, as `WikiLink` reads it, against the lowercased titles of the folder's files. A link to a
+/// task carries its status's checkbox marker.
 nonisolated struct TitleResolver: WikiLinkResolver {
     let titles: Set<String>
+    var statuses: [String: Status] = [:]
 
     func resolve(displayName: String, range: NSRange) -> WikiLinkResolution? {
-        guard let link = WikiLink(inner: displayName), titles.contains(link.title.lowercased()) else { return nil }
-        return WikiLinkResolution(id: displayName, exists: true)
+        guard let link = WikiLink(inner: displayName) else { return nil }
+        let title = link.title.lowercased()
+        guard titles.contains(title) else { return nil }
+        return WikiLinkResolution(id: displayName, exists: true, marker: statuses[title].map(StatusCheckbox.marker(for:)))
     }
 
-    func fingerprint() -> AnyHashable { titles }
+    func fingerprint() -> AnyHashable { [AnyHashable(titles), AnyHashable(statuses)] }
+
+    /// The statuses of the tasks, live or logged, that links open: the first item with each title, when it's a task.
+    static func statuses(in index: VaultIndex) -> [String: Status] {
+        var result: [String: Status] = [:]
+        for item in index.items.values where item.properties.kind == .task {
+            let title = item.title.lowercased()
+            if index.items(titled: title).first?.path == item.path { result[title] = item.properties.status }
+        }
+        return result
+    }
 }
 
 /// Draws `![[name.png]]` from the folder's images, found as `Vault.attachmentPath(for:in:)` finds them. An image keeps

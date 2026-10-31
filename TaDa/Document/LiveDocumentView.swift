@@ -54,6 +54,7 @@ struct BodyEditor: View {
             theme: theme,
             documentID: document.path,
             linkTargets: model.index.titles,
+            linkStatuses: TitleResolver.statuses(in: model.index),
             fitsContent: true,
             autocomplete: model.autocomplete,
             haptics: model.haptics,
