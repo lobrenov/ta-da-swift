@@ -197,7 +197,6 @@ struct PhoneSearchResults: View {
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    PhoneRowSeparator(inset: 52)
                 }
             }
             if !tasks.isEmpty {
@@ -265,15 +264,6 @@ struct PhoneSectionHeader: View {
         .padding(.top, 18)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
-    }
-}
-
-/// The rule under a row, inset to line up with its title.
-struct PhoneRowSeparator: View {
-    var inset: CGFloat = 50
-
-    var body: some View {
-        Hairline().padding(.leading, inset)
     }
 }
 #endif

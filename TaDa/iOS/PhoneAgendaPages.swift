@@ -204,7 +204,6 @@ private struct PhoneAgendaWeek: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .scaledMinHeight(52)
                 .padding(.trailing, 16)
-                .overlay(alignment: .bottom) { Hairline() }
             }
             .padding(.leading, 16)
             .contentShape(.rect)
@@ -266,7 +265,6 @@ private struct AgendaRepeats: View {
             }
             .padding(.horizontal, 16)
             .scaledMinHeight(46)
-            PhoneRowSeparator()
         }
     }
 }

@@ -69,7 +69,6 @@ struct ReminderRow: View {
             }
             .padding(.trailing, 16)
             .scaledMinHeight(40)
-            .overlay(alignment: .bottom) { Hairline() }
         }
         .padding(.leading, 16)
     }

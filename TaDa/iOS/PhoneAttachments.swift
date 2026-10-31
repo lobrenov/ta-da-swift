@@ -219,7 +219,6 @@ private struct AttachmentRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityAddTraits(isPicked ? .isSelected : [])
-            PhoneRowSeparator(inset: nav.isPicking ? 16 + 22 + 12 + 44 + 12 : 16 + 44 + 12)
         }
         .background {
             // An opaque base under the highlight, so the swipe's pill stays hidden behind the row.

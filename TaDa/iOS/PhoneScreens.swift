@@ -97,7 +97,6 @@ struct PhoneTasksScreen: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                PhoneRowSeparator(inset: 52)
             }
             PhoneProjectRows(model: model)
         }

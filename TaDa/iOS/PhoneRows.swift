@@ -65,7 +65,6 @@ struct PhoneTaskRow: View {
             .padding(.horizontal, 16)
             .padding(.vertical, isSearch ? 10 : 0)
             .scaledMinHeight(isSearch ? 0 : 46)
-            PhoneRowSeparator()
         }
         .background {
             // An opaque base under the highlight, so the swipe's pill stays hidden behind the row.
@@ -201,7 +200,6 @@ struct PhoneProjectRow: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            PhoneRowSeparator(inset: 52)
         }
         .contextMenu { PhoneFileMenu(model: model, item: project) }
     }
@@ -238,7 +236,6 @@ struct PhoneAreaRow: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            PhoneRowSeparator(inset: 52)
         }
         .contextMenu { PhoneFileMenu(model: model, item: area) }
     }
@@ -276,7 +273,6 @@ struct PhoneNoteRow: View {
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            PhoneRowSeparator(inset: 52)
         }
     }
 }
