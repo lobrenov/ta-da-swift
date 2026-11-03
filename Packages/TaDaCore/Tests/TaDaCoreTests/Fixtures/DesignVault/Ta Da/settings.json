@@ -1,0 +1,24 @@
+{
+  "dailyNotes" : {
+    "dailyFolder" : "Periodic Notes/Daily Notes",
+    "dailyTemplate" : null,
+    "weekFolder" : "Periodic Notes/Weekly Notes",
+    "weekNotes" : true,
+    "weekTemplate" : null
+  },
+  "editor" : {
+    "autocomplete" : {
+      "brackets" : true,
+      "formatting" : true,
+      "tags" : true,
+      "wikiLinks" : true
+    },
+    "taskLinkBoxes" : true
+  },
+  "theme" : {
+    "darkScheme" : "Catppuccin Mocha",
+    "lightScheme" : "Catppuccin Latte",
+    "themeSet" : "Ayu",
+    "usesSchemePerAppearance" : false
+  }
+}

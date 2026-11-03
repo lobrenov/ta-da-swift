@@ -1,6 +1,6 @@
 ---
 type: area
-createdDate: 2026-10-09
+createdDate: 2026-10-01
 tags: [work]
 ---
-Client work and admin.
+App development and the admin around it.

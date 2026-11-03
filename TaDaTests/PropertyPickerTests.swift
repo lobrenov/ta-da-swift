@@ -94,12 +94,12 @@ struct PropertyPickerTests {
 
     @Test func typingFiltersTheProjectsAndOffersOneByThatName() {
         let index = index()
-        let meg = menu(index, task: "Ta Da/tasks/Plan.md", query: " meg ")
-        #expect(meg.titles == ["Game Jam - Starfall", nil, "New project “meg”"])
-        #expect(meg.highlight == 0, "the first match, as the current project doesn't match")
+        let gam = menu(index, task: "Ta Da/tasks/Plan.md", query: " gam ")
+        #expect(gam.titles == ["Game Jam - Starfall", nil, "New project “gam”"])
+        #expect(gam.highlight == 0, "the first match, as the current project doesn't match")
 
-        let ta = menu(index, task: "Ta Da/tasks/Plan.md", query: "ta")
-        #expect(ta.titles == ["Ta Da MVP", nil, "New project “ta”"])
+        let ta = menu(index, task: "Ta Da/tasks/Plan.md", query: "ta d")
+        #expect(ta.titles == ["Ta Da MVP", nil, "New project “ta d”"])
         #expect(ta.highlight == 0, "the current project, which matches")
 
         let none = menu(index, task: "Ta Da/tasks/Plan.md", query: "launch")

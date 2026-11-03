@@ -95,7 +95,7 @@ private let index = VaultIndex(items)
     ])
     #expect(search.search("WEBSITE").map(\.title) == ["Update Dan’s website", "Other"])
     #expect(search.search("cafe err").map(\.title) == ["Café run"])
-    #expect(search.search("gamejams dan").map(\.title) == ["Update Dan’s website"])
+    #expect(search.search("jams dan").map(\.title) == ["Update Dan’s website"])
     #expect(search.search("  ").isEmpty)
 }
 

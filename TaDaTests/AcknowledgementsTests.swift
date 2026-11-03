@@ -5,13 +5,20 @@ import Testing
 struct AcknowledgementsTests {
     @Test func bundledFileListsEachPackageWithItsLicence() {
         let all = Acknowledgement.all
-        #expect(all.map(\.name) == ["swift-markdown-engine-extended (the Live editor)", "Yams", "libyaml (inside Yams)"])
+        #expect(all.map(\.name) == [
+            "swift-markdown-engine-extended (the Live editor)", "Yams", "libyaml (inside Yams)",
+            "Ayu (the Ayu Light and Ayu Mirage themes)", "TokyoNight (the TokyoNight Day and TokyoNight themes)",
+            "Catppuccin (the Catppuccin Latte and Catppuccin Mocha themes)",
+        ])
         #expect(all.map(\.url) == [
             "https://github.com/lobrenov/swift-markdown-engine-extended",
             "https://github.com/jpsim/Yams",
             "https://github.com/yaml/libyaml",
+            "https://github.com/ayu-theme/ayu-colors",
+            "https://github.com/folke/tokyonight.nvim",
+            "https://github.com/catppuccin/palette",
         ])
-        #expect(all.map(\.licence) == ["Apache License 2.0", "MIT", "MIT"])
+        #expect(all.map(\.licence) == ["Apache License 2.0", "MIT", "MIT", "MIT", "Apache License 2.0", "MIT"])
     }
 
     @Test func parsesSectionsAndTakesTheFirstLicenceHeading() {
