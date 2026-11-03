@@ -17,7 +17,7 @@ The Ta Da app (Mac and iPhone) is versioned `x.y.z (n)`. The Obsidian plugin is 
 - Plugin: `version` in `manifest.json` and `package.json`, plus a `versions.json` entry (plugin version → Obsidian `minAppVersion`).
 
 ## Tags
-Each new version is tagged `v<x.y.z>`, in its own repo, on the commit that sets it. A version's builds are the build numbers between its tag and the next.
+Each new version is tagged in its own repo, on the commit that sets it: the app `v<x.y.z>`, the plugin `<x.y.z>` (from 0.5.1; Obsidian downloads the release whose tag is the manifest version). A version's builds are the build numbers between its tag and the next.
 
 ## Plugin pairing
 Each plugin version is paired with the Ta Da version whose TaDaCore it ports, meaning the version whose conformance fixtures its tests pass. A TaDaCore or file format change in Ta Da is ported to the plugin, and the plugin version that ships it is paired with that Ta Da version.
@@ -38,3 +38,4 @@ Each plugin version is paired with the Ta Da version whose TaDaCore it ports, me
 | 0.4.2 | 0.36.3 |
 | 0.4.3 | 0.36.4 |
 | 0.5.0 | 0.36.5 |
+| 0.5.1 | 0.36.5 |
