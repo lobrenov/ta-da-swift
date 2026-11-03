@@ -18,3 +18,6 @@ A scrolling chart of temperature and rain for the next 24 hours.
 - [x] Plot temperature
 - [ ] Add rain bars
 - [ ] Dark mode colours
+
+> [!note] Rain Bar Research
+> - find an example or two?

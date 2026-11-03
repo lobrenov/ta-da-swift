@@ -9,3 +9,5 @@ tags: health, errands
 dueDate: 2026-10-28
 ---
 Six months since the last one.
+
+- [ ] Check local dentists
