@@ -62,6 +62,7 @@ struct AreaBrowserView: View {
                         .accessibilityAddTraits(.isHeader)
                 }
                 Spacer(minLength: 12)
+                GroupFilterButton(model: model, domain: .area(area.path), items: files)
                 Button { model.selection = area.path } label: {
                     Label("Open area file", systemImage: "doc")
                 }

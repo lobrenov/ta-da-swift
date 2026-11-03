@@ -23,7 +23,7 @@ struct TaskListView: View {
         BrowserColumn(model: model, paths: paths, spacing: 22,
                       empty: all.isEmpty && !filter.isActive ? empty : tasks.isEmpty && filter.isActive ? .noTagMatch : nil) {
             VStack(alignment: .leading, spacing: 10) {
-                DomainHeader(.loose) { GroupButton(model: model, list: list) }
+                DomainHeader(.loose) { GroupFilterButton(model: model, list: list, domain: .loose, items: all) }
                 TagFilterRow(model: model, domain: .loose, items: all, shown: (tasks.count, all.count))
             }
         } content: {

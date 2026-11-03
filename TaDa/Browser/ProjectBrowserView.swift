@@ -48,7 +48,7 @@ struct ProjectBrowserView: View {
                         .accessibilityAddTraits(.isHeader)
                 }
                 Spacer(minLength: 12)
-                GroupButton(model: model, list: .project)
+                GroupFilterButton(model: model, list: .project, domain: domain, items: tasks)
                 OpenFileButton(label: "Open project file") { model.selection = project.path }
             }
             ProjectPropertyLine(model: model, project: project, progress: progress)

@@ -84,6 +84,8 @@ struct FolderBrowserView: View {
                     }
                     .fixedSize(horizontal: false, vertical: true)
                 }
+                Spacer(minLength: 12)
+                GroupFilterButton(model: model, domain: .folder(folder), items: notes)
             }
             .frame(height: 34)
             Text(counts.joined(separator: " · "))

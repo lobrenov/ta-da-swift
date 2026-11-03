@@ -58,16 +58,6 @@ extension AppModel {
     /// The day the Agenda's month is the month of: the selected day, or the middle of the selected week.
     var agendaAnchor: LocalDate { agendaSelection.anchor }
 
-    /// "Today", "Tomorrow" or "Yesterday" for the days around today.
-    func relativeDayName(_ day: LocalDate) -> String? {
-        switch today.days(to: day) {
-        case 0: "Today"
-        case 1: "Tomorrow"
-        case -1: "Yesterday"
-        default: nil
-        }
-    }
-
     /// The repeating tasks with an occurrence on `day`, once each, in `occurrences`' order.
     func repeats(on day: LocalDate, in occurrences: [Occurrence]) -> [Item] {
         var seen = Set<String>()

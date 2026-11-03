@@ -1,6 +1,6 @@
-// The Agenda's day: its heading, the daily note's row, the day's events then reminders, then its tasks as Today's list
-// groups them, under Scheduled, then the coming occurrences of repeating tasks in a Repeats group. A day's tasks keep
-// Today's Group menu and tag filter; while tags are picked the events and reminders hide.
+// The Agenda's day: the daily note's row, the day's events then reminders, then the picked tags' chips and the Group and
+// Filter capsule over its tasks as Today's list groups them, then the coming occurrences of repeating tasks in a
+// Repeats group. While tags are picked the events and reminders hide.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -27,13 +27,6 @@ struct AgendaDayList: View {
             AgendaStrip(model: model)
         } content: {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text(day.formatted(.fullDate)).font(.system(size: 18, weight: .bold)).foregroundStyle(theme.color(\.strong))
-                        .accessibilityAddTraits(.isHeader)
-                    Spacer(minLength: 0)
-                    if let relative = model.relativeDayName(day) { Text(relative).fontWeight(.semibold).foregroundStyle(theme.color(\.accent)) }
-                }
-                .padding(.horizontal, 10)
                 AgendaNoteRow(model: model, period: .day(day))
                 if !events.isEmpty || !reminders.isEmpty {
                     VStack(alignment: .leading, spacing: 1) {
@@ -43,23 +36,15 @@ struct AgendaDayList: View {
                     .padding(.top, 4)
                 }
             }
-            if !all.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        VStack(spacing: 7) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "calendar").font(.system(size: 12)).foregroundStyle(theme.color(\.due))
-                                    .accessibilityHidden(true)
-                                Text("Scheduled").fontWeight(.semibold).foregroundStyle(theme.color(\.strong))
-                                Spacer(minLength: 8)
-                                GroupButton(model: model, list: list)
-                            }
-                            .padding(.horizontal, 10)
-                            Hairline()
-                        }
-                        .accessibilityElement(children: .contain)
+            VStack(alignment: .leading, spacing: 8) {
+                if !all.isEmpty || filter.isActive {
+                    HStack(alignment: .top, spacing: 8) {
                         TagFilterRow(model: model, domain: .agenda, items: all, shown: (tasks.count, all.count))
+                        Spacer(minLength: 8)
+                        GroupFilterButton(model: model, list: all.isEmpty ? nil : list, domain: .agenda, items: all)
                     }
+                }
+                if !all.isEmpty {
                     VStack(alignment: .leading, spacing: 22) {
                         if tasks.isEmpty {
                             Text("Nothing here carries the picked tags.").foregroundStyle(theme.color(\.muted)).padding(.horizontal, 10)
@@ -71,7 +56,8 @@ struct AgendaDayList: View {
                         }
                     }
                 }
-            } else if events.isEmpty && reminders.isEmpty && occurrences.isEmpty {
+            }
+            if all.isEmpty, events.isEmpty, reminders.isEmpty, occurrences.isEmpty {
                 Text("Nothing scheduled").foregroundStyle(theme.color(\.muted)).padding(.horizontal, 10)
             }
             if !occurrences.isEmpty { AgendaRepeats(model: model, occurrences: occurrences) }

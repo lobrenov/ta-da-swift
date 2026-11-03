@@ -1,4 +1,4 @@
-// The Agenda's week: its heading, the week note's row, a row for each day that picks it, then the tasks due or at their
+// The Agenda's week: the week note's row, a row for each day that picks it, then the tasks due or at their
 // deadline in the week.
 #if os(macOS)
 import SwiftUI
@@ -19,17 +19,6 @@ struct AgendaWeekList: View {
             AgendaStrip(model: model)
         } content: {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text("Week \(week.week)").font(.system(size: 18, weight: .bold)).foregroundStyle(theme.color(\.strong))
-                        .accessibilityAddTraits(.isHeader)
-                    Text("\(week.firstDay.formatted(.dayMonth)) – \(week.firstDay.adding(days: 6).formatted(.dayMonth))")
-                        .foregroundStyle(theme.color(\.muted))
-                        .lineLimit(1)
-                        .fixedSize()
-                    Spacer(minLength: 0)
-                    if week == model.today.isoWeek { Text("This week").fontWeight(.semibold).foregroundStyle(theme.color(\.accent)) }
-                }
-                .padding(.horizontal, 10)
                 if model.weekNotes { AgendaNoteRow(model: model, period: .week(week)) }
                 VStack(spacing: 0) {
                     ForEach(week.days, id: \.self) { dayRow($0, entries: entries) }
