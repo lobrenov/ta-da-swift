@@ -19,7 +19,7 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - App + core tests: `xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test`. This runs `TaDa.xctestplan`: TaDaTests, TaDaCoreTests and TaDaUITests. Always ask for user permission before running UI tests that take control of the screen/mouse/keyboard. The UI tests need the Accessibility permission for Xcode's test runner and fail if Ta Da is already running (stop it in Xcode first). They launch with `-uiTesting`, which uses throwaway settings and a small folder in the app's container (`TaDa/UITestingLaunch.swift`). Skip them with `-skip-testing:TaDaUITests`.
 - 1,000-file test folder (to open in the app): `TADA_GENERATE_VAULT=<dir> swift test --package-path Packages/TaDaCore --filter writeGeneratedVault`. `LargeVaultTests` and `LargeVaultUITimingTests` print the scale timings.
 - Design renders (PNG per theme/domain on the DesignVault fixture, to compare with the canvas): `TEST_RUNNER_TADA_RENDER_DIR=<dir> xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -destination 'platform=macOS' test -only-testing:TaDaTests/DesignRenderTests ENABLE_APP_SANDBOX=NO`. Check glass and the title bar in the running app.
-- Beta .dmg: `scripts/make-beta-dmg.sh` (writes `build/TaDa-<version>-<build>.dmg`; bump Build first). Sharing and tester steps: `docs/beta-builds.md`.
+- Release: `scripts/make-release.sh` (bump Build first; `--dry-run` writes `build/release/` and publishes nothing). It publishes a GitHub release with the update zip, DMG and Sparkle feed. Signing key, releasing and first install: `docs/releases.md`.
 - Always open `TaDa.xcworkspace`, not the `.xcodeproj`.
 
 ## Layout

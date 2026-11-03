@@ -5,7 +5,7 @@ Work not yet built.
 ## Features
 
 - `.itermcolors` import into a theme.
-- Developer ID signing and notarisation, or TestFlight for Mac, if Ta Da joins the paid Apple Developer Program: testers would no longer unblock each beta build (`docs/beta-builds.md`).
+- Developer ID signing and notarisation, or TestFlight for Mac, if Ta Da joins the paid Apple Developer Program: a first install would no longer need unblocking (`docs/releases.md`).
 - Per-file iCloud sync state.
 - Attachments: check on a device that an undownloaded iCloud image shows its placeholder size and added date, and that Clean Up's unticked-while-downloading rule holds against a real sync.
 - JetBrains Mono as the mono font.

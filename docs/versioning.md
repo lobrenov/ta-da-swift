@@ -8,7 +8,7 @@ The Ta Da app (Mac and iPhone) is versioned `x.y.z (n)`. The Obsidian plugin is 
 - `z`: increment: a build plan stage, a logical group of commits, or a fix.
 
 ## Build n (app only)
-- Goes up by one when a build from a changed codebase goes out (a beta DMG or an install on a device). Building the same code again, on any Mac, keeps its number. Runs from Xcode during development don't count.
+- Goes up by one when a build from a changed codebase goes out (a release or an install on a device). Building the same code again, on any Mac, keeps its number. Runs from Xcode during development don't count.
 - Never resets, independent of the version. A new version always goes out with a new build.
 - The Mac and iPhone apps share the version and build (one target).
 

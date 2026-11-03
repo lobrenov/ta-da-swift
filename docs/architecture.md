@@ -5,12 +5,12 @@ How the app is built. The file format and writing rules are in `docs/file-format
 ## Layers
 
 - **TaDaCore** (`Packages/TaDaCore`, local package): the model, parsing, surgical writes, the index, queries and storage. Foundation, `MarkdownEngineSyntax` (the Live editor package's grammar) and Yams 6.2.2 only; no UI.
-- **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 and iOS 26 minimum; on the Mac, App Sandbox with user-selected read/write and Calendars. The model, theme, live editor, folder handling and the document's title, body, banner and footer build for both; the Mac's views are behind `#if os(macOS)` and the iPhone's are in `TaDa/iOS/`.
+- **TaDa** (`TaDa/`, app target): SwiftUI views over an `@Observable` `AppModel`. macOS 26 and iOS 26 minimum; on the Mac, App Sandbox with user-selected read/write, Calendars and outgoing connections. The model, theme, live editor, folder handling and the document's title, body, banner and footer build for both; the Mac's views are behind `#if os(macOS)` and the iPhone's are in `TaDa/iOS/`.
 - **MarkdownEngine** (package `swift-markdown-engine-extended`, pinned to an exact `-live.<n>` tag): the Live editor, a fork of swift-markdown-engine under Apache-2.0, for macOS and iOS. Parsing, styling, layout, input and the text-delegate path are shared; `Platform/Platform.swift` names the AppKit and UIKit types, and `TextView/iOS/` holds the iOS editor. Its `FORK.md` lists the changes from upstream. Its package also declares HighlighterSwift and SwiftMath, for upstream's code-block and LaTeX products; `Package.resolved` pins them within the fork's `from:` ranges (a re-resolve may move them, harmlessly) and Xcode fetches them, but Ta Da doesn't link or build them.
 
 The workspace `TaDa.xcworkspace` holds the project and TaDaCore; the test plan `TaDa.xctestplan` runs TaDaTests, TaDaCoreTests and TaDaUITests.
 
-`TaDa/Acknowledgements.txt` ships in the app bundle with the notices and licences of the linked packages (the editor fork, Yams and its libyaml) and of the bundled themes' palettes (Ayu, TokyoNight, Catppuccin), copied from their own files; Settings ▸ About lists each package's name, URL and licence from it (`Acknowledgement`).
+`TaDa/Acknowledgements.txt` ships in the app bundle with the notices and licences of the linked packages (the editor fork, Yams and its libyaml, and Sparkle) and of the bundled themes' palettes (Ayu, TokyoNight, Catppuccin), copied from their own files; Settings ▸ About lists each package's name, URL and licence from it (`Acknowledgement`).
 
 ## Files
 
@@ -24,6 +24,8 @@ TaDa/
 ├── SettingsStore.swift        where AppModel keeps this device's settings: UserDefaults, or a test's in-memory store (the folder's settings are in `Ta Da/settings.json`)
 ├── Commands.swift             menu commands and shortcuts
 ├── UITestingLaunch.swift      the `-uiTesting` launch: throwaway settings and folder
+├── Info.plist                 the Mac's Sparkle keys, merged with the generated Info.plist
+├── TaDa.entitlements          the Mac's mach-lookup exceptions for Sparkle's installer
 ├── Theme/                     Theme (15 colour tokens + isDark, as `PlatformColor`: NSColor or UIColor), ThemeSet, Appearance, the 17 bundled
 │                              schemes and 9 sets; themed(by:) sets \.theme and the colour scheme and follows the system appearance
 ├── Onboarding/                FolderPickerView
@@ -33,6 +35,7 @@ TaDa/
 │                              the denied state's settings link, calendar colours)
 ├── Notifications/             NotificationsStore (the Badges switch, notification access, the app icon's badge)
 ├── QuickEntry/                Hotkey (a key and Carbon modifiers), HotkeyService (registers the global hotkey with Carbon), QuickEntryPanel (the floating panel), QuickEntryView (its content)
+├── Updates/                   Updater: Sparkle on the Mac (see Updates below)
 ├── Sidebar/                   SidebarView: search, domains, the Tasks | Tags | Notes switch over Loose, loose projects and areas with their projects, Untagged and the tag tree, or Loose and the folder tree, folder line, Settings, New buttons; SidebarSplitView: the sidebar beside the workspace, hidden or floating in a narrow window; SidebarState: whether it is docked, hidden or floating; SidebarSwipe: the two-finger swipes that float and hide it
 ├── Browser/
 │   ├── WorkspaceView.swift    the area right of the sidebar, per domain
@@ -150,6 +153,12 @@ The global hotkey (`AppModel.quickEntryHotkey`, ⌃Space by default; Settings �
 It opens or closes `QuickEntryPanel`: a borderless `.nonactivatingPanel` at the floating level, on every Space and over full-screen apps, centred on the pointer's screen. It takes the keyboard without bringing Ta Da forward, keeps its top edge as its content grows, and closes on esc or when neither it nor one of its menus has the keyboard. Each opening starts a new `AppModel.quickEntryDraft` (TaDaCore's `QuickEntryDraft`) and a new `QuickEntryView`.
 
 The view's chips are `PropertyChipRow` and `TagChipRow` on `AppModel.quickEntryItem`, the draft as an `Item` at `AppModel.quickEntryDraftPath`, which isn't a file. The pickers' writers (`setStatus`, `setParent`, `setDate`, `addTag`, `removeTag`) edit the draft for that path; `item(at:)` gives tagMenu the draft, whose own section is Added. Hidden buttons take ⌘P, ⌘S, ⌘D and ⌘T and set `propertyMenuRequest` for the draft's chips. Each opening reads the names a new file is numbered against (`quickEntryTakenNames()`), and the file line shows `quickEntryPath(for:taken:)`. ↵ writes the draft through `AppModel.create(_:)` and closes; ⌘↵ also brings Ta Da forward and opens the file with `openLink(to:)`, setting `bodyFocus` so `LiveEditor` takes the keyboard with the caret at the body's start. A failed write brings Ta Da forward to show its error.
+
+## Updates
+
+The Mac app updates itself with Sparkle 2.10.1, linked to the Mac only (`platformFilters`). `Updater` (`TaDa/Updates/Updater.swift`, the only file that imports Sparkle) is owned by `AppDelegate`: it starts `SPUStandardUpdaterController`, checks the feed in the background on open, and backs Ta Da ▸ Check for Updates…, which is disabled while a check runs (`canCheckForUpdates`). Sparkle also checks daily (`SUEnableAutomaticChecks`) and shows its own update window. Debug builds don't start it.
+
+`TaDa/Info.plist` (Mac only, through `INFOPLIST_FILE[sdk=macosx*]`) holds `SUFeedURL` (`https://github.com/lobrenov/ta-da-swift/releases/latest/download/appcast.xml`), `SUPublicEDKey`, `SUEnableInstallerLauncherService` and `SUEnableAutomaticChecks`. `TaDa/TaDa.entitlements` (`CODE_SIGN_ENTITLEMENTS[sdk=macosx*]`) adds the `-spks` and `-spki` mach-lookup exceptions for Sparkle's installer; outgoing connections are on, so Sparkle downloads in the app. An update is an EdDSA-signed zip, accepted when its signature matches `SUPublicEDKey` or its code signature matches the app's. Releasing is in `docs/releases.md`.
 
 ## iPhone
 
