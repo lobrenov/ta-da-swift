@@ -1,6 +1,9 @@
 # Ta Da
 
-A task manager over a folder of markdown files. Each task, project, area and note is one `.md` file with YAML frontmatter, so the folder stays readable in any text editor and works as an Obsidian vault.
+A completely vibe-coded task manager using markdown files. Each task, project, area and note is one `.md` file with YAML frontmatter, so the folder stays readable in any text editor and works as an Obsidian vault.
+
+> [!NOTE]
+> **AI Disclaimer:** Ta Da and its Obsidian plugin version are 100% vibe-coded. I've no intention of claiming that "I made" Ta Da or could quickly or easily re-create it myself. It almost definitely has many AI-isms in its visual design and codebase. 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/mac-agenda-dark.png">
@@ -13,7 +16,7 @@ A task manager over a folder of markdown files. Each task, project, area and not
 |---|---|
 | **Mac** | Beta - signing and notarisation pending. |
 | **iPhone** | Beta - App Store pending. |
-| **Obsidian** | A plugin that can be used over the same vault: [ta-da-obsidian](https://github.com/lobrenov/ta-da-obsidian). |
+| **Obsidian** | An [Obsidian plugin](https://github.com/lobrenov/ta-da-obsidian) that can be used over the same vault, either concurrently or standalone. Works on Obsidian desktop and mobile. |
 
 All three read and write the same files, so any file-synced vault accessible by Ta Da and Obsidian works - e.g. iCloud Drive.
 
