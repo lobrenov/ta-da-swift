@@ -1,5 +1,6 @@
 // The sheets that set a property on one or more files: a due date or deadline from a month calendar, or a project or
-// area. Each sets nothing until ✓. A task's due date sheet also holds its repeat rule, on a Repeat page.
+// area. Each sets nothing until ✓; swiping the date sheet down sets its dates too. A task's due date sheet also holds its
+// repeat rule, on a Repeat page.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -19,6 +20,8 @@ struct PhoneDateSheet: View {
     /// The rule set or stopped on the Repeat page, written with the dates; nil while it's untouched.
     @State private var repeatChange: RepeatRule??
     @State private var showsRepeat = false
+    /// ✕ or ✓ closed the sheet; else it was swiped down, which sets what's staged.
+    @State private var isClosed = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.dismiss) private var dismiss
     @Environment(\.theme) private var theme
@@ -80,7 +83,10 @@ struct PhoneDateSheet: View {
             .navigationDestination(isPresented: $showsRepeat) { PhoneRepeatPage(picker: picker) }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) { dismiss() }
+                    Button(role: .cancel) {
+                        isClosed = true
+                        dismiss()
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(role: .confirm) { apply() }
@@ -90,6 +96,11 @@ struct PhoneDateSheet: View {
         }
         .presentationDetents([.medium, .large])
         .onAppear { configureRepeat() }
+        .onDisappear { if !isClosed, write() { nav.endPicking() } }
+        .accessibilityAction(.escape) {
+            isClosed = true
+            dismiss()
+        }
         .onChange(of: kind) {
             month = (day ?? model.today).startOfMonth
             configureRepeat()
@@ -183,17 +194,26 @@ struct PhoneDateSheet: View {
     }
 
     private func apply() {
-        let changes = AgendaEntry.Kind.changes(changed, in: days)
-        let change = CalendarPickerModel.Repeating.held(repeatChange, staged: stagedItems)
-        let paths = paths
+        isClosed = true
         nav.endPicking()
         dismiss()
+        write()
+    }
+
+    /// Writes the staged dates and rule, a rule still typed on the Repeat page included. False when nothing is staged.
+    @discardableResult private func write() -> Bool {
+        let typed = picker.isEnds ? nil : picker.typedRule
+        let changes = AgendaEntry.Kind.changes(changed, in: days)
+        let change = CalendarPickerModel.Repeating.held(typed.map { .some($0) } ?? repeatChange, staged: stagedItems)
+        guard !changes.isEmpty || change != nil else { return false }
+        let paths = paths
         Task {
             for (kind, date) in changes {
                 await model.setDate(kind, to: date, of: paths)
             }
             if let change { await model.setRepeat(change, of: paths) }
         }
+        return true
     }
 }
 

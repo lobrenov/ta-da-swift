@@ -241,17 +241,19 @@ struct PhoneAreaRow: View {
     }
 }
 
-/// A note in a tag's screen or search: its page, title, and subtasks and folder, opening its file.
+/// A note in a folder's or a tag's screen or search: its page, title, and subtasks and folder (not in a folder's screen),
+/// opening its file.
 struct PhoneNoteRow: View {
     let model: AppModel
     let note: Item
+    var showsFolder = true
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
         let folder = Vault.folder(of: note.path)
         let subtasks = note.subtasks
-        let meta = (subtasks.total > 0 ? ["\(subtasks.done)/\(subtasks.total)"] : []) + [folder.isEmpty ? "Loose" : folder]
+        let meta = (subtasks.total > 0 ? ["\(subtasks.done)/\(subtasks.total)"] : []) + (showsFolder ? [folder.isEmpty ? "Loose" : folder] : [])
         VStack(spacing: 0) {
             Button { nav.push(.file(note.path)) } label: {
                 HStack(spacing: 12) {
@@ -261,10 +263,12 @@ struct PhoneNoteRow: View {
                             .scaledFont(size: 17)
                             .foregroundStyle(theme.color(\.fg))
                             .lineLimit(2)
-                        Text(meta.joined(separator: " · "))
-                            .scaledFont(size: 13)
-                            .foregroundStyle(theme.color(\.muted))
-                            .lineLimit(1)
+                        if !meta.isEmpty {
+                            Text(meta.joined(separator: " · "))
+                                .scaledFont(size: 13)
+                                .foregroundStyle(theme.color(\.muted))
+                                .lineLimit(1)
+                        }
                     }
                     Spacer(minLength: 8)
                 }

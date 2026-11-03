@@ -13,18 +13,7 @@ struct PhoneGroupMenu: View {
     var body: some View {
         let grouping = model.grouping(of: list)
         Menu {
-            Picker("Group by", selection: Binding(get: { model.grouping(of: list) },
-                                                 set: { model.setGrouping($0, of: list) })) {
-                ForEach(list.groupings, id: \.self) { choice in
-                    if choice == list.defaultGrouping {
-                        Label { Text(choice.rawValue); Text("Default") } icon: { Image(systemName: choice.systemImage) }
-                            .tag(choice)
-                    } else {
-                        Label(choice.rawValue, systemImage: choice.systemImage).tag(choice)
-                    }
-                }
-            }
-            .pickerStyle(.inline)
+            PhoneGroupPicker(model: model, list: list).pickerStyle(.inline)
         } label: {
             HStack(spacing: 6) {
                 Text(grouping.rawValue).foregroundStyle(theme.color(\.fg))
@@ -45,8 +34,28 @@ struct PhoneGroupMenu: View {
     }
 }
 
+/// The Group by picker, its default marked, for a menu.
+struct PhoneGroupPicker: View {
+    let model: AppModel
+    let list: GroupedList
+
+    var body: some View {
+        Picker("Group by", systemImage: model.grouping(of: list).systemImage,
+               selection: Binding(get: { model.grouping(of: list) }, set: { model.setGrouping($0, of: list) })) {
+            ForEach(list.groupings, id: \.self) { choice in
+                if choice == list.defaultGrouping {
+                    Label { Text(choice.rawValue); Text("Default") } icon: { Image(systemName: choice.systemImage) }
+                        .tag(choice)
+                } else {
+                    Label(choice.rawValue, systemImage: choice.systemImage).tag(choice)
+                }
+            }
+        }
+    }
+}
+
 /// The filter pill, then the picked tags as chips with ×, then Clear. Nothing when no file in `items` carries a tag
-/// and none is picked.
+/// and none is picked. Without the pill (`showsPill`), nothing while none is picked.
 struct PhoneTagFilterBar: View {
     let model: AppModel
     let domain: AppModel.Domain
@@ -56,6 +65,7 @@ struct PhoneTagFilterBar: View {
     let shown: Int
     /// A list whose Group menu leads the row.
     var group: GroupedList? = nil
+    var showsPill = true
     @State private var isPicking = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
@@ -63,41 +73,10 @@ struct PhoneTagFilterBar: View {
     var body: some View {
         let filter = model.tagFilter(on: domain)
         Group {
-            if group != nil || filter.isActive || items.contains(where: { !$0.tags.isEmpty }) {
+            if filter.isActive || showsPill && (group != nil || items.contains(where: { !$0.tags.isEmpty })) {
                 WrappingHStack(spacing: 8) {
                     if let group { PhoneGroupMenu(model: model, list: group) }
-                    Button { isPicking = true } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "line.3.horizontal.decrease")
-                                .scaledFont(size: 12, weight: .bold)
-                                .foregroundStyle(filter.isActive ? theme.color(\.accent) : theme.color(\.muted))
-                            Text("Filter")
-                            if filter.picked.count > 1 {
-                                Text("\(filter.picked.count)")
-                                    .scaledFont(size: 12, weight: .bold)
-                                    .monospacedDigit()
-                                    .foregroundStyle(theme.color(\.bg))
-                                    .padding(.horizontal, 6)
-                                    .background(theme.color(\.accent), in: .capsule)
-                            }
-                        }
-                        .foregroundStyle(theme.color(filter.isActive ? \.strong : \.muted))
-                        .padding(.leading, 11)
-                        .padding(.trailing, 13)
-                        .scaledMinHeight(32)
-                        .background(filter.isActive ? theme.tagFill() : .clear, in: .capsule)
-                        .overlay {
-                            if filter.isActive {
-                                Capsule().strokeBorder(theme.tagRing)
-                            } else {
-                                Capsule().strokeBorder(theme.color(\.surface), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
-                            }
-                        }
-                        .frame(minHeight: 44)
-                        .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(filter.isActive ? "Filter, \(filter.picked.count) tags picked" : "Filter by tag")
+                    if showsPill { pill(filter) }
                     let tags = TagFilter.tags(of: items)
                     ForEach(filter.picked.sorted(), id: \.self) { path in
                         if let tag = tags.first(where: { $0.tag.path == path })?.tag ?? Tag(path) {
@@ -144,6 +123,41 @@ struct PhoneTagFilterBar: View {
             }
         }
         .sheet(isPresented: $isPicking) { PhoneTagFilterSheet(model: model, domain: domain, items: items) }
+    }
+
+    private func pill(_ filter: TagFilter) -> some View {
+        Button { isPicking = true } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "line.3.horizontal.decrease")
+                    .scaledFont(size: 12, weight: .bold)
+                    .foregroundStyle(filter.isActive ? theme.color(\.accent) : theme.color(\.muted))
+                Text("Filter")
+                if filter.picked.count > 1 {
+                    Text("\(filter.picked.count)")
+                        .scaledFont(size: 12, weight: .bold)
+                        .monospacedDigit()
+                        .foregroundStyle(theme.color(\.bg))
+                        .padding(.horizontal, 6)
+                        .background(theme.color(\.accent), in: .capsule)
+                }
+            }
+            .foregroundStyle(theme.color(filter.isActive ? \.strong : \.muted))
+            .padding(.leading, 11)
+            .padding(.trailing, 13)
+            .scaledMinHeight(32)
+            .background(filter.isActive ? theme.tagFill() : .clear, in: .capsule)
+            .overlay {
+                if filter.isActive {
+                    Capsule().strokeBorder(theme.tagRing)
+                } else {
+                    Capsule().strokeBorder(theme.color(\.surface), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                }
+            }
+            .frame(minHeight: 44)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(filter.isActive ? "Filter, \(filter.picked.count) tags picked" : "Filter by tag")
     }
 }
 

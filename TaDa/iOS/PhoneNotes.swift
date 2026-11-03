@@ -103,7 +103,7 @@ struct PhoneFolderScreen: View {
                 .padding(.top, 10)
                 PhoneCardLabel(title: "Notes")
             }
-            ForEach(notes) { PhoneNoteRow(model: model, note: $0) }
+            ForEach(notes) { PhoneNoteRow(model: model, note: $0, showsFolder: false) }
             if notes.isEmpty {
                 Text(path.isEmpty ? "No notes at the top level." : "No notes in \(name) itself.")
                     .scaledFont(size: 15)

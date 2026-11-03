@@ -36,6 +36,7 @@ import Testing
     ("Some text.\n", true),
     ("- One\n- Two\n", true),
     ("## Heading\n", true),
+    ("![[Shot.png]]\n", true),
     ("- [ ] A\n- [x] B\n", false),
     ("\n\n", false),
     ("", false),

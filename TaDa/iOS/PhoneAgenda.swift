@@ -1,5 +1,5 @@
 // The Agenda tab: the title with the month button, the week strip (or the month when it's open), and the day or week
-// below it as a row of pages. Swiping the pages moves a day, or a week when a week is picked; swiping the strip moves
+// below it as a row of pages. A day with tasks has Group by and Filter… in the ⋯ menu. Swiping the pages moves a day, or a week when a week is picked; swiping the strip moves
 // a week, or a month when it's open; both follow `AppModel.agendaSelection`. Pulling a page down past its top opens search; pulling the strip
 // down opens the month.
 #if os(iOS)
@@ -11,6 +11,7 @@ struct PhoneAgendaScreen: View {
     @State private var search = ListSearch(morph: AgendaMotion.spring)
     /// On screen: not in another tab, nor under a pushed screen. Only the page on screen sets what can be picked.
     @State private var isOnScreen = false
+    @State private var isFiltering = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(SearchHost.self) private var searchHost
     @Environment(\.theme) private var theme
@@ -48,6 +49,14 @@ struct PhoneAgendaScreen: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        if case .day = model.agendaSelection {
+                            if !model.agendaTasks.isEmpty {
+                                PhoneGroupPicker(model: model, list: .today).pickerStyle(.menu)
+                            }
+                            if model.tagFilter(on: .agenda).isActive || model.agendaTasks.contains(where: { !$0.tags.isEmpty }) {
+                                Button("Filter…", systemImage: "line.3.horizontal.decrease") { isFiltering = true }
+                            }
+                        }
                         if !nav.pickable.isEmpty {
                             Button("Select", systemImage: "checkmark.circle") { nav.startPicking() }
                         }
@@ -58,6 +67,7 @@ struct PhoneAgendaScreen: View {
             }
         }
         .pickingBars(model: model)
+        .sheet(isPresented: $isFiltering) { PhoneTagFilterSheet(model: model, domain: .agenda, items: model.agendaTasks) }
         .onAppear {
             isOnScreen = true
             searchHost.search = search

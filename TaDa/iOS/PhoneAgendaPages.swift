@@ -1,5 +1,6 @@
-// The Agenda tab's pages: a day (its note, events and reminders, then its tasks and its repeating tasks' occurrences) or
-// a week (its note, a row for each day, then the tasks due in it), and the cards and rows that open a day's or a week's note.
+// The Agenda tab's pages: a day (its note, events and reminders, then its tasks, with the picked tags' chips while the ⋯
+// menu's filter is on, and its repeating tasks' occurrences) or a week (its note, a row for each day, then the tasks due
+// in it), and the cards and rows that open a day's or a week's note.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -52,16 +53,7 @@ private struct PhoneAgendaDay: View {
 
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(day.formatted(.fullDate)).scaledFont(size: 22, weight: .bold).foregroundStyle(theme.color(\.strong))
-                        .accessibilityAddTraits(.isHeader)
-                    Spacer(minLength: 0)
-                    if let relative = model.relativeDayName(day) {
-                        Text(relative).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.accent))
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
+                AgendaPageHeading(text: day.formatted(.fullDate))
                 AgendaNote(model: model, period: .day(day), note: note, isInline: day == model.today)
                 if !events.isEmpty || !reminders.isEmpty {
                     Color.clear.frame(height: 6)
@@ -69,15 +61,8 @@ private struct PhoneAgendaDay: View {
                     ForEach(reminders) { ReminderRow(reminder: $0, context: context, today: day == model.today ? model.today : nil) }
                 }
                 if !all.isEmpty {
-                    HStack {
-                        Text("Scheduled").scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong))
-                            .accessibilityAddTraits(.isHeader)
-                        Spacer(minLength: 8)
-                        PhoneGroupMenu(model: model, list: list)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
-                    PhoneTagFilterBar(model: model, domain: .agenda, items: all, shown: tasks.count)
+                    Color.clear.frame(height: 6)
+                    PhoneTagFilterBar(model: model, domain: .agenda, items: all, shown: tasks.count, showsPill: false)
                     if tasks.isEmpty {
                         ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
                                                description: Text("No task here carries the picked tags.")).padding(.top, 40)
@@ -131,18 +116,7 @@ private struct PhoneAgendaWeek: View {
 
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("Week \(week.week)").scaledFont(size: 22, weight: .bold).foregroundStyle(theme.color(\.strong))
-                        .accessibilityAddTraits(.isHeader)
-                    Text("\(week.firstDay.formatted(.dayMonth)) – \(week.firstDay.adding(days: 6).formatted(.dayMonth))")
-                        .scaledFont(size: 15).foregroundStyle(theme.color(\.muted)).lineLimit(1)
-                    Spacer(minLength: 0)
-                    if week == model.today.isoWeek {
-                        Text("This week").scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.accent))
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 14)
+                AgendaPageHeading(text: "Week \(week.week)")
                 if model.weekNotes {
                     AgendaNote(model: model, period: .week(week), note: model.note(for: .week(week)), isInline: true)
                 }
@@ -211,6 +185,18 @@ private struct PhoneAgendaWeek: View {
         .buttonStyle(.plain)
         .accessibilityLabel(day.formatted(.fullDate) + (note == nil ? ", no note" : ", note") + (counts.isEmpty ? "" : ", " + counts)
                             + AgendaDots.spoken(model, day, marks: marks))
+    }
+}
+
+/// A page's heading for VoiceOver only.
+private struct AgendaPageHeading: View {
+    let text: String
+
+    var body: some View {
+        Color.clear.frame(height: 0)
+            .accessibilityElement()
+            .accessibilityLabel(text)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
