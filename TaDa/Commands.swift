@@ -25,6 +25,7 @@ struct AppCommands: Commands {
     var body: some Commands {
         CommandGroup(after: .appInfo) {
             Button("Check for Updates…") { updater.checkForUpdates() }
+                .disabled(!updater.canCheckForUpdates)
         }
         CommandGroup(replacing: .newItem) {
             Button("New Task/Note") { Task { await model.newTaskOrNote() } }

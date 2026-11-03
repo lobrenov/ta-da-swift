@@ -548,7 +548,7 @@ Sparkle (software updates)
 https://github.com/sparkle-project/Sparkle
 ===============================================================================
 
---- LICENSE (Sparkle) ---
+--- LICENSE (MIT) ---
 
 Copyright (c) 2006-2013 Andy Matuschak.
 Copyright (c) 2009-2013 Elgato Systems GmbH.

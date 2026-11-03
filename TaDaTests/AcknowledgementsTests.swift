@@ -20,7 +20,7 @@ struct AcknowledgementsTests {
             "https://github.com/catppuccin/palette",
             "https://github.com/sparkle-project/Sparkle",
         ])
-        #expect(all.map(\.licence) == ["Apache License 2.0", "MIT", "MIT", "MIT", "Apache License 2.0", "MIT", "Sparkle"])
+        #expect(all.map(\.licence) == ["Apache License 2.0", "MIT", "MIT", "MIT", "Apache License 2.0", "MIT", "MIT"])
     }
 
     @Test func parsesSectionsAndTakesTheFirstLicenceHeading() {
