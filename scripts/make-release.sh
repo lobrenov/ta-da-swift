@@ -12,14 +12,11 @@ case "${1:-}" in
   *) echo "usage: $0 [--dry-run]" >&2; exit 1 ;;
 esac
 
+git fetch -q --tags origin main
 if [ $DRY -eq 0 ]; then
-  git fetch -q origin main
   [ -z "$(git status --porcelain)" ] || { echo "Working tree isn't clean." >&2; exit 1; }
   [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || { echo "HEAD isn't origin/main." >&2; exit 1; }
 fi
-
-SPARKLE_BIN=$(ls -d ~/Library/Developer/Xcode/DerivedData/*/SourcePackages/artifacts/sparkle/Sparkle/bin 2>/dev/null | head -1 || true)
-[ -x "${SPARKLE_BIN:-}/generate_appcast" ] || { echo "Sparkle's generate_appcast isn't in DerivedData; resolve packages in Xcode first." >&2; exit 1; }
 
 check_unreleased() {
   if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
@@ -28,7 +25,11 @@ check_unreleased() {
   fi
 }
 
-SETTINGS=$(xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -configuration Release -destination 'generic/platform=macOS' -showBuildSettings 2>/dev/null)
+SETTINGS=$(xcodebuild -workspace TaDa.xcworkspace -scheme TaDa -configuration Release -destination 'generic/platform=macOS' -showBuildSettings 2>/dev/null) \
+  || { echo "xcodebuild -showBuildSettings failed." >&2; exit 1; }
+BUILD_DIR=$(awk '$1=="BUILD_DIR"{print $3}' <<<"$SETTINGS")
+SPARKLE_BIN="${BUILD_DIR%/Build/Products}/SourcePackages/artifacts/sparkle/Sparkle/bin"
+[ -x "$SPARKLE_BIN/generate_appcast" ] || { echo "Sparkle's generate_appcast isn't in $SPARKLE_BIN; resolve packages in Xcode first." >&2; exit 1; }
 TAG="v$(awk '$1=="MARKETING_VERSION"{print $3}' <<<"$SETTINGS")-$(awk '$1=="CURRENT_PROJECT_VERSION"{print $3}' <<<"$SETTINGS")"
 check_unreleased
 
@@ -43,6 +44,8 @@ APP="$ARCHIVE/Products/Applications/TaDa.app"
 VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist")
 BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Contents/Info.plist")
 MINIMUM=$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$APP/Contents/Info.plist")
+[ "$("$SPARKLE_BIN/generate_keys" -p)" = "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "$APP/Contents/Info.plist")" ] \
+  || { echo "The Keychain's Sparkle key doesn't match the archived app's SUPublicEDKey." >&2; exit 1; }
 TAG="v$VERSION-$BUILD"
 check_unreleased
 NAME="TaDa-$VERSION-$BUILD"
@@ -70,7 +73,7 @@ Later builds arrive by themselves through Ta Da's update window (Check for Updat
 README
 hdiutil create -volname "Ta Da" -srcfolder "$STAGING" -format UDZO "$OUT/$NAME.dmg"
 
-PREV=$(git tag --list 'v*-*' --sort=-v:refname | head -1)
+PREV=$(git tag --list 'v*-*' --merged HEAD --sort=-v:refname | head -1)
 [ -n "$PREV" ] || PREV=$(git tag --list 'v*' --merged HEAD^ --sort=-v:refname | grep -v -- '-' | head -1 || true)
 SUBJECTS=$(git log --format=%s ${PREV:+"$PREV..HEAD"})
 {
@@ -98,6 +101,6 @@ if [ $DRY -eq 1 ]; then
   exit 0
 fi
 
-gh release create "$TAG" --repo "$REPO" --target "$(git rev-parse HEAD)" \
+gh release create "$TAG" --repo "$REPO" --target "$(git rev-parse HEAD)" --latest \
   --title "Ta Da $VERSION ($BUILD)" --notes "$NOTES" \
   "$OUT/$NAME.zip" "$OUT/$NAME.dmg" "$OUT/appcast.xml"
