@@ -96,7 +96,7 @@ struct PhoneTaskRow: View {
                 .truncationMode(.tail)
                 .layoutPriority(1)
             RowGlyphs(item: item, today: model.today,
-                      move: model.index.repeatMove(of: item, today: model.today), iconSize: 14)
+                      move: model.index.repeatMove(of: item, today: model.today), iconSize: 14, dropsToFit: false)
             Spacer(minLength: 8)
             if let place {
                 Text(place)

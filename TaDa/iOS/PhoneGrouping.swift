@@ -1,38 +1,8 @@
-// The iPhone's Group menu on a list's title line, its tag filter (the pill, the picked tags' chips and Clear, and the
-// sheet the pill opens), and a Status, Date or Open list's foldable sections.
+// The iPhone's Group by and Filter… for a list's ⋯ menu, the picked tags' chips over the list, the sheet Filter… opens,
+// and a Status, Date or Open list's foldable sections.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
-
-/// The list's grouping in a capsule; a tap opens the Group by menu, its default marked.
-struct PhoneGroupMenu: View {
-    let model: AppModel
-    let list: GroupedList
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        let grouping = model.grouping(of: list)
-        Menu {
-            PhoneGroupPicker(model: model, list: list).pickerStyle(.inline)
-        } label: {
-            HStack(spacing: 6) {
-                Text(grouping.rawValue).foregroundStyle(theme.color(\.fg))
-                Image(systemName: "chevron.up.chevron.down")
-                    .scaledFont(size: 11, weight: .semibold)
-                    .foregroundStyle(theme.color(\.muted))
-            }
-            .scaledFont(size: 15)
-            .padding(.leading, 12)
-            .padding(.trailing, 10)
-            .scaledMinHeight(32)
-            .background(theme.color(\.code), in: .capsule)
-            .overlay(Capsule().strokeBorder(theme.color(\.border)))
-            .frame(minHeight: 44)
-            .contentShape(.rect)
-        }
-        .accessibilityLabel("Group by \(grouping.rawValue)")
-    }
-}
 
 /// The Group by picker, its default marked, for a menu.
 struct PhoneGroupPicker: View {
@@ -54,8 +24,24 @@ struct PhoneGroupPicker: View {
     }
 }
 
-/// The filter pill, then the picked tags as chips with ×, then Clear. Nothing when no file in `items` carries a tag
-/// and none is picked. Without the pill (`showsPill`), nothing while none is picked.
+/// A list's ⋯ menu items: Group by `group`'s picker, then Filter…, which sets `isFiltering`. Filter… shows while a file in
+/// `items` carries a tag or one is picked.
+struct PhoneGroupFilterItems: View {
+    let model: AppModel
+    var group: GroupedList? = nil
+    let domain: AppModel.Domain
+    let items: [Item]
+    @Binding var isFiltering: Bool
+
+    var body: some View {
+        if let group { PhoneGroupPicker(model: model, list: group).pickerStyle(.menu) }
+        if model.tagFilter(on: domain).isActive || items.contains(where: { !$0.tags.isEmpty }) {
+            Button("Filter…", systemImage: "line.3.horizontal.decrease") { isFiltering = true }
+        }
+    }
+}
+
+/// While tags are picked: each as a chip with ×, how many of `items` are shown, and Clear.
 struct PhoneTagFilterBar: View {
     let model: AppModel
     let domain: AppModel.Domain
@@ -63,101 +49,55 @@ struct PhoneTagFilterBar: View {
     let items: [Item]
     /// How many of them the filter leaves.
     let shown: Int
-    /// A list whose Group menu leads the row.
-    var group: GroupedList? = nil
-    var showsPill = true
-    @State private var isPicking = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
         let filter = model.tagFilter(on: domain)
-        Group {
-            if filter.isActive || showsPill && (group != nil || items.contains(where: { !$0.tags.isEmpty })) {
-                WrappingHStack(spacing: 8) {
-                    if let group { PhoneGroupMenu(model: model, list: group) }
-                    if showsPill { pill(filter) }
-                    let tags = TagFilter.tags(of: items)
-                    ForEach(filter.picked.sorted(), id: \.self) { path in
-                        if let tag = tags.first(where: { $0.tag.path == path })?.tag ?? Tag(path) {
-                            HStack(spacing: 6) {
-                                Image(systemName: "tag").scaledFont(size: 12, weight: .semibold).foregroundStyle(theme.color(\.accent))
-                                TagName(tag: tag).foregroundStyle(theme.color(\.strong)).lineLimit(1)
-                                Button {
-                                    nav.play(.pick)
-                                    model.toggleFilterTag(path, on: domain)
-                                } label: {
-                                    Image(systemName: "xmark")
-                                        .scaledFont(size: 11, weight: .bold)
-                                        .foregroundStyle(theme.color(\.muted))
-                                        .frame(width: 44, height: 44)
-                                        .contentShape(.rect)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel("Stop filtering by \(tag.name)")
+        if filter.isActive {
+            WrappingHStack(spacing: 8) {
+                let tags = TagFilter.tags(of: items)
+                ForEach(filter.picked.sorted(), id: \.self) { path in
+                    if let tag = tags.first(where: { $0.tag.path == path })?.tag ?? Tag(path) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "tag").scaledFont(size: 12, weight: .semibold).foregroundStyle(theme.color(\.accent))
+                            TagName(tag: tag).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+                            Button {
+                                nav.play(.pick)
+                                model.toggleFilterTag(path, on: domain)
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .scaledFont(size: 11, weight: .bold)
+                                    .foregroundStyle(theme.color(\.muted))
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(.rect)
                             }
-                            .padding(.leading, 11)
-                            .padding(.trailing, -6)
-                            .frame(height: 32)
-                            .background(theme.tagFill(), in: .capsule)
-                            .overlay(Capsule().strokeBorder(theme.tagRing))
-                            .padding(.trailing, 8)
-                        }
-                    }
-                    if filter.isActive {
-                        Text("\(shown) of \(items.count) shown")
-                            .scaledFont(size: 13)
-                            .foregroundStyle(theme.color(\.muted))
-                            .frame(minHeight: 44)
-                        Button("Clear") { model.clearTagFilter(on: domain) }
                             .buttonStyle(.plain)
-                            .foregroundStyle(theme.color(\.accent))
-                            .padding(.horizontal, 4)
-                            .frame(minHeight: 44)
-                            .contentShape(.rect)
+                            .accessibilityLabel("Stop filtering by \(tag.name)")
+                        }
+                        .padding(.leading, 11)
+                        .padding(.trailing, -6)
+                        .frame(height: 32)
+                        .background(theme.tagFill(), in: .capsule)
+                        .overlay(Capsule().strokeBorder(theme.tagRing))
+                        .padding(.trailing, 8)
                     }
                 }
-                .scaledFont(size: 15)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 2)
+                Text("\(shown) of \(items.count) shown")
+                    .scaledFont(size: 13)
+                    .foregroundStyle(theme.color(\.muted))
+                    .frame(minHeight: 44)
+                Button("Clear") { model.clearTagFilter(on: domain) }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(theme.color(\.accent))
+                    .padding(.horizontal, 4)
+                    .frame(minHeight: 44)
+                    .contentShape(.rect)
             }
+            .scaledFont(size: 15)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 2)
         }
-        .sheet(isPresented: $isPicking) { PhoneTagFilterSheet(model: model, domain: domain, items: items) }
-    }
-
-    private func pill(_ filter: TagFilter) -> some View {
-        Button { isPicking = true } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "line.3.horizontal.decrease")
-                    .scaledFont(size: 12, weight: .bold)
-                    .foregroundStyle(filter.isActive ? theme.color(\.accent) : theme.color(\.muted))
-                Text("Filter")
-                if filter.picked.count > 1 {
-                    Text("\(filter.picked.count)")
-                        .scaledFont(size: 12, weight: .bold)
-                        .monospacedDigit()
-                        .foregroundStyle(theme.color(\.bg))
-                        .padding(.horizontal, 6)
-                        .background(theme.color(\.accent), in: .capsule)
-                }
-            }
-            .foregroundStyle(theme.color(filter.isActive ? \.strong : \.muted))
-            .padding(.leading, 11)
-            .padding(.trailing, 13)
-            .scaledMinHeight(32)
-            .background(filter.isActive ? theme.tagFill() : .clear, in: .capsule)
-            .overlay {
-                if filter.isActive {
-                    Capsule().strokeBorder(theme.tagRing)
-                } else {
-                    Capsule().strokeBorder(theme.color(\.surface), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
-                }
-            }
-            .frame(minHeight: 44)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(filter.isActive ? "Filter, \(filter.picked.count) tags picked" : "Filter by tag")
     }
 }
 

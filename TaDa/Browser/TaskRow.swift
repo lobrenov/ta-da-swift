@@ -41,28 +41,34 @@ struct TaskRow: View {
 }
 
 /// A task row's quiet glyphs, icon only: a note, subtasks, a repeat rule and tags. Each says its detail on hover and
-/// to VoiceOver. A done or skipped repeating task's glyph is followed by where it moves ("Tomorrow") or "Ended".
+/// to VoiceOver. A done or skipped repeating task's glyph is followed by where it moves ("Tomorrow") or "Ended". With
+/// `dropsToFit` they drop when the row's title would otherwise truncate.
 struct RowGlyphs: View {
     let item: Item
     let today: LocalDate
     var move: RepeatMove? = nil
     var iconSize: CGFloat = 11.5
+    var dropsToFit = true
     @Environment(\.theme) private var theme
 
     var body: some View {
         let glyphs = glyphs
-        // The glyphs drop, keeping their spoken labels, when the row's title would otherwise truncate.
-        ViewThatFits(in: .horizontal) {
+        if !dropsToFit {
             glyphRow(glyphs)
-            // A repeat glyph keeps its text; the other glyphs drop.
-            if let repeating = glyphs.first(where: { $0.systemImage == "repeat" && $0.text != nil }) {
-                glyphRow([repeating])
-                    .accessibilityElement(children: .ignore)
+        } else {
+            // The glyphs drop, keeping their spoken labels, when the row's title would otherwise truncate.
+            ViewThatFits(in: .horizontal) {
+                glyphRow(glyphs)
+                // A repeat glyph keeps its text; the other glyphs drop.
+                if let repeating = glyphs.first(where: { $0.systemImage == "repeat" && $0.text != nil }) {
+                    glyphRow([repeating])
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(glyphs.map(\.spoken).joined(separator: ", "))
+                }
+                Color.clear.frame(width: 0)
+                    .accessibilityElement()
                     .accessibilityLabel(glyphs.map(\.spoken).joined(separator: ", "))
             }
-            Color.clear.frame(width: 0)
-                .accessibilityElement()
-                .accessibilityLabel(glyphs.map(\.spoken).joined(separator: ", "))
         }
     }
 

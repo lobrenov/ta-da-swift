@@ -11,8 +11,6 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     var subtitle = ""
     /// Before the large title, as an area's cube.
     var icon: AnyView? = nil
-    /// At the large title's end, as the Group menu.
-    var titleAccessory: AnyView? = nil
     /// A top-bar button before More that opens the page's own file, with its label.
     var fileButton: (label: String, open: () -> Void)? = nil
     var pickable: [String] = []
@@ -104,7 +102,7 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         .onChange(of: pickable) { if isOnScreen { nav.setPickable(pickable) } }
     }
 
-    /// The large title and subtitle, at the top of the list, and the title's accessory.
+    /// The large title and subtitle, at the top of the list.
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
@@ -123,10 +121,6 @@ struct PhoneList<Content: View, MenuItems: View>: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
-            if let titleAccessory {
-                Spacer(minLength: 0)
-                titleAccessory.dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-            }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 8)

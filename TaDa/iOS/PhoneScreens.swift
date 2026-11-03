@@ -6,6 +6,7 @@ import TaDaCore
 
 struct PhoneTaskListScreen: View {
     let model: AppModel
+    @State private var isFiltering = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -20,10 +21,8 @@ struct PhoneTaskListScreen: View {
         let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : sections.filter { !model.isFolded($0, by: grouping, in: GroupedList.loose.foldKey) }.flatMap(\.tasks).map(\.path)
 
-        PhoneList(model: model, title: "Loose tasks", subtitle: tasks(open),
-                  titleAccessory: AnyView(PhoneGroupMenu(model: model, list: .loose)),
-                  pickable: pickable, add: newTask) {
-            EmptyView()
+        PhoneList(model: model, title: "Loose tasks", subtitle: tasks(open), pickable: pickable, add: newTask) {
+            PhoneGroupFilterItems(model: model, group: .loose, domain: .loose, items: all, isFiltering: $isFiltering)
         } content: {
             PhoneTagFilterBar(model: model, domain: .loose, items: all, shown: shownTasks.count)
             if all.isEmpty {
@@ -50,6 +49,7 @@ struct PhoneTaskListScreen: View {
                 PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: GroupedList.loose.foldKey, dates: .elsewhere)
             }
         }
+        .sheet(isPresented: $isFiltering) { PhoneTagFilterSheet(model: model, domain: .loose, items: all) }
     }
 
     /// A new loose task opens with its title ready to type.
@@ -209,6 +209,7 @@ struct PhoneFoldHeader: View {
 struct PhoneProjectScreen: View {
     let model: AppModel
     let path: String
+    @State private var isFiltering = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -225,6 +226,8 @@ struct PhoneProjectScreen: View {
             PhoneList(model: model, title: project.title,
                       fileButton: ("Project File", { nav.push(.file(path)) }),
                       pickable: shown.map(\.path), add: { await newTask(in: project) }) {
+                PhoneGroupFilterItems(model: model, group: .project, domain: .project(path), items: all, isFiltering: $isFiltering)
+                Divider()
                 Button("Open Project File", systemImage: "doc") { nav.push(.file(path)) }
                 Button("Move to Trash", systemImage: "trash", role: .destructive) {
                     if !model.asksBeforeTrashing([path]) {
@@ -237,7 +240,7 @@ struct PhoneProjectScreen: View {
                 PhoneProjectLine(model: model, project: project, progress: progress)
                     .padding(.horizontal, 16)
                     .padding(.top, 4)
-                PhoneTagFilterBar(model: model, domain: .project(path), items: all, shown: tasks.count, group: .project)
+                PhoneTagFilterBar(model: model, domain: .project(path), items: all, shown: tasks.count)
                 PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: path, dates: .elsewhere)
                 if all.isEmpty {
                     Text("No tasks")
@@ -249,6 +252,7 @@ struct PhoneProjectScreen: View {
                         .padding(16)
                 }
             }
+            .sheet(isPresented: $isFiltering) { PhoneTagFilterSheet(model: model, domain: .project(path), items: all) }
         } else {
             ContentUnavailableView("Project not found", systemImage: "questionmark.folder",
                                    description: Text("This project’s file is no longer in the folder."))
@@ -337,6 +341,7 @@ struct PhoneAreaScreen: View {
     let path: String
     @State private var isRenaming = false
     @State private var newTitle = ""
+    @State private var isFiltering = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -354,6 +359,8 @@ struct PhoneAreaScreen: View {
                       subtitle: "\(projects.count == 1 ? "1 project" : "\(projects.count) projects") · \(tasks(open.count))",
                       icon: AnyView(AreaIcon(size: 30)),
                       pickable: shown.map(\.path), add: { await newTask(in: area) }) {
+                PhoneGroupFilterItems(model: model, domain: .area(path), items: allProjects + allFiled, isFiltering: $isFiltering)
+                Divider()
                 Button("New Task", systemImage: "plus") { Task { await newTask(in: area) } }
                 Button("New Project", systemImage: "chart.pie") { Task { await newProject() } }
                 Divider()
@@ -400,6 +407,9 @@ struct PhoneAreaScreen: View {
                 TextField("Name", text: $newTitle)
                 Button("Cancel", role: .cancel) {}
                 Button("Rename") { Task { await rename() } }
+            }
+            .sheet(isPresented: $isFiltering) {
+                PhoneTagFilterSheet(model: model, domain: .area(path), items: allProjects + allFiled)
             }
         } else {
             ContentUnavailableView("Area not found", systemImage: "questionmark.folder",

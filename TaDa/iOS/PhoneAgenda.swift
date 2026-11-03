@@ -50,12 +50,8 @@ struct PhoneAgendaScreen: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         if case .day = model.agendaSelection {
-                            if !model.agendaTasks.isEmpty {
-                                PhoneGroupPicker(model: model, list: .today).pickerStyle(.menu)
-                            }
-                            if model.tagFilter(on: .agenda).isActive || model.agendaTasks.contains(where: { !$0.tags.isEmpty }) {
-                                Button("Filter…", systemImage: "line.3.horizontal.decrease") { isFiltering = true }
-                            }
+                            PhoneGroupFilterItems(model: model, group: model.agendaTasks.isEmpty ? nil : .today, domain: .agenda,
+                                                  items: model.agendaTasks, isFiltering: $isFiltering)
                         }
                         if !nav.pickable.isEmpty {
                             Button("Select", systemImage: "checkmark.circle") { nav.startPicking() }

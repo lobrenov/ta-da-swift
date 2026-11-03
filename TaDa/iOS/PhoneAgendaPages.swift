@@ -62,7 +62,7 @@ private struct PhoneAgendaDay: View {
                 }
                 if !all.isEmpty {
                     Color.clear.frame(height: 6)
-                    PhoneTagFilterBar(model: model, domain: .agenda, items: all, shown: tasks.count, showsPill: false)
+                    PhoneTagFilterBar(model: model, domain: .agenda, items: all, shown: tasks.count)
                     if tasks.isEmpty {
                         ContentUnavailableView("No matches", systemImage: "line.3.horizontal.decrease",
                                                description: Text("No task here carries the picked tags.")).padding(.top, 40)
