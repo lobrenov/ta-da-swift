@@ -2,7 +2,7 @@
 
 Native SwiftUI task manager over a folder of markdown files (one file per task/project, YAML frontmatter). macOS app, and an iPhone app (POC) on the same code; iPad later.
 
-- Repo: https://github.com/lobrenov/ta-da-swift (private; `origin`)
+- Repo: https://github.com/lobrenov/ta-da-swift (public; `origin`)
 - Design system: `docs/design/design-framework.md`. Follow it for UI work; its In the app table names the Swift view for each component, and its As built section lists where the app differs from the guidance. Component guidelines are in `docs/design/components/`, values in `docs/design/tokens.json`. Colour changes go in both `tokens.json` and `TaDa/Theme/BundledThemes.swift`.
 - Design canvas: https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V. Its reference pages show the app as built: macOS and iOS (each view), Menus (menus and components), Editors (markdown as the editor draws it), App (icon, themes). A feature is mocked up on a new page, built, then its boards are updated into the reference pages and the feature page is deleted. Docs name designs, not canvas pages or boards.
 - Architecture (layers, files, runtime, window, editors, shortcuts): `docs/architecture.md`. Schema: `docs/file-format.md` (the source of truth; update it with any format change).
