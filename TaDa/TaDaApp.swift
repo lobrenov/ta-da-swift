@@ -15,7 +15,7 @@ struct TaDaApp: App {
             ContentView(model: appDelegate.model)
         }
         .defaultSize(width: 1280, height: 800)
-        .commands { AppCommands(model: appDelegate.model) }
+        .commands { AppCommands(model: appDelegate.model, updater: appDelegate.updater) }
 
         Settings {
             SettingsView(model: appDelegate.model)
@@ -27,6 +27,7 @@ struct TaDaApp: App {
 /// changes, and keeps Quick Entry's hotkey registered.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = AppModel.forLaunch()
+    let updater = Updater()
     private let hotkeys = HotkeyService()
     private lazy var quickEntry = QuickEntryPanel(model: model)
 

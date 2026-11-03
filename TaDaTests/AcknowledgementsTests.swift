@@ -9,6 +9,7 @@ struct AcknowledgementsTests {
             "swift-markdown-engine-extended (the Live editor)", "Yams", "libyaml (inside Yams)",
             "Ayu (the Ayu Light and Ayu Mirage themes)", "TokyoNight (the TokyoNight Day and TokyoNight themes)",
             "Catppuccin (the Catppuccin Latte and Catppuccin Mocha themes)",
+            "Sparkle (software updates)",
         ])
         #expect(all.map(\.url) == [
             "https://github.com/lobrenov/swift-markdown-engine-extended",
@@ -17,8 +18,9 @@ struct AcknowledgementsTests {
             "https://github.com/ayu-theme/ayu-colors",
             "https://github.com/folke/tokyonight.nvim",
             "https://github.com/catppuccin/palette",
+            "https://github.com/sparkle-project/Sparkle",
         ])
-        #expect(all.map(\.licence) == ["Apache License 2.0", "MIT", "MIT", "MIT", "Apache License 2.0", "MIT"])
+        #expect(all.map(\.licence) == ["Apache License 2.0", "MIT", "MIT", "MIT", "Apache License 2.0", "MIT", "Sparkle"])
     }
 
     @Test func parsesSectionsAndTakesTheFirstLicenceHeading() {

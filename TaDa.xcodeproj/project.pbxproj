@@ -10,6 +10,7 @@
 		2B593608306FCE4600D4BBDB /* TaDaCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2B593607306FCE4600D4BBDB /* TaDaCore */; };
 		2B59360B306FCF3A00D4BBDB /* MarkdownEngine in Frameworks */ = {isa = PBXBuildFile; productRef = 2B59360A306FCF3A00D4BBDB /* MarkdownEngine */; };
 		2B59360D306FD00100D4BBDB /* Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B59360C306FD00100D4BBDB /* Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift */; };
+		2B59F00C306FCF3A00D4BBDB /* Sparkle in Frameworks */ = {isa = PBXBuildFile; platformFilters = (macos, ); productRef = 2B59F00B306FCF3A00D4BBDB /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,9 +37,23 @@
 		2B59360C306FD00100D4BBDB /* Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Packages/TaDaCore/Sources/TaDaCoreTesting/GeneratedVault.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2B59F00D306FCF3A00D4BBDB /* Exceptions for "TaDa" folder in "TaDa" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				TaDa.entitlements,
+			);
+			target = 2B5935D1306FCAE300D4BBDB /* TaDa */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2B5935D4306FCAE300D4BBDB /* TaDa */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2B59F00D306FCF3A00D4BBDB /* Exceptions for "TaDa" folder in "TaDa" target */,
+			);
 			path = TaDa;
 			sourceTree = "<group>";
 		};
@@ -60,6 +75,7 @@
 			files = (
 				2B593608306FCE4600D4BBDB /* TaDaCore in Frameworks */,
 				2B59360B306FCF3A00D4BBDB /* MarkdownEngine in Frameworks */,
+				2B59F00C306FCF3A00D4BBDB /* Sparkle in Frameworks */,
 			);
 		};
 		2B5935DC306FCAE500D4BBDB /* Frameworks */ = {
@@ -116,6 +132,7 @@
 			packageProductDependencies = (
 				2B593607306FCE4600D4BBDB /* TaDaCore */,
 				2B59360A306FCF3A00D4BBDB /* MarkdownEngine */,
+				2B59F00B306FCF3A00D4BBDB /* Sparkle */,
 			);
 			productName = TaDa;
 			productReference = 2B5935D2306FCAE300D4BBDB /* TaDa.app */;
@@ -198,6 +215,7 @@
 			packageReferences = (
 				2B593606306FCE4600D4BBDB /* XCLocalSwiftPackageReference "Packages/TaDaCore" */,
 				2B593609306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "swift-markdown-engine-extended" */,
+				2B59F00A306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2B5935D3306FCAE300D4BBDB /* Products */;
@@ -387,6 +405,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = TaDa/TaDa.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 39;
 				DEAD_CODE_STRIPPING = YES;
@@ -394,7 +413,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
@@ -406,6 +425,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_FILE[sdk=macosx*]" = TaDa/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Ta Da";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Ta Da shows your calendar events beside your tasks in the Agenda. It never changes your calendars.";
@@ -447,6 +467,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = TaDa/TaDa.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 39;
 				DEAD_CODE_STRIPPING = YES;
@@ -454,7 +475,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
@@ -466,6 +487,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_FILE[sdk=macosx*]" = TaDa/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Ta Da";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Ta Da shows your calendar events beside your tasks in the Agenda. It never changes your calendars.";
@@ -661,6 +683,14 @@
 				version = "0.15.0-live.9";
 			};
 		};
+		2B59F00A306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -672,6 +702,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 2B593609306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "swift-markdown-engine-extended" */;
 			productName = MarkdownEngine;
+		};
+		2B59F00B306FCF3A00D4BBDB /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2B59F00A306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

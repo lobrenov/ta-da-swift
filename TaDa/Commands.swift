@@ -9,6 +9,7 @@ import TaDaCore
 
 struct AppCommands: Commands {
     @Bindable var model: AppModel
+    let updater: Updater
     @FocusedValue(\.editor) private var editor
 
     /// The open or picked file, when it's one note.
@@ -22,6 +23,9 @@ struct AppCommands: Commands {
     }
 
     var body: some Commands {
+        CommandGroup(after: .appInfo) {
+            Button("Check for Updates…") { updater.checkForUpdates() }
+        }
         CommandGroup(replacing: .newItem) {
             Button("New Task/Note") { Task { await model.newTaskOrNote() } }
                 .keyboardShortcut("n")
