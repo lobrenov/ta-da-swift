@@ -6,7 +6,7 @@ The Mac app updates itself with Sparkle 2: it checks for a new build on open, do
 - Part 2: Sparkle in the app, with releases published on GitHub, still unnotarised.
 - Part 3: the paid Apple Developer Program, Developer ID signing and notarisation, and what changes in Sparkle.
 
-Today's beta process (`scripts/make-beta-dmg.sh`, `docs/beta-builds.md`) is unchanged until Part 2 ships. The iPhone app isn't part of this plan: Sparkle is macOS only.
+The iPhone app isn't part of this plan: Sparkle is macOS only.
 
 ## Decisions
 - Sparkle 2 is pinned with `exact:` and linked to the Mac app only. `import Sparkle` is only in `TaDa/Updates/Updater.swift`, behind `#if os(macOS)`. Adding it updates `TaDa/Acknowledgements.txt`.
@@ -80,6 +80,13 @@ Both options use the same feed URL pattern, so the steps below work for either: 
 4. `docs/beta-builds.md` becomes `docs/releases.md`: releasing, the EdDSA key on each Mac, first install from the DMG (dragged to Applications before opening, so Sparkle can update it), and updates arriving by themselves. Add the Updates section to `docs/architecture.md`. Check: the docs match the script.
 5. Ship the first Sparkle build the old way (a DMG with the unblock steps), then a second build through Sparkle. Check: a tester's Mac updates from the first to the second with no unblocking, and the folder is remembered.
 
+### Part 2 outcome
+Done 2026-11-03 with option a: the app repo is public as `lobrenov/ta-da-swift` (renamed from `ta-da-app`), beside the public `lobrenov/ta-da-obsidian`.
+- `scripts/make-release.sh` replaces `make-beta-dmg.sh`. The feed lists only the release's own build, with its notes embedded, so each release attaches three files (zip, DMG, `appcast.xml`) and needs no sync of earlier zips. It creates the release as latest, and stops if the Keychain's key isn't `SUPublicEDKey`.
+- The updater doesn't start in Debug builds, so tests and Xcode runs don't check the feed. Check for Updates… follows `canCheckForUpdates`.
+- `docs/releases.md` replaces `docs/beta-builds.md`; Updates is in `docs/architecture.md`.
+- 0.37.0 (40) was installed from its DMG on a second Mac and unblocked once; on the next open it offered 0.37.1 (41), which installed with no Gatekeeper warning and kept the folder.
+
 ## Part 3 — Apple Developer Program and notarisation
 
 ### Enrolling
@@ -105,7 +112,7 @@ Both options use the same feed URL pattern, so the steps below work for either: 
 - None required (Part 1 showed Sparkle installing an update on its EdDSA signature alone). The first Developer ID build is still EdDSA-signed with the same key, so unnotarised builds update to it even though the code signature changes from Apple Development to Developer ID. After that, either check can be used to replace the key later.
 - The sandbox container and the chosen folder: a new Team ID changes the app's signing identity, and macOS may ask about the app's data or forget the folder once. Check it on the first update.
 - Optional: once every installed copy is on Developer ID, `SUVerifyUpdateBeforeExtraction` can be set to check the Apple code signature before unpacking.
-- Docs: drop the unblock steps from `docs/releases.md`, the release repo's README and the DMG's `Read Me First.txt`, and remove the Developer ID line from `docs/backlog.md`.
+- Docs: drop the unblock steps from `docs/releases.md`, `README.md` and the DMG's `Read Me First.txt` (in `make-release.sh`), and remove the Developer ID line from `docs/backlog.md`.
 
 ### Steps
 1. Enrol, then create the certificate and the notarisation profile. Check: `security find-identity -v -p codesigning` lists Developer ID Application; `notarytool history --keychain-profile TaDa` runs.
