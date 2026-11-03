@@ -39,3 +39,4 @@ Each plugin version is paired with the Ta Da version whose TaDaCore it ports, me
 | 0.4.3 | 0.36.4 |
 | 0.5.0 | 0.36.5 |
 | 0.5.1 | 0.36.5 |
+| 0.5.2 | 0.36.5 |
