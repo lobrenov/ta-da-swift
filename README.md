@@ -41,7 +41,7 @@ All three read and write the same files, so any file-synced vault accessible by 
 
 ## Install (Mac)
 Requires macOS 26 or later.
-1. Download the latest `.dmg` from [Releases](https://github.com/lobrenov/ta-da-app/releases), open it and drag **Ta Da** onto **Applications**.
+1. Download the latest `.dmg` from [Releases](https://github.com/lobrenov/ta-da-swift/releases), open it and drag **Ta Da** onto **Applications**.
 2. Open Ta Da and click **Done** on the warning. Then open System Settings › Privacy & Security, click **Open Anyway** next to the Ta Da message, and confirm.
 3. Choose your folder.
 

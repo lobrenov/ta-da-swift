@@ -51,7 +51,7 @@ Done 2026-11-02 on `spike/sparkle` (Sparkle 2.10.1, macOS 27.0.1, Xcode 27.2), i
 ## Part 2 — Unnotarised updates via GitHub
 Files attached to releases in a private repo can't be downloaded without signing in, so the feed and the update files have to be public.
 
-### Option a: make `ta-da-app` public
+### Option a: make `ta-da-swift` public
 | Pros | Cons |
 |---|---|
 | One repo: tags, releases and the feed sit next to the code | The source, history and `SampleVault` are public; it needs a licence decision first (the editor fork is Apache-2.0, and Acknowledgements must be complete) |
@@ -62,7 +62,7 @@ Files attached to releases in a private repo can't be downloaded without signing
 | Pros | Cons |
 |---|---|
 | The source stays private | A second repo to create; `gh release create --repo lobrenov/ta-da-app-releases` |
-| The repo holds only builds, notes and the feed; switching later to option a just means moving the feed | Tags are in two places: `v<x.y.z>` in `ta-da-app`, and the release tag in the releases repo |
+| The repo holds only builds, notes and the feed; switching later to option a just means moving the feed | Tags are in two places: `v<x.y.z>` in `ta-da-swift`, and the release tag in the releases repo |
 | Its README can be the tester page (install and unblock steps) | |
 
 Both options use the same feed URL pattern, so the steps below work for either: `https://github.com/lobrenov/<repo>/releases/latest/download/appcast.xml`. Every release attaches the zip, the DMG, its notes and the whole `appcast.xml`. `generate_appcast` builds the feed from `build/releases/`, a local folder that keeps every released zip, which `make-release.sh` syncs from the GitHub releases before it runs. The choice between a and b is final once a build ships, because `SUFeedURL` is built into every copy.
