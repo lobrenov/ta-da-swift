@@ -50,6 +50,7 @@ struct LiveEditor: View {
     @State private var rightClickMenu = RightClickMenuController()
     @State private var textMenu = TextMenuController()
     @State private var linkMenu = LinkMenuController()
+    @State private var addLinkMenu = AddLinkMenuController()
     @State private var tagMenu = TagMenuController()
     #else
     /// The open `/` query's choices, the one ↵ picks, and the query's state, which a pick inserts against.
@@ -128,6 +129,7 @@ struct LiveEditor: View {
             calloutMenu.hide()
             rightClickMenu.hide()
             textMenu.hide()
+            addLinkMenu.hide()
         }
         #else
         NativeTextViewWrapper(
@@ -351,6 +353,7 @@ struct LiveEditor: View {
         let target = TextMenuTarget(
             hasSelection: request.hasSelection,
             onLink: request.link != nil,
+            canAddLink: links != nil && AddLink.range(request.selection, in: (slashCommand.textView?.string ?? "") as NSString) != nil,
             canExtract: taskExtraction != nil && ExtractTask.extractableRange(request.selection, selectedText: request.selectedText) != nil,
             formats: Set(request.activeFormats.map(Self.command(for:))),
             block: Self.command(for: request.blockKind),
@@ -377,6 +380,18 @@ struct LiveEditor: View {
         case .paste: request.paste()
         case .pasteAsPlainText: request.pasteAsPlainText()
         case .selectAll: request.selectAll()
+        case .addLink:
+            guard let links, let text = slashCommand.textView?.string as NSString?,
+                  let range = AddLink.range(request.selection, in: text) else { return }
+            // The link takes the trimmed selection; the blanks around it stay.
+            let lead = range.location - request.selection.location
+            let trail = NSMaxRange(request.selection) - NSMaxRange(range)
+            let selected = text.substring(with: range)
+            let selection = request.selectedText as NSString
+            addLinkMenu.show(text: selected, source: links, anchor: request.anchorRect, theme: theme, pick: { choice in
+                request.replaceSelection(selection.substring(to: lead) + AddLink.markdown(choice, selection: selected)
+                                         + selection.substring(from: selection.length - trail))
+            }, close: request.close)
         case .extractToTask:
             guard let model = taskExtraction, let textView = slashCommand.textView else { return }
             // The task takes the trimmed selection; the blanks around it stay.

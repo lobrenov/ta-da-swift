@@ -91,4 +91,30 @@ struct LinkMenuTests {
         await model.savingImage?.value
         #expect(try Data(contentsOf: folder.url.appending(path: "Ta Da/attachments/front 2.jpg")) == Data([3]))
     }
+
+    #if os(macOS)
+    @Test func addLinkListsTheMatchesThenALinkToTheFieldsText() async {
+        let model = await folder.model()
+        let search = LinkMenuSearch()
+        search.source = LinkMenuSource(index: model.index, vault: model.vault)
+        let sections = AddLink.sections("kombi", search: search)
+        #expect(sections.map { $0.items.map(\.title) } == [["Kombi service history", "Photograph the Kombi", "Sell the Kombi"], ["Link “kombi”"]])
+        #expect(sections[0].label == "Add Link" && sections[1].label == nil)
+        let none = AddLink.sections(" crash reporting ", search: search)
+        #expect(none.map { $0.items.map(\.title) } == [["Link “crash reporting”"]])
+        #expect(none[0].items[0].accessibilityValue == "New")
+        #expect(AddLink.sections("", search: search).flatMap(\.items).allSatisfy { if case .file = $0 { true } else { false } })
+        #expect(AddLink.sections("a|b", search: search).flatMap(\.items).allSatisfy { if case .file = $0 { true } else { false } })
+    }
+
+    @Test func addLinkWritesTheSelectionAsTheAlias() async throws {
+        let model = await folder.model()
+        let search = LinkMenuSearch()
+        search.source = LinkMenuSource(index: model.index, vault: model.vault)
+        let choice = try #require(AddLink.sections("sell", search: search)[0].items.first)
+        #expect(AddLink.markdown(choice, selection: "selling the van") == "[[Sell the Kombi|selling the van]]")
+        #expect(AddLink.markdown(choice, selection: "sell the kombi") == "[[Sell the Kombi]]", "a case-only difference")
+        #expect(AddLink.markdown(.new("crash reporting"), selection: "crash reporting") == "[[crash reporting]]")
+    }
+    #endif
 }

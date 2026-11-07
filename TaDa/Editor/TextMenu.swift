@@ -11,7 +11,7 @@ struct TextMenuRow: PopupMenuItem {
     enum Action: Equatable {
         case openLink, copyLink
         case cut, copy, paste, pasteAsPlainText, selectAll
-        case extractToTask
+        case addLink, extractToTask
         /// A slash command: an inline format from Format ▸, a block from Paragraph ▸, an insertion from Insert ▸.
         case command(SlashCommand)
         /// Paragraph ▸ Body.
@@ -41,6 +41,7 @@ struct TextMenuRow: PopupMenuItem {
 struct TextMenuTarget {
     var hasSelection: Bool
     var onLink: Bool
+    var canAddLink = false
     var canExtract: Bool
     /// The inline formats the selection, or the word at the caret, is in.
     var formats: Set<SlashCommand>
@@ -83,10 +84,15 @@ enum TextMenu {
             TextMenuRow(action: .pasteAsPlainText, title: "Paste as Plain Text", icon: .symbol("doc.plaintext"), key: "⌥⇧⌘V"),
             TextMenuRow(action: .selectAll, title: "Select All", icon: .symbol("selection.pin.in.out"), key: "⌘A"),
         ])
-        if target.hasSelection, target.canExtract {
-            sections.append([TextMenuRow(action: .extractToTask, title: "Extract to Task",
-                                         icon: .symbol("arrow.up.forward.square"), key: "⌥⌘E")])
+        var selection: [TextMenuRow] = []
+        if target.hasSelection, target.canAddLink {
+            selection.append(TextMenuRow(action: .addLink, title: "Add Link", icon: .symbol("link")))
         }
+        if target.hasSelection, target.canExtract {
+            selection.append(TextMenuRow(action: .extractToTask, title: "Extract to Task",
+                                         icon: .symbol("arrow.up.forward.square"), key: "⌥⌘E"))
+        }
+        if !selection.isEmpty { sections.append(selection) }
         sections.append([
             TextMenuRow(action: .submenu, title: "Format", icon: .glyph("Aa"), submenu: [PopupMenuSection(items: formats.map {
                 TextMenuRow(action: .command($0), title: $0.title, icon: .command($0), key: keys(for: $0),
