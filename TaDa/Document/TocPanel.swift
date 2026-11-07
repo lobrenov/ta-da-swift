@@ -125,85 +125,108 @@ extension View {
     }
 }
 
+/// The rail and panel over a document's scroll view. `isOpen` is the one animated value: it slides the mounted panel in from the
+/// editor's right edge and fades it, and fades the rail out. One hover tracker on the scroll view decides whether the pointer is
+/// inside, from the rail's and the panel's resting frames, and one cancellable task opens or closes after a delay.
 private struct TocPanelModifier: ViewModifier {
     let model: AppModel
     let document: OpenDocument
     let state: TocState
+    @State private var isOpen = false
+    /// What the pointer last asked for; `isOpen` follows it after a delay.
+    @State private var wantsOpen = false
+    @State private var pending: Task<Void, Never>?
+    @State private var railFrame = CGRect.zero
+    @State private var panelFrame = CGRect.zero
+    @State private var panelGlobalFrame = CGRect.zero
+
+    private static let space = "tocPanel"
+    private static let openDelay = Duration.milliseconds(50)
+    private static let closeDelay = Duration.milliseconds(200)
+    private static let slideIn = Animation.smooth(duration: 0.22)
+    private static let slideOut = Animation.smooth(duration: 0.16)
+    private static let panelWidth: CGFloat = 260
+    private static let panelTrailing: CGFloat = 12
+    /// How far past the rail's own padding the pointer still counts as on it.
+    private static let railSlack: CGFloat = 4
 
     func body(content view: Content) -> some View {
         let toc = (model.index[document.path] ?? document.item).map { TocContent(item: $0, index: model.index) }
         view
-            .onContinuousHover { phase in
-                if case .active = phase, state.typing { state.typing = false }
+            .coordinateSpace(.named(Self.space))
+            .onContinuousHover(coordinateSpace: .named(Self.space)) { phase in
+                switch phase {
+                case .active(let point):
+                    if state.typing { state.typing = false }
+                    let onRail = railFrame.insetBy(dx: -Self.railSlack, dy: -Self.railSlack).contains(point)
+                    setWantsOpen(onRail || (isOpen && panelFrame.contains(point)))
+                case .ended:
+                    setWantsOpen(false)
+                }
             }
             .onChange(of: document.path, initial: true) {
                 state.typing = false
                 state.visibleLines = 0...0
             }
+            .onChange(of: state.typing) { _, typing in
+                guard typing else { return }
+                pending?.cancel()
+                wantsOpen = false
+                isOpen = false
+            }
+            .onChange(of: isOpen) { publishPanelFrame() }
+            .onChange(of: panelGlobalFrame) { publishPanelFrame() }
+            .onDisappear {
+                pending?.cancel()
+                state.panelFrame = nil
+            }
             .overlay {
-                if let toc, toc.hasRail {
-                    TocOverlay(content: toc, state: state, open: { model.openLink(to: $0) })
-                }
+                if let toc, toc.hasRail { overlay(toc) }
             }
     }
-}
 
-/// The rail, and over it the panel while the pointer rests on either. `isOpen` is the one state: the panel's insertion and
-/// removal slide it from and to the editor's right edge, and the rail's opacity follows it, all in the transaction that sets it.
-private struct TocOverlay: View {
-    let content: TocContent
-    let state: TocState
-    let open: (String) -> Void
-    @State private var isOpen = false
-    @State private var overRail = false
-    @State private var overPanel = false
-    @State private var pending: Task<Void, Never>?
-
-    static let openDelay = Duration.milliseconds(50)
-    static let closeDelay = Duration.milliseconds(200)
-    static let slideIn = Animation.easeOut(duration: 0.18)
-    static let slideOut = Animation.easeIn(duration: 0.12)
-
-    var body: some View {
-        GeometryReader { viewport in
+    private func overlay(_ toc: TocContent) -> some View {
+        let current = toc.currentHeading(lastVisibleLine: state.visibleLines.upperBound)
+        return GeometryReader { viewport in
             ZStack(alignment: .topTrailing) {
-                TocRail(content: content, current: content.currentHeading(lastVisibleLine: state.visibleLines.upperBound))
+                TocRail(content: toc, current: current)
                     .opacity(isOpen || state.typing ? 0 : 1)
-                    .onHover { overRail = $0 }
-                    .allowsHitTesting(!state.typing && !isOpen)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { railFrame = $0 }
                     .padding(.top, 50)
                     .padding(.trailing, 10)
-                if isOpen {
-                    TocPanel(content: content, current: content.currentHeading(lastVisibleLine: state.visibleLines.upperBound),
-                             maxHeight: viewport.size.height - 46 - 12, scroll: state.scroll.toLine, open: open)
-                        .onHover { overPanel = $0 }
-                        .padding(.top, 46)
-                        .padding(.trailing, 12)
-                        .transition(.asymmetric(insertion: .move(edge: .trailing),
-                                                 removal: .move(edge: .trailing).combined(with: .opacity)))
-                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { state.panelFrame = $0 }
-                        .onDisappear { state.panelFrame = nil }
-                }
+                    .allowsHitTesting(false)
+                TocPanel(content: toc, current: current, maxHeight: viewport.size.height - 46 - 12,
+                         scroll: state.scroll.toLine, open: { model.openLink(to: $0) })
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { panelFrame = $0 }
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { panelGlobalFrame = $0 }
+                    .offset(x: isOpen ? 0 : Self.panelWidth + Self.panelTrailing)
+                    .opacity(isOpen ? 1 : 0)
+                    .allowsHitTesting(isOpen)
+                    .accessibilityHidden(!isOpen)
+                    .padding(.top, 46)
+                    .padding(.trailing, Self.panelTrailing)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         }
-        .onChange(of: overRail || overPanel) { _, inside in
-            pending?.cancel()
-            guard inside != isOpen else { return }
-            pending = Task {
-                try? await Task.sleep(for: inside ? Self.openDelay : Self.closeDelay)
-                guard !Task.isCancelled else { return }
-                withAnimation(inside ? Self.slideIn : Self.slideOut) { isOpen = inside }
-            }
+    }
+
+    /// Records what the pointer wants and, if that differs from what's shown, opens or closes after a delay. A later change of mind
+    /// cancels the wait.
+    private func setWantsOpen(_ wants: Bool) {
+        guard wants != wantsOpen else { return }
+        wantsOpen = wants
+        pending?.cancel()
+        guard wants != isOpen else { return }
+        pending = Task {
+            try? await Task.sleep(for: wants ? Self.openDelay : Self.closeDelay)
+            guard !Task.isCancelled else { return }
+            withAnimation(wants ? Self.slideIn : Self.slideOut) { isOpen = wants }
         }
-        .onDisappear { pending?.cancel() }
-        .onChange(of: state.typing) { _, typing in
-            guard typing else { return }
-            pending?.cancel()
-            overRail = false
-            overPanel = false
-            isOpen = false
-        }
+    }
+
+    /// The cursor's exclusion zone: the panel's resting frame while it's open.
+    private func publishPanelFrame() {
+        state.panelFrame = isOpen ? panelGlobalFrame : nil
     }
 }
 
