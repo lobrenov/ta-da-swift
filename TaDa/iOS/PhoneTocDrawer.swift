@@ -20,34 +20,53 @@ struct PhoneTocDrawer: ViewModifier {
     let state: TocState
     let isSource: Bool
     let isSearching: Bool
-    /// The screen is the one showing.
+    /// The screen is the one showing, with no sheet over it.
     let isActive: Bool
     let open: (String) -> Void
-    /// How far open the drawer is, 0 to 1.
-    @State private var progress: CGFloat = 0
-    @Environment(\.theme) private var theme
+    /// VoiceOver's "Contents and Links" asked for the drawer.
+    @State private var openRequested = false
 
     func body(content view: Content) -> some View {
         let toc = (model.index[document.path] ?? document.item).map { TocContent(item: $0, index: model.index) }
         let available = TocDrawerRules.isAvailable(toc, isSource: isSource, isSearching: isSearching)
         view
-            .background {
-                if available && isActive {
-                    RightEdgeSwipe(isEnabled: progress == 0, onChange: { progress = $0 }, onEnd: settle)
-                }
-            }
             .overlay {
                 if available, let toc {
-                    drawer(toc)
+                    PhoneTocDrawerLayer(content: toc, state: state, isActive: isActive, openRequested: $openRequested, open: open)
                 }
             }
-            .onChange(of: available) { _, available in
-                if !available { progress = 0 }
-            }
             .onChange(of: document.path, initial: true) { state.topLine = 0 }
-            .accessibilityAction(named: "Contents and Links") {
-                if available { withAnimation(.snappy) { progress = 1 } }
+            .accessibilityActions {
+                if available { Button("Contents and Links") { openRequested = true } }
             }
+    }
+}
+
+/// The edge swipe, scrim and drawer. It holds the drawer's progress, so a drag redraws only this view.
+private struct PhoneTocDrawerLayer: View {
+    let content: TocContent
+    let state: TocState
+    let isActive: Bool
+    @Binding var openRequested: Bool
+    let open: (String) -> Void
+    /// How far open the drawer is, 0 to 1.
+    @State private var progress: CGFloat = 0
+    @Environment(\.theme) private var theme
+
+    var body: some View {
+        ZStack {
+            if isActive {
+                RightEdgeSwipe(isClosed: progress == 0, onChange: { progress = $0 }, onEnd: settle)
+                    .frame(width: 0, height: 0)
+                    .allowsHitTesting(false)
+            }
+            drawer(content)
+        }
+        .onChange(of: openRequested) { _, requested in
+            guard requested else { return }
+            openRequested = false
+            withAnimation(.snappy) { progress = 1 }
+        }
     }
 
     private func settle(velocity: CGFloat) {
@@ -77,12 +96,14 @@ struct PhoneTocDrawer: ViewModifier {
                     }
                     .shadow(color: .black.opacity(theme.isDark ? 0.5 : 0.16), radius: 20, x: -12)
                     .offset(x: (1 - progress) * (TocDrawerRules.width + 40))
-                    .gesture(closeDrag)
+                    .simultaneousGesture(closeDrag)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
             .ignoresSafeArea()
             .allowsHitTesting(progress > 0)
             .accessibilityHidden(progress == 0)
+            .accessibilityAddTraits(progress == 1 ? .isModal : [])
+            .accessibilityAction(.escape, close)
         }
     }
 
@@ -190,7 +211,8 @@ struct PhoneTocDrawer: ViewModifier {
 /// A swipe in from the screen's right edge, recognised on the window. The system's edge zone (about 20pt) is the only
 /// place it starts, so the back swipe (left edge) and the editor's horizontal scrolling (tables, code) are left alone.
 private struct RightEdgeSwipe: UIViewRepresentable {
-    let isEnabled: Bool
+    /// The drawer is closed, so a swipe may open it.
+    let isClosed: Bool
     /// The drawer's progress as the finger moves.
     let onChange: (CGFloat) -> Void
     /// The swipe ended with this horizontal velocity.
@@ -207,7 +229,6 @@ private struct RightEdgeSwipe: UIViewRepresentable {
     func updateUIView(_ anchor: Anchor, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        coordinator.recognizer.isEnabled = isEnabled
     }
 
     static func dismantleUIView(_ anchor: Anchor, coordinator: Coordinator) {
@@ -248,8 +269,17 @@ private struct RightEdgeSwipe: UIViewRepresentable {
             }
         }
 
-        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
-                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool { parent?.isClosed ?? false }
+
+        /// Not while a sheet or alert is over the screen.
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            gestureRecognizer.view?.window?.rootViewController?.presentedViewController == nil
+        }
+
+        /// The page's and the editor's scrolling wait for the swipe to fail, so they don't scroll while the drawer drags.
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy other: UIGestureRecognizer) -> Bool {
+            other.view is UIScrollView
+        }
     }
 }
 #endif

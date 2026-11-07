@@ -92,7 +92,7 @@ struct PhoneFileScreen: View {
         .scrollDismissesKeyboard(.interactively)
         .pullToSearch(search)
         .phoneTocDrawer(model: model, document: document, state: toc, isSource: isSource, isSearching: search.isSearching,
-                        isActive: isVisible, open: { nav.push(.file($0)) })
+                        isActive: isVisible && nav.sheet == nil, open: { nav.push(.file($0)) })
     }
 
     private func fileContent(_ document: OpenDocument) -> some View {

@@ -56,7 +56,9 @@ struct BodyEditor: View {
         LiveEditor(
             text: Binding { document.body } set: { newValue in
                 document.body = newValue
+                #if os(macOS)
                 toc?.typing = true
+                #endif
             },
             theme: theme,
             documentID: document.path,
