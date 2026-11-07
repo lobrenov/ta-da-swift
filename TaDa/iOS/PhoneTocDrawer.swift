@@ -35,7 +35,7 @@ struct PhoneTocDrawer: ViewModifier {
                     PhoneTocDrawerLayer(content: toc, state: state, isActive: isActive, openRequested: $openRequested, open: open)
                 }
             }
-            .onChange(of: document.path, initial: true) { state.topLine = 0 }
+            .onChange(of: document.path, initial: true) { state.visibleLines = 0...0 }
             .accessibilityActions {
                 if available { Button("Contents and Links") { openRequested = true } }
             }
@@ -118,13 +118,13 @@ private struct PhoneTocDrawerLayer: View {
     }
 
     private func list(_ toc: TocContent, top: CGFloat, bottom: CGFloat) -> some View {
-        let current = toc.currentHeading(topLine: state.topLine)
+        let current = toc.currentHeading(lastVisibleLine: state.visibleLines.upperBound)
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if !toc.headings.isEmpty {
                     section("Contents", count: nil) {
                         ForEach(Array(toc.headings.enumerated()), id: \.offset) { index, heading in
-                            row(heading.text, indent: 28 + CGFloat(heading.level - 2) * 18, isCurrent: index == current) {
+                            row(heading.text, indent: 28 + CGFloat(toc.depth(of: heading)) * 18, isCurrent: index == current) {
                                 state.scroll.toLine(heading.line)
                                 close()
                             }

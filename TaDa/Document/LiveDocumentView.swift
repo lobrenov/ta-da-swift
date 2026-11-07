@@ -48,7 +48,7 @@ struct BodyEditor: View {
     var open: ((String) -> Void)? = nil
     /// Opens a clicked tag; by default the model shows its page.
     var openTag: ((Tag) -> Void)? = nil
-    /// Gets the page's top line and a way to scroll a line to the top.
+    /// Gets the page's visible lines and a way to scroll a line to the top.
     var toc: TocState? = nil
     @Environment(\.theme) private var theme
 
@@ -78,7 +78,7 @@ struct BodyEditor: View {
                 guard let tag = Tag(name) else { return }
                 if let openTag { openTag(tag) } else { model.show(.tag(tag.path)) }
             },
-            onVisibleTopLine: topLineReport,
+            onVisibleLines: visibleLinesReport,
             scroll: scroll
         )
         // The editor insets its text by 16pt; line it up with the title.
@@ -86,8 +86,8 @@ struct BodyEditor: View {
         .accessibilityLabel("Body")
     }
 
-    private var topLineReport: ((Int) -> Void)? {
-        toc.map { toc in { toc.topLine = $0 } }
+    private var visibleLinesReport: ((ClosedRange<Int>) -> Void)? {
+        toc.map { toc in { toc.visibleLines = $0 } }
     }
 
     private var scroll: EditorScroll? {

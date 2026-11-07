@@ -16,7 +16,7 @@ struct TocFile: Identifiable, Equatable {
 
 /// The sections of a file's tocPanel.
 struct TocContent: Equatable {
-    /// The body's H2 to H6; the file's title and an H1 aren't listed.
+    /// The body's H1 to H6; the file's title isn't one.
     var headings: [Heading]
     var links: [TocFile]
     var backlinks: [TocFile]
@@ -36,11 +36,16 @@ struct TocContent: Equatable {
             return TocFile(title: item.title, path: item.path, icon: choice.icon,
                            hint: kind == .project ? "Project" : kind == .area ? "Area" : "")
         }
-        headings = item.headings.filter { $0.level >= 2 }
+        headings = item.headings
         links = index.links(from: item).map { link in
             link.item.map(file) ?? TocFile(title: link.title, path: nil, icon: .note, hint: "")
         }
         backlinks = index.backlinks(to: item).map(file)
+    }
+
+    /// A heading's depth: its level below the shallowest level in the file.
+    func depth(of heading: Heading) -> Int {
+        heading.level - (headings.map(\.level).min() ?? heading.level)
     }
 
     /// A file with no headings and no links has no rail.
@@ -48,17 +53,17 @@ struct TocContent: Equatable {
 
     var hasLinks: Bool { !links.isEmpty || !backlinks.isEmpty }
 
-    /// The heading in view: the last whose line is at or above the top visible line.
-    func currentHeading(topLine: Int) -> Int? {
-        headings.lastIndex { $0.line <= topLine }
+    /// The heading in view: the last whose line is at or above the last visible line.
+    func currentHeading(lastVisibleLine: Int) -> Int? {
+        headings.lastIndex { $0.line <= lastVisibleLine }
     }
 }
 
 /// What the Live editor reports to the rail and panel, and how they ask it to scroll.
 @Observable
 final class TocState {
-    /// The 0-based line at the top of the editor's visible area.
-    var topLine = 0
+    /// The 0-based first and last lines of the editor's visible area.
+    var visibleLines = 0...0
     /// The body changed and the pointer hasn't moved since.
     var typing = false
     @ObservationIgnored let scroll = EditorScroll()
@@ -116,7 +121,7 @@ private struct TocPanelModifier: ViewModifier {
             }
             .onChange(of: document.path, initial: true) {
                 state.typing = false
-                state.topLine = 0
+                state.visibleLines = 0...0
             }
             .overlay {
                 if let toc, toc.hasRail {
@@ -137,21 +142,22 @@ private struct TocOverlay: View {
     @State private var pending: Task<Void, Never>?
     @Environment(\.theme) private var theme
 
-    static let openDelay = Duration.milliseconds(150)
-    static let closeDelay = Duration.milliseconds(300)
-    static let fade = 0.12
+    static let openDelay = Duration.milliseconds(50)
+    static let closeDelay = Duration.milliseconds(200)
+    static let fadeIn = 0.08
+    static let fadeOut = 0.12
 
     var body: some View {
         GeometryReader { viewport in
             ZStack(alignment: .topTrailing) {
-                TocRail(content: content, current: content.currentHeading(topLine: state.topLine))
+                TocRail(content: content, current: content.currentHeading(lastVisibleLine: state.visibleLines.upperBound))
                     .opacity(isOpen || state.typing ? 0 : 1)
                     .onHover { overRail = $0 }
                     .allowsHitTesting(!state.typing)
                     .padding(.top, 50)
                     .padding(.trailing, 10)
                 if isOpen {
-                    TocPanel(content: content, current: content.currentHeading(topLine: state.topLine),
+                    TocPanel(content: content, current: content.currentHeading(lastVisibleLine: state.visibleLines.upperBound),
                              maxHeight: viewport.size.height - 46 - 12, scroll: state.scroll.toLine, open: open)
                         .onHover { overPanel = $0 }
                         .padding(.top, 46)
@@ -161,14 +167,13 @@ private struct TocOverlay: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         }
-        .animation(.easeOut(duration: Self.fade), value: isOpen)
         .onChange(of: overRail || overPanel) { _, inside in
             pending?.cancel()
             guard inside != isOpen else { return }
             pending = Task {
                 try? await Task.sleep(for: inside ? Self.openDelay : Self.closeDelay)
                 guard !Task.isCancelled else { return }
-                isOpen = inside
+                withAnimation(.easeOut(duration: inside ? Self.fadeIn : Self.fadeOut)) { isOpen = inside }
             }
         }
         .onChange(of: state.typing) { _, typing in
@@ -192,7 +197,7 @@ struct TocRail: View {
             ForEach(Array(content.headings.enumerated()), id: \.offset) { index, heading in
                 RoundedRectangle(cornerRadius: 1)
                     .fill(theme.color(index == current ? \.accent : \.surface))
-                    .frame(width: heading.level == 2 ? 16 : 10, height: 2)
+                    .frame(width: content.depth(of: heading) == 0 ? 16 : 10, height: 2)
             }
             if content.hasLinks {
                 Image(systemName: "link")
@@ -224,7 +229,7 @@ struct TocPanel: View {
                 if !content.headings.isEmpty {
                     label("Contents", count: nil)
                     ForEach(Array(content.headings.enumerated()), id: \.offset) { index, heading in
-                        TocRow(title: heading.text, indent: CGFloat(heading.level - 2) * 14, isCurrent: index == current) {
+                        TocRow(title: heading.text, indent: CGFloat(content.depth(of: heading)) * 14, isCurrent: index == current) {
                             scroll(heading.line)
                         }
                     }

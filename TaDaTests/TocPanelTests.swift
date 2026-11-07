@@ -37,11 +37,19 @@ struct TocPanelTests {
         return TocContent(item: try #require(model.index[path]), index: model.index)
     }
 
-    @Test func contentsListHeadingsFromH2WithTheirLines() async throws {
+    @Test func contentsListHeadingsFromH1WithTheirLines() async throws {
         let toc = try await content("tasks/Photograph the Kombi.md")
-        #expect(toc.headings.map(\.text) == ["Scope", "Must ship", "Deep"])
-        #expect(toc.headings.map(\.level) == [2, 3, 6])
-        #expect(toc.headings.map(\.line) == [2, 3, 4])
+        #expect(toc.headings.map(\.text) == ["Title", "Scope", "Must ship", "Deep"])
+        #expect(toc.headings.map(\.level) == [1, 2, 3, 6])
+        #expect(toc.headings.map(\.line) == [0, 2, 3, 4])
+        #expect(toc.headings.map(toc.depth(of:)) == [0, 1, 2, 5])
+    }
+
+    @Test func depthIsRelativeToTheShallowestLevelPresent() async throws {
+        let only = try await content("notes/Only headings.md")
+        #expect(only.headings.map(only.depth(of:)) == [0, 0])
+        let project = try await content("projects/Sell the Kombi.md")
+        #expect(project.headings.map(project.depth(of:)) == [0])
     }
 
     @Test func linksAreBodyLinksOnceInOrderWithUnresolvedOnesMarked() async throws {
@@ -85,13 +93,13 @@ struct TocPanelTests {
         #expect(backlinksOnly.hasRail && backlinksOnly.hasLinks)
     }
 
-    @Test func theCurrentHeadingIsTheLastAtOrAboveTheTopLine() async throws {
+    @Test func theCurrentHeadingIsTheLastAtOrAboveTheLastVisibleLine() async throws {
         let toc = try await content("tasks/Photograph the Kombi.md")
-        #expect(toc.currentHeading(topLine: 0) == nil)
-        #expect(toc.currentHeading(topLine: 1) == nil)
-        #expect(toc.currentHeading(topLine: 2) == 0)
-        #expect(toc.currentHeading(topLine: 3) == 1)
-        #expect(toc.currentHeading(topLine: 40) == 2)
+        #expect(toc.currentHeading(lastVisibleLine: 0) == 0)
+        #expect(toc.currentHeading(lastVisibleLine: 1) == 0)
+        #expect(toc.currentHeading(lastVisibleLine: 2) == 1)
+        #expect(toc.currentHeading(lastVisibleLine: 3) == 2)
+        #expect(toc.currentHeading(lastVisibleLine: 40) == 3)
     }
 
     #if os(macOS)
