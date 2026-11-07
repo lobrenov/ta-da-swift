@@ -93,4 +93,14 @@ struct TocPanelTests {
         #expect(toc.currentHeading(topLine: 3) == 1)
         #expect(toc.currentHeading(topLine: 40) == 2)
     }
+
+    #if os(macOS)
+    @Test func aBodyChangeFromOutsideTheEditorIsNotTyping() async throws {
+        let model = await folder.model(selecting: "notes/Empty.md")
+        let state = TocState()
+        let document = try #require(model.document)
+        document.body = "Changed elsewhere.\n"
+        #expect(!state.typing)
+    }
+    #endif
 }

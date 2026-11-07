@@ -56,8 +56,6 @@ final class TocState {
     var topLine = 0
     /// The body changed and the pointer hasn't moved since.
     var typing = false
-    /// The file whose body the state follows, so opening another isn't typing.
-    var owner: String?
     @ObservationIgnored let scroll = EditorScroll()
 }
 
@@ -79,11 +77,7 @@ private struct TocPanelModifier: ViewModifier {
             .onContinuousHover { phase in
                 if case .active = phase, state.typing { state.typing = false }
             }
-            .onChange(of: document.body) {
-                if state.owner == document.path { state.typing = true } else { state.owner = document.path }
-            }
             .onChange(of: document.path, initial: true) {
-                state.owner = document.path
                 state.typing = false
                 state.topLine = 0
             }
@@ -117,7 +111,7 @@ private struct TocOverlay: View {
                     .opacity(isOpen || state.typing ? 0 : 1)
                     .onHover { overRail = $0 }
                     .allowsHitTesting(!state.typing)
-                    .padding(.top, 58)
+                    .padding(.top, 50)
                     .padding(.trailing, 10)
                 if isOpen {
                     TocPanel(content: content, current: content.currentHeading(topLine: state.topLine),
@@ -167,7 +161,7 @@ struct TocRail: View {
                 Image(systemName: "link")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(theme.color(\.surface))
-                    .padding(.top, content.headings.isEmpty ? 0 : -3)
+                    .padding(.top, content.headings.isEmpty ? 0 : 4)
             }
         }
         .padding(8)
@@ -263,11 +257,12 @@ private struct TocRow: View {
     let action: () -> Void
     @State private var hovered = false
     @Environment(\.theme) private var theme
+    private static let search = LinkMenuSearch()
 
     var body: some View {
         HStack(spacing: 8) {
             if let icon {
-                LinkChoiceIcon(icon: icon, search: LinkMenuSearch(), theme: theme)
+                LinkChoiceIcon(icon: icon, search: Self.search, theme: theme)
                     .frame(width: 14)
                     .opacity(isUnresolved ? 0.6 : 1)
             }
