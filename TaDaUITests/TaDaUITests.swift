@@ -12,9 +12,11 @@ final class TaDaUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments = ["-uiTesting"]
         app.launch()
-        XCTAssertTrue(app.buttons["Alpha"].waitForExistence(timeout: 10), "the test folder's tasks are listed")
+        XCTAssertTrue(alpha.waitForExistence(timeout: 10), "the test folder's tasks are listed")
     }
 
+    /// Alpha's row; its label goes on with the row's glyphs ("Alpha, Has a note").
+    private var alpha: XCUIElement { app.buttons.matching(NSPredicate(format: "label == 'Alpha' OR label BEGINSWITH 'Alpha, '")).firstMatch }
     private var title: XCUIElement { app.textViews["Title"].exists ? app.textViews["Title"] : app.textFields["Title"] }
     /// The label sits on the editor's scroll view.
     private var body: XCUIElement { app.scrollViews["Body"].textViews.firstMatch }
@@ -26,9 +28,9 @@ final class TaDaUITests: XCTestCase {
     }
 
     func testDeletingAndRestoringFiles() throws {
-        app.buttons["Alpha"].rightClick()
+        alpha.rightClick()
         app.buttons["Delete"].click()
-        XCTAssertTrue(app.buttons["Alpha"].waitForNonExistence(timeout: 5), "the file menu's Delete moves Alpha to the trash")
+        XCTAssertTrue(alpha.waitForNonExistence(timeout: 5), "the file menu's Delete moves Alpha to the trash")
 
         app.buttons["Beta"].click()
         waitForTitle("Beta")
@@ -42,7 +44,7 @@ final class TaDaUITests: XCTestCase {
         app.buttons["Restore"].click()
         XCTAssertTrue(alpha.waitForNonExistence(timeout: 5), "Restore takes Alpha out of the trash")
         app.typeKey("1", modifierFlags: .command)
-        XCTAssertTrue(app.buttons["Alpha"].waitForExistence(timeout: 5), "and back into the Agenda")
+        XCTAssertTrue(alpha.waitForExistence(timeout: 5), "and back into the Agenda")
     }
 
     func testArrowKeysMoveThroughTheAgendaButNotWhileEditing() throws {
@@ -65,7 +67,7 @@ final class TaDaUITests: XCTestCase {
     }
 
     func testAddSubtaskAndUndo() throws {
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
         body.click()
         app.typeKey(.upArrow, modifierFlags: .command)
@@ -85,7 +87,7 @@ final class TaDaUITests: XCTestCase {
     }
 
     func testClosingTheWindowRightAfterTypingSavesTheEdit() throws {
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
         body.click()
         app.typeKey(.upArrow, modifierFlags: .command)
@@ -95,7 +97,7 @@ final class TaDaUITests: XCTestCase {
 
         app.launchArguments = ["-uiTesting", "-uiTestingRelaunch"]
         app.launch()
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
         XCTAssertEqual(body.value as? String, "Saved. First line.\n")
         XCTAssertFalse(app.buttons["Alpha (unsaved edits)"].exists)
@@ -107,7 +109,7 @@ final class TaDaUITests: XCTestCase {
     }
 
     func testPropertyChipsPickFromTheirMenusWithTheKeyboard() throws {
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
 
         let status = app.buttons["Status"]
@@ -137,10 +139,10 @@ final class TaDaUITests: XCTestCase {
 
     func testMovingTasksFromTheFileMenuAndWithTheShortcut() throws {
         let project = app.buttons["Project"]
-        app.buttons["Alpha"].rightClick()
+        alpha.rightClick()
         app.buttons["Move"].click()
         app.buttons.matching(NSPredicate(format: "label == 'Website' AND value CONTAINS 'open'")).firstMatch.click()
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
         waitForValue(project, "value == 'Website'")
 
@@ -155,7 +157,7 @@ final class TaDaUITests: XCTestCase {
         app.typeText("Web")
         app.typeKey(.return, modifierFlags: [])
         for name in ["Beta", "Alpha"] {
-            app.buttons[name].click()
+            (name == "Alpha" ? alpha : app.buttons[name]).click()
             waitForTitle(name)
             waitForValue(project, "value == 'Website'")
         }
@@ -163,19 +165,19 @@ final class TaDaUITests: XCTestCase {
 
     func testDraggingATaskOntoASidebarProject() throws {
         let website = app.buttons.matching(NSPredicate(format: "label == 'Website'")).firstMatch
-        app.buttons["Alpha"].click(forDuration: 0.5, thenDragTo: website, withVelocity: .slow, thenHoldForDuration: 0.5)
+        alpha.click(forDuration: 0.5, thenDragTo: website, withVelocity: .slow, thenHoldForDuration: 0.5)
         XCTAssertTrue(app.buttons["Website, 1"].waitForExistence(timeout: 5), "the drop links Alpha to Website")
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
         waitForValue(app.buttons["Project"], "value == 'Website'")
 
-        app.buttons["Alpha"].click(forDuration: 0.5, thenDragTo: app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Loose'")).firstMatch,
+        alpha.click(forDuration: 0.5, thenDragTo: app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Loose'")).firstMatch,
                                    withVelocity: .slow, thenHoldForDuration: 0.5)
         waitForValue(app.buttons["Project"], "value == 'None'")
     }
 
     func testAddSubtaskIsOffUnlessAnEditorHasTheKeyboard() throws {
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
         let taskMenu = app.menuBars.menuBarItems["Task"]
         taskMenu.click()
@@ -234,7 +236,7 @@ final class TaDaUITests: XCTestCase {
     }
 
     func testCompleteSelectedTask() throws {
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
         app.menuBarItems["Task"].click()
         app.menuBarItems["Task"].menuItems.firstMatch.click()
@@ -251,7 +253,7 @@ final class TaDaUITests: XCTestCase {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setData(png, forType: .png)
 
-        app.buttons["Alpha"].click()
+        alpha.click()
         waitForTitle("Alpha")
         body.click()
         app.typeKey(.downArrow, modifierFlags: .command)

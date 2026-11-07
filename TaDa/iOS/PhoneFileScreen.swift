@@ -15,6 +15,7 @@ struct PhoneFileScreen: View {
     @State private var isEditing = false
     @State private var isVisible = false
     @State private var search = ListSearch()
+    @State private var toc = TocState()
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -90,6 +91,8 @@ struct PhoneFileScreen: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .pullToSearch(search)
+        .phoneTocDrawer(model: model, document: document, state: toc, isSource: isSource, isSearching: search.isSearching,
+                        isActive: isVisible && nav.sheet == nil, open: { nav.push(.file($0)) })
     }
 
     private func fileContent(_ document: OpenDocument) -> some View {
@@ -119,7 +122,7 @@ struct PhoneFileScreen: View {
                     .padding(.horizontal, -5)
             } else {
                 BodyEditor(model: model, document: document, open: { nav.push(.file($0)) },
-                           openTag: { nav.push(.tag($0.path)) })
+                           openTag: { nav.push(.tag($0.path)) }, toc: toc)
             }
             if let item = document.item, item.properties.kind == .project {
                 PhoneLinkedTasks(model: model, project: model.index[item.path] ?? item)

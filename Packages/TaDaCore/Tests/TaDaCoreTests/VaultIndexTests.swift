@@ -232,3 +232,14 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
     #expect(index.tasks(in: project).isEmpty && index.tasks(in: area).isEmpty && index.projects(in: area).isEmpty)
     #expect(index.notes.map(\.path) == ["Ark.md"])
 }
+
+@Test func linksFromAnItemAreEachBodyLinkOnceInOrderResolvedOrNot() {
+    let source = makeItem("tasks/Source.md", "type: task\nstatus: Doing\nproject: \"[[Ta Da MVP]]\"",
+                          body: "[[Nowhere]] then [[member|m]], [[Ta Da MVP#Goals]], [[NOWHERE]], [[Member]] and ![[Photo.png]] [[Source]]")
+    let index = VaultIndex([project, member, source])
+    let links = index.links(from: source)
+    #expect(links.map { $0.item?.path } == [nil, member.path, project.path])
+    #expect(links.map(\.title) == ["Nowhere", "member", "Ta Da MVP"])
+    #expect(index.links(from: project).isEmpty)
+    #expect(index.links(from: toTask).isEmpty, "a frontmatter link isn't a body link")
+}

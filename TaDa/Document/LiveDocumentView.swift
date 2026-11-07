@@ -6,6 +6,7 @@ import TaDaCore
 struct LiveDocumentView: View {
     let model: AppModel
     let document: OpenDocument
+    @State private var toc = TocState()
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -18,7 +19,7 @@ struct LiveDocumentView: View {
                     }
                     WarningList(warnings: warnings)
                     Hairline()
-                    BodyEditor(model: model, document: document)
+                    BodyEditor(model: model, document: document, toc: toc)
                     Spacer(minLength: 0)
                     DocumentFooter(document: document)
                 }
@@ -28,6 +29,7 @@ struct LiveDocumentView: View {
                 .frame(minHeight: viewport.size.height, alignment: .top)
             }
         }
+        .tocPanel(model: model, document: document, state: toc)
     }
 
     private var warnings: [Warning] {
@@ -46,11 +48,18 @@ struct BodyEditor: View {
     var open: ((String) -> Void)? = nil
     /// Opens a clicked tag; by default the model shows its page.
     var openTag: ((Tag) -> Void)? = nil
+    /// Gets the page's visible lines and a way to scroll a line to the top.
+    var toc: TocState? = nil
     @Environment(\.theme) private var theme
 
     var body: some View {
         LiveEditor(
-            text: Binding { document.body } set: { document.body = $0 },
+            text: Binding { document.body } set: { newValue in
+                document.body = newValue
+                #if os(macOS)
+                toc?.typing = true
+                #endif
+            },
             theme: theme,
             documentID: document.path,
             linkTargets: model.index.titles,
@@ -68,11 +77,22 @@ struct BodyEditor: View {
             onTagClick: { name in
                 guard let tag = Tag(name) else { return }
                 if let openTag { openTag(tag) } else { model.show(.tag(tag.path)) }
-            }
+            },
+            onVisibleLines: visibleLinesReport,
+            scroll: scroll,
+            isCursorExcluded: toc.map { toc in { toc.panelContains($0) } }
         )
         // The editor insets its text by 16pt; line it up with the title.
         .padding(.horizontal, -16)
         .accessibilityLabel("Body")
+    }
+
+    private var visibleLinesReport: ((ClosedRange<Int>) -> Void)? {
+        toc.map { toc in { toc.visibleLines = $0 } }
+    }
+
+    private var scroll: EditorScroll? {
+        toc?.scroll
     }
 
     private func openLink(_ target: String) {

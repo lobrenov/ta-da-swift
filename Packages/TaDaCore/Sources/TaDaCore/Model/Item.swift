@@ -18,6 +18,8 @@ public struct Item: Hashable, Sendable, Identifiable {
     public var checkboxes: [Checkbox]
     /// Links in the body. They never set project membership.
     public var links: [WikiLink]
+    /// Headings in the body, with lines in the body as the Live editor shows it.
+    public var headings: [Heading]
     /// Embeds in the body, such as `![[front.jpg]]`. They aren't links.
     public var embeds: [WikiLink]
     /// The file's tags: `tags:` in order, then the body's that aren't in `tags:`. Each keeps its first spelling.
@@ -78,6 +80,7 @@ public struct Item: Hashable, Sendable, Identifiable {
         }
         checkboxes = body.checkboxes
         links = body.links
+        headings = body.headings
         embeds = body.embeds
         let bodyPaths = Set(body.tags.map(\.path))
         let frontmatterPaths = Set(read.properties.tags.map(\.path))

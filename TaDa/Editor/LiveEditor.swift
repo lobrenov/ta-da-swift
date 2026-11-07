@@ -10,6 +10,11 @@ import TaDaCore
 import ImageIO
 import UniformTypeIdentifiers
 
+/// Scrolls an editor's line to the top of the page; the editor sets `toLine` while it's shown.
+final class EditorScroll {
+    var toLine: (Int) -> Void = { _ in }
+}
+
 struct LiveEditor: View {
     @Binding var text: String
     let theme: Theme
@@ -39,6 +44,12 @@ struct LiveEditor: View {
     var onLinkClick: (String) -> Void = { _ in }
     /// Receives a clicked `#tag`, as written, without `#`; without it, tags draw as bubbles but don't open.
     var onTagClick: ((String) -> Void)? = nil
+    /// The 0-based first and last visible lines, as the page scrolls.
+    var onVisibleLines: ((ClosedRange<Int>) -> Void)? = nil
+    /// Gets a way to scroll a line to the top.
+    var scroll: EditorScroll? = nil
+    /// Whether a point in window coordinates is over something drawn on the editor that owns the cursor, so it shows the arrow.
+    var isCursorExcluded: ((CGPoint) -> Bool)? = nil
 
     @State private var slashCommand = SlashCommandProxy()
     /// Whether the editor has the keyboard; setting it gives or drops it.
@@ -48,7 +59,9 @@ struct LiveEditor: View {
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
     @State private var rightClickMenu = RightClickMenuController()
+    @State private var textMenu = TextMenuController()
     @State private var linkMenu = LinkMenuController()
+    @State private var addLinkMenu = AddLinkMenuController()
     @State private var tagMenu = TagMenuController()
     #else
     /// The open `/` query's choices, the one ↵ picks, and the query's state, which a pick inserts against.
@@ -100,16 +113,22 @@ struct LiveEditor: View {
                 }
             },
             header: header,
+            isCursorExcluded: isCursorExcluded,
             onSlashCommandChange: showQueryMenu,
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: showCheckboxMenu,
             onCalloutMenu: showCalloutMenu,
             onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } },
             onTagClick: onTagClick,
-            onRightClickMenu: showRightClickMenu
+            onRightClickMenu: showRightClickMenu,
+            onTextMenu: showTextMenu,
+            onVisibleLines: onVisibleLines
         )
         .focusedValue(\.editor, slashCommand)
-        .onAppear { slashCommand.triggers = triggers }
+        .onAppear {
+            slashCommand.triggers = triggers
+            scroll?.toLine = { [slashCommand] in slashCommand.scroll(toLine: $0) }
+        }
         .onChange(of: takesFocus, initial: true) {
             guard takesFocus else { return }
             if focused { tookFocus() } else { focused = true }
@@ -125,6 +144,8 @@ struct LiveEditor: View {
             checkboxMenu.hide()
             calloutMenu.hide()
             rightClickMenu.hide()
+            textMenu.hide()
+            addLinkMenu.hide()
         }
         #else
         NativeTextViewWrapper(
@@ -183,9 +204,13 @@ struct LiveEditor: View {
                     }
                 }
             },
-            onTagClick: onTagClick
+            onTagClick: onTagClick,
+            onVisibleLines: onVisibleLines
         )
-        .onAppear { slashCommand.triggers = triggers }
+        .onAppear {
+            slashCommand.triggers = triggers
+            scroll?.toLine = { [slashCommand] in slashCommand.scroll(toLine: $0) }
+        }
         .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .sensoryFeedback(.impact(weight: .light), trigger: toggles) { _, _ in haptics }
         .sensoryFeedback(.impact(weight: .medium), trigger: menuPresses) { _, _ in haptics }
@@ -342,6 +367,99 @@ struct LiveEditor: View {
             },
             anchor: request.anchorRect, theme: theme, close: request.close
         )
+    }
+
+    private func showTextMenu(_ request: TextMenuRequest) {
+        let target = TextMenuTarget(
+            hasSelection: request.hasSelection,
+            onLink: request.link != nil,
+            canAddLink: links != nil && !request.selectionTouchesLink
+                && AddLink.range(request.selection, selectedText: request.selectedText) != nil,
+            canExtract: taskExtraction != nil && ExtractTask.extractableRange(request.selection, selectedText: request.selectedText) != nil,
+            formats: Set(request.activeFormats.map(Self.command(for:))),
+            block: Self.command(for: request.blockKind),
+            isBody: request.blockKind == .body
+        )
+        textMenu.show(TextMenu.sections(for: target), anchor: request.anchorRect, theme: theme, pick: { runTextMenu($0, request) },
+                      close: request.close)
+    }
+
+    private func runTextMenu(_ row: TextMenuRow, _ request: TextMenuRequest) {
+        switch row.action {
+        case .openLink:
+            guard let link = request.link else { return }
+            switch link.kind {
+            case .wiki: onLinkClick(link.target)
+            case .markdown: URL(string: link.target).map { _ = NSWorkspace.shared.open($0) }
+            }
+        case .copyLink:
+            guard let link = request.link else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(link.source, forType: .string)
+        case .cut: request.cut()
+        case .copy: request.copy()
+        case .paste: request.paste()
+        case .pasteAsPlainText: request.pasteAsPlainText()
+        case .selectAll: request.selectAll()
+        case .addLink:
+            guard let links, let textView = slashCommand.textView, !request.selectionTouchesLink,
+                  let range = AddLink.range(request.selection, selectedText: request.selectedText) else { return }
+            let selected = (request.selectedText as NSString).substring(with: NSRange(location: range.location - request.selection.location,
+                                                                                       length: range.length))
+            addLinkMenu.show(text: selected, source: links, anchor: textView.firstRect(forCharacterRange: range, actualRange: nil),
+                             theme: theme, pick: { choice in
+                request.replaceSelection(ExtractTask.replacingTrimmed(in: request.selectedText) { _ in
+                    AddLink.markdown(choice, selection: selected)
+                } ?? request.selectedText)
+            }, close: request.close)
+        case .extractToTask:
+            guard let model = taskExtraction, let textView = slashCommand.textView else { return }
+            ExtractTask.perform(selection: request.selection, in: textView, model: model) { link in
+                request.replaceSelection(ExtractTask.replacingTrimmed(in: request.selectedText) { _ in link } ?? request.selectedText)
+            }
+        case .body: request.setBlockKind(.body)
+        case .command(let command):
+            if let format = Self.format(for: command) {
+                request.toggleFormat(format)
+            } else if let kind = Self.blockKind(for: command) {
+                request.setBlockKind(kind)
+            } else if command == .link, let link = TextMenu.linkInsertion(selection: request.selection, selectedText: request.selectedText) {
+                request.insert(link.text, selecting: link.selection, asBlock: false)
+            } else {
+                let text = (slashCommand.textView?.string ?? "") as NSString
+                let line = text.lineRange(for: NSRange(location: min(request.selection.location, text.length), length: 0))
+                let before = text.substring(with: NSRange(location: line.location, length: request.selection.location - line.location))
+                let atLineStart = before.allSatisfy(\.isWhitespace)
+                let insertion = command.insertion(followsBlankLine: request.followsBlankLine && atLineStart)
+                request.insert(insertion.text, selecting: insertion.selection, asBlock: TextMenu.blockInsertions.contains(command))
+            }
+        case .submenu: break
+        }
+    }
+
+    private static let formatCommands: [(SlashCommand, MarkdownFormat)] = [
+        (.bold, .bold), (.italic, .italic), (.strikethrough, .strikethrough), (.highlight, .highlight), (.inlineCode, .inlineCode),
+    ]
+
+    private static let blockCommands: [(SlashCommand, TextMenuBlockKind)] = [
+        (.heading1, .heading(1)), (.heading2, .heading(2)), (.heading3, .heading(3)), (.bulletedList, .bullet),
+        (.numberedList, .numbered), (.task, .task), (.quote, .quote),
+    ]
+
+    private static func command(for format: MarkdownFormat) -> SlashCommand {
+        formatCommands.first { $0.1 == format }!.0
+    }
+
+    private static func format(for command: SlashCommand) -> MarkdownFormat? {
+        formatCommands.first { $0.0 == command }?.1
+    }
+
+    private static func command(for kind: TextMenuBlockKind) -> SlashCommand? {
+        blockCommands.first { $0.1 == kind }?.0
+    }
+
+    private static func blockKind(for command: SlashCommand) -> TextMenuBlockKind? {
+        blockCommands.first { $0.0 == command }?.1
     }
 
     /// A right-click on an image opens the embed menu; ⌘C, ⌘X and ⌘⌫ on a selected one copy, cut or delete it.

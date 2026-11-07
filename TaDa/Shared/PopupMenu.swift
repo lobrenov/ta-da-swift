@@ -10,11 +10,18 @@ protocol PopupMenuItem {
     var accessibilityValue: String { get }
     /// Highlighted with a `deadline` tint instead of `surface`.
     var isDestructive: Bool { get }
+    /// Drawn dimmed and skipped by the highlight, type-select, hover and click.
+    var isEnabled: Bool { get }
+    /// The rows of a submenu that opens beside this one's row, which then shows a ▸. Submenu rows' own submenus
+    /// are ignored.
+    var submenu: [PopupMenuSection<Self>] { get }
 }
 
 extension PopupMenuItem {
     var accessibilityValue: String { "" }
     var isDestructive: Bool { false }
+    var isEnabled: Bool { true }
+    var submenu: [PopupMenuSection<Self>] { [] }
 }
 
 /// Some of a menu's items: under an uppercase label, or after a divider when they have none and aren't first.
@@ -74,6 +81,10 @@ final class PopupPanel<Content: View> {
     var onEscape: (() -> Bool)?
     /// What dismissing does; hides the panel unless set.
     var onDismiss: (() -> Void)?
+    /// Called whenever the panel hides.
+    var onHide: (() -> Void)?
+    /// A window whose clicks and scrolls don't dismiss this panel, such as its submenu.
+    var companion: (() -> NSWindow?)?
 
     /// With `becomesKey` the panel has the keyboard while it's open, for a text field in it.
     init(becomesKey: Bool = false, content: @escaping () -> Content) {
@@ -82,6 +93,20 @@ final class PopupPanel<Content: View> {
     }
 
     var isOpen: Bool { panel?.isVisible == true }
+    var window: NSWindow? { panel }
+    var frame: CGRect? { isOpen ? panel?.frame : nil }
+
+    /// Shows the panel at `size` right of `row` (screen coordinates), `inset` points above its top, or left of it
+    /// at the screen's edge.
+    func show(size: CGSize, beside row: CGRect, inset: CGFloat, in parent: NSWindow) {
+        let panel = panel ?? makePanel()
+        var origin = CGPoint(x: row.maxX - 2, y: row.maxY + inset - size.height)
+        if let visible = parent.screen?.visibleFrame {
+            if origin.x + size.width > visible.maxX - 4 { origin.x = row.minX + 2 - size.width }
+            origin.y = min(max(origin.y, visible.minY + 4), visible.maxY - size.height - 4)
+        }
+        place(panel, at: CGRect(origin: origin, size: size), in: parent)
+    }
 
     /// Shows the panel at `size` below `anchor` (screen coordinates), `inset` points left of it and `gap` below,
     /// or above it when there's no room below. Moves and resizes it when it's already open.
@@ -92,7 +117,11 @@ final class PopupPanel<Content: View> {
             if origin.y < visible.minY { origin.y = anchor.maxY + gap }
             origin.x = min(max(origin.x, visible.minX + 4), visible.maxX - size.width - 4)
         }
-        panel.setFrame(CGRect(origin: origin, size: size), display: true)
+        place(panel, at: CGRect(origin: origin, size: size), in: parent)
+    }
+
+    private func place(_ panel: NSPanel, at frame: CGRect, in parent: NSWindow) {
+        panel.setFrame(frame, display: true)
         if panel.parent !== parent {
             panel.parent?.removeChildWindow(panel)
             parent.addChildWindow(panel, ordered: .above)
@@ -109,6 +138,7 @@ final class PopupPanel<Content: View> {
     func hide() {
         if let eventMonitor { NSEvent.removeMonitor(eventMonitor) }
         eventMonitor = nil
+        defer { onHide?() }
         guard let panel, panel.isVisible else { return }
         let parent = panel.parent
         let wasKey = panel.isKeyWindow
@@ -146,7 +176,7 @@ final class PopupPanel<Content: View> {
             }
             // A two-finger click on a trackpad also sends scroll events that don't move.
             let isStillScroll = event.type == .scrollWheel && event.scrollingDeltaX == 0 && event.scrollingDeltaY == 0
-            if event.window !== panel, !isStillScroll { dismiss() }
+            if event.window !== panel, event.window !== companion?(), !isStillScroll { dismiss() }
             return event
         }
     }
@@ -163,6 +193,9 @@ final class PopupPanel<Content: View> {
 final class PopupMenu<Item: PopupMenuItem, Row: View> {
     private let model: PopupMenuModel<Item>
     private let panel: PopupPanel<PopupMenuView<Item, Row>>
+    private let submenuModel: PopupMenuModel<Item>
+    private let submenuPanel: PopupPanel<PopupMenuView<Item, Row>>
+    private weak var parentWindow: NSWindow?
     private var typed = ""
     private var typedAt: TimeInterval = 0
 
@@ -177,6 +210,15 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         get { model.searchPrompt }
         set { model.searchPrompt = newValue }
     }
+
+    /// Read by VoiceOver for the search field, in place of its prompt.
+    var searchLabel: String? {
+        get { model.searchLabel }
+        set { model.searchLabel = newValue }
+    }
+
+    /// Whether opening the menu selects the text in the search field.
+    var selectsQueryOnOpen = false
 
     /// What's typed in the search field.
     var query: String {
@@ -207,10 +249,23 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         model.searchPrompt = searchPrompt
         self.model = model
         panel = PopupPanel(becomesKey: searchPrompt != nil) { PopupMenuView(model: model, row: row) }
+        let submenuModel = PopupMenuModel<Item>(style: .compact, emptyText: nil)
+        self.submenuModel = submenuModel
+        submenuPanel = PopupPanel { PopupMenuView(model: submenuModel, row: row) }
         if takesKeys { panel.onKey = { [weak self] event in self?.handleKey(event) ?? false } }
+        panel.onEscape = { [weak self] in self?.closeSubmenu() ?? false }
+        panel.onHide = { [weak self] in self?.closeSubmenu() }
+        panel.companion = { [weak self] in self?.submenuPanel.window }
+        submenuPanel.companion = { [weak self] in self?.panel.window }
+        model.onHover = { [weak self] index in self?.hover(index) }
+        submenuModel.pick = { [weak self] item in self?.pickFromSubmenu(item) }
     }
 
     var isOpen: Bool { panel.isOpen }
+    /// Whether a submenu is open beside a row.
+    var isSubmenuOpen: Bool { submenuPanel.isOpen }
+    /// The highlighted submenu row, as an index into its items; nil when none is.
+    var submenuHighlight: Int? { submenuModel.highlight }
     /// The highlighted item, as an index into all the items; nil when none is.
     var highlight: Int? { model.highlight }
 
@@ -220,45 +275,126 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
     func show(_ sections: [PopupMenuSection<Item>], highlight: Int?, theme: Theme, below anchor: CGRect,
               inset: CGFloat, gap: CGFloat, in parent: NSWindow, header: (height: CGFloat, view: AnyView)? = nil,
               pick: @escaping (Item) -> Void) {
+        closeSubmenu()
         let opening = !panel.isOpen
         model.header = header
         model.sections = sections.filter { !$0.items.isEmpty }
         model.highlight = highlight
         model.theme = theme
         model.pick = pick
+        parentWindow = parent
         model.revision += 1
+        if opening, selectsQueryOnOpen { model.selectionRevision += 1 }
         panel.show(size: model.size, below: anchor, inset: inset, gap: gap, in: parent)
         if opening { announceHighlight() }
     }
 
     func hide() { panel.hide() }
 
-    /// Moves the highlight `offset` items, wrapping round. With none highlighted, down starts at the first item
-    /// and up at the last.
+    /// Moves the highlight `offset` items, wrapping round, in the open submenu or else the menu. With none
+    /// highlighted, down starts at the first item and up at the last.
     func move(by offset: Int) {
-        let count = model.items.count
+        let target = isSubmenuOpen ? submenuModel : model
+        let items = target.items
+        let count = items.count
         guard count > 0 else { return }
-        model.highlight = model.highlight.map { ($0 + offset % count + count) % count } ?? (offset > 0 ? 0 : count - 1)
+        var index = target.highlight.map { ($0 + offset % count + count) % count } ?? (offset > 0 ? 0 : count - 1)
+        var tries = 0
+        while !items[index].isEnabled, tries < count {
+            index = (index + (offset > 0 ? 1 : count - 1)) % count
+            tries += 1
+        }
+        guard items[index].isEnabled else { return }
+        target.highlight = index
         announceHighlight()
     }
 
-    /// Picks the highlighted item; false when there's none.
+    /// Picks the highlighted item of the open submenu, or of the menu, where a row with a submenu opens its
+    /// submenu instead; false when there's none.
     @discardableResult
     func pickHighlighted() -> Bool {
-        guard let highlight = model.highlight, model.items.indices.contains(highlight) else { return false }
-        model.pick(model.items[highlight])
+        if isSubmenuOpen {
+            guard let highlight = submenuModel.highlight, submenuModel.items.indices.contains(highlight),
+                  submenuModel.items[highlight].isEnabled else { return false }
+            pickFromSubmenu(submenuModel.items[highlight])
+            return true
+        }
+        guard let highlight = model.highlight, model.items.indices.contains(highlight),
+              model.items[highlight].isEnabled else { return false }
+        if model.items[highlight].submenu.isEmpty {
+            model.pick(model.items[highlight])
+        } else {
+            openSubmenu(at: highlight, highlightFirst: true)
+        }
         return true
     }
 
-    private func handleKey(_ event: NSEvent) -> Bool {
+    /// Opens the highlighted row's submenu with its first row highlighted; false when the row has none.
+    @discardableResult
+    func openSubmenu() -> Bool {
+        guard !isSubmenuOpen, let highlight = model.highlight, model.items.indices.contains(highlight),
+              !model.items[highlight].submenu.isEmpty else { return false }
+        openSubmenu(at: highlight, highlightFirst: true)
+        return true
+    }
+
+    /// Closes the open submenu; false when none was open.
+    @discardableResult
+    func closeSubmenu() -> Bool {
+        let wasOpen = isSubmenuOpen
+        model.openIndex = nil
+        submenuModel.highlight = nil
+        submenuPanel.hide()
+        return wasOpen
+    }
+
+    /// The screen frames of the menu and its open submenu.
+    var rootFrame: CGRect? { panel.frame }
+    var submenuFrame: CGRect? { submenuPanel.frame }
+
+    /// What the pointer entering row `index` does: opens its submenu, or closes the open one.
+    func hover(_ index: Int) {
+        if model.items.indices.contains(index), !model.items[index].submenu.isEmpty {
+            guard model.openIndex != index else { return }
+            openSubmenu(at: index, highlightFirst: false)
+        } else {
+            closeSubmenu()
+        }
+    }
+
+    private func openSubmenu(at index: Int, highlightFirst: Bool) {
+        guard let parent = parentWindow, let rootFrame = panel.frame else { return }
+        model.highlight = index
+        model.openIndex = index
+        submenuModel.sections = model.items[index].submenu
+        submenuModel.highlight = highlightFirst ? submenuModel.items.firstIndex { $0.isEnabled } : nil
+        submenuModel.theme = model.theme
+        submenuModel.revision += 1
+        let top = rootFrame.maxY - model.rowTop(of: index)
+        let row = CGRect(x: rootFrame.minX, y: top - model.style.rowHeight, width: rootFrame.width,
+                         height: model.style.rowHeight)
+        submenuPanel.show(size: submenuModel.size, beside: row, inset: submenuModel.style.padding, in: parent)
+        if highlightFirst { announceHighlight() }
+    }
+
+    private func pickFromSubmenu(_ item: Item) {
+        model.pick(item)
+        hide()
+    }
+
+    func handleKey(_ event: NSEvent) -> Bool {
         switch event.specialKey {
         case .downArrow: move(by: 1)
         case .upArrow: move(by: -1)
+        case .rightArrow:
+            if !isSubmenuOpen, !openSubmenu(), model.searchPrompt != nil { return false }
+        case .leftArrow:
+            if !closeSubmenu(), model.searchPrompt != nil { return false }
         case .carriageReturn, .enter:
             if event.modifierFlags.contains(.shift), let onShiftReturn { onShiftReturn() } else { pickHighlighted() }
         default:
             guard model.searchPrompt == nil else { return false }
-            typeSelect(event)
+            if !isSubmenuOpen { typeSelect(event) }
         }
         return true
     }
@@ -269,14 +405,15 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
               let characters = event.characters, !characters.isEmpty else { return }
         typed = event.timestamp - typedAt < 1 ? typed + characters : characters
         typedAt = event.timestamp
-        guard let match = TypeSelect.match(typed, in: model.items.map(\.title), from: model.highlight) else { return }
+        guard let match = TypeSelect.match(typed, in: model.items.map { $0.isEnabled ? $0.title : "" }, from: model.highlight) else { return }
         model.highlight = match
         announceHighlight()
     }
 
     private func announceHighlight() {
-        guard let highlight = model.highlight, model.items.indices.contains(highlight) else { return }
-        let item = model.items[highlight]
+        let target = isSubmenuOpen ? submenuModel : model
+        guard let highlight = target.highlight, target.items.indices.contains(highlight) else { return }
+        let item = target.items[highlight]
         announceToVoiceOver([item.title, item.accessibilityValue].filter { !$0.isEmpty }.joined(separator: ", "))
     }
 }
@@ -311,12 +448,19 @@ private final class PopupMenuModel<Item: PopupMenuItem> {
     var highlight: Int?
     var theme = Theme.all[0]
     var searchPrompt: String?
+    var searchLabel: String?
+    /// Bumped when the search field's text is to be selected.
+    var selectionRevision = 0
     var header: (height: CGFloat, view: AnyView)?
     var query = ""
     var footerHints: [(key: String, label: String)]?
     /// Bumped on each show, to scroll the highlight into view.
     var revision = 0
     @ObservationIgnored var pick: (Item) -> Void = { _ in }
+    /// Called with the index of a row the pointer enters or taps.
+    @ObservationIgnored var onHover: (Int) -> Void = { _ in }
+    /// The row whose submenu is open.
+    @ObservationIgnored var openIndex: Int?
     @ObservationIgnored var onSearch: (String) -> Void = { _ in }
 
     init(style: PopupMenuStyle, emptyText: String?) {
@@ -339,6 +483,26 @@ private final class PopupMenuModel<Item: PopupMenuItem> {
             heights += Array(repeating: style.rowHeight, count: section.items.count)
         }
         return min(heights.reduce(0, +) + CGFloat(heights.count - 1), style.maxListHeight)
+    }
+
+    /// A row's distance from the panel's top, under the padding, search field, header and the rows and labels
+    /// before it, 1pt apart, at most the list's visible height. Submenus assume an unscrolled list.
+    func rowTop(of index: Int) -> CGFloat {
+        var y = style.padding + (searchPrompt == nil ? 0 : PopupMenuStyle.searchHeight)
+            + (header.map { $0.height + PopupMenuStyle.dividerHeight } ?? 0)
+        let limit = y + max(listHeight - style.rowHeight, 0)
+        var seen = 0
+        for (sectionIndex, section) in sections.enumerated() {
+            if section.label != nil {
+                y += PopupMenuStyle.labelHeight + 1
+            } else if sectionIndex > 0 {
+                y += PopupMenuStyle.dividerHeight + 1
+            }
+            if index < seen + section.items.count { return min(y + CGFloat(index - seen) * (style.rowHeight + 1), limit) }
+            y += CGFloat(section.items.count) * (style.rowHeight + 1)
+            seen += section.items.count
+        }
+        return min(y, limit)
     }
 
     /// The search field, the header and its divider, the list, the padding all round and the footer.
@@ -364,7 +528,8 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
                     guard query != model.query else { return }
                     model.query = query
                     model.onSearch(query)
-                }, theme: theme, revision: model.revision)
+                }, accessibilityLabel: model.searchLabel, theme: theme, revision: model.revision,
+                           selectionRevision: model.selectionRevision)
             }
             if let header = model.header {
                 header.view
@@ -427,25 +592,40 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
         let fill: Color = !isHighlighted ? .clear
             : item.isDestructive ? theme.color(\.deadline).opacity(theme.isDark ? 0.22 : 0.14)
             : theme.color(\.surface)
-        return row(item, isHighlighted, theme)
+        return HStack(spacing: 8) {
+            row(item, isHighlighted, theme)
+            if !item.submenu.isEmpty {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(theme.color(\.muted))
+                    .accessibilityHidden(true)
+            }
+        }
             .padding(.horizontal, style.rowPadding)
             .frame(height: style.rowHeight)
             .background(fill, in: .rect(cornerRadius: style.rowRadius))
+            .opacity(item.isEnabled ? 1 : 0.45)
             .contentShape(.rect)
             .onHover { inside in
                 if inside {
-                    model.highlight = index
-                } else if !style.keepsHighlight, model.highlight == index {
+                    if item.isEnabled { model.highlight = index }
+                    model.onHover(index)
+                } else if !style.keepsHighlight, model.highlight == index, model.openIndex != index {
                     model.highlight = nil
                 }
             }
-            .onTapGesture { model.pick(item) }
+            .onTapGesture { activate(item, index: index) }
             .id(RowID(index: index))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(item.title)
             .accessibilityValue(item.accessibilityValue)
             .accessibilityAddTraits(isHighlighted ? [.isButton, .isSelected] : .isButton)
-            .accessibilityAction { model.pick(item) }
+            .accessibilityAction { activate(item, index: index) }
+    }
+
+    private func activate(_ item: Item, index: Int) {
+        guard item.isEnabled else { return }
+        if item.submenu.isEmpty { model.pick(item) } else { model.onHover(index) }
     }
 
     /// Scrolls the highlighted row into view; the first row brings its section's label too.
@@ -466,9 +646,14 @@ struct PopupField: View {
     let systemImage: String
     @Binding var text: String
     var note: String?
+    /// Read by VoiceOver in place of `prompt`.
+    var accessibilityLabel: String?
     let theme: Theme
     let revision: Int
+    /// The text is selected each time this changes.
+    var selectionRevision = 0
     @FocusState private var focused: Bool
+    @State private var selection: TextSelection?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -476,10 +661,11 @@ struct PopupField: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(theme.color(\.muted))
                 .accessibilityHidden(true)
-            TextField(prompt, text: $text, prompt: Text(prompt).foregroundStyle(theme.color(\.muted)))
+            TextField(prompt, text: $text, selection: $selection, prompt: Text(prompt).foregroundStyle(theme.color(\.muted)))
                 .textFieldStyle(.plain)
                 .foregroundStyle(theme.color(\.strong))
                 .focused($focused)
+                .accessibilityLabel(accessibilityLabel ?? prompt)
             if let note {
                 Text(note)
                     .font(.system(size: 12))
@@ -495,6 +681,9 @@ struct PopupField: View {
         .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
         .padding(2)
         .onChange(of: revision, initial: true) { focused = true }
+        .onChange(of: selectionRevision, initial: true) {
+            if selectionRevision > 0 { selection = TextSelection(range: text.startIndex..<text.endIndex) }
+        }
     }
 }
 

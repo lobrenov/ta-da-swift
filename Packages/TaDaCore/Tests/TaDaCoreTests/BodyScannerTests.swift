@@ -210,3 +210,33 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
 @Test func targetsSkipUnicodeSpaces() {
     #expect(BodyScanner.linkTargets(in: "See [[\u{a0}y]]").map(\.link.target) == ["y"])
 }
+
+@Test func scannerFindsHeadingsWithLevelsTextAndBodyLines() {
+    let body = "Intro\n\n# One\ntext\n## Two ##\n###### Six\n####### Seven\n#NoSpace\n"
+    #expect(BodyScanner.scan(body).headings == [
+        Heading(level: 1, text: "One", line: 2), Heading(level: 2, text: "Two", line: 4), Heading(level: 6, text: "Six", line: 5),
+    ])
+}
+
+@Test func scannerHeadingLinesAreBodyLinesNotFileLines() {
+    #expect(BodyScanner.scan("# One\n## Two", firstLineIndex: 4).headings.map(\.line) == [0, 1])
+}
+
+@Test func scannerSkipsHeadingsInCodeAndCalloutTitles() {
+    let body = "```\n# Code\n```\n~~~md\n## Tilde\n~~~\n> [!note] # Title\n> ## Inside\n    # Indented code\n## Real"
+    #expect(BodyScanner.scan(body).headings == [Heading(level: 2, text: "Real", line: 9)])
+}
+
+@Test func itemHeadingsSkipFrontmatter() {
+    let item = Item(parsing: "---\ntype: task\nstatus: Todo\n---\n# One\n\n## Two\n", path: "tasks/H.md")
+    #expect(item?.headings.map(\.line) == [0, 2])
+    #expect(item?.headings.map(\.text) == ["One", "Two"])
+}
+
+@Test func scannerDropsEmptyHeadings() {
+    #expect(BodyScanner.scan("## \n#  ##\n## A").headings.map(\.text) == ["A"])
+}
+
+@Test func scannerHeadingTextIsPlainText() {
+    #expect(BodyScanner.scan("## **Bold** and `code` with [[Target|Alias]]\n# [[Plain]]").headings.map(\.text) == ["Bold and code with Alias", "Plain"])
+}

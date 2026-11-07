@@ -173,21 +173,14 @@ struct AgendaNoteRow: View {
                 NoteIcon().padding(.top, 1)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(isDay ? "Daily note" : "Week note").font(.system(size: 13.5, weight: .semibold)).foregroundStyle(theme.color(\.strong))
-                    HStack(spacing: 8) {
-                        Text(file).font(.system(size: 11.5, design: .monospaced)).layoutPriority(1)
-                        if let summary = note.summary {
-                            Text("·")
-                            Text(summary)
-                        }
-                    }
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(theme.color(\.muted))
-                    .lineLimit(1)
                     if let lines = model.cachedBoxLines(of: note) ?? loaded {
                         ForEach(lines.indices, id: \.self) { boxLine(lines[$0]) }
                     } else {
                         // Room for the lines until they're read, so nothing below moves.
                         ForEach(0..<NoteBoxLine.count(of: note.checkboxes), id: \.self) { _ in Color.clear.frame(height: 20) }
+                    }
+                    if let summary = note.summary {
+                        Text(summary).font(.system(size: 11.5)).foregroundStyle(theme.color(\.muted)).lineLimit(1)
                     }
                 }
                 Spacer(minLength: 8)
@@ -204,11 +197,15 @@ struct AgendaNoteRow: View {
                 } else if boxes.total > 0 {
                     Text("\(boxes.done)/\(boxes.total)").font(.system(size: 11.5)).foregroundStyle(theme.color(\.muted))
                 }
+                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(theme.color(\.muted))
+                    .padding(.top, 2)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(selected ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 7))
+            .background(theme.color(selected ? \.surface : \.side), in: .rect(cornerRadius: 7))
+            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(\.border)))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

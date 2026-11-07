@@ -1,6 +1,16 @@
 import Foundation
 import MarkdownEngineSyntax
 
+/// An ATX heading in a body.
+public struct Heading: Hashable, Sendable {
+    /// 1 to 6.
+    public var level: Int
+    /// As plain text, without the `#` markers or inline markup; a wiki link reads as its alias, target or heading.
+    public var text: String
+    /// The 0-based line in the body, which is the text the Live editor shows (after front matter), whatever `firstLineIndex` is.
+    public var line: Int
+}
+
 /// What a file's body contributes to its item.
 public struct BodyScan: Equatable, Sendable {
     /// The first top-level paragraph as plain text.
@@ -13,6 +23,8 @@ public struct BodyScan: Equatable, Sendable {
     public var embeds: [WikiLink]
     /// Every inline `#tag`, first spelling kept, in order. Code, HTML, links' text and `[[…]]` hold none.
     public var tags: [Tag]
+    /// Every heading with text, in document order, skipping code and callout titles.
+    public var headings: [Heading]
 }
 
 /// Reads a body with `MarkdownFacts`, the grammar the spec states.
@@ -42,7 +54,8 @@ public enum BodyScanner {
             checkboxes: checkboxes,
             links: facts.links.compactMap(link),
             embeds: facts.embeds.compactMap(link),
-            tags: facts.tags.compactMap { Tag($0.name) }.unique)
+            tags: facts.tags.compactMap { Tag($0.name) }.unique,
+            headings: facts.headings.filter { !$0.plainText.isEmpty }.map { Heading(level: $0.level, text: $0.plainText, line: $0.line - firstLineIndex) })
     }
 
     /// Where each `![[…]]` that `scan` finds sits in `body`: the range of its target (the text before any `#` or

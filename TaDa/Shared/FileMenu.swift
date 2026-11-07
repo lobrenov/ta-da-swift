@@ -79,7 +79,7 @@ struct FileMenuAction: PopupMenuItem {
             let schedule = date(.due, title: files.count == 1 ? "Schedule" : "Schedule \(files.count) Tasks", shortcut: "⌘S")
             let deadline = date(.deadline, title: "Set Deadline…", shortcut: "⌘D")
             let delete = FileMenuAction(title: paths.count == 1 ? "Delete" : "Delete \(paths.count) Tasks",
-                                        systemImage: "trash", shortcut: "⌘⌫") {
+                                        systemImage: "trash", shortcut: "⌘⌫", isDestructive: true) {
                 Task { await model.moveToTrash(paths) }
             }
             var convert: [FileMenuAction] = []
@@ -110,7 +110,7 @@ struct FileMenuAction: PopupMenuItem {
     static func noteActions(for path: String, model: AppModel, onRow: Bool, at point: CGPoint?, in window: NSWindow?) -> [FileMenuAction] {
         let paths = onRow && model.multiSelection.contains(path) ? model.multiSelection.sorted() : [path]
         let trash = FileMenuAction(title: paths.count == 1 ? "Move to Trash" : "Move \(paths.count) Files to Trash",
-                                   systemImage: "trash", shortcut: "⌘⌫", startsGroup: paths.count == 1) {
+                                   systemImage: "trash", shortcut: "⌘⌫", isDestructive: true, startsGroup: paths.count == 1) {
             Task { await model.moveToTrash(paths) }
         }
         guard paths.count == 1 else { return [reveal(paths, model: model), trash] }
@@ -180,7 +180,7 @@ struct FileMenuAction: PopupMenuItem {
             },
             tags(area.path, model: model, at: point, in: window),
             reveal([area.path], model: model),
-            FileMenuAction(title: "Delete", systemImage: "trash", shortcut: "⌘⌫", startsGroup: true) {
+            FileMenuAction(title: "Delete", systemImage: "trash", shortcut: "⌘⌫", isDestructive: true, startsGroup: true) {
                 Task { await model.moveToTrash([area.path]) }
             },
         ]
