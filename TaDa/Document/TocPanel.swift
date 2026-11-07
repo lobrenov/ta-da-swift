@@ -144,7 +144,7 @@ private struct TocPanelModifier: ViewModifier {
     private static let openDelay = Duration.milliseconds(50)
     private static let closeDelay = Duration.milliseconds(200)
     private static let slideIn = Animation.smooth(duration: 0.22)
-    private static let slideOut = Animation.smooth(duration: 0.16)
+    private static let slideOut = Animation.smooth(duration: 0.18)
     private static let panelWidth: CGFloat = 260
     private static let panelTrailing: CGFloat = 12
     private static let panelTop: CGFloat = 46
