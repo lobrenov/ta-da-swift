@@ -93,13 +93,13 @@ struct TocPanelTests {
         #expect(backlinksOnly.hasRail && backlinksOnly.hasLinks)
     }
 
-    @Test func theCurrentHeadingIsTheLastAtOrAboveTheLastVisibleLine() async throws {
+    @Test func theCurrentHeadingIsTheLastAtOrAboveTheFirstVisibleLine() async throws {
         let toc = try await content("tasks/Photograph the Kombi.md")
-        #expect(toc.currentHeading(lastVisibleLine: 0) == 0)
-        #expect(toc.currentHeading(lastVisibleLine: 1) == 0)
-        #expect(toc.currentHeading(lastVisibleLine: 2) == 1)
-        #expect(toc.currentHeading(lastVisibleLine: 3) == 2)
-        #expect(toc.currentHeading(lastVisibleLine: 40) == 3)
+        #expect(toc.currentHeading(firstVisibleLine: 0) == 0)
+        #expect(toc.currentHeading(firstVisibleLine: 1) == 0)
+        #expect(toc.currentHeading(firstVisibleLine: 2) == 1)
+        #expect(toc.currentHeading(firstVisibleLine: 3) == 2)
+        #expect(toc.currentHeading(firstVisibleLine: 40) == 3)
     }
 
     #if os(macOS)

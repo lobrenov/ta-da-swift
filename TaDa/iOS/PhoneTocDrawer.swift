@@ -118,7 +118,7 @@ private struct PhoneTocDrawerLayer: View {
     }
 
     private func list(_ toc: TocContent, top: CGFloat, bottom: CGFloat) -> some View {
-        let current = toc.currentHeading(lastVisibleLine: state.visibleLines.upperBound)
+        let current = toc.currentHeading(firstVisibleLine: state.visibleLines.lowerBound)
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if !toc.headings.isEmpty {

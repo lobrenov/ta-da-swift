@@ -56,9 +56,9 @@ struct TocContent: Equatable {
 
     var hasLinks: Bool { !links.isEmpty || !backlinks.isEmpty }
 
-    /// The heading in view: the last whose line is at or above the last visible line.
-    func currentHeading(lastVisibleLine: Int) -> Int? {
-        headings.lastIndex { $0.line <= lastVisibleLine }
+    /// The heading in view: the last whose line is at or above the first visible line.
+    func currentHeading(firstVisibleLine: Int) -> Int? {
+        headings.lastIndex { $0.line <= firstVisibleLine }
     }
 }
 
@@ -177,7 +177,7 @@ private struct TocPanelModifier: ViewModifier {
     }
 
     private func overlay(_ toc: TocContent) -> some View {
-        let current = toc.currentHeading(lastVisibleLine: state.visibleLines.upperBound)
+        let current = toc.currentHeading(firstVisibleLine: state.visibleLines.lowerBound)
         return GeometryReader { viewport in
             panelStack(toc, current: current, viewport: viewport.size)
                 .coordinateSpace(.named(Self.space))
