@@ -48,6 +48,8 @@ struct LiveEditor: View {
     var onVisibleLines: ((ClosedRange<Int>) -> Void)? = nil
     /// Gets a way to scroll a line to the top.
     var scroll: EditorScroll? = nil
+    /// Whether a point in window coordinates is over something drawn on the editor that owns the cursor, so it shows the arrow.
+    var isCursorExcluded: ((CGPoint) -> Bool)? = nil
 
     @State private var slashCommand = SlashCommandProxy()
     /// Whether the editor has the keyboard; setting it gives or drops it.
@@ -111,6 +113,7 @@ struct LiveEditor: View {
                 }
             },
             header: header,
+            isCursorExcluded: isCursorExcluded,
             onSlashCommandChange: showQueryMenu,
             slashCommandProxy: slashCommand,
             onTaskMarkerMenu: showCheckboxMenu,

@@ -2,6 +2,9 @@
 // at the Live editor's right edge opens it as a panel; `TocContent` is what both list.
 import SwiftUI
 import TaDaCore
+#if os(macOS)
+import AppKit
+#endif
 
 /// A file listed under Links or Backlinks: the file it opens, or an unresolved link's title.
 struct TocFile: Identifiable, Equatable {
@@ -67,6 +70,19 @@ final class TocState {
     /// The body changed and the pointer hasn't moved since.
     var typing = false
     @ObservationIgnored let scroll = EditorScroll()
+    /// The open panel's frame in the window's SwiftUI space (origin top-left); nil while it's closed.
+    @ObservationIgnored var panelFrame: CGRect?
+
+    /// Whether a point in window coordinates (an event's `locationInWindow`, origin bottom-left) is over the open panel.
+    func panelContains(_ windowPoint: CGPoint) -> Bool {
+        #if os(macOS)
+        guard let panelFrame, let content = NSApp.keyWindow?.contentView else { return false }
+        let point = content.convert(windowPoint, from: nil)
+        return panelFrame.contains(CGPoint(x: point.x, y: content.isFlipped ? point.y : content.bounds.height - point.y))
+        #else
+        return false
+        #endif
+    }
 }
 
 /// How the iPhone drawer opens and settles.
@@ -142,7 +158,6 @@ private struct TocOverlay: View {
     @State private var overRail = false
     @State private var overPanel = false
     @State private var pending: Task<Void, Never>?
-    @Environment(\.theme) private var theme
 
     static let openDelay = Duration.milliseconds(50)
     static let closeDelay = Duration.milliseconds(200)
@@ -155,7 +170,7 @@ private struct TocOverlay: View {
                 TocRail(content: content, current: content.currentHeading(lastVisibleLine: state.visibleLines.upperBound))
                     .opacity(isOpen || state.typing ? 0 : 1)
                     .onHover { overRail = $0 }
-                    .allowsHitTesting(!state.typing)
+                    .allowsHitTesting(!state.typing && !isOpen)
                     .padding(.top, 50)
                     .padding(.trailing, 10)
                 if isOpen {
@@ -164,7 +179,10 @@ private struct TocOverlay: View {
                         .onHover { overPanel = $0 }
                         .padding(.top, 46)
                         .padding(.trailing, 12)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                        .transition(.asymmetric(insertion: .move(edge: .trailing),
+                                                 removal: .move(edge: .trailing).combined(with: .opacity)))
+                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { state.panelFrame = $0 }
+                        .onDisappear { state.panelFrame = nil }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
@@ -178,6 +196,7 @@ private struct TocOverlay: View {
                 withAnimation(inside ? Self.slideIn : Self.slideOut) { isOpen = inside }
             }
         }
+        .onDisappear { pending?.cancel() }
         .onChange(of: state.typing) { _, typing in
             guard typing else { return }
             pending?.cancel()
@@ -188,23 +207,18 @@ private struct TocOverlay: View {
     }
 }
 
-/// Makes the pointer an arrow over the view it backs. The editor's text view sets the I-beam with its own cursor rects and tracking
-/// areas; this view is a later subview of the same window content, so it's above the text view, and its cursor rect and `cursorUpdate`
-/// tracking area (active always, the visible rect) take the cursor there.
-private struct ArrowCursor: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSView { ArrowCursorView() }
-    func updateNSView(_ view: NSView, context: Context) {}
+/// Sizes its one child to its own ideal height, no taller than `max`; the panel's content height from the first frame.
+private struct CappedHeight: Layout {
+    let max: CGFloat
 
-    private final class ArrowCursorView: NSView {
-        override func resetCursorRects() { addCursorRect(bounds, cursor: .arrow) }
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let view = subviews.first else { return .zero }
+        let ideal = view.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+        return CGSize(width: ideal.width, height: Swift.min(ideal.height, max))
+    }
 
-        override func updateTrackingAreas() {
-            super.updateTrackingAreas()
-            trackingAreas.forEach(removeTrackingArea)
-            addTrackingArea(NSTrackingArea(rect: .zero, options: [.cursorUpdate, .activeAlways, .inVisibleRect], owner: self))
-        }
-
-        override func cursorUpdate(with event: NSEvent) { NSCursor.arrow.set() }
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
     }
 }
 
@@ -230,7 +244,6 @@ struct TocRail: View {
         }
         .padding(8)
         .contentShape(.rect)
-        .background(ArrowCursor())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Contents and links")
     }
@@ -243,29 +256,13 @@ struct TocPanel: View {
     let maxHeight: CGFloat
     let scroll: (Int) -> Void
     let open: (String) -> Void
-    @State private var height: CGFloat = 0
     @Environment(\.theme) private var theme
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 1) {
-                if !content.headings.isEmpty {
-                    label("Contents", count: nil)
-                    ForEach(Array(content.headings.enumerated()), id: \.offset) { index, heading in
-                        TocRow(title: heading.text, indent: CGFloat(content.depth(of: heading)) * 14, isCurrent: index == current) {
-                            scroll(heading.line)
-                        }
-                    }
-                }
-                section("Links", content.links, separated: !content.headings.isEmpty)
-                section("Backlinks", content.backlinks, separated: !content.headings.isEmpty || !content.links.isEmpty)
-            }
-            .padding(4)
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+        CappedHeight(max: maxHeight) {
+            ScrollView { list }.scrollBounceBehavior(.basedOnSize)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        .frame(width: 260, height: min(height, maxHeight))
-        .background(ArrowCursor())
+        .frame(width: 260)
         .font(.system(size: 13))
         .background(theme.color(theme.isDark ? \.side : \.bg), in: .rect(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.surface)))
@@ -275,6 +272,22 @@ struct TocPanel: View {
                 radius: 4, y: 2)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Contents and links")
+    }
+
+    private var list: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            if !content.headings.isEmpty {
+                label("Contents", count: nil)
+                ForEach(Array(content.headings.enumerated()), id: \.offset) { index, heading in
+                    TocRow(title: heading.text, indent: CGFloat(content.depth(of: heading)) * 14, isCurrent: index == current) {
+                        scroll(heading.line)
+                    }
+                }
+            }
+            section("Links", content.links, separated: !content.headings.isEmpty)
+            section("Backlinks", content.backlinks, separated: !content.headings.isEmpty || !content.links.isEmpty)
+        }
+        .padding(4)
     }
 
     @ViewBuilder

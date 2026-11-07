@@ -79,7 +79,8 @@ struct BodyEditor: View {
                 if let openTag { openTag(tag) } else { model.show(.tag(tag.path)) }
             },
             onVisibleLines: visibleLinesReport,
-            scroll: scroll
+            scroll: scroll,
+            isCursorExcluded: toc.map { toc in { toc.panelContains($0) } }
         )
         // The editor insets its text by 16pt; line it up with the title.
         .padding(.horizontal, -16)
