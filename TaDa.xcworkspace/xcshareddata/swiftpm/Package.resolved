@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lobrenov/swift-markdown-engine-extended.git",
       "state" : {
-        "revision" : "b97a1d4509ce0a4ec20669e4bf3d473bc0667fcb",
-        "version" : "0.15.0-live.9"
+        "revision" : "71c5c68ce4cf4088896a8f0db31b314097eb0e16",
+        "version" : "0.15.0-live.10"
       }
     },
     {

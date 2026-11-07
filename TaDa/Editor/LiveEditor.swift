@@ -416,7 +416,7 @@ struct LiveEditor: View {
             clickTransitions: clicks,
             // A 16pt box on the 14pt body font (17pt high).
             sizeScale: 0.96,
-            contentGap: 10,
+            contentGap: 6,
             draw: { marker, rect, tint in
                 guard let context = Self.currentContext else { return }
                 InlineCheckbox.draw(marker, in: rect, tint: tint, background: background, context: context)

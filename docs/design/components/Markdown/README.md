@@ -21,7 +21,7 @@ How the Live editor draws a file's markdown. Every marker stays in the file; the
 
 ## Blocks
 
-- Lists indent 27.5px a level. Bullets are 6px `muted` glyphs by depth: filled circle, circle, filled square, diamond, then again. Numbers are `muted` and tabular. Task lines use the inline checkboxes (see Checkbox).
+- Lists indent 27.5px a level; in a table cell the first level starts at the cell's text edge. Bullets are 6px `muted` glyphs by depth: filled circle, circle, filled square, diamond, then again, centred on the cap height. Numbers are `muted` and tabular. Task lines use the inline checkboxes (see Checkbox), centred on the bullet's position with a 6px gap before the text.
 - `td-quote` — `muted` text beside a 3px `surface` bar with round ends; each `>` adds a bar.
 - `td-codeblock` — `code-text` at 20px line height on `code`, a 1px `border` ring, `radius-lg`, padding 10px 14px. The fence's language sits top right in `muted` 11px. No syntax colours.
 - `td-md-table` — a 1px `border` frame with `radius-lg`, the header row on `code` in `strong` 600, `border` hairlines between rows, cells 6px 14px. Columns aligned with `--:` right-align, with tabular numbers.
