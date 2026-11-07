@@ -115,6 +115,7 @@ struct LinkMenuTests {
         #expect(AddLink.markdown(choice, selection: "selling the van") == "[[Sell the Kombi|selling the van]]")
         #expect(AddLink.markdown(choice, selection: "sell the kombi") == "[[Sell the Kombi]]", "a case-only difference")
         #expect(AddLink.markdown(.new("crash reporting"), selection: "crash reporting") == "[[crash reporting]]")
+        #expect(AddLink.markdown(.new("release plan"), selection: "release notes") == "[[release plan|release notes]]")
     }
     #endif
 }

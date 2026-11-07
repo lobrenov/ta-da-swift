@@ -381,26 +381,19 @@ struct LiveEditor: View {
         case .pasteAsPlainText: request.pasteAsPlainText()
         case .selectAll: request.selectAll()
         case .addLink:
-            guard let links, let text = slashCommand.textView?.string as NSString?,
-                  let range = AddLink.range(request.selection, in: text) else { return }
-            // The link takes the trimmed selection; the blanks around it stay.
-            let lead = range.location - request.selection.location
-            let trail = NSMaxRange(request.selection) - NSMaxRange(range)
-            let selected = text.substring(with: range)
-            let selection = request.selectedText as NSString
-            addLinkMenu.show(text: selected, source: links, anchor: request.anchorRect, theme: theme, pick: { choice in
-                request.replaceSelection(selection.substring(to: lead) + AddLink.markdown(choice, selection: selected)
-                                         + selection.substring(from: selection.length - trail))
+            guard let links, let textView = slashCommand.textView,
+                  let range = AddLink.range(request.selection, in: textView.string as NSString) else { return }
+            let selected = (textView.string as NSString).substring(with: range)
+            addLinkMenu.show(text: selected, source: links, anchor: textView.firstRect(forCharacterRange: range, actualRange: nil),
+                             theme: theme, pick: { choice in
+                request.replaceSelection(ExtractTask.replacingTrimmed(in: request.selectedText) { _ in
+                    AddLink.markdown(choice, selection: selected)
+                } ?? request.selectedText)
             }, close: request.close)
         case .extractToTask:
             guard let model = taskExtraction, let textView = slashCommand.textView else { return }
-            // The task takes the trimmed selection; the blanks around it stay.
-            let text = request.selectedText as NSString
-            let range = ExtractTask.extractableRange(request.selection, selectedText: request.selectedText)
-            let lead = range.map { $0.location - request.selection.location } ?? 0
-            let trail = range.map { text.length - lead - $0.length } ?? 0
             ExtractTask.perform(selection: request.selection, in: textView, model: model) { link in
-                request.replaceSelection(text.substring(to: lead) + link + text.substring(from: text.length - trail))
+                request.replaceSelection(ExtractTask.replacingTrimmed(in: request.selectedText) { _ in link } ?? request.selectedText)
             }
         case .body: request.setBlockKind(.body)
         case .command(let command):

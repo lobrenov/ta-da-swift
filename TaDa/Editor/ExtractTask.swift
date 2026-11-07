@@ -49,6 +49,14 @@ enum ExtractTask {
         return NSRange(location: selection.location + start, length: end - start)
     }
 
+    /// `selectedText` with its trimmed part, as `extractableRange` finds it, replaced by `replacement(trimmed)`; the blanks
+    /// around it stay. nil when nothing can be extracted.
+    static func replacingTrimmed(in selectedText: String, with replacement: (String) -> String) -> String? {
+        let text = selectedText as NSString
+        guard let range = extractableRange(NSRange(location: 0, length: text.length), selectedText: selectedText) else { return nil }
+        return text.substring(to: range.location) + replacement(text.substring(with: range)) + text.substring(from: NSMaxRange(range))
+    }
+
     /// Extract to Task on a selection: a task named by the selected text, trimmed, which `replace` swaps for the task's
     /// `[[link]]`, if unchanged meanwhile. A selected subtask line extracts the subtask.
     static func perform(selection: NSRange, in textView: NSTextView, model: AppModel,

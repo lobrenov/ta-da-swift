@@ -60,14 +60,14 @@ enum AddLink {
         return sections.filter { !$0.items.isEmpty }
     }
 
-    /// What replaces the selection `text`: `[[Title|text]]`, or `[[Title]]` when they match but for case.
+    /// What replaces the selection `text`: `[[target|text]]`, or `[[target]]` when they match but for case.
     static func markdown(_ choice: AddLinkChoice, selection text: String) -> String {
+        let target: String
         switch choice {
-        case .file(let file):
-            file.title.compare(text, options: .caseInsensitive) == .orderedSame ? "[[\(file.title)]]" : "[[\(file.title)|\(text)]]"
-        case .new(let name):
-            "[[\(name)]]"
+        case .file(let file): target = file.title
+        case .new(let name): target = name
         }
+        return target.compare(text, options: .caseInsensitive) == .orderedSame ? "[[\(target)]]" : "[[\(target)|\(text)]]"
     }
 }
 
@@ -113,10 +113,11 @@ final class AddLinkMenuController {
     }
 
     private func makeMenu() -> PopupMenu<AddLinkChoice, AddLinkRow> {
-        let menu = PopupMenu(style: .full(confirm: "Link", maxListHeight: 284), takesKeys: true, emptyText: "No matching files",
-                             searchPrompt: "Link to a file") { [search] choice, isHighlighted, theme in
+        let menu = PopupMenu(style: .full(confirm: "Link", maxListHeight: 284), takesKeys: true, searchPrompt: "") { [search] choice, isHighlighted, theme in
             AddLinkRow(choice: choice, isHighlighted: isHighlighted, theme: theme, search: search)
         }
+        menu.searchLabel = "Add Link"
+        menu.selectsQueryOnOpen = true
         menu.onSearch = { [weak self] _ in self?.refresh() }
         return menu
     }

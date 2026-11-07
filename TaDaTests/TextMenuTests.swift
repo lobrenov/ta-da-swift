@@ -116,6 +116,11 @@ struct TextMenuTests {
         #expect(ExtractTask.extractableRange(NSRange(location: 0, length: 4), selectedText: "Milk") == NSRange(location: 0, length: 4))
     }
 
+    @Test func theBlanksAroundATrimmedSelectionStay() {
+        #expect(ExtractTask.replacingTrimmed(in: "  Buy milk \n") { "[[\($0)]]" } == "  [[Buy milk]] \n")
+        #expect(ExtractTask.replacingTrimmed(in: " \n ") { $0 } == nil)
+    }
+
     @Test func extractNeedsOneLineOfText() {
         #expect(ExtractTask.extractableRange(NSRange(location: 0, length: 7), selectedText: " \n  \n ") == nil)
         #expect(ExtractTask.extractableRange(NSRange(location: 0, length: 9), selectedText: "Buy\nmilk\n") == nil)

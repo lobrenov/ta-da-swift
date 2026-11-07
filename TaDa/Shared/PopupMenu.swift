@@ -211,6 +211,15 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         set { model.searchPrompt = newValue }
     }
 
+    /// Read by VoiceOver for the search field, in place of its prompt.
+    var searchLabel: String? {
+        get { model.searchLabel }
+        set { model.searchLabel = newValue }
+    }
+
+    /// Whether opening the menu selects the text in the search field.
+    var selectsQueryOnOpen = false
+
     /// What's typed in the search field.
     var query: String {
         get { model.query }
@@ -275,6 +284,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         model.pick = pick
         parentWindow = parent
         model.revision += 1
+        if opening, selectsQueryOnOpen { model.selectionRevision += 1 }
         panel.show(size: model.size, below: anchor, inset: inset, gap: gap, in: parent)
         if opening { announceHighlight() }
     }
@@ -438,6 +448,9 @@ private final class PopupMenuModel<Item: PopupMenuItem> {
     var highlight: Int?
     var theme = Theme.all[0]
     var searchPrompt: String?
+    var searchLabel: String?
+    /// Bumped when the search field's text is to be selected.
+    var selectionRevision = 0
     var header: (height: CGFloat, view: AnyView)?
     var query = ""
     var footerHints: [(key: String, label: String)]?
@@ -515,7 +528,8 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
                     guard query != model.query else { return }
                     model.query = query
                     model.onSearch(query)
-                }, theme: theme, revision: model.revision)
+                }, accessibilityLabel: model.searchLabel, theme: theme, revision: model.revision,
+                           selectionRevision: model.selectionRevision)
             }
             if let header = model.header {
                 header.view
@@ -632,9 +646,14 @@ struct PopupField: View {
     let systemImage: String
     @Binding var text: String
     var note: String?
+    /// Read by VoiceOver in place of `prompt`.
+    var accessibilityLabel: String?
     let theme: Theme
     let revision: Int
+    /// The text is selected each time this changes.
+    var selectionRevision = 0
     @FocusState private var focused: Bool
+    @State private var selection: TextSelection?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -642,10 +661,11 @@ struct PopupField: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(theme.color(\.muted))
                 .accessibilityHidden(true)
-            TextField(prompt, text: $text, prompt: Text(prompt).foregroundStyle(theme.color(\.muted)))
+            TextField(prompt, text: $text, selection: $selection, prompt: Text(prompt).foregroundStyle(theme.color(\.muted)))
                 .textFieldStyle(.plain)
                 .foregroundStyle(theme.color(\.strong))
                 .focused($focused)
+                .accessibilityLabel(accessibilityLabel ?? prompt)
             if let note {
                 Text(note)
                     .font(.system(size: 12))
@@ -661,6 +681,9 @@ struct PopupField: View {
         .background(theme.color(\.surface), in: .rect(cornerRadius: 7))
         .padding(2)
         .onChange(of: revision, initial: true) { focused = true }
+        .onChange(of: selectionRevision, initial: true) {
+            if selectionRevision > 0 { selection = TextSelection(range: text.startIndex..<text.endIndex) }
+        }
     }
 }
 
