@@ -21,6 +21,12 @@ struct TocContent: Equatable {
     var links: [TocFile]
     var backlinks: [TocFile]
 
+    init(headings: [Heading], links: [TocFile], backlinks: [TocFile]) {
+        self.headings = headings
+        self.links = links
+        self.backlinks = backlinks
+    }
+
     init(item: Item, index: VaultIndex) {
         let search = LinkMenuSearch()
         search.source.index = index
@@ -48,7 +54,6 @@ struct TocContent: Equatable {
     }
 }
 
-#if os(macOS)
 /// What the Live editor reports to the rail and panel, and how they ask it to scroll.
 @Observable
 final class TocState {
@@ -58,6 +63,30 @@ final class TocState {
     var typing = false
     @ObservationIgnored let scroll = EditorScroll()
 }
+
+/// How the iPhone drawer opens and settles.
+enum TocDrawerRules {
+    static let width: CGFloat = 318
+    /// A swipe faster than this (points per second) settles the drawer the way it points.
+    static let flick: CGFloat = 400
+
+    /// A file with something to list gets the drawer in Live mode, unless the search is showing.
+    static func isAvailable(_ content: TocContent?, isSource: Bool, isSearching: Bool) -> Bool {
+        content?.hasRail == true && !isSource && !isSearching
+    }
+
+    /// How far open (0 to 1) a drag of `translation` leaves a drawer that started at `start`.
+    static func progress(start: CGFloat, translation: CGFloat) -> CGFloat {
+        min(1, max(0, start - translation / width))
+    }
+
+    /// Whether the drawer settles open: by the swipe's direction when it's a flick, else by which half it's in.
+    static func settlesOpen(progress: CGFloat, velocity: CGFloat) -> Bool {
+        abs(velocity) > flick ? velocity < 0 : progress > 0.5
+    }
+}
+
+#if os(macOS)
 
 extension View {
     /// The rail and panel over the document's scroll view at the editor's right edge.

@@ -48,19 +48,15 @@ struct BodyEditor: View {
     var open: ((String) -> Void)? = nil
     /// Opens a clicked tag; by default the model shows its page.
     var openTag: ((Tag) -> Void)? = nil
-    #if os(macOS)
     /// Gets the page's top line and a way to scroll a line to the top.
     var toc: TocState? = nil
-    #endif
     @Environment(\.theme) private var theme
 
     var body: some View {
         LiveEditor(
             text: Binding { document.body } set: { newValue in
                 document.body = newValue
-                #if os(macOS)
                 toc?.typing = true
-                #endif
             },
             theme: theme,
             documentID: document.path,
@@ -89,19 +85,11 @@ struct BodyEditor: View {
     }
 
     private var topLineReport: ((Int) -> Void)? {
-        #if os(macOS)
         toc.map { toc in { toc.topLine = $0 } }
-        #else
-        nil
-        #endif
     }
 
     private var scroll: EditorScroll? {
-        #if os(macOS)
         toc?.scroll
-        #else
-        nil
-        #endif
     }
 
     private func openLink(_ target: String) {
