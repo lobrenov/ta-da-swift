@@ -26,26 +26,12 @@ enum AddLinkChoice: Hashable, PopupMenuItem {
 }
 
 enum AddLink {
-    /// The selection cut back to its first and last non-blank characters, when it can be linked: one line that overlaps
-    /// no link and holds neither `]]` nor `|`.
-    static func range(_ selection: NSRange, in text: NSString) -> NSRange? {
-        guard NSMaxRange(selection) <= text.length,
-              let range = ExtractTask.extractableRange(selection, selectedText: text.substring(with: selection)) else { return nil }
-        let linked = text.substring(with: range)
-        guard !linked.contains("]]"), !linked.contains("|") else { return nil }
-        let line = text.lineRange(for: range)
-        for link in Self.links {
-            for match in link.matches(in: text as String, range: line) where NSIntersectionRange(match.range, range).length > 0 {
-                return nil
-            }
-        }
-        return range
-    }
-
-    /// Wiki links, markdown links and images, and autolinks, as the editor shows them.
-    private static let links = [#"\[\[[^\]]*\]\]"#, #"!?\[[^\]]*\]\([^)]*\)"#, #"<[^>\s]+>"#].map {
-        // The patterns are constants.
-        try! NSRegularExpression(pattern: $0)
+    /// The selection, which holds `selectedText`, cut back to its first and last non-blank characters, when it can be
+    /// linked: one line that holds neither `]]` nor `|`. The editor says whether it touches a link.
+    static func range(_ selection: NSRange, selectedText: String) -> NSRange? {
+        guard let range = ExtractTask.extractableRange(selection, selectedText: selectedText) else { return nil }
+        let linked = (selectedText as NSString).substring(with: NSRange(location: range.location - selection.location, length: range.length))
+        return linked.contains("]]") || linked.contains("|") ? nil : range
     }
 
     /// The menu's sections for the field's `query`: the files that match, then a link to `query` as it is. Recent files

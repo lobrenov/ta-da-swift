@@ -353,7 +353,8 @@ struct LiveEditor: View {
         let target = TextMenuTarget(
             hasSelection: request.hasSelection,
             onLink: request.link != nil,
-            canAddLink: links != nil && AddLink.range(request.selection, in: (slashCommand.textView?.string ?? "") as NSString) != nil,
+            canAddLink: links != nil && !request.selectionTouchesLink
+                && AddLink.range(request.selection, selectedText: request.selectedText) != nil,
             canExtract: taskExtraction != nil && ExtractTask.extractableRange(request.selection, selectedText: request.selectedText) != nil,
             formats: Set(request.activeFormats.map(Self.command(for:))),
             block: Self.command(for: request.blockKind),
@@ -381,9 +382,10 @@ struct LiveEditor: View {
         case .pasteAsPlainText: request.pasteAsPlainText()
         case .selectAll: request.selectAll()
         case .addLink:
-            guard let links, let textView = slashCommand.textView,
-                  let range = AddLink.range(request.selection, in: textView.string as NSString) else { return }
-            let selected = (textView.string as NSString).substring(with: range)
+            guard let links, let textView = slashCommand.textView, !request.selectionTouchesLink,
+                  let range = AddLink.range(request.selection, selectedText: request.selectedText) else { return }
+            let selected = (request.selectedText as NSString).substring(with: NSRange(location: range.location - request.selection.location,
+                                                                                       length: range.length))
             addLinkMenu.show(text: selected, source: links, anchor: textView.firstRect(forCharacterRange: range, actualRange: nil),
                              theme: theme, pick: { choice in
                 request.replaceSelection(ExtractTask.replacingTrimmed(in: request.selectedText) { _ in

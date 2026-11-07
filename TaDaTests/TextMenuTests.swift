@@ -46,24 +46,17 @@ struct TextMenuTests {
         #expect(titles(TextMenu.sections(for: target(selection: true, addLink: false, extract: false))).count == 2)
     }
 
-    @Test func addLinkNeedsOneLineThatOverlapsNoLink() {
-        let text = "Read up on crash reporting and [[Beta plan]] or [site](https://a.b) then <https://c.d>\nsecond line" as NSString
-        func range(_ phrase: String) -> NSRange? {
-            AddLink.range(text.range(of: phrase), in: text)
+    @Test func addLinkNeedsOneLineWithoutAPipeOrClosingBrackets() {
+        func range(_ selected: String, at location: Int = 10) -> NSRange? {
+            AddLink.range(NSRange(location: location, length: (selected as NSString).length), selectedText: selected)
         }
-        #expect(range("crash reporting") == text.range(of: "crash reporting"))
-        #expect(AddLink.range(NSRange(location: 10, length: 17), in: text) == NSRange(location: 11, length: 15), "trimmed")
-        #expect(range("Read up on crash reporting and [[Beta plan]]") == nil)
-        #expect(range("Beta") == nil)
-        #expect(range("site") == nil)
-        #expect(range("https://c.d") == nil)
-        #expect(range("then") == text.range(of: "then"))
-        #expect(range("<https://c.d>\nsecond") == nil, "two lines")
-        #expect(AddLink.range(NSRange(location: 10, length: 1), in: text) == nil, "blank")
-        #expect(AddLink.range(NSRange(location: 0, length: 500), in: text) == nil, "out of range")
-        #expect(AddLink.range(text.range(of: "crash"), in: "a |b ]] c crash" as NSString) == nil)
-        #expect(AddLink.range(NSRange(location: 0, length: 4), in: "a |b" as NSString) == nil, "a pipe")
-        #expect(AddLink.range(NSRange(location: 0, length: 4), in: "a ]] " as NSString) == nil, "a closing bracket pair")
+        #expect(range("crash reporting") == NSRange(location: 10, length: 15))
+        #expect(range("  crash reporting \n") == NSRange(location: 12, length: 15), "trimmed")
+        #expect(range("   ") == nil, "blank")
+        #expect(range("crash\nreporting") == nil, "two lines")
+        #expect(range("a | b") == nil, "a pipe")
+        #expect(range("a ]] b") == nil, "a closing bracket pair")
+        #expect(range("a ] b") != nil)
     }
 
     @Test func aLinkAddsOpenLinkAndCopyLinkFirst() {
