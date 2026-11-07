@@ -126,8 +126,8 @@ extension View {
 }
 
 /// The rail and panel over a document's scroll view. `isOpen` is the one animated value: it slides the mounted panel in from the
-/// editor's right edge and fades it, and fades the rail out. One hover zone in the overlay decides whether the pointer is
-/// inside, from the rail's and the panel's resting frames, and one cancellable task opens or closes after a delay.
+/// editor's right edge and fades it, and fades the rail out. The overlay's one hover tracker tests the pointer against the rail's
+/// frame and the panel's resting frame, and one cancellable task opens or closes after a delay.
 private struct TocPanelModifier: ViewModifier {
     let model: AppModel
     let document: OpenDocument
@@ -137,8 +137,8 @@ private struct TocPanelModifier: ViewModifier {
     @State private var wantsOpen = false
     @State private var pending: Task<Void, Never>?
     @State private var railFrame = CGRect.zero
-    @State private var panelFrame = CGRect.zero
-    @State private var panelGlobalFrame = CGRect.zero
+    @State private var panelHeight: CGFloat = 0
+    @State private var overlayOrigin = CGPoint.zero
 
     private static let space = "tocPanel"
     private static let openDelay = Duration.milliseconds(50)
@@ -147,13 +147,13 @@ private struct TocPanelModifier: ViewModifier {
     private static let slideOut = Animation.smooth(duration: 0.16)
     private static let panelWidth: CGFloat = 260
     private static let panelTrailing: CGFloat = 12
+    private static let panelTop: CGFloat = 46
     /// How far past the rail's own padding the pointer still counts as on it.
     private static let railSlack: CGFloat = 4
 
     func body(content view: Content) -> some View {
         let toc = (model.index[document.path] ?? document.item).map { TocContent(item: $0, index: model.index) }
         view
-            .coordinateSpace(.named(Self.space))
             .onContinuousHover { phase in
                 if case .active = phase, state.typing { state.typing = false }
             }
@@ -167,8 +167,6 @@ private struct TocPanelModifier: ViewModifier {
                 wantsOpen = false
                 isOpen = false
             }
-            .onChange(of: isOpen) { publishPanelFrame() }
-            .onChange(of: panelGlobalFrame) { publishPanelFrame() }
             .onDisappear {
                 pending?.cancel()
                 state.panelFrame = nil
@@ -182,20 +180,26 @@ private struct TocPanelModifier: ViewModifier {
         let current = toc.currentHeading(lastVisibleLine: state.visibleLines.upperBound)
         return GeometryReader { viewport in
             panelStack(toc, current: current, viewport: viewport.size)
-                .contentShape(Path(hoverZone))
+                .coordinateSpace(.named(Self.space))
+                .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { overlayOrigin = $0 }
                 .onContinuousHover { phase in
                     switch phase {
-                    case .active: setWantsOpen(true)
+                    case .active(let point): setWantsOpen(hoverZone(in: viewport.size).contains(point))
                     case .ended: setWantsOpen(false)
                     }
                 }
         }
     }
 
-    /// The hover area, in the overlay's space: the rail while closed, the rail and the panel's resting frame while open.
-    private var hoverZone: CGRect {
+    /// The panel's resting frame in the overlay: where it sits open, whatever its slide offset.
+    private func panelRest(in viewport: CGSize) -> CGRect {
+        CGRect(x: viewport.width - Self.panelTrailing - Self.panelWidth, y: Self.panelTop, width: Self.panelWidth, height: panelHeight)
+    }
+
+    /// Where the pointer counts as inside, in the overlay: the rail while closed, the rail and the panel's resting frame while open.
+    private func hoverZone(in viewport: CGSize) -> CGRect {
         let rail = railFrame.insetBy(dx: -Self.railSlack, dy: -Self.railSlack)
-        return isOpen ? rail.union(panelFrame) : rail
+        return isOpen ? rail.union(panelRest(in: viewport)) : rail
     }
 
     private func panelStack(_ toc: TocContent, current: Int?, viewport: CGSize) -> some View {
@@ -206,19 +210,20 @@ private struct TocPanelModifier: ViewModifier {
                 .padding(.top, 50)
                 .padding(.trailing, 10)
                 .allowsHitTesting(false)
-            TocPanel(content: toc, current: current, maxHeight: viewport.height - 46 - 12,
+            TocPanel(content: toc, current: current, maxHeight: viewport.height - Self.panelTop - 12,
                      scroll: state.scroll.toLine, open: { model.openLink(to: $0) })
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { panelFrame = $0 }
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { panelGlobalFrame = $0 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { panelHeight = $0 }
                 .offset(x: isOpen ? 0 : Self.panelWidth + Self.panelTrailing)
                 .opacity(isOpen ? 1 : 0)
                 .allowsHitTesting(isOpen)
                 .accessibilityHidden(!isOpen)
-                .padding(.top, 46)
+                .padding(.top, Self.panelTop)
                 .padding(.trailing, Self.panelTrailing)
         }
-
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        .onChange(of: isOpen) { publishPanelFrame(viewport) }
+        .onChange(of: panelHeight) { publishPanelFrame(viewport) }
+        .onChange(of: overlayOrigin) { publishPanelFrame(viewport) }
     }
 
     /// Records what the pointer wants and, if that differs from what's shown, opens or closes after a delay. A later change of mind
@@ -236,8 +241,8 @@ private struct TocPanelModifier: ViewModifier {
     }
 
     /// The cursor's exclusion zone: the panel's resting frame while it's open.
-    private func publishPanelFrame() {
-        state.panelFrame = isOpen ? panelGlobalFrame : nil
+    private func publishPanelFrame(_ viewport: CGSize) {
+        state.panelFrame = isOpen ? panelRest(in: viewport).offsetBy(dx: overlayOrigin.x, dy: overlayOrigin.y) : nil
     }
 }
 
