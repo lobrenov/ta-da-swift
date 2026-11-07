@@ -48,6 +48,7 @@ struct LiveEditor: View {
     @State private var checkboxMenu = CheckboxMenuController()
     @State private var calloutMenu = CalloutMenuController()
     @State private var rightClickMenu = RightClickMenuController()
+    @State private var textMenu = TextMenuController()
     @State private var linkMenu = LinkMenuController()
     @State private var tagMenu = TagMenuController()
     #else
@@ -106,7 +107,8 @@ struct LiveEditor: View {
             onCalloutMenu: showCalloutMenu,
             onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } },
             onTagClick: onTagClick,
-            onRightClickMenu: showRightClickMenu
+            onRightClickMenu: showRightClickMenu,
+            onTextMenu: showTextMenu
         )
         .focusedValue(\.editor, slashCommand)
         .onAppear { slashCommand.triggers = triggers }
@@ -125,6 +127,7 @@ struct LiveEditor: View {
             checkboxMenu.hide()
             calloutMenu.hide()
             rightClickMenu.hide()
+            textMenu.hide()
         }
         #else
         NativeTextViewWrapper(
@@ -342,6 +345,100 @@ struct LiveEditor: View {
             },
             anchor: request.anchorRect, theme: theme, close: request.close
         )
+    }
+
+    private func showTextMenu(_ request: TextMenuRequest) {
+        let target = TextMenuTarget(
+            hasSelection: request.hasSelection,
+            onLink: request.link != nil,
+            canExtract: taskExtraction != nil && !request.selectedText.allSatisfy(\.isWhitespace),
+            formats: Set(request.activeFormats.map(Self.command(for:))),
+            block: Self.command(for: request.blockKind),
+            isBody: request.blockKind == .body
+        )
+        textMenu.show(TextMenu.sections(for: target), anchor: request.anchorRect, theme: theme, pick: { runTextMenu($0, request) },
+                      close: request.close)
+    }
+
+    private func runTextMenu(_ row: TextMenuRow, _ request: TextMenuRequest) {
+        switch row.action {
+        case .openLink:
+            guard let link = request.link else { return }
+            switch link.kind {
+            case .wiki: onLinkClick(link.target)
+            case .markdown: URL(string: link.target).map { _ = NSWorkspace.shared.open($0) }
+            }
+        case .copyLink:
+            guard let link = request.link else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(link.source, forType: .string)
+        case .cut: request.cut()
+        case .copy: request.copy()
+        case .paste: request.paste()
+        case .pasteAsPlainText: request.pasteAsPlainText()
+        case .selectAll: request.selectAll()
+        case .extractToTask:
+            guard let model = taskExtraction, let textView = slashCommand.textView else { return }
+            ExtractTask.perform(selection: request.selection, in: textView, model: model)
+        case .body: request.setBlockKind(.body)
+        case .command(let command):
+            if let format = Self.format(for: command) {
+                request.toggleFormat(format)
+            } else if let kind = Self.blockKind(for: command) {
+                request.setBlockKind(kind)
+            } else {
+                let insertion = command.insertion(followsBlankLine: request.followsBlankLine)
+                request.insert(insertion.text, selecting: insertion.selection, asBlock: TextMenu.blockInsertions.contains(command))
+            }
+        case .submenu: break
+        }
+    }
+
+    private static func command(for format: MarkdownFormat) -> SlashCommand {
+        switch format {
+        case .bold: .bold
+        case .italic: .italic
+        case .strikethrough: .strikethrough
+        case .highlight: .highlight
+        case .inlineCode: .inlineCode
+        }
+    }
+
+    private static func format(for command: SlashCommand) -> MarkdownFormat? {
+        switch command {
+        case .bold: .bold
+        case .italic: .italic
+        case .strikethrough: .strikethrough
+        case .highlight: .highlight
+        case .inlineCode: .inlineCode
+        default: nil
+        }
+    }
+
+    private static func command(for kind: TextMenuBlockKind) -> SlashCommand? {
+        switch kind {
+        case .heading(1): .heading1
+        case .heading(2): .heading2
+        case .heading(3): .heading3
+        case .bullet: .bulletedList
+        case .numbered: .numberedList
+        case .task: .task
+        case .quote: .quote
+        case .heading, .body: nil
+        }
+    }
+
+    private static func blockKind(for command: SlashCommand) -> TextMenuBlockKind? {
+        switch command {
+        case .heading1: .heading(1)
+        case .heading2: .heading(2)
+        case .heading3: .heading(3)
+        case .bulletedList: .bullet
+        case .numberedList: .numbered
+        case .task: .task
+        case .quote: .quote
+        default: nil
+        }
     }
 
     /// A right-click on an image opens the embed menu; ⌘C, ⌘X and ⌘⌫ on a selected one copy, cut or delete it.

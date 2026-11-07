@@ -77,7 +77,7 @@ private struct SlashMenuRow: View {
 #endif
 
 /// The command's SF Symbol, or its `H1`–`H3` or `[[ ]]` glyph; `size` is the symbol's point size.
-private struct SlashCommandIcon: View {
+struct SlashCommandIcon: View {
     let command: SlashCommand
     var size: CGFloat = 13
 

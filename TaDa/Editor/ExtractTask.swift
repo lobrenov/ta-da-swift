@@ -1,6 +1,7 @@
 // Extract to Task (⌥⌘E): the subtask on a line of the open file's editor becomes a task file, filed under the file's
-// project or area, and its line (with the lines indented under it) is deleted as one undoable edit.
-// The checkbox menu's row and Task ▸ Extract to Task call it; the window shows `ExtractedToast` after.
+// project or area, and its line (with the lines indented under it) is deleted as one undoable edit. A selection becomes
+// a task named by it and is replaced with the task's link.
+// The checkbox menu's row, the text menu's row and Task ▸ Extract to Task call it; the window shows `ExtractedToast` after.
 #if os(macOS)
 import AppKit
 import SwiftUI
@@ -28,6 +29,31 @@ enum ExtractTask {
             }
             textView.breakUndoCoalescing()
             textView.insertText("", replacementRange: extract.range)
+            textView.undoManager?.setActionName("Extract to Task")
+            textView.breakUndoCoalescing()
+            model.extracted = extracted
+        }
+    }
+
+    /// Extract to Task on a selection: a task named by the selected text, which is replaced with the task's `[[link]]` as
+    /// one undo step, if unchanged meanwhile.
+    static func perform(selection: NSRange, in textView: NSTextView, model: AppModel) {
+        let selected = (textView.string as NSString).substring(with: selection)
+        let title = selected.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard let path = model.document?.path, !title.isEmpty else {
+            NSSound.beep()
+            return
+        }
+        let extract = SubtaskExtraction.Extract(title: title, status: .notStarted, body: "", range: selection)
+        Task {
+            guard let extracted = await model.extractTask(extract, from: path) else { return }
+            guard NSMaxRange(selection) <= (textView.string as NSString).length,
+                  (textView.string as NSString).substring(with: selection) == selected else {
+                model.errorMessage = "“\(Item.title(ofPath: extracted.path))” was made a task, but the text changed meanwhile, so it is still in the file."
+                return
+            }
+            textView.breakUndoCoalescing()
+            textView.insertText("[[\(Item.title(ofPath: extracted.path))]]", replacementRange: selection)
             textView.undoManager?.setActionName("Extract to Task")
             textView.breakUndoCoalescing()
             model.extracted = extracted

@@ -92,8 +92,15 @@ struct AppCommands: Commands {
             .keyboardShortcut("l")
             .disabled(editor == nil)
             Button("Extract to Task") {
-                if let textView = editor?.textView { ExtractTask.perform(in: textView, at: textView.selectedRange().location, model: model) }
+                guard let textView = editor?.textView else { return }
+                let selection = textView.selectedRange()
+                if selection.length > 0 {
+                    ExtractTask.perform(selection: selection, in: textView, model: model)
+                } else {
+                    ExtractTask.perform(in: textView, at: selection.location, model: model)
+                }
             }
+            .keyboardShortcut("e", modifiers: [.command, .option])
             .disabled(editor == nil)
             Button("Move…") { model.showMoveMenu() }
                 .keyboardShortcut("p")

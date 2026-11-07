@@ -13,6 +13,13 @@ public enum SubtaskExtraction {
         public let body: String
         /// The UTF-16 range of the subtask line and the lines under it, line endings included, which the edit deletes.
         public let range: NSRange
+
+        public init(title: String, status: Status, body: String, range: NSRange) {
+            self.title = title
+            self.status = status
+            self.body = body
+            self.range = range
+        }
     }
 
     /// The subtask on the line holding UTF-16 `location` in `text`. Nil when the line isn't a subtask (an icon box
