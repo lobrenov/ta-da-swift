@@ -351,7 +351,7 @@ struct LiveEditor: View {
         let target = TextMenuTarget(
             hasSelection: request.hasSelection,
             onLink: request.link != nil,
-            canExtract: taskExtraction != nil && !request.selectedText.allSatisfy(\.isWhitespace),
+            canExtract: taskExtraction != nil && ExtractTask.extractableRange(request.selection, selectedText: request.selectedText) != nil,
             formats: Set(request.activeFormats.map(Self.command(for:))),
             block: Self.command(for: request.blockKind),
             isBody: request.blockKind == .body
@@ -379,7 +379,14 @@ struct LiveEditor: View {
         case .selectAll: request.selectAll()
         case .extractToTask:
             guard let model = taskExtraction, let textView = slashCommand.textView else { return }
-            ExtractTask.perform(selection: request.selection, in: textView, model: model)
+            // The task takes the trimmed selection; the blanks around it stay.
+            let text = request.selectedText as NSString
+            let range = ExtractTask.extractableRange(request.selection, selectedText: request.selectedText)
+            let lead = range.map { $0.location - request.selection.location } ?? 0
+            let trail = range.map { text.length - lead - $0.length } ?? 0
+            ExtractTask.perform(selection: request.selection, in: textView, model: model) { link in
+                request.replaceSelection(text.substring(to: lead) + link + text.substring(from: text.length - trail))
+            }
         case .body: request.setBlockKind(.body)
         case .command(let command):
             if let format = Self.format(for: command) {
@@ -387,58 +394,40 @@ struct LiveEditor: View {
             } else if let kind = Self.blockKind(for: command) {
                 request.setBlockKind(kind)
             } else {
-                let insertion = command.insertion(followsBlankLine: request.followsBlankLine)
+                let text = (slashCommand.textView?.string ?? "") as NSString
+                let line = text.lineRange(for: NSRange(location: min(request.selection.location, text.length), length: 0))
+                let before = text.substring(with: NSRange(location: line.location, length: request.selection.location - line.location))
+                let atLineStart = before.allSatisfy(\.isWhitespace)
+                let insertion = command.insertion(followsBlankLine: request.followsBlankLine && atLineStart)
                 request.insert(insertion.text, selecting: insertion.selection, asBlock: TextMenu.blockInsertions.contains(command))
             }
         case .submenu: break
         }
     }
 
+    private static let formatCommands: [(SlashCommand, MarkdownFormat)] = [
+        (.bold, .bold), (.italic, .italic), (.strikethrough, .strikethrough), (.highlight, .highlight), (.inlineCode, .inlineCode),
+    ]
+
+    private static let blockCommands: [(SlashCommand, TextMenuBlockKind)] = [
+        (.heading1, .heading(1)), (.heading2, .heading(2)), (.heading3, .heading(3)), (.bulletedList, .bullet),
+        (.numberedList, .numbered), (.task, .task), (.quote, .quote),
+    ]
+
     private static func command(for format: MarkdownFormat) -> SlashCommand {
-        switch format {
-        case .bold: .bold
-        case .italic: .italic
-        case .strikethrough: .strikethrough
-        case .highlight: .highlight
-        case .inlineCode: .inlineCode
-        }
+        formatCommands.first { $0.1 == format }!.0
     }
 
     private static func format(for command: SlashCommand) -> MarkdownFormat? {
-        switch command {
-        case .bold: .bold
-        case .italic: .italic
-        case .strikethrough: .strikethrough
-        case .highlight: .highlight
-        case .inlineCode: .inlineCode
-        default: nil
-        }
+        formatCommands.first { $0.0 == command }?.1
     }
 
     private static func command(for kind: TextMenuBlockKind) -> SlashCommand? {
-        switch kind {
-        case .heading(1): .heading1
-        case .heading(2): .heading2
-        case .heading(3): .heading3
-        case .bullet: .bulletedList
-        case .numbered: .numberedList
-        case .task: .task
-        case .quote: .quote
-        case .heading, .body: nil
-        }
+        blockCommands.first { $0.1 == kind }?.0
     }
 
     private static func blockKind(for command: SlashCommand) -> TextMenuBlockKind? {
-        switch command {
-        case .heading1: .heading(1)
-        case .heading2: .heading(2)
-        case .heading3: .heading(3)
-        case .bulletedList: .bullet
-        case .numberedList: .numbered
-        case .task: .task
-        case .quote: .quote
-        default: nil
-        }
+        blockCommands.first { $0.0 == command }?.1
     }
 
     /// A right-click on an image opens the embed menu; ⌘C, ⌘X and ⌘⌫ on a selected one copy, cut or delete it.

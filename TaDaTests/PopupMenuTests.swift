@@ -8,12 +8,13 @@ import Testing
 struct PopupMenuTests {
     private struct Entry: PopupMenuItem {
         var title: String
-        var submenu: [Entry] = []
+        var isEnabled = true
+        var submenu: [PopupMenuSection<Entry>] = []
     }
 
     private let entries = [
         Entry(title: "Copy"),
-        Entry(title: "Format", submenu: [Entry(title: "Bold"), Entry(title: "Italic")]),
+        Entry(title: "Format", submenu: [PopupMenuSection(items: [Entry(title: "Bold"), Entry(title: "Italic")])]),
         Entry(title: "Paste"),
     ]
 
@@ -149,6 +150,51 @@ struct PopupMenuTests {
         let style = PopupMenuStyle.compact
         let rowTop = root.maxY - (style.padding + style.rowHeight + 1)
         #expect(abs(sub.maxY - style.padding - rowTop) < 1)
+    }
+
+    @Test func movingSkipsDisabledRows() {
+        let window = NSWindow(contentRect: CGRect(x: 200, y: 400, width: 600, height: 400), styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        let menu = PopupMenu<Entry, Text>(style: .compact, takesKeys: true) { item, _, _ in Text(item.title) }
+        defer { menu.hide() }
+        let items = [Entry(title: "Cut", isEnabled: false), Entry(title: "Copy", isEnabled: false), Entry(title: "Paste"),
+                     Entry(title: "Select", isEnabled: false)]
+        menu.show([PopupMenuSection(items: items)], highlight: nil, theme: Theme.all[0],
+                  below: CGRect(x: 300, y: 600, width: 1, height: 1), inset: 0, gap: 0, in: window) { _ in }
+        _ = menu.handleKey(down)
+        #expect(menu.highlight == 2)
+        _ = menu.handleKey(down)
+        #expect(menu.highlight == 2, "the only enabled row")
+        _ = menu.handleKey(up)
+        #expect(menu.highlight == 2)
+    }
+
+    @Test func aDisabledRowIsNotPicked() {
+        var picked: [String] = []
+        let window = NSWindow(contentRect: CGRect(x: 200, y: 400, width: 600, height: 400), styleMask: [.titled],
+                              backing: .buffered, defer: false)
+        let menu = PopupMenu<Entry, Text>(style: .compact, takesKeys: true) { item, _, _ in Text(item.title) }
+        defer { menu.hide() }
+        menu.show([PopupMenuSection(items: [Entry(title: "Cut", isEnabled: false)])], highlight: 0, theme: Theme.all[0],
+                  below: CGRect(x: 300, y: 600, width: 1, height: 1), inset: 0, gap: 0, in: window) { picked.append($0.title) }
+        #expect(!menu.pickHighlighted())
+        #expect(picked.isEmpty)
+    }
+
+    @Test func submenuSectionsAreSeparatedByADivider() throws {
+        func submenuHeight(_ sections: [PopupMenuSection<Entry>]) throws -> CGFloat {
+            let window = NSWindow(contentRect: CGRect(x: 200, y: 400, width: 600, height: 400), styleMask: [.titled],
+                                  backing: .buffered, defer: false)
+            let menu = PopupMenu<Entry, Text>(style: .compact, takesKeys: true) { item, _, _ in Text(item.title) }
+            defer { menu.hide() }
+            menu.show([PopupMenuSection(items: [Entry(title: "Format", submenu: sections)])], highlight: 0, theme: Theme.all[0],
+                      below: CGRect(x: 300, y: 600, width: 1, height: 1), inset: 0, gap: 0, in: window) { _ in }
+            #expect(menu.handleKey(right))
+            return try #require(menu.submenuFrame).height
+        }
+        let one = try submenuHeight([PopupMenuSection(items: [Entry(title: "A"), Entry(title: "B")])])
+        let two = try submenuHeight([PopupMenuSection(items: [Entry(title: "A")]), PopupMenuSection(items: [Entry(title: "B")])])
+        #expect(two - one == PopupMenuStyle.dividerHeight + 1, "a divider and its gap")
     }
 
     @Test func submenuDefaultsEmpty() {

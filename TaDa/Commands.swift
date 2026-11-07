@@ -95,7 +95,12 @@ struct AppCommands: Commands {
                 guard let textView = editor?.textView else { return }
                 let selection = textView.selectedRange()
                 if selection.length > 0 {
-                    ExtractTask.perform(selection: selection, in: textView, model: model)
+                    ExtractTask.perform(selection: selection, in: textView, model: model) { link in
+                        textView.breakUndoCoalescing()
+                        textView.insertText(link, replacementRange: selection)
+                        textView.undoManager?.setActionName("Extract to Task")
+                        textView.breakUndoCoalescing()
+                    }
                 } else {
                     ExtractTask.perform(in: textView, at: selection.location, model: model)
                 }

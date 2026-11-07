@@ -35,27 +35,49 @@ enum ExtractTask {
         }
     }
 
-    /// Extract to Task on a selection: a task named by the selected text, which is replaced with the task's `[[link]]` as
-    /// one undo step, if unchanged meanwhile.
-    static func perform(selection: NSRange, in textView: NSTextView, model: AppModel) {
-        let selected = (textView.string as NSString).substring(with: selection)
-        let title = selected.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        guard let path = model.document?.path, !title.isEmpty else {
+    /// `selection`, which holds `selectedText`, cut back to its first and last non-blank characters; nil when that is
+    /// nothing or spans lines.
+    static func extractableRange(_ selection: NSRange, selectedText: String) -> NSRange? {
+        let text = selectedText as NSString
+        let blanks = CharacterSet.whitespacesAndNewlines
+        var start = 0, end = text.length
+        while start < end, blanks.contains(Unicode.Scalar(text.character(at: start)) ?? "a") { start += 1 }
+        while end > start, blanks.contains(Unicode.Scalar(text.character(at: end - 1)) ?? "a") { end -= 1 }
+        guard start < end else { return nil }
+        let trimmed = text.substring(with: NSRange(location: start, length: end - start))
+        guard trimmed.rangeOfCharacter(from: .newlines) == nil else { return nil }
+        return NSRange(location: selection.location + start, length: end - start)
+    }
+
+    /// Extract to Task on a selection: a task named by the selected text, trimmed, which `replace` swaps for the task's
+    /// `[[link]]`, if unchanged meanwhile. A selected subtask line extracts the subtask.
+    static func perform(selection: NSRange, in textView: NSTextView, model: AppModel,
+                        replace: @escaping @MainActor (String) -> Void) {
+        let text = textView.string as NSString
+        guard NSMaxRange(selection) <= text.length,
+              let range = extractableRange(selection, selectedText: text.substring(with: selection)) else {
             NSSound.beep()
             return
         }
-        let extract = SubtaskExtraction.Extract(title: title, status: .notStarted, body: "", range: selection)
+        let line = text.lineRange(for: NSRange(location: range.location, length: 0))
+        let content = text.substring(with: line)
+        let first = content.firstIndex { !$0.isWhitespace }.map { content.utf16.distance(from: content.startIndex, to: $0) }
+        let last = content.lastIndex { !$0.isWhitespace }.map { content.utf16.distance(from: content.startIndex, to: content.index(after: $0)) }
+        if SubtaskExtraction.extract(lineAt: range.location, in: textView.string) != nil,
+           first == range.location - line.location, last == NSMaxRange(range) - line.location {
+            return perform(in: textView, at: range.location, model: model)
+        }
+        let selected = text.substring(with: range)
+        guard let path = model.document?.path else { return NSSound.beep() }
+        let extract = SubtaskExtraction.Extract(title: selected, status: .notStarted, body: "", range: range)
         Task {
             guard let extracted = await model.extractTask(extract, from: path) else { return }
-            guard NSMaxRange(selection) <= (textView.string as NSString).length,
-                  (textView.string as NSString).substring(with: selection) == selected else {
+            guard NSMaxRange(range) <= (textView.string as NSString).length,
+                  (textView.string as NSString).substring(with: range) == selected else {
                 model.errorMessage = "“\(Item.title(ofPath: extracted.path))” was made a task, but the text changed meanwhile, so it is still in the file."
                 return
             }
-            textView.breakUndoCoalescing()
-            textView.insertText("[[\(Item.title(ofPath: extracted.path))]]", replacementRange: selection)
-            textView.undoManager?.setActionName("Extract to Task")
-            textView.breakUndoCoalescing()
+            replace("[[\(Item.title(ofPath: extracted.path))]]")
             model.extracted = extracted
         }
     }

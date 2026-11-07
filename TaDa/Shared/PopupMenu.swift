@@ -10,15 +10,18 @@ protocol PopupMenuItem {
     var accessibilityValue: String { get }
     /// Highlighted with a `deadline` tint instead of `surface`.
     var isDestructive: Bool { get }
+    /// Drawn dimmed and skipped by the highlight, type-select, hover and click.
+    var isEnabled: Bool { get }
     /// The rows of a submenu that opens beside this one's row, which then shows a ▸. Submenu rows' own submenus
     /// are ignored.
-    var submenu: [Self] { get }
+    var submenu: [PopupMenuSection<Self>] { get }
 }
 
 extension PopupMenuItem {
     var accessibilityValue: String { "" }
     var isDestructive: Bool { false }
-    var submenu: [Self] { [] }
+    var isEnabled: Bool { true }
+    var submenu: [PopupMenuSection<Self>] { [] }
 }
 
 /// Some of a menu's items: under an uppercase label, or after a divider when they have none and aren't first.
@@ -282,9 +285,17 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
     /// highlighted, down starts at the first item and up at the last.
     func move(by offset: Int) {
         let target = isSubmenuOpen ? submenuModel : model
-        let count = target.items.count
+        let items = target.items
+        let count = items.count
         guard count > 0 else { return }
-        target.highlight = target.highlight.map { ($0 + offset % count + count) % count } ?? (offset > 0 ? 0 : count - 1)
+        var index = target.highlight.map { ($0 + offset % count + count) % count } ?? (offset > 0 ? 0 : count - 1)
+        var tries = 0
+        while !items[index].isEnabled, tries < count {
+            index = (index + (offset > 0 ? 1 : count - 1)) % count
+            tries += 1
+        }
+        guard items[index].isEnabled else { return }
+        target.highlight = index
         announceHighlight()
     }
 
@@ -293,11 +304,13 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
     @discardableResult
     func pickHighlighted() -> Bool {
         if isSubmenuOpen {
-            guard let highlight = submenuModel.highlight, submenuModel.items.indices.contains(highlight) else { return false }
+            guard let highlight = submenuModel.highlight, submenuModel.items.indices.contains(highlight),
+                  submenuModel.items[highlight].isEnabled else { return false }
             pickFromSubmenu(submenuModel.items[highlight])
             return true
         }
-        guard let highlight = model.highlight, model.items.indices.contains(highlight) else { return false }
+        guard let highlight = model.highlight, model.items.indices.contains(highlight),
+              model.items[highlight].isEnabled else { return false }
         if model.items[highlight].submenu.isEmpty {
             model.pick(model.items[highlight])
         } else {
@@ -343,8 +356,8 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         guard let parent = parentWindow, let rootFrame = panel.frame else { return }
         model.highlight = index
         model.openIndex = index
-        submenuModel.sections = [PopupMenuSection(items: model.items[index].submenu)]
-        submenuModel.highlight = highlightFirst ? 0 : nil
+        submenuModel.sections = model.items[index].submenu
+        submenuModel.highlight = highlightFirst ? submenuModel.items.firstIndex { $0.isEnabled } : nil
         submenuModel.theme = model.theme
         submenuModel.revision += 1
         let top = rootFrame.maxY - model.rowTop(of: index)
@@ -382,7 +395,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
               let characters = event.characters, !characters.isEmpty else { return }
         typed = event.timestamp - typedAt < 1 ? typed + characters : characters
         typedAt = event.timestamp
-        guard let match = TypeSelect.match(typed, in: model.items.map(\.title), from: model.highlight) else { return }
+        guard let match = TypeSelect.match(typed, in: model.items.map { $0.isEnabled ? $0.title : "" }, from: model.highlight) else { return }
         model.highlight = match
         announceHighlight()
     }
@@ -577,10 +590,11 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
             .padding(.horizontal, style.rowPadding)
             .frame(height: style.rowHeight)
             .background(fill, in: .rect(cornerRadius: style.rowRadius))
+            .opacity(item.isEnabled ? 1 : 0.45)
             .contentShape(.rect)
             .onHover { inside in
                 if inside {
-                    model.highlight = index
+                    if item.isEnabled { model.highlight = index }
                     model.onHover(index)
                 } else if !style.keepsHighlight, model.highlight == index, model.openIndex != index {
                     model.highlight = nil
@@ -596,6 +610,7 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
     }
 
     private func activate(_ item: Item, index: Int) {
+        guard item.isEnabled else { return }
         if item.submenu.isEmpty { model.pick(item) } else { model.onHover(index) }
     }
 

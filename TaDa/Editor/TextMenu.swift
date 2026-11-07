@@ -32,7 +32,7 @@ struct TextMenuRow: PopupMenuItem {
     var key: String? = nil
     var isChecked = false
     var isEnabled = true
-    var submenu: [Self] = []
+    var submenu: [PopupMenuSection<Self>] = []
 
     var accessibilityValue: String { isChecked ? "Current" : "" }
 }
@@ -88,19 +88,25 @@ enum TextMenu {
                                          icon: .symbol("arrow.up.forward.square"), key: "⌥⌘E")])
         }
         sections.append([
-            TextMenuRow(action: .submenu, title: "Format", icon: .glyph("Aa"), submenu: formats.map {
+            TextMenuRow(action: .submenu, title: "Format", icon: .glyph("Aa"), submenu: [PopupMenuSection(items: formats.map {
                 TextMenuRow(action: .command($0), title: $0.title, icon: .command($0), key: keys(for: $0),
                             isChecked: target.formats.contains($0))
-            }),
-            TextMenuRow(action: .submenu, title: "Paragraph", icon: .glyph("¶"),
-                        submenu: (paragraphs.map { paragraph($0, target) }
-                                  + [TextMenuRow(action: .body, title: "Body", icon: .glyph("T"), isChecked: target.isBody)]
-                                  + lists.map { paragraph($0, target) })),
-            TextMenuRow(action: .submenu, title: "Insert", icon: .symbol("plus"), submenu: insertions.map {
-                TextMenuRow(action: .command($0), title: $0.title, icon: .command($0))
-            }),
+            })]),
+            TextMenuRow(action: .submenu, title: "Paragraph", icon: .glyph("¶"), submenu: [
+                PopupMenuSection(items: paragraphs.map { paragraph($0, target) }
+                                 + [TextMenuRow(action: .body, title: "Body", icon: .glyph("T"), isChecked: target.isBody)]),
+                PopupMenuSection(items: lists.map { paragraph($0, target) }),
+            ]),
+            TextMenuRow(action: .submenu, title: "Insert", icon: .symbol("plus"), submenu: [
+                PopupMenuSection(items: insertions.prefix(3).map(insertion)),
+                PopupMenuSection(items: insertions.dropFirst(3).map(insertion)),
+            ]),
         ])
         return sections
+    }
+
+    private static func insertion(_ command: SlashCommand) -> TextMenuRow {
+        TextMenuRow(action: .command(command), title: command.title, icon: .command(command))
     }
 
     private static func paragraph(_ command: SlashCommand, _ target: TextMenuTarget) -> TextMenuRow {
@@ -123,7 +129,6 @@ final class TextMenuController {
         }
         menu.show(sections.map { PopupMenuSection(items: $0) }, highlight: nil, theme: theme, below: anchor,
                   inset: 0, gap: 4, in: parent) { [weak self] item in
-            guard item.isEnabled, item.submenu.isEmpty else { return }
             self?.hide()
             close()
             pick(item)
@@ -159,7 +164,6 @@ private struct TextMenuRowView: View {
                     .foregroundStyle(theme.color(\.muted))
             }
         }
-        .opacity(item.isEnabled ? 1 : 0.45)
     }
 
     @ViewBuilder private var icon: some View {
