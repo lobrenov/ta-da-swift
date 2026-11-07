@@ -181,30 +181,21 @@ private struct TocPanelModifier: ViewModifier {
     private func overlay(_ toc: TocContent) -> some View {
         let current = toc.currentHeading(lastVisibleLine: state.visibleLines.upperBound)
         return GeometryReader { viewport in
-            ZStack(alignment: .topLeading) {
-                hoverZone
-                panelStack(toc, current: current, viewport: viewport.size)
-            }
-            .onContinuousHover { phase in
-                switch phase {
-                case .active: setWantsOpen(true)
-                case .ended: setWantsOpen(false)
+            panelStack(toc, current: current, viewport: viewport.size)
+                .contentShape(Path(hoverZone))
+                .onContinuousHover { phase in
+                    switch phase {
+                    case .active: setWantsOpen(true)
+                    case .ended: setWantsOpen(false)
+                    }
                 }
-            }
         }
     }
 
-    /// The hover area: transparent, behind the panel, over the rail while closed and the rail and panel while open. It sits above
-    /// the editor, whose own view would otherwise end the hover under the panel. The tracker is on the stack that holds it and the
-    /// panel, so moving onto the panel's rows keeps the hover.
-    private var hoverZone: some View {
+    /// The hover area, in the overlay's space: the rail while closed, the rail and the panel's resting frame while open.
+    private var hoverZone: CGRect {
         let rail = railFrame.insetBy(dx: -Self.railSlack, dy: -Self.railSlack)
-        let zone = isOpen ? rail.union(panelFrame) : rail
-        return Color.clear
-            .contentShape(.rect)
-            .frame(width: zone.width, height: zone.height)
-            .offset(x: zone.minX, y: zone.minY)
-            .transaction { $0.animation = nil }
+        return isOpen ? rail.union(panelFrame) : rail
     }
 
     private func panelStack(_ toc: TocContent, current: Int?, viewport: CGSize) -> some View {
