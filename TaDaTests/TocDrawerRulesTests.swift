@@ -28,4 +28,14 @@ import Testing
         #expect(!TocDrawerRules.isAvailable(some, isSource: true, isSearching: false))
         #expect(!TocDrawerRules.isAvailable(some, isSource: false, isSearching: true))
     }
+
+    @Test func swipeStartsAtTheRightEdgeMovingLeft() {
+        let left = CGPoint(x: -500, y: 40)
+        #expect(TocDrawerRules.startsOpening(startX: 397, windowWidth: 402, velocity: left))
+        #expect(TocDrawerRules.startsOpening(startX: 378, windowWidth: 402, velocity: left))
+        #expect(!TocDrawerRules.startsOpening(startX: 377, windowWidth: 402, velocity: left))
+        #expect(!TocDrawerRules.startsOpening(startX: 5, windowWidth: 402, velocity: left))
+        #expect(!TocDrawerRules.startsOpening(startX: 397, windowWidth: 402, velocity: CGPoint(x: 500, y: 0)))
+        #expect(!TocDrawerRules.startsOpening(startX: 397, windowWidth: 402, velocity: CGPoint(x: -100, y: 400)))
+    }
 }

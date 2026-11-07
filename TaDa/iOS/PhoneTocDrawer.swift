@@ -208,8 +208,7 @@ private struct PhoneTocDrawerLayer: View {
     private static let search = LinkMenuSearch()
 }
 
-/// A swipe in from the screen's right edge, recognised on the window. The system's edge zone (about 20pt) is the only
-/// place it starts, so the back swipe (left edge) and the editor's horizontal scrolling (tables, code) are left alone.
+/// A leftward pan that starts at the window's right edge, recognised on the window.
 private struct RightEdgeSwipe: UIViewRepresentable {
     /// The drawer is closed, so a swipe may open it.
     let isClosed: Bool
@@ -229,10 +228,11 @@ private struct RightEdgeSwipe: UIViewRepresentable {
     func updateUIView(_ anchor: Anchor, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
+        coordinator.install(in: anchor.window)
     }
 
     static func dismantleUIView(_ anchor: Anchor, coordinator: Coordinator) {
-        coordinator.recognizer.view?.removeGestureRecognizer(coordinator.recognizer)
+        coordinator.install(in: nil)
     }
 
     /// Puts the recognizer on the window once the view is in one.
@@ -240,24 +240,39 @@ private struct RightEdgeSwipe: UIViewRepresentable {
         var coordinator: Coordinator?
         override func didMoveToWindow() {
             super.didMoveToWindow()
-            guard let coordinator else { return }
-            coordinator.recognizer.view?.removeGestureRecognizer(coordinator.recognizer)
-            window?.addGestureRecognizer(coordinator.recognizer)
+            coordinator?.install(in: window)
         }
     }
 
     final class Coordinator: NSObject, UIGestureRecognizerDelegate {
         var parent: RightEdgeSwipe?
-        let recognizer = UIScreenEdgePanGestureRecognizer()
+        let recognizer = UIPanGestureRecognizer()
+        private var startX: CGFloat = 0
 
         override init() {
             super.init()
-            recognizer.edges = .right
             recognizer.delegate = self
             recognizer.addTarget(self, action: #selector(pan))
         }
 
-        @objc private func pan(_ recognizer: UIScreenEdgePanGestureRecognizer) {
+        /// Moves the recognizer to `window`, or takes it off with nil.
+        func install(in window: UIWindow?) {
+            guard recognizer.view !== window else { return }
+            if let old = recognizer.view {
+                old.removeGestureRecognizer(recognizer)
+                #if DEBUG
+                print("PhoneTocDrawer: pan removed")
+                #endif
+            }
+            if let window {
+                window.addGestureRecognizer(recognizer)
+                #if DEBUG
+                print("PhoneTocDrawer: pan added")
+                #endif
+            }
+        }
+
+        @objc private func pan(_ recognizer: UIPanGestureRecognizer) {
             guard let parent else { return }
             switch recognizer.state {
             case .changed:
@@ -269,11 +284,17 @@ private struct RightEdgeSwipe: UIViewRepresentable {
             }
         }
 
-        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool { parent?.isClosed ?? false }
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let parent, parent.isClosed, let window = recognizer.view else { return false }
+            return TocDrawerRules.startsOpening(startX: startX, windowWidth: window.bounds.width,
+                                                velocity: recognizer.velocity(in: window))
+        }
 
         /// Not while a sheet or alert is over the screen.
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-            gestureRecognizer.view?.window?.rootViewController?.presentedViewController == nil
+            guard let window = gestureRecognizer.view as? UIWindow, window.rootViewController?.presentedViewController == nil else { return false }
+            startX = touch.location(in: window).x
+            return true
         }
 
         /// The page's and the editor's scrolling wait for the swipe to fail, so they don't scroll while the drawer drags.

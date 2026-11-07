@@ -75,6 +75,14 @@ enum TocDrawerRules {
         content?.hasRail == true && !isSource && !isSearching
     }
 
+    /// How close to the window's right edge a touch starts a swipe that opens the drawer.
+    static let edgeZone: CGFloat = 24
+
+    /// A touch within the edge zone, moving left more than up or down.
+    static func startsOpening(startX: CGFloat, windowWidth: CGFloat, velocity: CGPoint) -> Bool {
+        windowWidth - startX <= edgeZone && velocity.x < 0 && abs(velocity.x) > abs(velocity.y)
+    }
+
     /// How far open (0 to 1) a drag of `translation` leaves a drawer that started at `start`.
     static func progress(start: CGFloat, translation: CGFloat) -> CGFloat {
         min(1, max(0, start - translation / width))
