@@ -1,6 +1,6 @@
 # Menu
 
-A themed list of actions in a floating panel. Two densities share one look: the full menu for the slash, link, checkbox and callout menus in the editor and the property chips' status, move, area, tag and date menus, and the compact file menu for a right-clicked area, project, task or note and the compact rightClickMenu.
+A themed list of actions in a floating panel. Two densities share one look: the full menu for the slash, link, checkbox and callout menus in the editor and the property chips' status, move, area, tag and date menus, and the compact file menu for a right-clicked area, project, task or note, the compact rightClickMenu and the compact textMenu.
 
 ## Anatomy
 
@@ -10,6 +10,7 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 - `td-menu-search` — the move, area and tag menus' field above the list (the date menu's above its month): 30px, `surface`, `radius-md`, a `muted` glyph (`magnifyingglass`, `calendar`), 13px `strong` text and an optional `muted` note on the right. It has the keyboard.
 - `td-menu-foot` — the key hints under a hairline: each key on a `td-key` cap (10.5px 500 `fg` on `surface`, 4px corners) and what it does: ↑↓ Navigate, ↵ Insert or Set, esc Close.
 - `td-menu-sep` — a 1px `border` line with 3px above and below, before destructive items.
+- Submenu — a row with children shows a `chevron.right` in `muted` on the right and opens a compact menu beside itself, level with the row.
 
 `td-menu.is-compact` is the file menu: `size-menu-compact` (196px), padding 4px, items `size-menu-item-compact` (26px) with padding 0 8px, `radius-sm`, `body` text and 14px glyphs. No group labels and no footer; shortcuts sit on the right.
 
@@ -17,6 +18,8 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 
 - `is-active` — the highlighted item: `surface` fill, `strong` label, glyph in `accent`. The arrow keys and the pointer move it.
 - `is-danger` — Delete, Move to Trash and Delete Forever: label and glyph in `deadline`; highlighted, a `deadline` tint (14% on light schemes, 22% on dark).
+- Disabled — a row drawn at 45% opacity, which the highlight, typed letters, hover and click skip.
+- A submenu opens on hover over its row, or → (↵) on the highlighted row, which then highlights its first row; ←, esc or moving onto another row closes it. Its row stays highlighted while it's open.
 - The slash, link, checkbox and callout menus open with an item highlighted (the first, the current marker or the current type). The file menu opens with none, as macOS context menus do.
 
 ## File menu
@@ -58,6 +61,14 @@ A themed list of actions in a floating panel. Two densities share one look: the 
 - Row grip (the header's too): Insert above, Insert below, Delete row. Deleting the header makes the next row the header.
 - Column grip: Insert left, Insert right, Delete column, then Align left, Align centre, Align right (the current one ticked).
 - Deleting a table's last row or only column deletes the table.
+
+## textMenu
+
+- A compact menu at the pointer on a right-click on text in the Mac's Live editor that no other menu takes, in sections with a divider between, opened with nothing highlighted. Source mode keeps the system menu.
+- On a link, Open Link and Copy Link (the link as written) lead. Then Cut (⌘X), Copy (⌘C), Paste (⌘V), Paste as Plain Text (⌥⇧⌘V) and Select All (⌘A); Cut and Copy are disabled with no selection. On a selection of one line, Add Link (not on a link) and Extract to Task (⌥⌘E). Then Format ▸, Paragraph ▸ and Insert ▸.
+- Format ▸: Bold, Italic, Strikethrough, Highlight and Inline code, with their keys. Paragraph ▸: Heading 1–3 and Body, then Bulleted list, Numbered list, Task and Quote. Insert ▸: Wikilink, Link and Image, then Table, Callout, Code block and Divider. Rows use the slash menu's names and icons. Format and Paragraph tick what the selection (or the word at the caret) or line already is, in `accent`; a ticked format removes it. Insert ▸ Link on a selection writes `[selection]()` with the caret between the parentheses.
+- Add Link opens the full link menu under the selection, its field holding the selected text, selected. A pick writes `[[Title|selection]]`, or `[[Title]]` when they match but for case; the last row, Link “selection” (New on the right), writes `[[selection]]`. esc leaves the text.
+- Extract to Task makes a task named by the selection and replaces it with its `[[link]]`; a selected subtask line extracts the subtask, as the checkbox menu's row does.
 
 ## Callout menu
 
