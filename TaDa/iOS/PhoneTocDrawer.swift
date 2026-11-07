@@ -260,15 +260,9 @@ private struct RightEdgeSwipe: UIViewRepresentable {
             guard recognizer.view !== window else { return }
             if let old = recognizer.view {
                 old.removeGestureRecognizer(recognizer)
-                #if DEBUG
-                print("PhoneTocDrawer: pan removed")
-                #endif
             }
             if let window {
                 window.addGestureRecognizer(recognizer)
-                #if DEBUG
-                print("PhoneTocDrawer: pan added")
-                #endif
             }
         }
 
