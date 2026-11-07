@@ -51,6 +51,10 @@ struct LiveEditor: View {
     @State private var linkMenu = LinkMenuController()
     @State private var tagMenu = TagMenuController()
     #else
+    /// The open `/` query's choices, the one ↵ picks, and the query's state, which a pick inserts against.
+    @State private var slashChoices: [SlashCommand] = []
+    @State private var slashHighlight = 0
+    @State private var slashState: SlashCommandState?
     @State private var linkSearch = LinkMenuSearch()
     /// The open `[[` or `![[` query's choices, and the one ↵ picks.
     @State private var linkChoices: [LinkChoice] = []
@@ -145,6 +149,9 @@ struct LiveEditor: View {
             },
             onTaskCheckboxToggle: { _ in toggles += 1 },
             keyboardBar: AnyView(VStack(spacing: 0) {
+                if !slashChoices.isEmpty {
+                    PhoneSlashList(choices: slashChoices, highlight: slashHighlight, theme: theme, pick: insertSlashCommand)
+                }
                 if !linkChoices.isEmpty {
                     PhoneLinkList(choices: linkChoices, highlight: linkHighlight, search: linkSearch, theme: theme, pick: insertLink)
                 }
@@ -209,13 +216,9 @@ struct LiveEditor: View {
     }
     #endif
 
-    /// The queries typing opens: `/` on the Mac, and with `links`, `[[`, `![[` and (by Autocomplete) `#`.
+    /// The queries typing opens: `/`, and with `links`, `[[`, `![[` and (by Autocomplete) `#`.
     private var triggers: Set<SlashCommandState.Trigger> {
-        #if os(macOS)
         var triggers: Set<SlashCommandState.Trigger> = [.slash]
-        #else
-        var triggers: Set<SlashCommandState.Trigger> = []
-        #endif
         if links != nil { triggers.formUnion(autocomplete.tags ? [.link, .embed, .tag] : [.link, .embed]) }
         return triggers
     }
@@ -233,8 +236,26 @@ struct LiveEditor: View {
     }
 
     #if os(iOS)
-    /// Lists the open `[[`, `![[` or `#` query's choices above the keyboard bar.
+    /// Replaces the `/query` with the command's markdown and selects its placeholder.
+    private func insertSlashCommand(_ command: SlashCommand) {
+        let insertion = command.insertion(followsBlankLine: slashState?.followsBlankLine ?? true)
+        slashCommand.insert(insertion.text, selecting: insertion.selection)
+    }
+
+    /// Lists the open `/`, `[[`, `![[` or `#` query's choices above the keyboard bar.
     private func showLinkChoices(_ state: SlashCommandState?) {
+        if let state, state.trigger == .slash {
+            let choices = SlashCommand.matching(state.query, atLineStart: state.isAtLineStart)
+                .filter { !state.inTableCell || ($0 != .table && $0 != .image) }
+            if choices != slashChoices { slashHighlight = 0 }
+            slashChoices = choices
+            slashState = state
+            tagChoices = nil
+            linkChoices = []
+            return
+        }
+        slashChoices = []
+        slashState = nil
         if let state, let links, state.trigger == .tag {
             let choices = links.tagSuggestions(state.query)
             if choices != tagChoices { tagHighlight = 0 }
@@ -255,6 +276,15 @@ struct LiveEditor: View {
 
     /// A hardware keyboard's ↑/↓ move through the choices and ↵ picks one.
     private func handleLinkKey(_ key: InlinePreviewKey) -> Bool {
+        if !slashChoices.isEmpty {
+            switch key {
+            case .moveUp: slashHighlight = (slashHighlight + slashChoices.count - 1) % slashChoices.count
+            case .moveDown: slashHighlight = (slashHighlight + 1) % slashChoices.count
+            case .confirm: insertSlashCommand(slashChoices[min(slashHighlight, slashChoices.count - 1)])
+            case .confirmAndOpen, .cancel: return false
+            }
+            return true
+        }
         if let tagChoices, !tagChoices.isEmpty {
             switch key {
             case .moveUp: tagHighlight = (tagHighlight + tagChoices.count - 1) % tagChoices.count
@@ -715,7 +745,7 @@ private struct CalloutMenu: View {
     }
 }
 
-/// Above the keyboard: subtask box, `#`, bold, italic, code, wikilink, callout and indent buttons, and hide
+/// Above the keyboard: `/`, subtask box, `#`, bold, italic, code, wikilink, callout and indent buttons, and hide
 /// keyboard. It's hosted outside SwiftUI's environment, so it takes the theme.
 private struct EditorKeyboardBar: View {
     let theme: Theme
@@ -730,13 +760,22 @@ private struct EditorKeyboardBar: View {
         HStack(spacing: 0) {
             ScrollView(.horizontal) {
                 HStack(spacing: 2) {
-                    button("Subtask", "checkmark.square") { if let textView = proxy.textView { PhoneSubtask.perform(in: textView) } }
-                    Button { proxy.type("#") } label: {
-                        Text(verbatim: "#")
+                    Button { proxy.type("/") } label: {
+                        Text(verbatim: "/")
                             .font(.system(size: 18, weight: .semibold, design: .monospaced))
                             .foregroundStyle(theme.color(\.accent))
                             .frame(width: 40, height: 36)
                             .background(theme.tagFill(), in: .capsule)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Insert Formatting")
+                    button("Subtask", "checkmark.square") { if let textView = proxy.textView { PhoneSubtask.perform(in: textView) } }
+                    Button { proxy.type("#") } label: {
+                        Text(verbatim: "#")
+                            .font(.system(size: 18, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(theme.color(\.fg))
+                            .frame(width: 40, height: 36)
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)

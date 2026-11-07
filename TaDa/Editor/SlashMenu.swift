@@ -1,9 +1,10 @@
 // The slash menu: markdown formats in a popup menu under the `/`.
 // The editor engine tracks the `/query` and routes the keys; LiveEditor bridges the two.
-#if os(macOS)
+// On iPhone the choices list above the keyboard bar (`PhoneSlashList`).
 import SwiftUI
-import AppKit
 import TaDaCore
+#if os(macOS)
+import AppKit
 
 /// Shows, moves through and picks from the slash menu. Owned by LiveEditor.
 final class SlashMenuController {
@@ -73,22 +74,25 @@ private struct SlashMenuRow: View {
         }
     }
 }
+#endif
 
+/// The command's SF Symbol, or its `H1`–`H3` or `[[ ]]` glyph; `size` is the symbol's point size.
 private struct SlashCommandIcon: View {
     let command: SlashCommand
+    var size: CGFloat = 13
 
     var body: some View {
         switch command {
         case .heading1: glyph("H1")
         case .heading2: glyph("H2")
         case .heading3: glyph("H3")
-        case .wikiLink: Text("[[ ]]").font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-        default: Image(systemName: symbol).font(.system(size: 13))
+        case .wikiLink: Text("[[ ]]").font(.system(size: size * 9.5 / 13, weight: .semibold, design: .monospaced))
+        default: Image(systemName: symbol).font(.system(size: size))
         }
     }
 
     private func glyph(_ text: String) -> some View {
-        Text(text).font(.system(size: 11, weight: .bold))
+        Text(text).font(.system(size: size * 11 / 13, weight: .bold))
     }
 
     private var symbol: String {
@@ -110,6 +114,53 @@ private struct SlashCommandIcon: View {
         case .inlineCode: "chevron.left.forwardslash.chevron.right"
         case .heading1, .heading2, .heading3, .wikiLink: ""
         }
+    }
+}
+
+#if os(iOS)
+/// The `/` query's choices, above the keyboard bar: a tap picks one.
+struct PhoneSlashList: View {
+    let choices: [SlashCommand]
+    let highlight: Int
+    let theme: Theme
+    let pick: (SlashCommand) -> Void
+
+    private static let rowHeight: CGFloat = 44
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(Array(choices.enumerated()), id: \.element) { offset, command in
+                    Button { pick(command) } label: {
+                        HStack(spacing: 12) {
+                            SlashCommandIcon(command: command, size: 17)
+                                .foregroundStyle(theme.color(offset == highlight ? \.accent : \.muted))
+                                .frame(width: 28, height: 28)
+                            Text(command.title)
+                                .foregroundStyle(theme.color(offset == highlight ? \.strong : \.fg))
+                                .lineLimit(1)
+                            Spacer(minLength: 8)
+                            Text(command.hint)
+                                .font(.system(size: 13, design: .monospaced))
+                                .foregroundStyle(theme.color(\.muted))
+                        }
+                        .padding(.horizontal, 12)
+                        .frame(height: Self.rowHeight)
+                        .background(offset == highlight ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 16))
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityValue(command.hint)
+                }
+            }
+            .padding(4)
+        }
+        .scrollIndicators(.never)
+        .frame(height: min(CGFloat(choices.count) * Self.rowHeight + 8, 162))
+        .font(.system(size: 17))
+        .glassEffect(in: .rect(cornerRadius: 20))
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
     }
 }
 #endif
