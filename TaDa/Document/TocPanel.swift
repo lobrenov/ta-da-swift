@@ -100,6 +100,7 @@ enum TocDrawerRules {
 }
 
 #if os(macOS)
+import AppKit
 
 extension View {
     /// The rail and panel over the document's scroll view at the editor's right edge.
@@ -131,7 +132,8 @@ private struct TocPanelModifier: ViewModifier {
     }
 }
 
-/// The rail, and over it the panel while the pointer rests on either.
+/// The rail, and over it the panel while the pointer rests on either. `isOpen` is the one state: the panel's insertion and
+/// removal slide it from and to the editor's right edge, and the rail's opacity follows it, all in the transaction that sets it.
 private struct TocOverlay: View {
     let content: TocContent
     let state: TocState
@@ -144,8 +146,8 @@ private struct TocOverlay: View {
 
     static let openDelay = Duration.milliseconds(50)
     static let closeDelay = Duration.milliseconds(200)
-    static let fadeIn = 0.08
-    static let fadeOut = 0.12
+    static let slideIn = Animation.easeOut(duration: 0.18)
+    static let slideOut = Animation.easeIn(duration: 0.12)
 
     var body: some View {
         GeometryReader { viewport in
@@ -162,7 +164,7 @@ private struct TocOverlay: View {
                         .onHover { overPanel = $0 }
                         .padding(.top, 46)
                         .padding(.trailing, 12)
-                        .transition(.opacity)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
@@ -173,7 +175,7 @@ private struct TocOverlay: View {
             pending = Task {
                 try? await Task.sleep(for: inside ? Self.openDelay : Self.closeDelay)
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeOut(duration: inside ? Self.fadeIn : Self.fadeOut)) { isOpen = inside }
+                withAnimation(inside ? Self.slideIn : Self.slideOut) { isOpen = inside }
             }
         }
         .onChange(of: state.typing) { _, typing in
@@ -183,6 +185,26 @@ private struct TocOverlay: View {
             overPanel = false
             isOpen = false
         }
+    }
+}
+
+/// Makes the pointer an arrow over the view it backs. The editor's text view sets the I-beam with its own cursor rects and tracking
+/// areas; this view is a later subview of the same window content, so it's above the text view, and its cursor rect and `cursorUpdate`
+/// tracking area (active always, the visible rect) take the cursor there.
+private struct ArrowCursor: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { ArrowCursorView() }
+    func updateNSView(_ view: NSView, context: Context) {}
+
+    private final class ArrowCursorView: NSView {
+        override func resetCursorRects() { addCursorRect(bounds, cursor: .arrow) }
+
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            trackingAreas.forEach(removeTrackingArea)
+            addTrackingArea(NSTrackingArea(rect: .zero, options: [.cursorUpdate, .activeAlways, .inVisibleRect], owner: self))
+        }
+
+        override func cursorUpdate(with event: NSEvent) { NSCursor.arrow.set() }
     }
 }
 
@@ -208,6 +230,7 @@ struct TocRail: View {
         }
         .padding(8)
         .contentShape(.rect)
+        .background(ArrowCursor())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Contents and links")
     }
@@ -242,6 +265,7 @@ struct TocPanel: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .frame(width: 260, height: min(height, maxHeight))
+        .background(ArrowCursor())
         .font(.system(size: 13))
         .background(theme.color(theme.isDark ? \.side : \.bg), in: .rect(cornerRadius: 10))
         .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.surface)))
