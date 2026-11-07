@@ -185,11 +185,18 @@ private struct TocPanelModifier: ViewModifier {
                 hoverZone
                 panelStack(toc, current: current, viewport: viewport.size)
             }
+            .onContinuousHover { phase in
+                switch phase {
+                case .active: setWantsOpen(true)
+                case .ended: setWantsOpen(false)
+                }
+            }
         }
     }
 
-    /// The overlay's one hover tracker: transparent, behind the panel, over the rail while closed and the rail and panel while open.
-    /// It sits above the editor, whose own view would otherwise end the hover under the panel.
+    /// The hover area: transparent, behind the panel, over the rail while closed and the rail and panel while open. It sits above
+    /// the editor, whose own view would otherwise end the hover under the panel. The tracker is on the stack that holds it and the
+    /// panel, so moving onto the panel's rows keeps the hover.
     private var hoverZone: some View {
         let rail = railFrame.insetBy(dx: -Self.railSlack, dy: -Self.railSlack)
         let zone = isOpen ? rail.union(panelFrame) : rail
@@ -198,12 +205,6 @@ private struct TocPanelModifier: ViewModifier {
             .frame(width: zone.width, height: zone.height)
             .offset(x: zone.minX, y: zone.minY)
             .transaction { $0.animation = nil }
-            .onContinuousHover { phase in
-                switch phase {
-                case .active: setWantsOpen(true)
-                case .ended: setWantsOpen(false)
-                }
-            }
     }
 
     private func panelStack(_ toc: TocContent, current: Int?, viewport: CGSize) -> some View {
