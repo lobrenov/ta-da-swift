@@ -10,6 +10,11 @@ import TaDaCore
 import ImageIO
 import UniformTypeIdentifiers
 
+/// Scrolls an editor's line to the top of the page; the editor sets `toLine` while it's shown.
+final class EditorScroll {
+    var toLine: (Int) -> Void = { _ in }
+}
+
 struct LiveEditor: View {
     @Binding var text: String
     let theme: Theme
@@ -39,6 +44,10 @@ struct LiveEditor: View {
     var onLinkClick: (String) -> Void = { _ in }
     /// Receives a clicked `#tag`, as written, without `#`; without it, tags draw as bubbles but don't open.
     var onTagClick: ((String) -> Void)? = nil
+    /// The 0-based line at the top of the visible area, as the page scrolls.
+    var onVisibleTopLine: ((Int) -> Void)? = nil
+    /// Gets a way to scroll a line to the top.
+    var scroll: EditorScroll? = nil
 
     @State private var slashCommand = SlashCommandProxy()
     /// Whether the editor has the keyboard; setting it gives or drops it.
@@ -109,10 +118,14 @@ struct LiveEditor: View {
             onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } },
             onTagClick: onTagClick,
             onRightClickMenu: showRightClickMenu,
-            onTextMenu: showTextMenu
+            onTextMenu: showTextMenu,
+            onVisibleTopLine: onVisibleTopLine
         )
         .focusedValue(\.editor, slashCommand)
-        .onAppear { slashCommand.triggers = triggers }
+        .onAppear {
+            slashCommand.triggers = triggers
+            scroll?.toLine = { [slashCommand] in slashCommand.scroll(toLine: $0) }
+        }
         .onChange(of: takesFocus, initial: true) {
             guard takesFocus else { return }
             if focused { tookFocus() } else { focused = true }
@@ -188,9 +201,13 @@ struct LiveEditor: View {
                     }
                 }
             },
-            onTagClick: onTagClick
+            onTagClick: onTagClick,
+            onVisibleTopLine: onVisibleTopLine
         )
-        .onAppear { slashCommand.triggers = triggers }
+        .onAppear {
+            slashCommand.triggers = triggers
+            scroll?.toLine = { [slashCommand] in slashCommand.scroll(toLine: $0) }
+        }
         .onChange(of: autocomplete.tags) { slashCommand.triggers = triggers }
         .sensoryFeedback(.impact(weight: .light), trigger: toggles) { _, _ in haptics }
         .sensoryFeedback(.impact(weight: .medium), trigger: menuPresses) { _, _ in haptics }

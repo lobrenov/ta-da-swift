@@ -9,6 +9,7 @@ struct ProjectDocumentView: View {
     let project: Item
     /// A new linked task's row, scrolled into view once it's laid out.
     @State private var revealed: String?
+    @State private var toc = TocState()
 
     var body: some View {
         let tasks = model.index.tasks(in: project)
@@ -20,7 +21,7 @@ struct ProjectDocumentView: View {
                         PropertyChips(model: model, item: project)
                         WarningList(warnings: model.index.warnings(for: project))
                         Hairline()
-                        BodyEditor(model: model, document: document)
+                        BodyEditor(model: model, document: document, toc: toc)
                         LinkedTasksTable(model: model, project: project, tasks: tasks) { revealed = $0 }
                             .padding(.top, 6)
                         Spacer(minLength: 0)
@@ -32,6 +33,7 @@ struct ProjectDocumentView: View {
                     .frame(minHeight: viewport.size.height, alignment: .top)
                 }
             }
+            .tocPanel(model: model, document: document, state: toc)
             .task(id: revealed) {
                 guard let revealed else { return }
                 withAnimation { proxy.scrollTo(revealed, anchor: .center) }

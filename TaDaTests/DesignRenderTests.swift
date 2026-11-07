@@ -188,6 +188,43 @@ struct DesignRenderTests {
         try await render(SidebarView(model: areas).themed(by: areas), width: 240, to: output.appending(path: "area-sidebar.png"))
     }
 
+    /// The tocPanel's rail and open panel on a task with headings, links and backlinks, in the standard light and dark schemes.
+    @Test(.enabled(if: output != nil))
+    func renderTocRailAndPanel() async throws {
+        let output = URL(filePath: try #require(Self.output), directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let folder = try TestFolder([
+            "areas/Megagames.md": "---\ntype: area\n---\n",
+            "notes/Release notes template.md": "Template.\n",
+            "notes/Swift conventions.md": "Conventions.\n",
+            "projects/Obsidian plugin.md": "---\ntype: project\n---\n",
+            "tasks/Ship the beta.md": "---\ntype: task\nstatus: Doing\n---\nSee [[Plan the beta]].\n",
+            "tasks/Plan the beta.md": """
+            ---
+            type: task
+            ---
+            ## Scope
+            ### Must ship
+            Uses [[Release notes template]], [[Megagames]], [[Swift conventions]] and [[Crash reporting]].
+            ### Can wait
+            ## Testers
+            ## Risks
+            """,
+        ])
+        let model = await folder.model(selecting: "tasks/Plan the beta.md")
+        let item = try #require(model.index["tasks/Plan the beta.md"])
+        let content = TocContent(item: item, index: model.index)
+        #expect(content.headings.count == 5 && content.links.count == 4 && content.backlinks.count == 1)
+        for theme in [ThemeSet.standard.light, ThemeSet.standard.dark] {
+            model.appearance = theme.isDark ? .dark : .light
+            let rail = TocRail(content: content, current: 1).padding(20).background(Color(theme.bg))
+            try await render(rail.themed(by: model), width: 120, to: output.appending(path: "toc-rail-\(theme.name).png"))
+            let panel = TocPanel(content: content, current: 1, maxHeight: 700, scroll: { _ in }, open: { _ in })
+                .padding(20).background(Color(theme.bg))
+            try await render(panel.themed(by: model), width: 320, to: output.appending(path: "toc-panel-\(theme.name).png"))
+        }
+    }
+
     private func render(_ model: AppModel, to url: URL) async throws {
         try await render(ContentView(model: model), width: 1280, to: url)
     }
