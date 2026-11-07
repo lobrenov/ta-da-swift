@@ -10,18 +10,15 @@ protocol PopupMenuItem {
     var accessibilityValue: String { get }
     /// Highlighted with a `deadline` tint instead of `surface`.
     var isDestructive: Bool { get }
-    /// The rows of a submenu that opens beside this one's row, which then shows a ▸. Submenu rows' own children
+    /// The rows of a submenu that opens beside this one's row, which then shows a ▸. Submenu rows' own submenus
     /// are ignored.
-    var children: [Self] { get }
-    /// Shows a tick on the row's right.
-    var isTicked: Bool { get }
+    var submenu: [Self] { get }
 }
 
 extension PopupMenuItem {
     var accessibilityValue: String { "" }
     var isDestructive: Bool { false }
-    var children: [Self] { [] }
-    var isTicked: Bool { false }
+    var submenu: [Self] { [] }
 }
 
 /// Some of a menu's items: under an uppercase label, or after a divider when they have none and aren't first.
@@ -247,7 +244,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         panel.onEscape = { [weak self] in self?.closeSubmenu() ?? false }
         panel.onHide = { [weak self] in self?.closeSubmenu() }
         panel.companion = { [weak self] in self?.submenuPanel.window }
-        submenuPanel.onDismiss = { [weak self] in self?.closeSubmenu() }
+        submenuPanel.companion = { [weak self] in self?.panel.window }
         model.onHover = { [weak self] index in self?.hover(index) }
         submenuModel.pick = { [weak self] item in self?.pickFromSubmenu(item) }
     }
@@ -266,6 +263,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
     func show(_ sections: [PopupMenuSection<Item>], highlight: Int?, theme: Theme, below anchor: CGRect,
               inset: CGFloat, gap: CGFloat, in parent: NSWindow, header: (height: CGFloat, view: AnyView)? = nil,
               pick: @escaping (Item) -> Void) {
+        closeSubmenu()
         let opening = !panel.isOpen
         model.header = header
         model.sections = sections.filter { !$0.items.isEmpty }
@@ -290,7 +288,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         announceHighlight()
     }
 
-    /// Picks the highlighted item of the open submenu, or of the menu, where a row with children opens its
+    /// Picks the highlighted item of the open submenu, or of the menu, where a row with a submenu opens its
     /// submenu instead; false when there's none.
     @discardableResult
     func pickHighlighted() -> Bool {
@@ -300,7 +298,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
             return true
         }
         guard let highlight = model.highlight, model.items.indices.contains(highlight) else { return false }
-        if model.items[highlight].children.isEmpty {
+        if model.items[highlight].submenu.isEmpty {
             model.pick(model.items[highlight])
         } else {
             openSubmenu(at: highlight, highlightFirst: true)
@@ -312,7 +310,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
     @discardableResult
     func openSubmenu() -> Bool {
         guard !isSubmenuOpen, let highlight = model.highlight, model.items.indices.contains(highlight),
-              !model.items[highlight].children.isEmpty else { return false }
+              !model.items[highlight].submenu.isEmpty else { return false }
         openSubmenu(at: highlight, highlightFirst: true)
         return true
     }
@@ -332,10 +330,8 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
     var submenuFrame: CGRect? { submenuPanel.frame }
 
     /// What the pointer entering row `index` does: opens its submenu, or closes the open one.
-    func hoverRow(_ index: Int) { hover(index) }
-
-    private func hover(_ index: Int) {
-        if model.items.indices.contains(index), !model.items[index].children.isEmpty {
+    func hover(_ index: Int) {
+        if model.items.indices.contains(index), !model.items[index].submenu.isEmpty {
             guard model.openIndex != index else { return }
             openSubmenu(at: index, highlightFirst: false)
         } else {
@@ -347,7 +343,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         guard let parent = parentWindow, let rootFrame = panel.frame else { return }
         model.highlight = index
         model.openIndex = index
-        submenuModel.sections = [PopupMenuSection(items: model.items[index].children)]
+        submenuModel.sections = [PopupMenuSection(items: model.items[index].submenu)]
         submenuModel.highlight = highlightFirst ? 0 : nil
         submenuModel.theme = model.theme
         submenuModel.revision += 1
@@ -464,10 +460,11 @@ private final class PopupMenuModel<Item: PopupMenuItem> {
     }
 
     /// A row's distance from the panel's top, under the padding, search field, header and the rows and labels
-    /// before it, 1pt apart.
+    /// before it, 1pt apart, at most the list's visible height. Submenus assume an unscrolled list.
     func rowTop(of index: Int) -> CGFloat {
         var y = style.padding + (searchPrompt == nil ? 0 : PopupMenuStyle.searchHeight)
             + (header.map { $0.height + PopupMenuStyle.dividerHeight } ?? 0)
+        let limit = y + max(listHeight - style.rowHeight, 0)
         var seen = 0
         for (sectionIndex, section) in sections.enumerated() {
             if section.label != nil {
@@ -475,11 +472,11 @@ private final class PopupMenuModel<Item: PopupMenuItem> {
             } else if sectionIndex > 0 {
                 y += PopupMenuStyle.dividerHeight + 1
             }
-            if index < seen + section.items.count { return y + CGFloat(index - seen) * (style.rowHeight + 1) }
+            if index < seen + section.items.count { return min(y + CGFloat(index - seen) * (style.rowHeight + 1), limit) }
             y += CGFloat(section.items.count) * (style.rowHeight + 1)
             seen += section.items.count
         }
-        return y
+        return min(y, limit)
     }
 
     /// The search field, the header and its divider, the list, the padding all round and the footer.
@@ -568,12 +565,19 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
         let fill: Color = !isHighlighted ? .clear
             : item.isDestructive ? theme.color(\.deadline).opacity(theme.isDark ? 0.22 : 0.14)
             : theme.color(\.surface)
-        return row(item, isHighlighted, theme)
+        return HStack(spacing: 8) {
+            row(item, isHighlighted, theme)
+            if !item.submenu.isEmpty {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(theme.color(\.muted))
+                    .accessibilityHidden(true)
+            }
+        }
             .padding(.horizontal, style.rowPadding)
             .frame(height: style.rowHeight)
             .background(fill, in: .rect(cornerRadius: style.rowRadius))
             .contentShape(.rect)
-            .overlay(alignment: .trailing) { accessory(item) }
             .onHover { inside in
                 if inside {
                     model.highlight = index
@@ -592,18 +596,7 @@ private struct PopupMenuView<Item: PopupMenuItem, Row: View>: View {
     }
 
     private func activate(_ item: Item, index: Int) {
-        if item.children.isEmpty { model.pick(item) } else { model.onHover(index) }
-    }
-
-    @ViewBuilder
-    private func accessory(_ item: Item) -> some View {
-        if item.isTicked || !item.children.isEmpty {
-            Image(systemName: item.children.isEmpty ? "checkmark" : "chevron.right")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(theme.color(item.children.isEmpty ? \.fg : \.muted))
-                .padding(.trailing, style.rowPadding)
-                .accessibilityHidden(true)
-        }
+        if item.submenu.isEmpty { model.pick(item) } else { model.onHover(index) }
     }
 
     /// Scrolls the highlighted row into view; the first row brings its section's label too.

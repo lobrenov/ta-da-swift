@@ -8,13 +8,12 @@ import Testing
 struct PopupMenuTests {
     private struct Entry: PopupMenuItem {
         var title: String
-        var children: [Entry] = []
-        var isTicked = false
+        var submenu: [Entry] = []
     }
 
     private let entries = [
         Entry(title: "Copy"),
-        Entry(title: "Format", children: [Entry(title: "Bold", isTicked: true), Entry(title: "Italic")]),
+        Entry(title: "Format", submenu: [Entry(title: "Bold"), Entry(title: "Italic")]),
         Entry(title: "Paste"),
     ]
 
@@ -114,11 +113,22 @@ struct PopupMenuTests {
         let (menu, _) = open()
         defer { menu.hide() }
         _ = menu.handleKey(right)
-        menu.hoverRow(2)
+        menu.hover(2)
         #expect(!menu.isSubmenuOpen)
-        menu.hoverRow(1)
+        menu.hover(1)
         #expect(menu.isSubmenuOpen)
         #expect(menu.submenuHighlight == nil)
+    }
+
+    @Test func showingAgainClosesTheSubmenuSoHoverReopensIt() {
+        let (menu, window) = open()
+        defer { menu.hide() }
+        _ = menu.handleKey(right)
+        menu.show([PopupMenuSection(items: entries)], highlight: 1, theme: Theme.all[0],
+                  below: CGRect(x: 300, y: 600, width: 1, height: 1), inset: 0, gap: 0, in: window) { _ in }
+        #expect(!menu.isSubmenuOpen)
+        menu.hover(1)
+        #expect(menu.isSubmenuOpen)
     }
 
     @Test func hidingTheMenuClosesTheSubmenu() {
@@ -141,10 +151,9 @@ struct PopupMenuTests {
         #expect(abs(sub.maxY - style.padding - rowTop) < 1)
     }
 
-    @Test func tickAndChildrenDefaultOff() {
+    @Test func submenuDefaultsEmpty() {
         struct Plain: PopupMenuItem { var title = "x" }
-        #expect(Plain().children.isEmpty)
-        #expect(!Plain().isTicked)
+        #expect(Plain().submenu.isEmpty)
     }
 }
 #endif
