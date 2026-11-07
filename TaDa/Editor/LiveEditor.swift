@@ -44,8 +44,8 @@ struct LiveEditor: View {
     var onLinkClick: (String) -> Void = { _ in }
     /// Receives a clicked `#tag`, as written, without `#`; without it, tags draw as bubbles but don't open.
     var onTagClick: ((String) -> Void)? = nil
-    /// The 0-based line at the top of the visible area, as the page scrolls.
-    var onVisibleTopLine: ((Int) -> Void)? = nil
+    /// The 0-based first and last visible lines, as the page scrolls.
+    var onVisibleLines: ((ClosedRange<Int>) -> Void)? = nil
     /// Gets a way to scroll a line to the top.
     var scroll: EditorScroll? = nil
 
@@ -119,7 +119,7 @@ struct LiveEditor: View {
             onTagClick: onTagClick,
             onRightClickMenu: showRightClickMenu,
             onTextMenu: showTextMenu,
-            onVisibleTopLine: onVisibleTopLine
+            onVisibleLines: onVisibleLines
         )
         .focusedValue(\.editor, slashCommand)
         .onAppear {
@@ -202,7 +202,7 @@ struct LiveEditor: View {
                 }
             },
             onTagClick: onTagClick,
-            onVisibleTopLine: onVisibleTopLine
+            onVisibleLines: onVisibleLines
         )
         .onAppear {
             slashCommand.triggers = triggers
@@ -420,6 +420,8 @@ struct LiveEditor: View {
                 request.toggleFormat(format)
             } else if let kind = Self.blockKind(for: command) {
                 request.setBlockKind(kind)
+            } else if command == .link, let link = TextMenu.linkInsertion(selection: request.selection, selectedText: request.selectedText) {
+                request.insert(link.text, selecting: link.selection, asBlock: false)
             } else {
                 let text = (slashCommand.textView?.string ?? "") as NSString
                 let line = text.lineRange(for: NSRange(location: min(request.selection.location, text.length), length: 0))

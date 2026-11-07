@@ -1,5 +1,6 @@
 #if os(macOS)
 import Foundation
+import SwiftUI
 import Testing
 import TaDaCore
 @testable import TaDa
@@ -117,6 +118,54 @@ struct TextMenuTests {
     @Test func extractNeedsOneLineOfText() {
         #expect(ExtractTask.extractableRange(NSRange(location: 0, length: 7), selectedText: " \n  \n ") == nil)
         #expect(ExtractTask.extractableRange(NSRange(location: 0, length: 9), selectedText: "Buy\nmilk\n") == nil)
+    }
+
+    @Test func linkOnASelectionLabelsTheTrimmedTextAndPutsTheCaretInTheParentheses() throws {
+        let link = try #require(TextMenu.linkInsertion(selection: NSRange(location: 4, length: 11), selectedText: " the kombi "))
+        #expect(link.text == " [the kombi]() ")
+        #expect(link.selection == NSRange(location: 13, length: 0))
+        #expect((link.text as NSString).substring(to: link.selection.location) == " [the kombi](")
+    }
+
+    @Test func linkCountsTheCaretInUTF16() throws {
+        let link = try #require(TextMenu.linkInsertion(selection: NSRange(location: 0, length: 6), selectedText: "🚐 van"))
+        #expect(link.text == "[🚐 van]()")
+        #expect(link.selection == NSRange(location: 9, length: 0))
+    }
+
+    @Test func linkWithoutTextFallsBackToTheTemplate() {
+        #expect(TextMenu.linkInsertion(selection: NSRange(location: 3, length: 0), selectedText: "") == nil)
+        #expect(TextMenu.linkInsertion(selection: NSRange(location: 3, length: 2), selectedText: " \n") == nil)
+    }
+
+    /// With `TADA_RENDER_DIR` set, draws every row of the root menu and the three submenus to PNGs.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TADA_RENDER_DIR"] != nil))
+    func renderRows() async throws {
+        let output = URL(filePath: try #require(ProcessInfo.processInfo.environment["TADA_RENDER_DIR"]), directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let sections = TextMenu.sections(for: target(selection: true, link: true, formats: [.bold], block: .heading2, isBody: false))
+        let root = sections.flatMap { $0 }
+        let menus = [("root", root)] + root.filter { !$0.submenu.isEmpty }.map { ($0.title, $0.submenu.flatMap(\.items)) }
+        for theme in [ThemeSet.standard.light, ThemeSet.standard.dark] {
+            for (name, rows) in menus {
+                let view = VStack(alignment: .leading, spacing: 1) {
+                    ForEach(Array(rows.enumerated()), id: \.offset) { offset, row in
+                        HStack(spacing: 8) {
+                            TextMenuRowView(item: row, isHighlighted: offset == 1, theme: theme)
+                            if !row.submenu.isEmpty { Image(systemName: "chevron.right").font(.system(size: 10, weight: .semibold)) }
+                        }
+                        .padding(.horizontal, 8).frame(height: 26)
+                    }
+                }
+                .frame(width: 196).padding(4).background(Color(theme.bg)).foregroundStyle(Color(theme.fg))
+                let renderer = ImageRenderer(content: view)
+                renderer.scale = 2
+                let image = try #require(renderer.nsImage)
+                let tiff = try #require(image.tiffRepresentation)
+                let png = try #require(NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]))
+                try png.write(to: output.appending(path: "textmenu-\(name)-\(theme.name).png"))
+            }
+        }
     }
 }
 #endif

@@ -70,6 +70,18 @@ enum TextMenu {
         }
     }
 
+    /// Insert ▸ Link on a selection: its text, trimmed, as the label of `[label]()`, the blanks around it kept, and the
+    /// caret between the parentheses. Nil without a selection of text, which inserts the slash menu's `[]()`.
+    static func linkInsertion(selection: NSRange, selectedText: String) -> (text: String, selection: NSRange)? {
+        guard let range = ExtractTask.trimmedRange(selection, selectedText: selectedText) else { return nil }
+        let text = selectedText as NSString
+        let lead = range.location - selection.location
+        let prefix = text.substring(to: lead) + "["
+        let label = text.substring(with: NSRange(location: lead, length: range.length))
+        let suffix = text.substring(from: lead + range.length)
+        return (prefix + label + "](" + ")" + suffix, NSRange(location: (prefix + label + "](" as NSString).length, length: 0))
+    }
+
     /// The menu's sections; a divider falls between them.
     static func sections(for target: TextMenuTarget) -> [[TextMenuRow]] {
         var sections: [[TextMenuRow]] = []
@@ -122,7 +134,9 @@ enum TextMenu {
 
 /// Shows, moves through and picks from the text menu. Owned by LiveEditor.
 final class TextMenuController {
-    private let menu = PopupMenu(style: .compact, takesKeys: true, row: TextMenuRowView.init)
+    /// The compact style, wide enough for Paste as Plain Text and its key.
+    private let menu = PopupMenu(style: { var style = PopupMenuStyle.compact; style.width = 232; return style }(),
+                                 takesKeys: true, row: TextMenuRowView.init)
 
     /// Opens the menu under `anchor` (screen coordinates). `pick` runs the chosen row after the menu has closed; `close`
     /// runs however the menu closes.
@@ -144,7 +158,7 @@ final class TextMenuController {
     func hide() { menu.hide() }
 }
 
-private struct TextMenuRowView: View {
+struct TextMenuRowView: View {
     let item: TextMenuRow
     let isHighlighted: Bool
     let theme: Theme
@@ -152,7 +166,7 @@ private struct TextMenuRowView: View {
     var body: some View {
         HStack(spacing: 8) {
             icon
-                .frame(width: 14, height: 20)
+                .frame(width: 20, height: 20)
                 .foregroundStyle(theme.color(isHighlighted ? \.accent : \.muted))
             Text(item.title)
                 .foregroundStyle(theme.color(isHighlighted ? \.strong : \.fg))
@@ -175,8 +189,8 @@ private struct TextMenuRowView: View {
     @ViewBuilder private var icon: some View {
         switch item.icon {
         case .symbol(let name): Image(systemName: name).font(.system(size: 12))
-        case .glyph(let text): Text(text).font(.system(size: text.count > 1 ? 11 : 12, weight: .semibold))
-        case .command(let command): SlashCommandIcon(command: command, size: 12)
+        case .glyph(let text): Text(text).font(.system(size: text.count > 1 ? 11 : 12, weight: .semibold)).lineLimit(1).fixedSize()
+        case .command(let command): SlashCommandIcon(command: command, size: 12).lineLimit(1).fixedSize()
         }
     }
 }

@@ -38,14 +38,21 @@ enum ExtractTask {
     /// `selection`, which holds `selectedText`, cut back to its first and last non-blank characters; nil when that is
     /// nothing or spans lines.
     static func extractableRange(_ selection: NSRange, selectedText: String) -> NSRange? {
+        guard let range = trimmedRange(selection, selectedText: selectedText),
+              !(selectedText as NSString).substring(with: NSRange(location: range.location - selection.location, length: range.length))
+                .contains(where: \.isNewline) else { return nil }
+        return range
+    }
+
+    /// `selection`, which holds `selectedText`, cut back to its first and last non-blank characters; nil when that is
+    /// nothing.
+    static func trimmedRange(_ selection: NSRange, selectedText: String) -> NSRange? {
         let text = selectedText as NSString
         let blanks = CharacterSet.whitespacesAndNewlines
         var start = 0, end = text.length
         while start < end, blanks.contains(Unicode.Scalar(text.character(at: start)) ?? "a") { start += 1 }
         while end > start, blanks.contains(Unicode.Scalar(text.character(at: end - 1)) ?? "a") { end -= 1 }
         guard start < end else { return nil }
-        let trimmed = text.substring(with: NSRange(location: start, length: end - start))
-        guard trimmed.rangeOfCharacter(from: .newlines) == nil else { return nil }
         return NSRange(location: selection.location + start, length: end - start)
     }
 
