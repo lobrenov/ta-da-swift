@@ -5,7 +5,7 @@ import MarkdownEngineSyntax
 public struct Heading: Hashable, Sendable {
     /// 1 to 6.
     public var level: Int
-    /// As written, without the `#` markers.
+    /// As plain text, without the `#` markers or inline markup; a wiki link reads as its alias, target or heading.
     public var text: String
     /// The 0-based line in the body, which is the text the Live editor shows (after front matter), whatever `firstLineIndex` is.
     public var line: Int
@@ -55,7 +55,7 @@ public enum BodyScanner {
             links: facts.links.compactMap(link),
             embeds: facts.embeds.compactMap(link),
             tags: facts.tags.compactMap { Tag($0.name) }.unique,
-            headings: facts.headings.filter { !$0.text.isEmpty }.map { Heading(level: $0.level, text: $0.text, line: $0.line - firstLineIndex) })
+            headings: facts.headings.filter { !$0.plainText.isEmpty }.map { Heading(level: $0.level, text: $0.plainText, line: $0.line - firstLineIndex) })
     }
 
     /// Where each `![[…]]` that `scan` finds sits in `body`: the range of its target (the text before any `#` or

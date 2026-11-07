@@ -236,3 +236,7 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
 @Test func scannerDropsEmptyHeadings() {
     #expect(BodyScanner.scan("## \n#  ##\n## A").headings.map(\.text) == ["A"])
 }
+
+@Test func scannerHeadingTextIsPlainText() {
+    #expect(BodyScanner.scan("## **Bold** and `code` with [[Target|Alias]]\n# [[Plain]]").headings.map(\.text) == ["Bold and code with Alias", "Plain"])
+}

@@ -680,7 +680,7 @@
 			repositoryURL = "https://github.com/lobrenov/swift-markdown-engine-extended.git";
 			requirement = {
 				kind = exactVersion;
-				version = "0.15.0-live.10";
+				version = "0.15.0-live.12";
 			};
 		};
 		2B59F00A306FCF3A00D4BBDB /* XCRemoteSwiftPackageReference "Sparkle" */ = {
