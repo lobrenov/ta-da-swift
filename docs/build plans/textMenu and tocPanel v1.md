@@ -27,6 +27,19 @@ Starting point, as checked on 2026-11-07:
 - Versions: each step is a `z` release from 0.37.5; the finished plan is 0.38.0.
 - Not in v1: textMenu on iPhone, unlinked mentions, heading levels beyond the slash menu's in Paragraph ▸.
 
+## Delegation
+Each of steps 1 to 7 is one stage, run by subagents:
+1. swift-dev builds the stage: in the fork for step 2, in Ta Da for the rest. Commit.
+2. code-reviewer reviews the stage's commit, returning at most 5 fixes.
+3. swift-dev applies the fixes. Commit.
+
+The main session briefs each stage with its step and Decisions, reviews each result against its Check before the next stage starts, tags the fork and bumps the pin after step 2, runs the by-hand checks in the app and the simulator, and runs step 8.
+
+## Sequencing
+- Steps 1, 2 and 3 run in parallel: step 1 writes only `Packages/TaDaCore`, step 2 only the fork, step 3 only `PopupMenu` and its tests. Each commit stages only its own files.
+- Steps 4 to 7 run one at a time, in order. Step 4 needs steps 2 and 3, step 5 needs step 4's Add Link row, step 6 needs steps 1 and 2 and shares `LiveEditor` with steps 4 and 5, and step 7 reuses step 6's sections.
+- Step 8 runs once steps 1 to 7 have passed their checks.
+
 ## Steps
 1. TaDaCore: `BodyScan.headings` (level, text, line), skipping code, front matter and callout titles; `Item.headings`; `VaultIndex.links(from:)` returning each body link once as a resolved item or an unresolved title. Check: `BodyScannerTests` and `VaultIndexTests`, written first, pass on macOS and the iOS Simulator; `LargeVaultTests` timings no worse.
 2. Fork (`-live.11`): `onTextMenu` for a right-click on text that no other menu takes, carrying the selection or caret, the link under the pointer, the selection's inline formats, the line's block kind and the anchor, with actions to run an inline format, a slash command, paste as plain text and replace the selection. `onVisibleTopLine` while scrolling and `scroll(toLine:)`. Check: fork tests; tag; the pin bumped here.
