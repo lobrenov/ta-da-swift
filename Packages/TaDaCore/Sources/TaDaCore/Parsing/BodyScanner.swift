@@ -23,7 +23,7 @@ public struct BodyScan: Equatable, Sendable {
     public var embeds: [WikiLink]
     /// Every inline `#tag`, first spelling kept, in order. Code, HTML, links' text and `[[…]]` hold none.
     public var tags: [Tag]
-    /// Every heading in document order, skipping code and callout titles.
+    /// Every heading with text, in document order, skipping code and callout titles.
     public var headings: [Heading]
 }
 
@@ -55,7 +55,7 @@ public enum BodyScanner {
             links: facts.links.compactMap(link),
             embeds: facts.embeds.compactMap(link),
             tags: facts.tags.compactMap { Tag($0.name) }.unique,
-            headings: facts.headings.map { Heading(level: $0.level, text: $0.text, line: $0.line - firstLineIndex) })
+            headings: facts.headings.filter { !$0.text.isEmpty }.map { Heading(level: $0.level, text: $0.text, line: $0.line - firstLineIndex) })
     }
 
     /// Where each `![[…]]` that `scan` finds sits in `body`: the range of its target (the text before any `#` or

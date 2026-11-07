@@ -223,7 +223,7 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
 }
 
 @Test func scannerSkipsHeadingsInCodeAndCalloutTitles() {
-    let body = "```\n# Code\n```\n~~~md\n## Tilde\n~~~\n> [!note] # Title\n> body\n    # Indented code\n## Real"
+    let body = "```\n# Code\n```\n~~~md\n## Tilde\n~~~\n> [!note] # Title\n> ## Inside\n    # Indented code\n## Real"
     #expect(BodyScanner.scan(body).headings == [Heading(level: 2, text: "Real", line: 9)])
 }
 
@@ -231,4 +231,8 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
     let item = Item(parsing: "---\ntype: task\nstatus: Todo\n---\n# One\n\n## Two\n", path: "tasks/H.md")
     #expect(item?.headings.map(\.line) == [0, 2])
     #expect(item?.headings.map(\.text) == ["One", "Two"])
+}
+
+@Test func scannerDropsEmptyHeadings() {
+    #expect(BodyScanner.scan("## \n#  ##\n## A").headings.map(\.text) == ["A"])
 }

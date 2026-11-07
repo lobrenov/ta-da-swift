@@ -139,12 +139,14 @@ public struct VaultIndex: Sendable {
         (linkersByTitle[item.title.lowercased()] ?? []).filter { $0 != item.path }.compactMap { items[$0] }.sorted(by: Self.byTitle)
     }
 
-    /// The links in this item's body, each title once in first-appearance order, with the item it resolves to (the first
-    /// by path) or nil. Embeds and frontmatter links aren't included.
+    /// The links in this item's body, each title once in first-appearance order, with the item it opens (the first
+    /// `items(titled:)` finds) or nil. Links to the item itself, embeds and frontmatter links aren't included.
     public func links(from item: Item) -> [(title: String, item: Item?)] {
         var seen = Set<String>()
         return item.links.compactMap { link in
-            seen.insert(link.title.lowercased()).inserted ? (link.title, items(titled: link.title).first) : nil
+            guard seen.insert(link.title.lowercased()).inserted else { return nil }
+            let target = items(titled: link.title).first
+            return target?.path == item.path ? nil : (link.title, target)
         }
     }
 
