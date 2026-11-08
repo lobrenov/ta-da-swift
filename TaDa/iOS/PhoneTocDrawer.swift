@@ -195,8 +195,7 @@ private struct PhoneTocDrawerLayer: View {
             .foregroundStyle(theme.color(isUnresolved ? \.muted : isCurrent ? \.accent : \.fg))
             .padding(.leading, indent)
             .padding(.trailing, 22)
-            .scaledMinHeight(44)
-            .overlay(alignment: .bottom) { Rectangle().fill(theme.color(\.border)).frame(height: 0.5) }
+            .scaledMinHeight(40)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
