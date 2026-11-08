@@ -14,17 +14,18 @@ pbpaste > key.txt && <bin>/generate_keys -f key.txt; rm -f key.txt; pbcopy < /de
 `generate_keys -p` prints the Keychain's public key. `make-release.sh` stops if it isn't `SUPublicEDKey`.
 
 ## Releasing
-1. Bump Build in Xcode (TaDa target › General › Identity), and Version as `docs/versioning.md` says. Commit and push.
-2. Check:
+1. Bump Build in Xcode (TaDa target › General › Identity), and Version as `docs/versioning.md` says.
+2. Write the release notes in `docs/release notes/<version>.md`, from the commits since the last release tag (`git log --format=%s <tag>..HEAD`) and the plans archived since. They are for people using Ta Da: what they can now do or will notice, one line each, in the design framework's names, under `## New`, `## Changed` and `## Fixed` (only those with items). No steps, review fixes, versions, tests, docs or code names. A later build of the same version adds to its file. Commit and push.
+3. Check:
    ```bash
    scripts/make-release.sh --dry-run
    ```
-   It archives, then writes `TaDa-<version>-<build>.zip`, `.dmg` and `.html` (the notes: commit subjects since the last release tag) and `appcast.xml` to `build/release/`, and prints the feed. `build/` is gitignored.
-3. Release:
+   It archives, then writes `TaDa-<version>-<build>.zip`, `.dmg` and `.html` (the notes file) and `appcast.xml` to `build/release/`, and prints the feed. `build/` is gitignored.
+4. Release:
    ```bash
    scripts/make-release.sh
    ```
-   It needs a clean tree at `origin/main` and stops if the build already has a release. It creates the release as latest, with the zip, DMG and feed. A failed upload leaves a draft release; delete it before running again.
+   It needs a clean tree at `origin/main` and the version's notes file, and stops if the build already has a release. It creates the release as latest, with the notes, zip, DMG and feed. A failed upload leaves a draft release; delete it before running again.
 
 ## First install
 Requires macOS 26 or later.

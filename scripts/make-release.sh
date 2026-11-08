@@ -32,6 +32,8 @@ SPARKLE_BIN="${BUILD_DIR%/Build/Products}/SourcePackages/artifacts/sparkle/Spark
 [ -x "$SPARKLE_BIN/generate_appcast" ] || { echo "Sparkle's generate_appcast isn't in $SPARKLE_BIN; resolve packages in Xcode first." >&2; exit 1; }
 TAG="v$(awk '$1=="MARKETING_VERSION"{print $3}' <<<"$SETTINGS")-$(awk '$1=="CURRENT_PROJECT_VERSION"{print $3}' <<<"$SETTINGS")"
 check_unreleased
+NOTES_FILE="docs/release notes/$(awk '$1=="MARKETING_VERSION"{print $3}' <<<"$SETTINGS").md"
+[ -s "$NOTES_FILE" ] || { echo "No release notes at $NOTES_FILE (docs/releases.md)." >&2; exit 1; }
 
 ARCHIVE=build/TaDa.xcarchive
 STAGING=build/dmg
@@ -73,19 +75,23 @@ Later builds arrive by themselves through Ta Da's update window (Check for Updat
 README
 hdiutil create -volname "Ta Da" -srcfolder "$STAGING" -format UDZO "$OUT/$NAME.dmg"
 
-PREV=$(git tag --list 'v*-*' --merged HEAD --sort=-v:refname | head -1)
-[ -n "$PREV" ] || PREV=$(git tag --list 'v*' --merged HEAD^ --sort=-v:refname | grep -v -- '-' | head -1 || true)
-SUBJECTS=$(git log --format=%s ${PREV:+"$PREV..HEAD"})
+# The notes file: "## " headings, "- " items and paragraphs.
 {
-  echo "<ul>"
-  while IFS= read -r s; do
-    [ -n "$s" ] || continue
-    s=${s//&/&amp;}; s=${s//</&lt;}; s=${s//>/&gt;}
-    echo "<li>$s</li>"
-  done <<<"$SUBJECTS"
-  echo "</ul>"
+  inList=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=${line//&/&amp;}; line=${line//</&lt;}; line=${line//>/&gt;}
+    if [[ $line == "- "* ]]; then
+      [ $inList -eq 1 ] || { echo "<ul>"; inList=1; }
+      echo "<li>${line#- }</li>"
+      continue
+    fi
+    [ $inList -eq 0 ] || { echo "</ul>"; inList=0; }
+    if [[ $line == "## "* ]]; then echo "<h3>${line#\#\# }</h3>"
+    elif [ -n "$line" ]; then echo "<p>$line</p>"
+    fi
+  done < "$NOTES_FILE"
+  [ $inList -eq 0 ] || echo "</ul>"
 } > "$OUT/$NAME.html"
-NOTES=$(sed 's/^/- /' <<<"$SUBJECTS")
 
 cp "$OUT/$NAME.zip" "$OUT/$NAME.html" "$OUT/feed/"
 "$SPARKLE_BIN/generate_appcast" --maximum-deltas 0 --embed-release-notes \
@@ -102,5 +108,5 @@ if [ $DRY -eq 1 ]; then
 fi
 
 gh release create "$TAG" --repo "$REPO" --target "$(git rev-parse HEAD)" --latest \
-  --title "Ta Da $VERSION ($BUILD)" --notes "$NOTES" \
+  --title "Ta Da $VERSION ($BUILD)" --notes-file "$NOTES_FILE" \
   "$OUT/$NAME.zip" "$OUT/$NAME.dmg" "$OUT/appcast.xml"
