@@ -126,8 +126,9 @@ extension View {
 }
 
 /// The rail and panel over a document's scroll view. `isOpen` is the one animated value: it slides the mounted panel in from the
-/// editor's right edge and fades it, and fades the rail out. The overlay's one hover tracker tests the pointer against the rail's
-/// frame and the panel's resting frame, and one cancellable task opens or closes after a delay.
+/// editor's right edge and fades it, and fades the rail out. The content's hover tracker tests the pointer against the rail's
+/// frame and the panel's resting frame, the open panel tracks the pointer over itself, and one cancellable task opens or closes
+/// after a delay.
 private struct TocPanelModifier: ViewModifier {
     let model: AppModel
     let document: OpenDocument
@@ -139,6 +140,10 @@ private struct TocPanelModifier: ViewModifier {
     @State private var railFrame = CGRect.zero
     @State private var panelHeight: CGFloat = 0
     @State private var overlayOrigin = CGPoint.zero
+    @State private var viewportSize = CGSize.zero
+    /// Where the pointer is: the page reports the rail's zone, the open panel reports itself, since it takes the hover over it.
+    @State private var onRail = false
+    @State private var onPanel = false
 
     private static let space = "tocPanel"
     private static let openDelay = Duration.milliseconds(50)
@@ -155,7 +160,13 @@ private struct TocPanelModifier: ViewModifier {
         let toc = (model.index[document.path] ?? document.item).map { TocContent(item: $0, index: model.index) }
         view
             .onContinuousHover { phase in
-                if case .active = phase, state.typing { state.typing = false }
+                switch phase {
+                case .active(let point):
+                    if state.typing { state.typing = false }
+                    onRail = toc?.hasRail == true && hoverZone(in: viewportSize).contains(point)
+                case .ended: onRail = false
+                }
+                setWantsOpen(onRail || onPanel)
             }
             .onChange(of: document.path, initial: true) {
                 state.typing = false
@@ -182,12 +193,7 @@ private struct TocPanelModifier: ViewModifier {
             panelStack(toc, current: current, viewport: viewport.size)
                 .coordinateSpace(.named(Self.space))
                 .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { overlayOrigin = $0 }
-                .onContinuousHover { phase in
-                    switch phase {
-                    case .active(let point): setWantsOpen(hoverZone(in: viewport.size).contains(point))
-                    case .ended: setWantsOpen(false)
-                    }
-                }
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { viewportSize = $0 }
         }
     }
 
@@ -216,6 +222,10 @@ private struct TocPanelModifier: ViewModifier {
                 .offset(x: isOpen ? 0 : Self.panelWidth + Self.panelTrailing)
                 .opacity(isOpen ? 1 : 0)
                 .allowsHitTesting(isOpen)
+                .onHover { hovering in
+                    onPanel = hovering
+                    setWantsOpen(onRail || onPanel)
+                }
                 .accessibilityHidden(!isOpen)
                 .padding(.top, Self.panelTop)
                 .padding(.trailing, Self.panelTrailing)

@@ -28,7 +28,7 @@ extension AppModel {
         for (path, text) in [
             ("Ta Da/tasks/Alpha.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\nFirst line.\n"),
             ("Ta Da/tasks/Beta.md", "---\ntype: task\nstatus: Not Started\ndueDate: \(today)\n---\n"),
-            ("Ta Da/projects/Website.md", "---\ntype: project\nstatus: Doing\n---\n"),
+            ("Ta Da/projects/Website.md", "---\ntype: project\nstatus: Doing\ntags: [web]\n---\n# Plan\n"),
             ("Ta Da/projects/Roadmap.md", "---\ntype: project\nstatus: Doing\n---\n"),
         ] + (1...25).map({ n in
             // Enough linked tasks that a new one's row starts below the project page's fold.

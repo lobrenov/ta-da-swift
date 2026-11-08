@@ -190,6 +190,69 @@ final class TaDaUITests: XCTestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
+    /// Website's page: a `web` tag and a `# Plan` heading, so it has a rail.
+    private func openWebsitePage() {
+        app.buttons.matching(NSPredicate(format: "label == 'Website'")).firstMatch.click()
+        app.buttons["Open project file"].click()
+        XCTAssertTrue(app.descendants(matching: .any)["Tag web"].firstMatch.waitForExistence(timeout: 5), "the project page is open")
+    }
+
+    private func pause(_ seconds: TimeInterval) {
+        RunLoop.current.run(until: .now.addingTimeInterval(seconds))
+    }
+
+    /// Whether `element` draws differently with the pointer over it than with the pointer at `away`.
+    private func drawsDifferentlyUnderThePointer(_ element: XCUIElement, away: XCUICoordinate) -> Bool {
+        away.hover()
+        pause(0.5)
+        let resting = element.screenshot().pngRepresentation
+        element.hover()
+        pause(0.5)
+        return element.screenshot().pngRepresentation != resting
+    }
+
+    /// Somewhere on the page that's no control: left of the title.
+    private var awayFromControls: XCUICoordinate { title.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: -8, dy: 0)) }
+
+    func testThePropertiesRailRespondsToThePointerOnAPageWithARail() throws {
+        openWebsitePage()
+        let chip = app.descendants(matching: .any)["Tag web"].firstMatch
+        let resting = chip.frame.width
+        chip.hover()
+        let deadline = Date.now.addingTimeInterval(3)
+        while chip.frame.width <= resting, Date.now < deadline { pause(0.1) }
+        XCTAssertGreaterThan(chip.frame.width, resting, "the tag chip makes room for × under the pointer")
+
+        XCTAssertTrue(drawsDifferentlyUnderThePointer(app.buttons["Status"], away: awayFromControls), "Status lights under the pointer")
+        XCTAssertTrue(drawsDifferentlyUnderThePointer(app.buttons["Add a tag"], away: awayFromControls), "+ Tag lights under the pointer")
+    }
+
+    func testTheTocPanelOpensOverItsRailStaysOpenAndClosesAway() throws {
+        openWebsitePage()
+        let rail = app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Contents and links'")).firstMatch
+        XCTAssertTrue(rail.waitForExistence(timeout: 5), "the page has a rail")
+        let onRail = rail.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let plan = app.buttons["Plan"]
+        XCTAssertFalse(plan.exists, "the panel starts closed")
+
+        onRail.hover()
+        XCTAssertTrue(plan.waitForExistence(timeout: 2), "the panel opens over the rail")
+        for _ in 0..<15 {
+            pause(0.1)
+            XCTAssertTrue(plan.exists, "the panel stays open while the pointer is on the rail")
+        }
+
+        plan.hover()
+        for _ in 0..<15 {
+            pause(0.1)
+            XCTAssertTrue(plan.exists, "the panel stays open while the pointer is on it")
+        }
+
+        awayFromControls.hover()
+        let closed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: plan)
+        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 2), .completed, "the panel closes when the pointer leaves")
+    }
+
     func testTheProjectPagesTasksTableEditsInPlace() throws {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Roadmap'")).firstMatch.click()
         app.buttons["Open project file"].click()
