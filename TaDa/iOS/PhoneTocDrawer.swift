@@ -51,6 +51,8 @@ private struct PhoneTocDrawerLayer: View {
     let open: (String) -> Void
     /// How far open the drawer is, 0 to 1.
     @State private var progress: CGFloat = 0
+    /// A drag to close moved sideways: the row under it doesn't take the touch as a tap.
+    @State private var isClosing = false
     @Environment(\.theme) private var theme
 
     var body: some View {
@@ -112,9 +114,16 @@ private struct PhoneTocDrawerLayer: View {
         DragGesture(minimumDistance: 12)
             .onChanged { drag in
                 guard abs(drag.translation.width) > abs(drag.translation.height) else { return }
+                isClosing = true
                 progress = TocDrawerRules.progress(start: 1, translation: drag.translation.width)
             }
-            .onEnded { drag in settle(velocity: abs(drag.translation.width) > abs(drag.translation.height) ? drag.velocity.width : 0) }
+            .onEnded { drag in
+                settle(velocity: abs(drag.translation.width) > abs(drag.translation.height) ? drag.velocity.width : 0)
+                Task {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    isClosing = false
+                }
+            }
     }
 
     private func list(_ toc: TocContent, top: CGFloat, bottom: CGFloat) -> some View {
@@ -138,6 +147,7 @@ private struct PhoneTocDrawerLayer: View {
             .padding(.bottom, bottom)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .scrollEdgeEffectHidden(true, for: .top)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Contents and links")
     }
@@ -175,7 +185,7 @@ private struct PhoneTocDrawerLayer: View {
 
     private func row(_ title: String, indent: CGFloat, icon: LinkChoice.Icon? = nil, hint: String = "", isCurrent: Bool = false,
                      isUnresolved: Bool = false, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button { if !isClosing { action() } } label: {
             HStack(spacing: 12) {
                 if let icon {
                     LinkChoiceIcon(icon: icon, search: Self.search, theme: theme)
