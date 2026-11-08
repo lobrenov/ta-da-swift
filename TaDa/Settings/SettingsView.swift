@@ -35,8 +35,7 @@ private struct SettingsWindow: View {
             .padding(.vertical, 14)
             .frame(width: 200)
             .frame(maxHeight: .infinity, alignment: .top)
-            .background(theme.color(\.side))
-            Hairline(axis: .vertical)
+            .background { theme.color(\.side).ignoresSafeArea() }
             ScrollView {
                 switch page {
                 case .vault: VaultSettingsView(model: model)
@@ -50,14 +49,14 @@ private struct SettingsWindow: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(theme.color(\.bg))
+            .background { theme.color(\.bg).ignoresSafeArea() }
         }
-        .overlay(alignment: .top) { Hairline() }
         .foregroundStyle(theme.color(\.fg))
         .font(.system(size: 13))
         .frame(width: 900, height: 594)
         .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
-        .containerBackground(theme.color(\.side), for: .window)
+        .toolbar(removing: .title)
+        .containerBackground(theme.color(\.bg), for: .window)
     }
 
     private func row(_ page: Page, _ title: String, systemImage: String, tint: KeyPath<Theme, NSColor>) -> some View {
