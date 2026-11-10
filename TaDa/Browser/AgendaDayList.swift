@@ -148,7 +148,6 @@ struct AgendaNoteRow: View {
             Button { Task { await model.openOrCreateNote(for: period) } } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "plus").font(.system(size: 12, weight: .semibold)).accessibilityHidden(true)
-                    Text(isDay ? "Start this day’s note" : "Start the week note").foregroundStyle(theme.color(\.fg))
                     Spacer(minLength: 8)
                     Text(file).font(.system(size: 11.5, design: .monospaced))
                 }

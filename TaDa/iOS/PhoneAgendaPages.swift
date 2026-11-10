@@ -316,8 +316,7 @@ private struct AgendaNote: View {
     }
 
     private var startRow: some View {
-        let title = isDay ? "Start this day’s note" : "Start the week note"
-        return Button {
+        Button {
             Task {
                 await model.openOrCreateNote(for: period)
                 if let path = model.selection { nav.push(.file(path)) }
@@ -325,7 +324,6 @@ private struct AgendaNote: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "plus").scaledFont(size: 17, weight: .semibold).accessibilityHidden(true)
-                Text(title).scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.fg))
                 Spacer(minLength: 8)
                 Text(file).scaledFont(size: 13).lineLimit(1)
             }
