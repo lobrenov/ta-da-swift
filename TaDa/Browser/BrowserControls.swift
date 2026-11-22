@@ -95,8 +95,8 @@ final class BrowserMenus {
                 self?.close()
                 if let list = context.list { context.model.setGrouping(group.grouping, of: list) }
             case let .tag(tag):
-                context.model.toggleFilterTag(tag.tag.path, on: context.domain)
-                self?.show(keeping: tag.tag.path)
+                context.model.toggleFilterTag(tag.path, on: context.domain)
+                self?.show(keeping: tag.path)
             }
         }
     }
@@ -196,11 +196,11 @@ struct FilterTagChoiceRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "tag")
+            Image(systemName: choice.tag == nil ? "tag.slash" : "tag")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(theme.color(\.accent))
                 .frame(width: 16)
-            TagName(tag: choice.tag)
+            FilterTagName(tag: choice.tag)
                 .foregroundStyle(theme.color(isHighlighted ? \.strong : \.fg))
                 .lineLimit(1)
             Spacer(minLength: 8)
@@ -351,12 +351,9 @@ struct TagFilterRow: View {
     var body: some View {
         let filter = model.tagFilter(on: domain)
         if filter.isActive {
-            let tags = TagFilter.tags(of: items)
             WrappingHStack(spacing: 6) {
                 ForEach(filter.picked.sorted(), id: \.self) { path in
-                    if let tag = tags.first(where: { $0.tag.path == path })?.tag ?? Tag(path) {
-                        PickedTagChip(tag: tag) { model.toggleFilterTag(path, on: domain) }
-                    }
+                    PickedTagChip(tag: TagFilter.pickedTag(path, in: items)) { model.toggleFilterTag(path, on: domain) }
                 }
                 Text("\(shown.0) of \(shown.1) shown")
                     .font(.system(size: 11.5))
@@ -378,16 +375,17 @@ struct TagFilterRow: View {
 
 /// A picked tag: a filled tag chip whose × unpicks it.
 private struct PickedTagChip: View {
-    let tag: Tag
+    /// Nil for No tag.
+    let tag: Tag?
     let remove: () -> Void
     @Environment(\.theme) private var theme
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "tag")
+            Image(systemName: tag == nil ? "tag.slash" : "tag")
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundStyle(theme.color(\.accent))
-            TagName(tag: tag).foregroundStyle(theme.color(\.strong))
+            FilterTagName(tag: tag).foregroundStyle(theme.color(\.strong))
             Button(action: remove) {
                 Image(systemName: "xmark")
                     .font(.system(size: 8, weight: .bold))
@@ -396,7 +394,7 @@ private struct PickedTagChip: View {
                     .contentShape(.circle)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Stop filtering by \(tag.name)")
+            .accessibilityLabel("Stop filtering by \(tag?.name ?? "No tag")")
         }
         .lineLimit(1)
         .padding(.leading, 9)
@@ -405,7 +403,7 @@ private struct PickedTagChip: View {
         .background(theme.tagFill(), in: .capsule)
         .overlay(Capsule().strokeBorder(theme.tagRing))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Filtering by tag \(tag.name)")
+        .accessibilityLabel(tag.map { "Filtering by tag \($0.name)" } ?? "Filtering by No tag")
         .accessibilityActions { Button("Stop filtering", action: remove) }
     }
 }

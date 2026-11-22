@@ -43,4 +43,12 @@ struct GroupFilterMenuTests {
         let groupings = GroupedList.project.groupings.count
         #expect(menu(picked: ["ux"], keeping: "ux").highlight == groupings + 2)
     }
+
+    @Test func noTagLeadsTheTagsWhileAFileHasNoneOrItsPicked() {
+        let untagged = Item(parsing: "---\ntype: task\nstatus: Doing\n---\n", path: "Ta Da/tasks/C.md")!
+        let shown = GroupFilterChoice.menu(groupings: nil, items: items + [untagged], picked: [], query: "", keeping: nil)
+        #expect(shown.sections.map { $0.items.map(\.title) } == [["No tag", "bug", "dev", "ux"]])
+        #expect(menu(picked: [TagFilter.untagged]).titles.last == ["No tag", "bug", "dev", "ux"], "kept while picked")
+        #expect(menu().titles.last == ["bug", "dev", "ux"], "every file has a tag")
+    }
 }

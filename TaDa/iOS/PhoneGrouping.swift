@@ -56,32 +56,30 @@ struct PhoneTagFilterBar: View {
         let filter = model.tagFilter(on: domain)
         if filter.isActive {
             WrappingHStack(spacing: 8) {
-                let tags = TagFilter.tags(of: items)
                 ForEach(filter.picked.sorted(), id: \.self) { path in
-                    if let tag = tags.first(where: { $0.tag.path == path })?.tag ?? Tag(path) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "tag").scaledFont(size: 12, weight: .semibold).foregroundStyle(theme.color(\.accent))
-                            TagName(tag: tag).foregroundStyle(theme.color(\.strong)).lineLimit(1)
-                            Button {
-                                nav.play(.pick)
-                                model.toggleFilterTag(path, on: domain)
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .scaledFont(size: 11, weight: .bold)
-                                    .foregroundStyle(theme.color(\.muted))
-                                    .frame(width: 44, height: 44)
-                                    .contentShape(.rect)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Stop filtering by \(tag.name)")
+                    let tag = TagFilter.pickedTag(path, in: items)
+                    HStack(spacing: 6) {
+                        Image(systemName: tag == nil ? "tag.slash" : "tag").scaledFont(size: 12, weight: .semibold).foregroundStyle(theme.color(\.accent))
+                        FilterTagName(tag: tag).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+                        Button {
+                            nav.play(.pick)
+                            model.toggleFilterTag(path, on: domain)
+                        } label: {
+                            Image(systemName: "xmark")
+                                .scaledFont(size: 11, weight: .bold)
+                                .foregroundStyle(theme.color(\.muted))
+                                .frame(width: 44, height: 44)
+                                .contentShape(.rect)
                         }
-                        .padding(.leading, 11)
-                        .padding(.trailing, -6)
-                        .frame(height: 32)
-                        .background(theme.tagFill(), in: .capsule)
-                        .overlay(Capsule().strokeBorder(theme.tagRing))
-                        .padding(.trailing, 8)
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Stop filtering by \(tag?.name ?? "No tag")")
                     }
+                    .padding(.leading, 11)
+                    .padding(.trailing, -6)
+                    .frame(height: 32)
+                    .background(theme.tagFill(), in: .capsule)
+                    .overlay(Capsule().strokeBorder(theme.tagRing))
+                    .padding(.trailing, 8)
                 }
                 Text("\(shown) of \(items.count) shown")
                     .scaledFont(size: 13)
@@ -118,7 +116,7 @@ struct PhoneTagFilterSheet: View {
             List {
                 let menu = FilterTagChoice.menu(items: items, picked: filter.picked, query: query, keeping: nil)
                 Section {
-                    ForEach(menu.sections.flatMap(\.items), id: \.tag.path) { row($0) }
+                    ForEach(menu.sections.flatMap(\.items), id: \.path) { row($0) }
                 } header: {
                     Text("Tags in this view")
                 } footer: {
@@ -147,11 +145,11 @@ struct PhoneTagFilterSheet: View {
     private func row(_ choice: FilterTagChoice) -> some View {
         Button {
             nav.play(.pick)
-            model.toggleFilterTag(choice.tag.path, on: domain)
+            model.toggleFilterTag(choice.path, on: domain)
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: "tag").foregroundStyle(theme.color(\.accent))
-                TagName(tag: choice.tag).foregroundStyle(theme.color(\.fg)).lineLimit(1)
+                Image(systemName: choice.tag == nil ? "tag.slash" : "tag").foregroundStyle(theme.color(\.accent))
+                FilterTagName(tag: choice.tag).foregroundStyle(theme.color(\.fg)).lineLimit(1)
                 Spacer()
                 Text("\(choice.count)").foregroundStyle(theme.color(\.muted))
                 Image(systemName: "checkmark")

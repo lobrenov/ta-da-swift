@@ -68,6 +68,12 @@ private func titles(_ sections: [ListSection]) -> [String] {
     #expect(TagFilter(picked: ["hom"]).apply(tasks).isEmpty, "a prefix isn't a parent")
 }
 
+@Test func tagFilterNoTagPassesFilesWithoutTagsAlongsidePickedTags() {
+    #expect(TagFilter(picked: [TagFilter.untagged]).apply(tasks).map(\.title) == ["Deadline today", "Dropped"])
+    #expect(TagFilter(picked: [TagFilter.untagged, "bug"]).apply(tasks).map(\.title) == ["Overdue", "Deadline today", "Undated", "Dropped"])
+    #expect(TagFilter(picked: [TagFilter.untagged]).isActive)
+}
+
 @Test func tagFilterListsTheTagsOfTheFilesWithCounts() {
     let tags = TagFilter.tags(of: tasks).map { "\($0.tag.name) \($0.count)" }
     #expect(tags == ["bug 2", "dev 1", "Home 2", "Home/Garden 1"], "a parent counts its children’s files, spelt as first met")

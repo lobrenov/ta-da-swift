@@ -91,11 +91,14 @@ public struct ListSection: Hashable, Sendable, Identifiable {
     }
 }
 
-/// The tags picked to narrow a list. A file passes when it carries a picked tag or a child of one; with none picked,
-/// every file passes.
+/// The tags picked to narrow a list. A file passes when it carries a picked tag or a child of one, or carries no tag
+/// while `untagged` is picked; with none picked, every file passes.
 public struct TagFilter: Hashable, Sendable {
-    /// Picked tags' paths.
+    /// Picked tags' paths, and `untagged` for No tag.
     public var picked: Set<String>
+
+    /// No tag's pick: an empty path, which no tag has.
+    public static let untagged = ""
 
     public init(picked: Set<String> = []) {
         self.picked = picked
@@ -105,6 +108,7 @@ public struct TagFilter: Hashable, Sendable {
 
     public func matches(_ item: Item) -> Bool {
         guard isActive else { return true }
+        if item.tags.isEmpty { return picked.contains(Self.untagged) }
         return item.tags.contains { use in
             picked.contains(use.tag.path) || picked.contains { use.tag.path.hasPrefix($0 + "/") }
         }
