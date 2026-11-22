@@ -152,7 +152,8 @@ struct FloatingAddButton: View {
     }
 }
 
-/// Files matching every word of `query`: projects first, then tasks, each with the line that matched.
+/// Files and folders matching every word of `query`: areas, projects, tasks, notes, then folders, tasks with the line
+/// that matched.
 struct PhoneSearchResults: View {
     let model: AppModel
     let query: String
@@ -165,9 +166,15 @@ struct PhoneSearchResults: View {
         let projects = results.filter { $0.properties.kind == .project }
         let tasks = results.filter { $0.properties.kind == .task }
         let notes = results.filter { $0.properties.kind == .note }
+        let areas = results.filter { $0.properties.kind == .area }
+        let folders = FolderNode.search(query, in: model.folderTree)
         LazyVStack(alignment: .leading, spacing: 0) {
-            if projects.isEmpty, tasks.isEmpty, notes.isEmpty {
+            if results.isEmpty, folders.isEmpty {
                 ContentUnavailableView.search(text: query).padding(.top, 60)
+            }
+            if !areas.isEmpty {
+                PhoneSectionHeader(title: "Areas")
+                ForEach(areas) { PhoneAreaRow(model: model, area: $0) }
             }
             if !projects.isEmpty {
                 PhoneSectionHeader(title: "Projects")
@@ -202,6 +209,31 @@ struct PhoneSearchResults: View {
             if !notes.isEmpty {
                 PhoneSectionHeader(title: "Notes", count: notes.count)
                 ForEach(notes) { PhoneNoteRow(model: model, note: $0) }
+            }
+            if !folders.isEmpty {
+                PhoneSectionHeader(title: "Folders", count: folders.count)
+                ForEach(folders) { folder in
+                    Button { nav.push(.folder(folder.path)) } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "folder")
+                                .scaledFont(size: 18)
+                                .foregroundStyle(theme.color(\.link))
+                                .frame(width: 24)
+                            Text(highlighted(folder.name, words))
+                                .scaledFont(size: 17)
+                                .foregroundStyle(theme.color(\.fg))
+                            Spacer()
+                            Text(folder.count == 1 ? "1 note" : "\(folder.count) notes")
+                                .scaledFont(size: 15)
+                                .foregroundStyle(theme.color(\.muted))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(Vault.folder(of: folder.path).isEmpty ? "Folder" : "Folder in \(Vault.folder(of: folder.path))")
+                }
             }
             PickingBarClearance()
         }

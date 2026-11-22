@@ -52,6 +52,15 @@ private func describe(_ nodes: [FolderNode], depth: Int = 0) -> [String] {
     ])
 }
 
+@Test func folderSearchMatchesNamesAtAnyDepthIgnoringCase() async {
+    let tree = await noteIndex().folderTree(folders: Vault(root: noteVault).emptyFolders())
+    #expect(FolderNode.search("meet", in: tree).map(\.path) == ["Meetings"])
+    #expect(FolderNode.search("CLI", in: tree).map(\.path) == ["Work/Clients"])
+    #expect(FolderNode.search("e", in: tree).map(\.path) == ["Empty", "Meetings", "Typed", "Work/Clients"])
+    #expect(FolderNode.search("meetings 2026", in: tree).isEmpty, "every word in the folder's own name")
+    #expect(FolderNode.search(" ", in: tree).isEmpty)
+}
+
 @Test func aKnownFolderStaysWhenItsLastNoteGoes() async {
     var index = await noteIndex()
     let known = Set(index.notes.map { Vault.folder(of: $0.path) }.filter { !$0.isEmpty })

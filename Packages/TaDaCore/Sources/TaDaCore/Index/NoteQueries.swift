@@ -10,6 +10,20 @@ public struct FolderNode: Hashable, Sendable, Identifiable {
     public var children: [FolderNode]
 
     public var id: String { path }
+
+    /// The folders in `tree`, at any depth, whose name contains every word of `query`, ignoring case and diacritics,
+    /// by path.
+    public static func search(_ query: String, in tree: [FolderNode]) -> [FolderNode] {
+        let words = query.split(whereSeparator: \.isWhitespace)
+        guard !words.isEmpty else { return [] }
+        func hits(_ nodes: [FolderNode]) -> [FolderNode] {
+            nodes.flatMap { node in
+                let found = words.allSatisfy { node.name.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
+                return (found ? [node] : []) + hits(node.children)
+            }
+        }
+        return hits(tree)
+    }
 }
 
 /// The Notes queries. Loose is the vault's top level, written as the folder `""`.
