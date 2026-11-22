@@ -358,6 +358,34 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         for name in ["a", "B C", "missing"] {
             add("TagEditor.removeTag", "\(label) \(name)", ["tag": name], input: text) { FrontmatterEditor.removeTag(tag(name), in: $0) }
         }
+        for (from, to) in [("a", "x"), ("A", "B C"), ("b c", "a"), ("a", "Café, x"), ("missing", "x")] {
+            add("TagEditor.renameTag", "\(label) \(from) to \(to)", ["tag": from, "to": to], input: text) {
+                FrontmatterEditor.renameTag(tag(from), to: tag(to), in: $0)
+            }
+        }
+        for name in ["a", "B C", "missing"] {
+            add("TagEditor.deleteTag", "\(label) \(name)", ["tag": name], input: text) { FrontmatterEditor.deleteTag(tag(name), in: $0) }
+        }
+    }
+    let tagged: [(String, String)] = [
+        ("flow with body", "---\ntype: task\ntags: [home, home/garden, work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#home\n"),
+        ("block with body", "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n"),
+        ("body only", "Todo #home/garden; #home\n\n```\n#home\n```\n"),
+        ("comment value with body", "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n"),
+    ]
+    for (label, text) in tagged {
+        for (from, to) in [("home", "house"), ("work", "Work"), ("home", "work")] {
+            add("TagEditor.rename", "\(label) \(from) to \(to)", ["tag": from, "to": to], input: text) {
+                let edited = TagEditor.rename(tag(from), to: tag(to), in: $0)
+                return ["text": edited.text, "unspliceable": edited.unspliceable] as [String: Any]
+            }
+        }
+        for name in ["home", "work", "missing"] {
+            add("TagEditor.delete", "\(label) \(name)", ["tag": name], input: text) {
+                let edited = TagEditor.delete(tag(name), in: $0)
+                return ["text": edited.text, "unspliceable": edited.unspliceable] as [String: Any]
+            }
+        }
     }
 
     // Parent

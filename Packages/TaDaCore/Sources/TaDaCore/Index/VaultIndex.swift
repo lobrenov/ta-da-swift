@@ -81,6 +81,11 @@ public struct VaultIndex: Sendable {
     /// The paths of the items that carry this tag path itself, not its children.
     func paths(carrying path: String) -> Set<String> { pathsByTag[path] ?? [] }
 
+    /// The paths of the items that carry this tag or any child of it, logged ones included, sorted.
+    public func paths(carryingOrUnder tag: Tag) -> [String] {
+        Set(pathsByTag.filter { $0.key == tag.path || tag.isAncestor(of: Tag($0.key)!) }.values.joined()).sorted()
+    }
+
     /// Items with this title, ignoring case: live tasks, projects and areas, then notes, then logged files, each by path.
     public func items(titled title: String) -> [Item] {
         (pathsByTitle[title.lowercased()] ?? []).compactMap { items[$0] }

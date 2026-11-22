@@ -3362,6 +3362,160 @@
     },
     {
       "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "TagEditor.renameTag task a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "TagEditor.renameTag task a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "TagEditor.renameTag task A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "TagEditor.renameTag task A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "TagEditor.renameTag task b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "TagEditor.renameTag task b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "TagEditor.renameTag task a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "TagEditor.renameTag task a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "TagEditor.renameTag task missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "TagEditor.renameTag task missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "TagEditor.deleteTag task a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "TagEditor.deleteTag task a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "TagEditor.deleteTag task B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "TagEditor.deleteTag task B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "input" : "---\ntype: task\nstatus: Not Started\n---\n",
+      "name" : "TagEditor.deleteTag task missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Not Started\r\n---\r\n",
+      "name" : "TagEditor.deleteTag task missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
         "tag" : "new"
       },
       "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\ntags: [new]\n---\nBody text.\n\n- [ ] one\n",
@@ -3467,6 +3621,160 @@
       "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
       "name" : "TagEditor.removeTag task with body missing (CRLF)",
       "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "TagEditor.renameTag task with body a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "TagEditor.renameTag task with body a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "TagEditor.renameTag task with body A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "TagEditor.renameTag task with body A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "TagEditor.renameTag task with body b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "TagEditor.renameTag task with body b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "TagEditor.renameTag task with body a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "TagEditor.renameTag task with body a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "TagEditor.renameTag task with body missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "TagEditor.renameTag task with body missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "TagEditor.deleteTag task with body a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "TagEditor.deleteTag task with body a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "TagEditor.deleteTag task with body B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "TagEditor.deleteTag task with body B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "input" : "---\ntype: task\nstatus: Doing\ndueDate: 2026-10-05\nproject: \"[[Garden]]\"\n---\nBody text.\n\n- [ ] one\n",
+      "name" : "TagEditor.deleteTag task with body missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-05\r\nproject: \"[[Garden]]\"\r\n---\r\nBody text.\r\n\r\n- [ ] one\r\n",
+      "name" : "TagEditor.deleteTag task with body missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
     },
     {
       "args" : {
@@ -3578,6 +3886,160 @@
     },
     {
       "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "TagEditor.renameTag comments a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag comments a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "TagEditor.renameTag comments A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag comments A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "TagEditor.renameTag comments b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag comments b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "TagEditor.renameTag comments a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag comments a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "TagEditor.renameTag comments missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag comments missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "TagEditor.deleteTag comments a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.deleteTag comments a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "TagEditor.deleteTag comments B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.deleteTag comments B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "input" : "---\n# a comment\ntype: task # trailing\nstatus: Doing   # c\ndueDate: 2026-10-05 # d\n# end\n---\nBody\n",
+      "name" : "TagEditor.deleteTag comments missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "input" : "---\r\n# a comment\r\ntype: task # trailing\r\nstatus: Doing   # c\r\ndueDate: 2026-10-05 # d\r\n# end\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.deleteTag comments missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
         "tag" : "new"
       },
       "expected" : "---\ntype: task\nstatus: Doing\ntags: [new]\n---\nBody",
@@ -3683,6 +4145,160 @@
       "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
       "name" : "TagEditor.removeTag no trailing newline missing (CRLF)",
       "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "TagEditor.renameTag no trailing newline a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "TagEditor.renameTag no trailing newline a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "TagEditor.renameTag no trailing newline A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "TagEditor.renameTag no trailing newline A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "TagEditor.renameTag no trailing newline b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "TagEditor.renameTag no trailing newline b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "TagEditor.renameTag no trailing newline a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "TagEditor.renameTag no trailing newline a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "TagEditor.renameTag no trailing newline missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "TagEditor.renameTag no trailing newline missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "TagEditor.deleteTag no trailing newline a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "TagEditor.deleteTag no trailing newline a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "TagEditor.deleteTag no trailing newline B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "TagEditor.deleteTag no trailing newline B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "input" : "---\ntype: task\nstatus: Doing\n---\nBody",
+      "name" : "TagEditor.deleteTag no trailing newline missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody",
+      "name" : "TagEditor.deleteTag no trailing newline missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
     },
     {
       "args" : {
@@ -3794,6 +4410,160 @@
     },
     {
       "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "Just text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "TagEditor.renameTag no frontmatter a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "Just text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "TagEditor.renameTag no frontmatter a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "Just text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "TagEditor.renameTag no frontmatter A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "Just text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "TagEditor.renameTag no frontmatter A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "Just text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "TagEditor.renameTag no frontmatter b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "Just text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "TagEditor.renameTag no frontmatter b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "Just text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "TagEditor.renameTag no frontmatter a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "Just text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "TagEditor.renameTag no frontmatter a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "Just text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "TagEditor.renameTag no frontmatter missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "Just text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "TagEditor.renameTag no frontmatter missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "Just text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "TagEditor.deleteTag no frontmatter a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "Just text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "TagEditor.deleteTag no frontmatter a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "Just text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "TagEditor.deleteTag no frontmatter B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "Just text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "TagEditor.deleteTag no frontmatter B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "Just text\n- [ ] box\n",
+      "input" : "Just text\n- [ ] box\n",
+      "name" : "TagEditor.deleteTag no frontmatter missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "Just text\r\n- [ ] box\r\n",
+      "input" : "Just text\r\n- [ ] box\r\n",
+      "name" : "TagEditor.deleteTag no frontmatter missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
         "tag" : "new"
       },
       "expected" : "",
@@ -3899,6 +4669,160 @@
       "input" : "",
       "name" : "TagEditor.removeTag empty file missing (CRLF)",
       "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.renameTag empty file missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.deleteTag empty file a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.deleteTag empty file a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.deleteTag empty file B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.deleteTag empty file B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.deleteTag empty file missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "",
+      "input" : "",
+      "name" : "TagEditor.deleteTag empty file missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
     },
     {
       "args" : {
@@ -4010,6 +4934,160 @@
     },
     {
       "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "TagEditor.renameTag empty keys a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "TagEditor.renameTag empty keys a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "TagEditor.renameTag empty keys A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "TagEditor.renameTag empty keys A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "TagEditor.renameTag empty keys b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "TagEditor.renameTag empty keys b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "TagEditor.renameTag empty keys a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "TagEditor.renameTag empty keys a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "TagEditor.renameTag empty keys missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "TagEditor.renameTag empty keys missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "TagEditor.deleteTag empty keys a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "TagEditor.deleteTag empty keys a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "TagEditor.deleteTag empty keys B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "TagEditor.deleteTag empty keys B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "input" : "---\ntype: task\nstatus:\nproject:\ncompletedDate:\ntags:\n---\n",
+      "name" : "TagEditor.deleteTag empty keys missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus:\r\nproject:\r\ncompletedDate:\r\ntags:\r\n---\r\n",
+      "name" : "TagEditor.deleteTag empty keys missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
         "tag" : "new"
       },
       "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d, new]\n---\n",
@@ -4115,6 +5193,160 @@
       "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
       "name" : "TagEditor.removeTag flow tags missing (CRLF)",
       "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [x, \"b c\", d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "TagEditor.renameTag flow tags a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [x, \"b c\", d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "TagEditor.renameTag flow tags a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [\"b c\", d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "TagEditor.renameTag flow tags A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [\"b c\", d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "TagEditor.renameTag flow tags A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "TagEditor.renameTag flow tags b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "TagEditor.renameTag flow tags b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [\"Café, x\", \"b c\", d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "TagEditor.renameTag flow tags a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [\"Café, x\", \"b c\", d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "TagEditor.renameTag flow tags a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "TagEditor.renameTag flow tags missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "TagEditor.renameTag flow tags missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [\"b c\", d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "TagEditor.deleteTag flow tags a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [\"b c\", d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "TagEditor.deleteTag flow tags a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "TagEditor.deleteTag flow tags B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "TagEditor.deleteTag flow tags B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-09-01\ntags: [a, \"b c\", d]\n---\n",
+      "name" : "TagEditor.deleteTag flow tags missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\ncreatedDate: 2026-09-01\r\ntags: [a, \"b c\", d]\r\n---\r\n",
+      "name" : "TagEditor.deleteTag flow tags missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
     },
     {
       "args" : {
@@ -4226,6 +5458,160 @@
     },
     {
       "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\ntags:\n  - x\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "TagEditor.renameTag block tags a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\ntags:\r\n  - x\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "TagEditor.renameTag block tags a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\ntags:\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "TagEditor.renameTag block tags A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\ntags:\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "TagEditor.renameTag block tags A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\ntags:\n  - a\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "TagEditor.renameTag block tags b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\ntags:\r\n  - a\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "TagEditor.renameTag block tags b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\ntags:\n  - Café, x\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "TagEditor.renameTag block tags a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\ntags:\r\n  - Café, x\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "TagEditor.renameTag block tags a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "TagEditor.renameTag block tags missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "TagEditor.renameTag block tags missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\ntags:\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "TagEditor.deleteTag block tags a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\ntags:\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "TagEditor.deleteTag block tags a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\ntags:\n  - a\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "TagEditor.deleteTag block tags B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\ntags:\r\n  - a\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "TagEditor.deleteTag block tags B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "input" : "---\ntype: task\ntags:\n  - a\n  - \"b c\"\ncreatedDate: 2026-09-01\n---\n",
+      "name" : "TagEditor.deleteTag block tags missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - a\r\n  - \"b c\"\r\ncreatedDate: 2026-09-01\r\n---\r\n",
+      "name" : "TagEditor.deleteTag block tags missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
         "tag" : "new"
       },
       "expected" : "---\ntype: task\ntags: [a, b, new]\n---\n",
@@ -4331,6 +5717,160 @@
       "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
       "name" : "TagEditor.removeTag string tags missing (CRLF)",
       "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\ntags: [x, b]\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "TagEditor.renameTag string tags a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: [x, b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "TagEditor.renameTag string tags a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\ntags: [B C, b]\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "TagEditor.renameTag string tags A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: [B C, b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "TagEditor.renameTag string tags A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\ntags: a, b\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "TagEditor.renameTag string tags b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "TagEditor.renameTag string tags b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\ntags: [\"Café, x\", b]\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "TagEditor.renameTag string tags a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: [\"Café, x\", b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "TagEditor.renameTag string tags a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\ntags: a, b\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "TagEditor.renameTag string tags missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "TagEditor.renameTag string tags missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\ntags: [b]\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "TagEditor.deleteTag string tags a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: [b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "TagEditor.deleteTag string tags a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\ntags: a, b\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "TagEditor.deleteTag string tags B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "TagEditor.deleteTag string tags B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\ntags: a, b\n---\n",
+      "input" : "---\ntype: task\ntags: a, b\n---\n",
+      "name" : "TagEditor.deleteTag string tags missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: a, b\r\n---\r\n",
+      "name" : "TagEditor.deleteTag string tags missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
     },
     {
       "args" : {
@@ -4442,6 +5982,160 @@
     },
     {
       "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : null,
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "TagEditor.renameTag tags with comment a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : null,
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "TagEditor.renameTag tags with comment a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : null,
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "TagEditor.renameTag tags with comment A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : null,
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "TagEditor.renameTag tags with comment A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "TagEditor.renameTag tags with comment b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "TagEditor.renameTag tags with comment b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : null,
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "TagEditor.renameTag tags with comment a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : null,
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "TagEditor.renameTag tags with comment a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "TagEditor.renameTag tags with comment missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "TagEditor.renameTag tags with comment missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : null,
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "TagEditor.deleteTag tags with comment a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : null,
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "TagEditor.deleteTag tags with comment a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "TagEditor.deleteTag tags with comment B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "TagEditor.deleteTag tags with comment B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "input" : "---\ntype: task\ntags: [a, # c\n  b]\n---\n",
+      "name" : "TagEditor.deleteTag tags with comment missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\ntags: [a, # c\r\n  b]\r\n---\r\n",
+      "name" : "TagEditor.deleteTag tags with comment missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
         "tag" : "new"
       },
       "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\ntags: [new]\n---\n",
@@ -4547,6 +6241,160 @@
       "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
       "name" : "TagEditor.removeTag both parents missing (CRLF)",
       "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "TagEditor.renameTag both parents a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "TagEditor.renameTag both parents a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "TagEditor.renameTag both parents A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "TagEditor.renameTag both parents A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "TagEditor.renameTag both parents b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "TagEditor.renameTag both parents b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "TagEditor.renameTag both parents a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "TagEditor.renameTag both parents a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "TagEditor.renameTag both parents missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "TagEditor.renameTag both parents missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "TagEditor.deleteTag both parents a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "TagEditor.deleteTag both parents a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "TagEditor.deleteTag both parents B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "TagEditor.deleteTag both parents B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\narea: \"[[Home]]\"\n---\n",
+      "name" : "TagEditor.deleteTag both parents missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
+      "name" : "TagEditor.deleteTag both parents missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
     },
     {
       "args" : {
@@ -4658,6 +6506,160 @@
     },
     {
       "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "TagEditor.renameTag home buy seed a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "TagEditor.renameTag home buy seed a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "TagEditor.renameTag home buy seed A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "TagEditor.renameTag home buy seed A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "TagEditor.renameTag home buy seed b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "TagEditor.renameTag home buy seed b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "TagEditor.renameTag home buy seed a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "TagEditor.renameTag home buy seed a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "TagEditor.renameTag home buy seed missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "TagEditor.renameTag home buy seed missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "TagEditor.deleteTag home buy seed a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "TagEditor.deleteTag home buy seed a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "TagEditor.deleteTag home buy seed B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "TagEditor.deleteTag home buy seed B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
+      "name" : "TagEditor.deleteTag home buy seed missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\ncreatedDate: 2026-09-25\r\ndueDate: 2026-10-02\r\ndeadline: 2026-10-06\r\nrepeat: Weekly · Fri\r\ntags: [shopping]\r\n---\r\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\r\n\r\n![[seed packet.jpg|300]]\r\n\r\n## Subtasks\r\n\r\n- [ ] Tomatoes #garden\r\n- [/] Basil\r\n  - [x] Check the label\r\n- [>] Carrots\r\n- [<] Peas\r\n- [X] Lettuce\r\n- [-] Radishes\r\n- [?] Ask the neighbour\r\n- [y] not a box\r\n\r\n```\r\n- [ ] in code #notatag\r\n```\r\n",
+      "name" : "TagEditor.deleteTag home buy seed missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
         "tag" : "new"
       },
       "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ntags: [new]\ndueDate: soon\n---\nCheck the warnings.\n",
@@ -4763,6 +6765,160 @@
       "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
       "name" : "TagEditor.removeTag home odd status missing (CRLF)",
       "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "TagEditor.renameTag home odd status a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "TagEditor.renameTag home odd status a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "TagEditor.renameTag home odd status A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "TagEditor.renameTag home odd status A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "TagEditor.renameTag home odd status b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "TagEditor.renameTag home odd status b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "TagEditor.renameTag home odd status a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "TagEditor.renameTag home odd status a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "TagEditor.renameTag home odd status missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "TagEditor.renameTag home odd status missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "TagEditor.deleteTag home odd status a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "TagEditor.deleteTag home odd status a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "TagEditor.deleteTag home odd status B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "TagEditor.deleteTag home odd status B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "input" : "---\ntype: task\nstatus: Someday\nproject: \"[[Nowhere]]\"\ncreatedDate: 2026-09-29\ndueDate: soon\n---\nCheck the warnings.\n",
+      "name" : "TagEditor.deleteTag home odd status missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Someday\r\nproject: \"[[Nowhere]]\"\r\ncreatedDate: 2026-09-29\r\ndueDate: soon\r\n---\r\nCheck the warnings.\r\n",
+      "name" : "TagEditor.deleteTag home odd status missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
     },
     {
       "args" : {
@@ -4874,6 +7030,160 @@
     },
     {
       "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "TagEditor.renameTag home inbox a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "TagEditor.renameTag home inbox a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "TagEditor.renameTag home inbox A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "TagEditor.renameTag home inbox A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "TagEditor.renameTag home inbox b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "TagEditor.renameTag home inbox b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "TagEditor.renameTag home inbox a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "TagEditor.renameTag home inbox a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "TagEditor.renameTag home inbox missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "TagEditor.renameTag home inbox missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "TagEditor.deleteTag home inbox a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "TagEditor.deleteTag home inbox a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "TagEditor.deleteTag home inbox B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "TagEditor.deleteTag home inbox B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "input" : "---\ncreatedDate: 2026-09-10\ntags: [ideas, Home/Garden]\n---\nA note about [[Garden]] and [[Taxes]].\n\nIdea for a bench. #ideas #wood\n\n![[bench.png]]\n",
+      "name" : "TagEditor.deleteTag home inbox missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "input" : "---\r\ncreatedDate: 2026-09-10\r\ntags: [ideas, Home/Garden]\r\n---\r\nA note about [[Garden]] and [[Taxes]].\r\n\r\nIdea for a bench. #ideas #wood\r\n\r\n![[bench.png]]\r\n",
+      "name" : "TagEditor.deleteTag home inbox missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
         "tag" : "new"
       },
       "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ntags: [new]\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
@@ -4979,6 +7289,760 @@
       "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
       "name" : "TagEditor.removeTag design resolve cabin missing (CRLF)",
       "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "TagEditor.renameTag design resolve cabin a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "TagEditor.renameTag design resolve cabin a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "TagEditor.renameTag design resolve cabin A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "TagEditor.renameTag design resolve cabin A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "TagEditor.renameTag design resolve cabin b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "TagEditor.renameTag design resolve cabin b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "TagEditor.renameTag design resolve cabin a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "TagEditor.renameTag design resolve cabin a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "TagEditor.renameTag design resolve cabin missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "TagEditor.renameTag design resolve cabin missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "TagEditor.deleteTag design resolve cabin a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "TagEditor.deleteTag design resolve cabin a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "TagEditor.deleteTag design resolve cabin B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "TagEditor.deleteTag design resolve cabin B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "input" : "---\ntype: task\nstatus: Doing\narea: Personal\ncontexts:\n  - \"@phone\"\ncreatedDate: 2026-09-29\ndeadline: 2026-10-02\n---\nSettle the split from the long weekend.\n\n## Subtasks\n\n- [x] Check the bank transfer\n- [ ] Send the remaining amount\n",
+      "name" : "TagEditor.deleteTag design resolve cabin missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "input" : "---\r\ntype: task\r\nstatus: Doing\r\narea: Personal\r\ncontexts:\r\n  - \"@phone\"\r\ncreatedDate: 2026-09-29\r\ndeadline: 2026-10-02\r\n---\r\nSettle the split from the long weekend.\r\n\r\n## Subtasks\r\n\r\n- [x] Check the bank transfer\r\n- [ ] Send the remaining amount\r\n",
+      "name" : "TagEditor.deleteTag design resolve cabin missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [house, house/garden, work]\n---\nSee #house and #house/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#house\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags: [home, home/garden, work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#home\n",
+      "name" : "TagEditor.rename flow with body home to house (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [house, house/garden, work]\r\n---\r\nSee #house and #house/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#house\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, home/garden, work]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#home\r\n",
+      "name" : "TagEditor.rename flow with body home to house (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, home/garden, Work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #Work.\n#home\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags: [home, home/garden, work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#home\n",
+      "name" : "TagEditor.rename flow with body work to Work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, home/garden, Work]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #Work.\r\n#home\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, home/garden, work]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#home\r\n",
+      "name" : "TagEditor.rename flow with body work to Work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [work/garden, work]\n---\nSee #work and #work/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#work\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags: [home, home/garden, work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#home\n",
+      "name" : "TagEditor.rename flow with body home to work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [work/garden, work]\r\n---\r\nSee #work and #work/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#work\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, home/garden, work]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#home\r\n",
+      "name" : "TagEditor.rename flow with body home to work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [work]\n---\nSee and, #homework, `#home`, [#home](x), #work.\n\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags: [home, home/garden, work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#home\n",
+      "name" : "TagEditor.delete flow with body home (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [work]\r\n---\r\nSee and, #homework, `#home`, [#home](x), #work.\r\n\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, home/garden, work]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#home\r\n",
+      "name" : "TagEditor.delete flow with body home (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, home/garden]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x),.\n#home\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags: [home, home/garden, work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#home\n",
+      "name" : "TagEditor.delete flow with body work (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, home/garden]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x),.\r\n#home\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, home/garden, work]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#home\r\n",
+      "name" : "TagEditor.delete flow with body work (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, home/garden, work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#home\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags: [home, home/garden, work]\n---\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\n#home\n",
+      "name" : "TagEditor.delete flow with body missing (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, home/garden, work]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#home\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, home/garden, work]\r\n---\r\nSee #home and #Home/Garden/Beds, #homework, `#home`, [#home](x), #work.\r\n#home\r\n",
+      "name" : "TagEditor.delete flow with body missing (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\ntype: note\ntags:\n  - work\n  - house\n---\n#house #work\nplain\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n",
+      "name" : "TagEditor.rename block with body home to house (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n  - house\r\n---\r\n#house #work\r\nplain\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n  - Home\r\n---\r\n#home #work\r\nplain\r\n",
+      "name" : "TagEditor.rename block with body home to house (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\ntype: note\ntags:\n  - Work\n  - Home\n---\n#home #Work\nplain\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n",
+      "name" : "TagEditor.rename block with body work to Work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: note\r\ntags:\r\n  - Work\r\n  - Home\r\n---\r\n#home #Work\r\nplain\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n  - Home\r\n---\r\n#home #work\r\nplain\r\n",
+      "name" : "TagEditor.rename block with body work to Work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: note\ntags:\n  - work\n---\n#work #work\nplain\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n",
+      "name" : "TagEditor.rename block with body home to work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n---\r\n#work #work\r\nplain\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n  - Home\r\n---\r\n#home #work\r\nplain\r\n",
+      "name" : "TagEditor.rename block with body home to work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\ntype: note\ntags:\n  - work\n---\n#work\nplain\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n",
+      "name" : "TagEditor.delete block with body home (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n---\r\n#work\r\nplain\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n  - Home\r\n---\r\n#home #work\r\nplain\r\n",
+      "name" : "TagEditor.delete block with body home (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: note\ntags:\n  - Home\n---\n#home\nplain\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n",
+      "name" : "TagEditor.delete block with body work (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: note\r\ntags:\r\n  - Home\r\n---\r\n#home\r\nplain\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n  - Home\r\n---\r\n#home #work\r\nplain\r\n",
+      "name" : "TagEditor.delete block with body work (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n",
+      "name" : "TagEditor.delete block with body missing (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n  - Home\r\n---\r\n#home #work\r\nplain\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: note\r\ntags:\r\n  - work\r\n  - Home\r\n---\r\n#home #work\r\nplain\r\n",
+      "name" : "TagEditor.delete block with body missing (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "Todo #house/garden; #house\n\n```\n#home\n```\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+      "name" : "TagEditor.rename body only home to house (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "Todo #house/garden; #house\r\n\r\n```\r\n#home\r\n```\r\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+      "name" : "TagEditor.rename body only home to house (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+      "name" : "TagEditor.rename body only work to Work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+      "name" : "TagEditor.rename body only work to Work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "Todo #work/garden; #work\n\n```\n#home\n```\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+      "name" : "TagEditor.rename body only home to work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "Todo #work/garden; #work\r\n\r\n```\r\n#home\r\n```\r\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+      "name" : "TagEditor.rename body only home to work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "Todo;\n\n```\n#home\n```\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+      "name" : "TagEditor.delete body only home (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "Todo;\r\n\r\n```\r\n#home\r\n```\r\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+      "name" : "TagEditor.delete body only home (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+      "name" : "TagEditor.delete body only work (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+      "name" : "TagEditor.delete body only work (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\n\n```\n#home\n```\n",
+      "name" : "TagEditor.delete body only missing (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+        "unspliceable" : false
+      },
+      "input" : "Todo #home/garden; #home\r\n\r\n```\r\n#home\r\n```\r\n",
+      "name" : "TagEditor.delete body only missing (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#house #work\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n",
+      "name" : "TagEditor.rename comment value with body home to house (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#house #work\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home #work\r\n",
+      "name" : "TagEditor.rename comment value with body home to house (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #Work\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n",
+      "name" : "TagEditor.rename comment value with body work to Work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home #Work\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home #work\r\n",
+      "name" : "TagEditor.rename comment value with body work to Work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#work #work\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n",
+      "name" : "TagEditor.rename comment value with body home to work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#work #work\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home #work\r\n",
+      "name" : "TagEditor.rename comment value with body home to work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#work\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n",
+      "name" : "TagEditor.delete comment value with body home (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#work\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home #work\r\n",
+      "name" : "TagEditor.delete comment value with body home (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n",
+      "name" : "TagEditor.delete comment value with body work (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home #work\r\n",
+      "name" : "TagEditor.delete comment value with body work (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n",
+      "name" : "TagEditor.delete comment value with body missing (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home #work\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags: [home, # c\r\n  work]\r\n---\r\n#home #work\r\n",
+      "name" : "TagEditor.delete comment value with body missing (CRLF)",
+      "op" : "TagEditor.delete"
     },
     {
       "args" : {

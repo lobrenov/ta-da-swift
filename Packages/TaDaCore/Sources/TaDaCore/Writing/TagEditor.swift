@@ -1,3 +1,4 @@
+import MarkdownEngineSyntax
 import Yams
 
 /// Adds and removes tags in `tags:` by splicing only that key's lines. The body's tags are never touched.
@@ -42,6 +43,58 @@ extension FrontmatterEditor {
             replace(range, in: &file, with: "tags:" + value.suffix)
         default:
             replace(range, in: &file, with: flowLine(kept.map(\.raw), suffix: value.suffix))
+        }
+        return file.text
+    }
+
+    /// Renames a tag and its children in `tags:`, ignoring case: the tag's path becomes `new`'s and a child keeps the rest
+    /// of its path as written. An item that becomes equal (ignoring case) to one already in the list is dropped, so
+    /// renaming into an existing tag merges them. List style and quoting are kept as `addTag` does. Returns `text`
+    /// unchanged when `tags:` holds no match, and nil when it carries the tag in a value that can't be spliced safely.
+    public static func renameTag(_ tag: Tag, to new: Tag, in text: String) -> String? {
+        edit(tag, in: text) { match in
+            Tag((new.segments + match.segments.dropFirst(tag.segments.count)).joined(separator: "/"))
+        }
+    }
+
+    /// Removes a tag and its children from `tags:`, ignoring case, as `removeTag` does. Returns `text` unchanged when
+    /// `tags:` holds no match, and nil when it carries the tag in a value that can't be spliced safely.
+    public static func deleteTag(_ tag: Tag, in text: String) -> String? {
+        edit(tag, in: text) { _ in nil }
+    }
+
+    /// Applies `transform` to each `tags:` item at `tag` or under it: its replacement, or nil to remove it.
+    private static func edit(_ tag: Tag, in text: String, _ transform: (Tag) -> Tag?) -> String? {
+        var file = Lines(text)
+        guard let closing = closingFence(file), let range = tagsRange(in: file, closing: closing) else { return text }
+        func matches(_ other: Tag) -> Bool { other.path == tag.path || tag.isAncestor(of: other) }
+        guard let value = TagsValue(file, range) else {
+            return Item(parsing: text, path: "x.md")?.properties.tags.contains(where: matches) == true ? nil : text
+        }
+        let isMatch = value.items.map { $0.tag.map(matches) ?? false }
+        guard isMatch.contains(true) else { return text }
+        var block: String?
+        if case let .block(indent) = value.style { block = indent }
+        var seen = Set(zip(value.items, isMatch).filter { !$1 }.compactMap { $0.0.tag?.path })
+        let results: [String?] = zip(value.items, isMatch).map { item, match in
+            guard match, let old = item.tag else { return item.raw }
+            guard let new = transform(old), seen.insert(new.path).inserted else { return nil }
+            return new.name == old.name ? item.raw : block == nil ? flowItem(new.name) : scalar(new.name)
+        }
+        guard results != value.items.map(\.raw) else { return text }
+        if let indent = block, results.contains(where: { $0 != nil }) {
+            for (item, new) in zip(value.items, results).reversed() {
+                guard let line = item.line, new != item.raw else { continue }
+                if let new {
+                    file.lines[line] = Substring("\(indent)- \(new)" + endingOf(file.lines[line]))
+                } else {
+                    file.lines.remove(at: line)
+                }
+            }
+        } else if results.allSatisfy({ $0 == nil }) {
+            replace(range, in: &file, with: "tags:" + value.suffix)
+        } else {
+            replace(range, in: &file, with: flowLine(results.compactMap { $0 }, suffix: value.suffix))
         }
         return file.text
     }
@@ -176,5 +229,25 @@ extension FrontmatterEditor {
             let item = current.trimmingCharacters(in: .whitespaces)
             return (item.isEmpty ? items : items + [item], "")
         }
+    }
+}
+
+/// Renames and deletes a tag and its children across a whole file: in `tags:` (`FrontmatterEditor`) and in the body's
+/// inline tags (`TagEdit`). The frontmatter's bytes are never touched by the body edit.
+public enum TagEditor {
+    /// `text` with the tag renamed to `new`, and whether `tags:` carries it in a value that can't be spliced (left as
+    /// it was while the body is still edited).
+    public static func rename(_ tag: Tag, to new: Tag, in text: String) -> (text: String, unspliceable: Bool) {
+        apply(FrontmatterEditor.renameTag(tag, to: new, in: text), to: text) { TagEdit.rename(tag.name, to: new.name, in: $0) }
+    }
+
+    /// `text` with the tag deleted, and whether `tags:` carries it in a value that can't be spliced, as `rename`.
+    public static func delete(_ tag: Tag, in text: String) -> (text: String, unspliceable: Bool) {
+        apply(FrontmatterEditor.deleteTag(tag, in: text), to: text) { TagEdit.delete(tag.name, in: $0) }
+    }
+
+    private static func apply(_ frontmatter: String?, to text: String, body edit: (String) -> String) -> (text: String, unspliceable: Bool) {
+        let split = FrontmatterSplitter.split(frontmatter ?? text)
+        return (split.block + edit(split.body), frontmatter == nil)
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import MarkdownEngineSyntax
 
 /// A tag, from `tags:` or an inline `#tag`. `/` nests: `home/garden` is a child of `home`.
 /// Tags match by `path`, ignoring case; `name` keeps the spelling as written.
@@ -17,6 +18,12 @@ public struct Tag: Hashable, Sendable {
         guard !segments.isEmpty else { return nil }
         name = segments.joined(separator: "/")
         path = name.lowercased()
+    }
+
+    /// Whether `text` is a valid inline tag name: read after a `#`, the parser takes all of it as one tag.
+    public static func isValidName(_ text: String) -> Bool {
+        let tags = MarkdownFacts.scan("#" + text).tags
+        return tags.count == 1 && tags[0].column == 0 && tags[0].line == 0 && tags[0].length == text.utf16.count + 1
     }
 
     /// `name`'s segments, e.g. `["Home", "Garden"]`.

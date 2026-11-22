@@ -281,6 +281,38 @@ public struct Vault: Sendable {
         return (newPath, relinked, failed)
     }
 
+    /// Renames a tag and its children in every file that carries one, logged ones too, in `tags:` and in the body, in one
+    /// coordinated read and write per file; a file that doesn't change isn't written. Returns the files as they now are
+    /// and the paths whose `tags:` couldn't be edited (their bodies are still written) or that couldn't be read or written.
+    public func renameTag(_ tag: Tag, to new: Tag, index: VaultIndex) -> (items: [Item], failed: [String]) {
+        editTag(tag, index: index) { TagEditor.rename(tag, to: new, in: $0) }
+    }
+
+    /// Deletes a tag and its children from every file that carries one, as `renameTag` does.
+    public func deleteTag(_ tag: Tag, index: VaultIndex) -> (items: [Item], failed: [String]) {
+        editTag(tag, index: index) { TagEditor.delete(tag, in: $0) }
+    }
+
+    private func editTag(_ tag: Tag, index: VaultIndex, _ edit: (String) -> (text: String, unspliceable: Bool))
+        -> (items: [Item], failed: [String]) {
+        var items: [Item] = [], failed: [String] = []
+        for path in index.paths(carryingOrUnder: tag) {
+            var unspliceable = false
+            do {
+                if let item = try update(path, { text in
+                    let edited = edit(text)
+                    unspliceable = edited.unspliceable
+                    return edited.text
+                }) { items.append(item) }
+            } catch {
+                failed.append(path)
+                continue
+            }
+            if unspliceable { failed.append(path) }
+        }
+        return (items, failed)
+    }
+
     /// Points a file's `key` link (`project` or `area`) at `new` if it still links to `old`, in one coordinated read
     /// and write. Returns the file as it now is (nil when it's no longer a Ta Da file).
     @discardableResult
