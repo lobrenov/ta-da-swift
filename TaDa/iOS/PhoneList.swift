@@ -20,6 +20,8 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     var pickingActions: AnyView? = nil
     /// What typing in search shows instead of the files that match.
     var searchResults: ((String) -> AnyView)? = nil
+    /// The More menu's Move to Trash, which ends it.
+    var moveToTrash: (() -> Void)? = nil
     @ViewBuilder var menu: MenuItems
     @ViewBuilder var content: Content
     @State private var search = ListSearch()
@@ -29,6 +31,9 @@ struct PhoneList<Content: View, MenuItems: View>: View {
     @State private var isTitleScrolledAway = false
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
+
+    /// Whether More has anything in it: the page's items, Select or Move to Trash.
+    private var hasMenu: Bool { MenuItems.self != EmptyView.self || !pickable.isEmpty || moveToTrash != nil }
 
     var body: some View {
         ScrollView {
@@ -77,13 +82,16 @@ struct PhoneList<Content: View, MenuItems: View>: View {
                         Button(fileButton.label, systemImage: "doc.text", action: fileButton.open)
                     }
                 }
-                if !search.isOpen {
+                if !search.isOpen, hasMenu {
                     ToolbarItem(placement: .topBarTrailing) {
                         Menu {
                             menu
-                            Button("Search", systemImage: "magnifyingglass") { search.open() }
                             if !pickable.isEmpty {
                                 Button("Select", systemImage: "checkmark.circle") { nav.startPicking() }
+                            }
+                            if let moveToTrash {
+                                Divider()
+                                Button("Move to Trash", systemImage: "trash", role: .destructive, action: moveToTrash)
                             }
                         } label: {
                             Label("More", systemImage: "ellipsis")

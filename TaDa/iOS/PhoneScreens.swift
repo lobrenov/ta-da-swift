@@ -225,17 +225,15 @@ struct PhoneProjectScreen: View {
 
             PhoneList(model: model, title: project.title,
                       fileButton: ("Project File", { nav.push(.file(path)) }),
-                      pickable: shown, add: { await newTask(in: project) }) {
+                      pickable: shown, add: { await newTask(in: project) },
+                      moveToTrash: {
+                          if !model.asksBeforeTrashing([path]) {
+                              nav.play(.trash)
+                              nav.pop()
+                          }
+                          Task { await model.moveToTrash([path]) }
+                      }) {
                 PhoneGroupFilterItems(model: model, group: .project, domain: .project(path), items: all, isFiltering: $isFiltering)
-                Divider()
-                Button("Open Project File", systemImage: "doc") { nav.push(.file(path)) }
-                Button("Move to Trash", systemImage: "trash", role: .destructive) {
-                    if !model.asksBeforeTrashing([path]) {
-                        nav.play(.trash)
-                        nav.pop()
-                    }
-                    Task { await model.moveToTrash([path]) }
-                }
             } content: {
                 PhoneProjectLine(model: model, project: project, progress: progress)
                     .padding(.horizontal, 16)
@@ -358,7 +356,8 @@ struct PhoneAreaScreen: View {
             PhoneList(model: model, title: area.title,
                       subtitle: "\(projects.count == 1 ? "1 project" : "\(projects.count) projects") · \(tasks(open.count))",
                       icon: AnyView(AreaIcon(size: 30)),
-                      pickable: shown.map(\.path), add: { await newTask(in: area) }) {
+                      pickable: shown.map(\.path), add: { await newTask(in: area) },
+                      moveToTrash: { Task { await model.moveToTrash([path]) } }) {
                 PhoneGroupFilterItems(model: model, domain: .area(path), items: allProjects + allFiled, isFiltering: $isFiltering)
                 Divider()
                 Button("New Task", systemImage: "plus") { Task { await newTask(in: area) } }
@@ -371,10 +370,6 @@ struct PhoneAreaScreen: View {
                 }
                 if let url = model.vault?.url(for: path) {
                     ShareLink(item: url) { Label("Share…", systemImage: "square.and.arrow.up") }
-                }
-                Divider()
-                Button("Move to Trash", systemImage: "trash", role: .destructive) {
-                    Task { await model.moveToTrash([path]) }
                 }
             } content: {
                 PhoneTagFilterBar(model: model, domain: .area(path), items: allProjects + allFiled,
