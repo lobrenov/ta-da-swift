@@ -14,3 +14,6 @@ TaDa.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Obsidian settings for SampleVault
 SampleVault/.obsidian/
+
+# Personal Claude Code instructions
+CLAUDE.local.md
