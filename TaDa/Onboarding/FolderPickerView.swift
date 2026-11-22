@@ -1,6 +1,9 @@
 // First run, or the saved folder is gone: pick the folder that holds the task and project files.
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(macOS)
+import AppKit
+#endif
 
 struct FolderPickerView: View {
     let model: AppModel
@@ -41,12 +44,28 @@ struct FolderPickerView: View {
 }
 
 extension View {
-    /// The system folder picker; the chosen folder replaces the current one.
+    /// The system folder picker, with New Folder (on iPhone, in its ••• menu); the chosen folder replaces the current one.
     func folderImporter(isPresented: Binding<Bool>, model: AppModel) -> some View {
+        #if os(macOS)
+        onChange(of: isPresented.wrappedValue) { _, isOpen in
+            guard isOpen else { return }
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.canCreateDirectories = true
+            panel.begin { response in
+                isPresented.wrappedValue = false
+                if response == .OK, let folder = panel.url {
+                    Task { await model.choose(folder) }
+                }
+            }
+        }
+        #else
         fileImporter(isPresented: isPresented, allowedContentTypes: [.folder]) { result in
             if case let .success(folder) = result {
                 Task { await model.choose(folder) }
             }
         }
+        #endif
     }
 }
