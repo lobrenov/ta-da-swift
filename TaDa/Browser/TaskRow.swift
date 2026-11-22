@@ -347,7 +347,7 @@ extension ListSection {
         switch kind {
         case .completed: true
         case .status(let status): status.isClosed
-        case .date, .open: false
+        case .date, .open, .tag, .untagged: false
         }
     }
 }

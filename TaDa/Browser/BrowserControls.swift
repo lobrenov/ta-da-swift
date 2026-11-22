@@ -309,11 +309,6 @@ struct TaskSections: View {
             }
         }
     }
-
-    /// The rows on screen, top to bottom, for the arrow keys.
-    static func shown(_ sections: [ListSection], by grouping: Grouping, in foldKey: String, model: AppModel) -> [String] {
-        sections.filter { !model.isFolded($0, by: grouping, in: foldKey) }.flatMap(\.tasks).map(\.path)
-    }
 }
 
 /// What a filtered list shows when no file carries the picked tags.

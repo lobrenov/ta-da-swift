@@ -9,8 +9,8 @@ enum GroupedList: String {
     /// The menu's choices, in order.
     var groupings: [Grouping] {
         switch self {
-        case .today: [.project, .status, .open]
-        case .loose, .project: [.status, .date, .open]
+        case .today: [.project, .status, .open, .tag]
+        case .loose, .project: [.status, .date, .open, .tag]
         }
     }
 
@@ -32,12 +32,20 @@ extension ListSection {
         grouping == .open ? title : "\(grouping.rawValue): \(title)"
     }
 
-    /// Done, Cancelled and Date's Completed start folded.
+    /// The paths of the rows on screen, top to bottom, each once (Tag shows a task under each of its tags), for the
+    /// arrow keys and picking.
+    static func shownPaths(_ sections: [ListSection], by grouping: Grouping, in foldKey: String, model: AppModel) -> [String] {
+        var seen: Set<String> = []
+        return sections.filter { !model.isFolded($0, by: grouping, in: foldKey) }.flatMap(\.tasks).map(\.path)
+            .filter { seen.insert($0).inserted }
+    }
+
+    /// Done, Cancelled, and Date's and Tag's Completed start folded.
     func startsFolded(_ grouping: Grouping) -> Bool {
         switch kind {
         case .status(let status): status.isClosed
-        case .completed: grouping == .date
-        case .date, .open: false
+        case .completed: grouping == .date || grouping == .tag
+        case .date, .open, .tag, .untagged: false
         }
     }
 }
@@ -49,12 +57,13 @@ extension Grouping {
         case .status: "checkmark.square"
         case .date: "calendar"
         case .open: "list.bullet"
+        case .tag: "tag"
         }
     }
 
     var tint: KeyPath<Theme, PlatformColor> {
         switch self {
-        case .project: \.accent
+        case .project, .tag: \.accent
         case .date: \.due
         case .status, .open: \.muted
         }

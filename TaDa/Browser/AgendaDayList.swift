@@ -21,7 +21,7 @@ struct AgendaDayList: View {
         let events = filter.isActive ? [] : model.events(on: day), reminders = filter.isActive ? [] : model.reminders(on: day)
         let occurrences = model.agendaOccurrences.filter { filter.matches($0.item) }
         let shownPaths = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
-            : TaskSections.shown(sections, by: grouping, in: list.foldKey, model: model)
+            : ListSection.shownPaths(sections, by: grouping, in: list.foldKey, model: model)
 
         BrowserColumn(model: model, paths: shownPaths, spacing: 22) {
             AgendaStrip(model: model)

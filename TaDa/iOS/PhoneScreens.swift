@@ -19,7 +19,7 @@ struct PhoneTaskListScreen: View {
         let sections = grouping == .project ? [] : ListSection.sections(shownTasks, by: grouping, today: model.today)
         let open = all.count { !$0.properties.status.isClosed }
         let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
-            : sections.filter { !model.isFolded($0, by: grouping, in: GroupedList.loose.foldKey) }.flatMap(\.tasks).map(\.path)
+            : ListSection.shownPaths(sections, by: grouping, in: GroupedList.loose.foldKey, model: model)
 
         PhoneList(model: model, title: "Loose tasks", subtitle: tasks(open), pickable: pickable, add: newTask) {
             PhoneGroupFilterItems(model: model, group: .loose, domain: .loose, items: all, isFiltering: $isFiltering)
@@ -220,12 +220,12 @@ struct PhoneProjectScreen: View {
             let tasks = filter.apply(all)
             let grouping = model.grouping(of: .project)
             let sections = ListSection.sections(tasks, by: grouping, today: model.today)
-            let shown = sections.filter { !model.isFolded($0, by: grouping, in: path) }.flatMap(\.tasks)
+            let shown = ListSection.shownPaths(sections, by: grouping, in: path, model: model)
             let progress = model.index.progress(of: project)
 
             PhoneList(model: model, title: project.title,
                       fileButton: ("Project File", { nav.push(.file(path)) }),
-                      pickable: shown.map(\.path), add: { await newTask(in: project) }) {
+                      pickable: shown, add: { await newTask(in: project) }) {
                 PhoneGroupFilterItems(model: model, group: .project, domain: .project(path), items: all, isFiltering: $isFiltering)
                 Divider()
                 Button("Open Project File", systemImage: "doc") { nav.push(.file(path)) }

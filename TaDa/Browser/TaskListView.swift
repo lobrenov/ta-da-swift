@@ -18,7 +18,7 @@ struct TaskListView: View {
         let groups = grouping == .project ? model.index.grouped(tasks) : []
         let sections = grouping == .project ? [] : ListSection.sections(tasks, by: grouping, today: model.today)
         let paths = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
-            : TaskSections.shown(sections, by: grouping, in: list.foldKey, model: model)
+            : ListSection.shownPaths(sections, by: grouping, in: list.foldKey, model: model)
 
         BrowserColumn(model: model, paths: paths, spacing: 22,
                       empty: all.isEmpty && !filter.isActive ? empty : tasks.isEmpty && filter.isActive ? .noTagMatch : nil) {

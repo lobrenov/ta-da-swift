@@ -42,6 +42,16 @@ private func titles(_ sections: [ListSection]) -> [String] {
     ])
 }
 
+@Test func tagSectionsPutATaskUnderEachOfItsTagsThenNoTagThenCompleted() {
+    #expect(titles(ListSection.sections(tasks, by: .tag, today: today)) == [
+        "#bug: Overdue, Undated",
+        "#dev: Undated",
+        "#Home/Garden: Next week",
+        "No tag: Deadline today",
+        "Completed: Shipped, Dropped",
+    ])
+}
+
 @Test func sectionsLeaveEmptyGroupsOut() {
     #expect(titles(ListSection.sections(Array(tasks[2...3]), by: .date, today: today)) == [
         "Upcoming: Next week",

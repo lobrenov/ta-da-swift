@@ -388,6 +388,23 @@
               ],
               "title" : "Not Started"
             }
+          ],
+          "Tag" : [
+            {
+              "kind" : {
+                "case" : "untagged",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/Message Max about a coat and a jacket.md",
+                "Ta Da/tasks/Resolve the cabin payback.md",
+                "Ta Da/tasks/Shift my physio appointment.md",
+                "Ta Da/tasks/Submit timesheet.md",
+                "Ta Da/tasks/Update my claude.md files.md",
+                "Ta Da/tasks/Update 2DS before the next session.md"
+              ],
+              "title" : "No tag"
+            }
           ]
         },
         "today" : {
@@ -479,6 +496,24 @@
                 "Ta Da/tasks/Submit timesheet.md"
               ],
               "title" : "Not Started"
+            }
+          ],
+          "Tag" : [
+            {
+              "kind" : {
+                "case" : "untagged",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/Create a system testing plan.md",
+                "Ta Da/tasks/Message Max about a coat and a jacket.md",
+                "Ta Da/tasks/Resolve the cabin payback.md",
+                "Ta Da/tasks/Shift my physio appointment.md",
+                "Ta Da/tasks/Submit timesheet.md",
+                "Ta Da/tasks/Update Dan’s website for Starfall.md",
+                "Ta Da/tasks/Update my claude.md files.md"
+              ],
+              "title" : "No tag"
             }
           ]
         }
@@ -1225,6 +1260,58 @@
               ],
               "title" : "Not Started"
             }
+          ],
+          "Tag" : [
+            {
+              "kind" : {
+                "case" : "tag",
+                "value" : "calls"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md"
+              ],
+              "title" : "#calls"
+            },
+            {
+              "kind" : {
+                "case" : "tag",
+                "value" : "Phone"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md"
+              ],
+              "title" : "#Phone"
+            },
+            {
+              "kind" : {
+                "case" : "tag",
+                "value" : "yaml"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Broken yaml.md"
+              ],
+              "title" : "#yaml"
+            },
+            {
+              "kind" : {
+                "case" : "untagged",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md",
+                "Ta Da/tasks/Cafe.md",
+                "Ta Da/tasks/Café.md",
+                "Ta Da/tasks/Ünïcode 日本.md",
+                "Ta Da/tasks/Windows task.md",
+                "Ta Da/tasks/Dup.md",
+                "Ta Da/tasks/Bad project.md",
+                "Ta Da/tasks/No status.md",
+                "Ta Da/tasks/Odd status.md",
+                "Ta Da/tasks/Unexpected.md"
+              ],
+              "title" : "No tag"
+            }
           ]
         },
         "today" : {
@@ -1344,6 +1431,69 @@
                 "Ta Da/tasks/Water plants.md"
               ],
               "title" : "Done"
+            }
+          ],
+          "Tag" : [
+            {
+              "kind" : {
+                "case" : "tag",
+                "value" : "calls"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md"
+              ],
+              "title" : "#calls"
+            },
+            {
+              "kind" : {
+                "case" : "tag",
+                "value" : "garden"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Buy seed.md"
+              ],
+              "title" : "#garden"
+            },
+            {
+              "kind" : {
+                "case" : "tag",
+                "value" : "Phone"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Call plumber.md"
+              ],
+              "title" : "#Phone"
+            },
+            {
+              "kind" : {
+                "case" : "tag",
+                "value" : "shopping"
+              },
+              "tasks" : [
+                "Ta Da/tasks/Buy seed.md"
+              ],
+              "title" : "#shopping"
+            },
+            {
+              "kind" : {
+                "case" : "untagged",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/a.md",
+                "Ta Da/tasks/Sub/A.md"
+              ],
+              "title" : "No tag"
+            },
+            {
+              "kind" : {
+                "case" : "completed",
+                "value" : null
+              },
+              "tasks" : [
+                "Ta Da/tasks/Water plants.md"
+              ],
+              "title" : "Completed"
             }
           ]
         }

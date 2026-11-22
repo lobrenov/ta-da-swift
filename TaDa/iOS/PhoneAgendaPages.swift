@@ -48,7 +48,7 @@ private struct PhoneAgendaDay: View {
             .filter { filter.matches($0.item) }
         let note = model.note(for: .day(day))
         let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
-            : sections.filter { !model.isFolded($0, by: grouping, in: list.foldKey) }.flatMap(\.tasks).map(\.path)
+            : ListSection.shownPaths(sections, by: grouping, in: list.foldKey, model: model)
         let context: IntegrationRowContext = day == model.today ? .today : .upcoming
 
         ScrollView {

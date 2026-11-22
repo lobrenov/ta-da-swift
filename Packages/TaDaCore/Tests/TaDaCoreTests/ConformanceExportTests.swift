@@ -165,6 +165,8 @@ private func json(_ section: ListSection) -> [String: Any] {
     case let .date(group): kind = ["case": "date", "value": group.rawValue]
     case .open: kind = ["case": "open", "value": NSNull()]
     case .completed: kind = ["case": "completed", "value": NSNull()]
+    case let .tag(tag): kind = ["case": "tag", "value": tag.name]
+    case .untagged: kind = ["case": "untagged", "value": NSNull()]
     }
     return ["title": section.title, "kind": kind, "tasks": section.tasks.map(\.path)]
 }

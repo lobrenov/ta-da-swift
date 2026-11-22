@@ -9,15 +9,19 @@ public enum Grouping: String, CaseIterable, Sendable {
     case date = "Date"
     /// Open, then Completed.
     case open = "Open"
+    /// Open tasks under each tag they carry, by full path, then No tag, then Completed.
+    case tag = "Tag"
 }
 
-/// A group of a Status, Date or Open list.
+/// A group of a Status, Date, Open or Tag list.
 public struct ListSection: Hashable, Sendable, Identifiable {
     public enum Kind: Hashable, Sendable {
         case status(Status)
         case date(DateGroup)
         case open
         case completed
+        case tag(Tag)
+        case untagged
     }
 
     /// Open tasks by their nearer date.
@@ -44,6 +48,8 @@ public struct ListSection: Hashable, Sendable, Identifiable {
         case .date(let group): group.rawValue
         case .open: "Open"
         case .completed: "Completed"
+        case .tag(let tag): "#" + tag.name
+        case .untagged: "No tag"
         }
     }
 
@@ -65,6 +71,12 @@ public struct ListSection: Hashable, Sendable, Identifiable {
             sections = DateGroup.allCases.map { group in
                 ListSection(kind: .date(group), tasks: open.filter { dateGroup(of: $0, today: today) == group })
             } + [ListSection(kind: .completed, tasks: closed)]
+        case .tag:
+            var tags: [String: Tag] = [:]
+            for use in open.flatMap(\.tags) where tags[use.tag.path] == nil { tags[use.tag.path] = use.tag }
+            sections = tags.values.sorted { $0.path.localizedStandardCompare($1.path) == .orderedAscending }.map { tag in
+                ListSection(kind: .tag(tag), tasks: open.filter { $0.tags.contains { $0.tag.path == tag.path } })
+            } + [ListSection(kind: .untagged, tasks: open.filter(\.tags.isEmpty)), ListSection(kind: .completed, tasks: closed)]
         case .open, .project:
             sections = [ListSection(kind: .open, tasks: open), ListSection(kind: .completed, tasks: closed)]
         }

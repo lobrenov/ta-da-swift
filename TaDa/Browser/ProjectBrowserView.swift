@@ -16,7 +16,7 @@ struct ProjectBrowserView: View {
         let grouping = model.grouping(of: .project)
         let sections = ListSection.sections(tasks, by: grouping, today: model.today)
 
-        BrowserColumn(model: model, paths: TaskSections.shown(sections, by: grouping, in: project.path, model: model),
+        BrowserColumn(model: model, paths: ListSection.shownPaths(sections, by: grouping, in: project.path, model: model),
                       spacing: 22) {
             header(model.index.progress(of: project), tasks: all, shown: tasks.count)
         } content: {
