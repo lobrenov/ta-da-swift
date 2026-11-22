@@ -157,6 +157,13 @@ struct PhoneNavigationTests {
         #expect(PhoneRoute.loose.path == nil && PhoneRoute.folder("Meetings").path == nil && PhoneRoute.folder("") != PhoneRoute.folder("Meetings"))
     }
 
+    @Test func aParentsPageIsItsAreaOrProjectScreen() {
+        let area = Item(parsing: "---\ntype: area\n---\n", path: "areas/House.md")!
+        let project = Item(parsing: "---\ntype: project\n---\n", path: "projects/Garden.md")!
+        #expect(PhoneRoute.page(of: area) == .area("areas/House.md"))
+        #expect(PhoneRoute.page(of: project) == .project("projects/Garden.md"))
+    }
+
     @Test func tagScreensShowNoFileAndTheTagSheetIsPerFile() {
         #expect(PhoneRoute.tag("home").path == nil && PhoneRoute.tag(nil).path == nil)
         #expect(PhoneRoute.tag("home") != PhoneRoute.tag(nil))

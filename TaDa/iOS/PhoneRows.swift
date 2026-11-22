@@ -61,6 +61,11 @@ struct PhoneTaskRow: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(isPicked ? .isSelected : [])
+                .accessibilityActions {
+                    if hasPlace, let parent = model.index.parent(of: item) {
+                        Button("Open \(parent.title)") { nav.push(.page(of: parent)) }
+                    }
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, isSearch ? 10 : 0)
@@ -105,10 +110,20 @@ struct PhoneTaskRow: View {
                     .lineLimit(1)
                     .layoutPriority(-1)
                     .accessibilityLabel("In \(place)")
+                    .opensParent(of: item, model: model)
             }
         }
         .foregroundStyle(theme.color(\.muted))
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Whether the row names its project or area on its line.
+    private var hasPlace: Bool {
+        switch meta {
+        case let .row(_, place): place != nil
+        case .agenda: true
+        case .search: false
+        }
     }
 
     private func searchBody(words: [String], place: String) -> some View {
@@ -285,20 +300,26 @@ struct PhoneNoteRow: View {
 struct PhoneAreaHeader: View {
     let area: Item
     var isFirst = false
+    @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 8) {
-                AreaIcon(size: 20)
-                Text(area.title).scaledFont(size: 20, weight: .bold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+        Button { if !nav.isPicking { nav.push(.page(of: area)) } } label: {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 8) {
+                    AreaIcon(size: 20)
+                    Text(area.title).scaledFont(size: 20, weight: .bold).foregroundStyle(theme.color(\.strong)).lineLimit(1)
+                }
+                Hairline()
             }
-            Hairline()
+            .padding(.horizontal, 16)
+            .padding(.top, isFirst ? 6 : 22)
+            .contentShape(.rect)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, isFirst ? 6 : 22)
+        .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
+        .accessibilityHint("Opens the area")
     }
 }
 
@@ -307,33 +328,63 @@ struct PhoneAreaHeader: View {
 struct PhoneProjectHeader: View {
     let model: AppModel
     let project: Item
+    @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
     var body: some View {
         let progress = model.index.progress(of: project)
         let isUnderArea = model.index.area(of: project) != nil
         let area = project.properties.area?.title
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 8) {
-                ProgressRing(progress)
-                    .foregroundStyle(theme.color(\.accent))
-                    .scaleEffect(20 / 14)
-                    .frame(width: 20, height: 20)
-                Text(project.title)
-                    .scaledFont(size: 20, weight: .bold)
-                    .foregroundStyle(theme.color(\.strong))
-                    .lineLimit(1)
-                if let area, !isUnderArea {
-                    Text(area).scaledFont(size: 15).foregroundStyle(theme.color(\.muted)).lineLimit(1)
+        Button { if !nav.isPicking { nav.push(.page(of: project)) } } label: {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 8) {
+                    ProgressRing(progress)
+                        .foregroundStyle(theme.color(\.accent))
+                        .scaleEffect(20 / 14)
+                        .frame(width: 20, height: 20)
+                    Text(project.title)
+                        .scaledFont(size: 20, weight: .bold)
+                        .foregroundStyle(theme.color(\.strong))
+                        .lineLimit(1)
+                    if let area, !isUnderArea {
+                        Text(area).scaledFont(size: 15).foregroundStyle(theme.color(\.muted)).lineLimit(1)
+                    }
                 }
+                if !isUnderArea { Hairline() }
             }
-            if !isUnderArea { Hairline() }
+            .padding(.horizontal, 16)
+            .padding(.top, isUnderArea ? 14 : 22)
+            .padding(.bottom, isUnderArea ? 4 : 0)
+            .contentShape(.rect)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, isUnderArea ? 14 : 22)
-        .padding(.bottom, isUnderArea ? 4 : 0)
+        .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
+        .accessibilityHint("Opens the project")
+    }
+}
+
+extension View {
+    /// A tap on a row's place opens `item`'s project or area, when it has one, unless the list is picking; the row's
+    /// other taps still open the row.
+    func opensParent(of item: Item, model: AppModel) -> some View {
+        modifier(OpensParent(item: item, model: model))
+    }
+}
+
+private struct OpensParent: ViewModifier {
+    let item: Item
+    let model: AppModel
+    @Environment(PhoneNavigation.self) private var nav
+
+    func body(content: Content) -> some View {
+        if let parent = model.index.parent(of: item) {
+            content
+                .contentShape(.rect)
+                .onTapGesture { if !nav.isPicking { nav.push(.page(of: parent)) } }
+        } else {
+            content
+        }
     }
 }
 

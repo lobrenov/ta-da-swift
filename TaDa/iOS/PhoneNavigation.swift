@@ -33,6 +33,11 @@ enum PhoneRoute: Hashable {
     /// A notes folder's notes and subfolders, by path; `""` for Loose, the top level.
     case folder(String)
 
+    /// A task's parent's screen: an area's page, or a project's tasks.
+    static func page(of parent: Item) -> PhoneRoute {
+        parent.properties.kind == .area ? .area(parent.path) : .project(parent.path)
+    }
+
     /// The file the screen shows, if it shows one.
     var path: String? {
         switch self {

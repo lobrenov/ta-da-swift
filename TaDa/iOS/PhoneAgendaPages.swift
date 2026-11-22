@@ -240,6 +240,7 @@ private struct AgendaRepeats: View {
                         Image(systemName: "repeat").scaledFont(size: 14).accessibilityHidden(true)
                         Spacer(minLength: 8)
                         Text(place).scaledFont(size: 15).lineLimit(1).layoutPriority(-1)
+                            .opensParent(of: item, model: model)
                     }
                     .foregroundStyle(theme.color(\.muted))
                     .frame(maxWidth: .infinity, alignment: .leading)
