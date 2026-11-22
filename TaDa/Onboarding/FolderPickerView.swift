@@ -53,12 +53,14 @@ extension View {
             panel.canChooseFiles = false
             panel.canChooseDirectories = true
             panel.canCreateDirectories = true
-            panel.begin { response in
+            let done = { (response: NSApplication.ModalResponse) in
                 isPresented.wrappedValue = false
                 if response == .OK, let folder = panel.url {
                     Task { await model.choose(folder) }
                 }
             }
+            // A sheet on the window, so the panel can't fall behind it.
+            if let window = NSApp.keyWindow { panel.beginSheetModal(for: window, completionHandler: done) } else { panel.begin(completionHandler: done) }
         }
         #else
         fileImporter(isPresented: isPresented, allowedContentTypes: [.folder]) { result in

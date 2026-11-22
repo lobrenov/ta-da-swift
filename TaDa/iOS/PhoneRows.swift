@@ -365,8 +365,8 @@ struct PhoneProjectHeader: View {
 }
 
 extension View {
-    /// A tap on a row's place opens `item`'s project or area, when it has one, unless the list is picking; the row's
-    /// other taps still open the row.
+    /// A tap on a row's place opens `item`'s project or area, when it has one, unless the list is picking (then it picks
+    /// the row, as the rest of the row does); the row's other taps still open the row.
     func opensParent(of item: Item, model: AppModel) -> some View {
         modifier(OpensParent(item: item, model: model))
     }
@@ -378,10 +378,10 @@ private struct OpensParent: ViewModifier {
     @Environment(PhoneNavigation.self) private var nav
 
     func body(content: Content) -> some View {
-        if let parent = model.index.parent(of: item) {
+        if !nav.isPicking, let parent = model.index.parent(of: item) {
             content
                 .contentShape(.rect)
-                .onTapGesture { if !nav.isPicking { nav.push(.page(of: parent)) } }
+                .onTapGesture { nav.push(.page(of: parent)) }
         } else {
             content
         }
