@@ -118,7 +118,7 @@ struct SlashCommandIcon: View {
 }
 
 #if os(iOS)
-/// The `/` query's choices, above the keyboard bar: a tap picks one.
+/// The `/` query's choices, above the keyboard bar: a tap picks one. Shown while the query is open, matches or not.
 struct PhoneSlashList: View {
     let choices: [SlashCommand]
     let highlight: Int
@@ -130,6 +130,11 @@ struct PhoneSlashList: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
+                if choices.isEmpty {
+                    Text("No matching formats")
+                        .foregroundStyle(theme.color(\.muted))
+                        .frame(maxWidth: .infinity, minHeight: Self.rowHeight)
+                }
                 ForEach(Array(choices.enumerated()), id: \.element) { offset, command in
                     Button { pick(command) } label: {
                         HStack(spacing: 12) {
@@ -156,7 +161,8 @@ struct PhoneSlashList: View {
             .padding(4)
         }
         .scrollIndicators(.never)
-        .frame(height: min(CGFloat(choices.count) * Self.rowHeight + 8, 162))
+        // The same height for any number of choices.
+        .frame(height: 162)
         .font(.system(size: 17))
         .glassEffect(in: .rect(cornerRadius: 20))
         .padding(.horizontal, 8)

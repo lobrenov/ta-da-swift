@@ -170,7 +170,7 @@ struct LiveEditor: View {
             },
             onTaskCheckboxToggle: { _ in toggles += 1 },
             keyboardBar: AnyView(VStack(spacing: 0) {
-                if !slashChoices.isEmpty {
+                if slashState != nil {
                     PhoneSlashList(choices: slashChoices, highlight: slashHighlight, theme: theme, pick: insertSlashCommand)
                 }
                 if !linkChoices.isEmpty {
