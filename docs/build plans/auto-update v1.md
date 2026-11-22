@@ -112,7 +112,7 @@ Done 2026-11-03 with option a: the app repo is public as `lobrenov/ta-da-swift` 
 - None required (Part 1 showed Sparkle installing an update on its EdDSA signature alone). The first Developer ID build is still EdDSA-signed with the same key, so unnotarised builds update to it even though the code signature changes from Apple Development to Developer ID. After that, either check can be used to replace the key later.
 - The sandbox container and the chosen folder: a new Team ID changes the app's signing identity, and macOS may ask about the app's data or forget the folder once. Check it on the first update.
 - Optional: once every installed copy is on Developer ID, `SUVerifyUpdateBeforeExtraction` can be set to check the Apple code signature before unpacking.
-- Docs: drop the unblock steps from `docs/releases.md`, `README.md` and the DMG's `Read Me First.txt` (in `make-release.sh`), and remove the Developer ID line from `docs/backlog.md`.
+- Docs: drop the unblock steps from `docs/releases.md`, `README.md` and the DMG's `Read Me First.txt` (in `make-release.sh`).
 
 ### Steps
 1. Enrol, then create the certificate and the notarisation profile. Check: `security find-identity -v -p codesigning` lists Developer ID Application; `notarytool history --keychain-profile TaDa` runs.
