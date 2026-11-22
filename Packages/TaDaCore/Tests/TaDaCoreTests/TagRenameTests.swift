@@ -204,3 +204,17 @@ private func tagged(_ tags: String, _ body: String) -> String { "---\ntype: task
         #expect(result.items.map(\.path) == ["Ta Da/tasks/B.md"])
     }
 }
+
+@Test func aFlowListClosedOnAnUnindentedLineIsLeftAlone() {
+    let text = front("tags: [\n  home,\n  work\n]")
+    #expect(FrontmatterEditor.addTag(tag("x"), in: text) == text)
+    #expect(FrontmatterEditor.removeTag(tag("home"), in: text) == text)
+    #expect(rename("home", "house", text) == nil)
+    #expect(delete("home", text) == nil)
+    #expect(rename("missing", "x", text) == text)
+}
+
+@Test func renamingABlockItemKeepsTheRestOfItsLine() {
+    #expect(rename("home", "house", front("tags:\n  - home # main\n  - work")) == front("tags:\n  - house # main\n  - work"))
+    #expect(rename("home", "house", front("tags:\n  - home  \n  - work")) == front("tags:\n  - house  \n  - work"))
+}

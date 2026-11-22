@@ -1823,6 +1823,140 @@ import UIKit
         return nil
     }
 
+    /// "1 file" or "n files".
+    static func files(_ count: Int) -> String { count == 1 ? "1 file" : "\(count) files" }
+
+    /// The files that carry the tag or a child of it, logged ones too.
+    func fileCount(carryingOrUnder tag: Tag) -> Int { index.paths(carryingOrUnder: tag).count }
+
+    /// What renaming `tag` and its children changes.
+    static func renameTagMessage(count: Int) -> String {
+        "Changes \(files(count)), including child tags. This can’t be undone."
+    }
+
+    /// What deleting `tag` and its children removes.
+    static func deleteTagMessage(count: Int) -> String {
+        "Removes it and its child tags from \(files(count)). This can’t be undone."
+    }
+
+    /// The error when `count` files still carry `tag` after a rename or delete.
+    static func tagFailureMessage(count: Int, tag: Tag) -> String {
+        "\(files(count)) still \(count == 1 ? "has" : "have") “\(tag.name)”. Ta Da can’t edit \(count == 1 ? "its" : "their") tags property."
+    }
+
+    /// Renaming a tag waits here for the user to confirm; `renameTag(_:to:)` goes ahead. It asks only for a name
+    /// `renameTarget(of:to:)` accepts.
+    var tagRenameConfirmation: TagConfirmation?
+    /// Deleting a tag waits here for the user to confirm; `deleteTag(_:)` goes ahead.
+    var tagDeleteConfirmation: TagConfirmation?
+    struct TagConfirmation: Equatable, Identifiable {
+        let id = UUID()
+        let tag: Tag
+        /// The new name, for a rename.
+        let new: Tag?
+        /// The files that carry the tag or a child of it.
+        let count: Int
+        /// Whether another tag already has the new name's path.
+        var merges = false
+    }
+
+    /// The tag the text `name` renames `tag` to: a valid name that differs from the tag's and isn't under its path.
+    static func renameTarget(of tag: Tag, to name: String) -> Tag? {
+        let name = name.trimmingCharacters(in: .whitespaces)
+        guard name != tag.name, Tag.isValidName(name), let new = Tag(name), !new.path.hasPrefix(tag.path + "/") else { return nil }
+        return new
+    }
+
+    /// Asks before renaming `tag` to the text `name`.
+    func askRenameTag(_ tag: Tag, to name: String) {
+        guard let new = Self.renameTarget(of: tag, to: name) else { return }
+        tagRenameConfirmation = TagConfirmation(tag: tag, new: new, count: fileCount(carryingOrUnder: tag),
+                                                merges: new.path != tag.path && self.tag(at: new.path) != nil)
+    }
+
+    /// Asks before deleting `tag`.
+    func askDeleteTag(_ tag: Tag) {
+        tagDeleteConfirmation = TagConfirmation(tag: tag, new: nil, count: fileCount(carryingOrUnder: tag))
+    }
+
+    /// Renames a tag and its children in every file that carries one, in `tags:` and in the body. The tag filters, folds
+    /// and page that name it follow once no file carries the old tag or a child of it, or when only the case changed.
+    /// Returns whether they followed.
+    @discardableResult
+    func renameTag(_ tag: Tag, to new: Tag) async -> Bool {
+        await editTag(tag, to: new) { vault, index in vault.renameTag(tag, to: new, index: index) }
+    }
+
+    /// Deletes a tag and its children from every file that carries one. The tag filters, folds and page that name it go,
+    /// once no file carries the tag or a child of it. Returns whether they did.
+    @discardableResult
+    func deleteTag(_ tag: Tag) async -> Bool {
+        await editTag(tag, to: nil) { vault, index in vault.deleteTag(tag, index: index) }
+    }
+
+    /// `path` after the tag at `old` is renamed to `new`, or nil when `new` is nil (deleted) and `path` is it or a child.
+    static func followedTagPath(_ path: String, from old: String, to new: String?) -> String? {
+        if path == old { return new }
+        if path.hasPrefix(old + "/") { return new.map { $0 + path.dropFirst(old.count) } }
+        return path
+    }
+
+    private func editTag(_ tag: Tag, to new: Tag?,
+                         _ edit: @escaping @Sendable (Vault, VaultIndex) -> (items: [Item], failed: [String])) async -> Bool {
+        guard let vault else { return false }
+        let affected = index.paths(carryingOrUnder: tag)
+        // Saved first, so the write below reloads the open file without losing edits.
+        if let document {
+            await save(document)
+            guard !affected.contains(document.path) || !document.isDirty else {
+                errorMessage = "The open file has changes Ta Da couldn’t save. Resolve them, then try again."
+                return false
+            }
+        }
+        let index = index
+        let (items, failed) = await Self.run { edit(vault, index) }
+        updateIndex { index in
+            for item in items { index.update(item) }
+        }
+        let followed = new?.path == tag.path || self.index.paths(carryingOrUnder: tag).isEmpty
+        if followed {
+            followTag(tag.path, to: new?.path)
+            updateTags()
+        }
+        if let document, items.contains(where: { $0.path == document.path }) { await reload(document, from: vault) }
+        if !failed.isEmpty { errorMessage = Self.tagFailureMessage(count: failed.count, tag: tag) }
+        return followed
+    }
+
+    /// Points the tag filters, folds, expanded tags and tag pages at a renamed tag's path (`new`), or drops those of a
+    /// deleted one (`new` nil); the tag's children's follow it.
+    private func followTag(_ old: String, to new: String?) {
+        func moved(_ path: String) -> String? { Self.followedTagPath(path, from: old, to: new) }
+        for (domain, filter) in tagFilters {
+            let picked = Set(filter.picked.compactMap(moved))
+            if picked != filter.picked { tagFilters[domain] = picked.isEmpty ? nil : TagFilter(picked: picked) }
+        }
+        let expanded = Set(expandedTags.compactMap(moved))
+        if expanded != expandedTags { expandedTags = expanded }
+        let prefix = "tag:"
+        var folded: [String: [String]] = [:]
+        for (key, groups) in foldedGroups {
+            guard key.hasPrefix(prefix) else { folded[key] = groups; continue }
+            if let path = moved(String(key.dropFirst(prefix.count))) { folded[prefix + path] = groups }
+        }
+        if folded != foldedGroups { foldedGroups = folded }
+        if case let .tag(path?) = domain {
+            let page = Domain.tag(moved(path))
+            if page != domain { domain = page }
+        }
+        if !phoneTagPages.isEmpty {
+            phoneTagPages = Dictionary(phoneTagPages.compactMap { key, page in
+                guard let key else { return (key, page) }
+                return moved(key).map { ($0, page) }
+            }, uniquingKeysWith: { first, _ in first })
+        }
+    }
+
     /// The tag tree's rows, top to bottom, leaving out the children of folded parents.
     var visibleTags: [(node: TagNode, depth: Int)] {
         func rows(_ nodes: [TagNode], depth: Int) -> [(node: TagNode, depth: Int)] {

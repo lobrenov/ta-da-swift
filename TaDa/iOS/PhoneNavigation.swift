@@ -223,6 +223,16 @@ enum PhoneTabReselect: Equatable {
         stacks = stacks.mapValues { routes in routes.filter { $0 != .attachment(path) } }
     }
 
+    /// Points every tab's screens for the tag at `old`, and its children, at `new`, or takes them out when `new` is nil.
+    func followTag(_ old: String, to new: String?) {
+        stacks = stacks.mapValues { routes in
+            routes.compactMap { route in
+                guard case let .tag(path?) = route else { return route }
+                return AppModel.followedTagPath(path, from: old, to: new).map { .tag($0) }
+            }
+        }
+    }
+
     /// Takes the screens for files that are gone out of every tab, as after a delete.
     func dropScreens(where isGone: (String) -> Bool) {
         stacks = stacks.mapValues { routes in routes.filter { $0.path.map { !isGone($0) } ?? true } }

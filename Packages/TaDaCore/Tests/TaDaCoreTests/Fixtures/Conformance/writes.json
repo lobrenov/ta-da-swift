@@ -8046,6 +8046,306 @@
     },
     {
       "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#house\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+      "name" : "TagEditor.rename flow closed on an unindented line home to house (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#house\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.rename flow closed on an unindented line home to house (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+      "name" : "TagEditor.rename flow closed on an unindented line work to Work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.rename flow closed on an unindented line work to Work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#work\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+      "name" : "TagEditor.rename flow closed on an unindented line home to work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#work\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.rename flow closed on an unindented line home to work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+      "name" : "TagEditor.delete flow closed on an unindented line home (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.delete flow closed on an unindented line home (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+        "unspliceable" : true
+      },
+      "input" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+      "name" : "TagEditor.delete flow closed on an unindented line work (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+        "unspliceable" : true
+      },
+      "input" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.delete flow closed on an unindented line work (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n",
+      "name" : "TagEditor.delete flow closed on an unindented line missing (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags: [\r\n  home,\r\n  work\r\n]\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.delete flow closed on an unindented line missing (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags:\n  - house # main\n  - work\n---\n#house\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags:\n  - home # main\n  - work\n---\n#home\n",
+      "name" : "TagEditor.rename block item with comment home to house (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "house"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags:\r\n  - house # main\r\n  - work\r\n---\r\n#house\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n  - work\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.rename block item with comment home to house (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags:\n  - home # main\n  - Work\n---\n#home\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags:\n  - home # main\n  - work\n---\n#home\n",
+      "name" : "TagEditor.rename block item with comment work to Work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "work",
+        "to" : "Work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n  - Work\r\n---\r\n#home\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n  - work\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.rename block item with comment work to Work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags:\n  - work\n---\n#work\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags:\n  - home # main\n  - work\n---\n#home\n",
+      "name" : "TagEditor.rename block item with comment home to work (LF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home",
+        "to" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags:\r\n  - work\r\n---\r\n#work\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n  - work\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.rename block item with comment home to work (CRLF)",
+      "op" : "TagEditor.rename"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags:\n  - work\n---\n\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags:\n  - home # main\n  - work\n---\n#home\n",
+      "name" : "TagEditor.delete block item with comment home (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "home"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags:\r\n  - work\r\n---\r\n\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n  - work\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.delete block item with comment home (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags:\n  - home # main\n---\n#home\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags:\n  - home # main\n  - work\n---\n#home\n",
+      "name" : "TagEditor.delete block item with comment work (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "work"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n---\r\n#home\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n  - work\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.delete block item with comment work (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\ntype: task\ntags:\n  - home # main\n  - work\n---\n#home\n",
+        "unspliceable" : false
+      },
+      "input" : "---\ntype: task\ntags:\n  - home # main\n  - work\n---\n#home\n",
+      "name" : "TagEditor.delete block item with comment missing (LF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : {
+        "text" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n  - work\r\n---\r\n#home\r\n",
+        "unspliceable" : false
+      },
+      "input" : "---\r\ntype: task\r\ntags:\r\n  - home # main\r\n  - work\r\n---\r\n#home\r\n",
+      "name" : "TagEditor.delete block item with comment missing (CRLF)",
+      "op" : "TagEditor.delete"
+    },
+    {
+      "args" : {
         "parent" : {
           "kind" : "project",
           "title" : "Garden"

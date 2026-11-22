@@ -20,6 +20,7 @@ struct SidebarView: View {
     @FocusState private var searchFocused: Bool
     /// The folder whose name is being typed: one just made, or one picked for Rename.
     @State private var namingFolder: String?
+    @State private var namingTag: String?
     /// The list on show: `model.sidebarMode`, swapped with a slide, toward the trailing edge when the new one is to the right.
     @State private var listed: AppModel.SidebarMode
     @State private var slidesForward = true
@@ -245,26 +246,46 @@ struct SidebarView: View {
         namingFolder = path
     }
 
-    /// A tag: a row with its glyph, last segment and count, and for a parent a fold chevron in the chevron column.
-    private func tagRow(_ node: TagNode, depth: Int) -> some View {
+    /// A tag: a row with its glyph, last segment and count, for a parent a fold chevron in the chevron column, and the tag
+    /// menu. While it's being renamed, a field with its full path in place of the row.
+    @ViewBuilder private func tagRow(_ node: TagNode, depth: Int) -> some View {
         let path = node.tag.path
         let folded = model.isTagFolded(path)
-        return SidebarRow(selected: model.domain == .tag(path) && !model.isSearching, height: 30, count: node.count,
-                          leading: Self.treeInset) {
-            model.show(.tag(path))
-            picked()
-        } icon: {
-            Image(systemName: "tag")
-                .font(.system(size: 11))
-                .foregroundStyle(theme.color(\.accent))
-                .frame(width: 16)
-                .accessibilityHidden(true)
-        } label: {
-            Text(node.tag.leaf)
+        Group {
+            if namingTag == path {
+                HStack(spacing: 10) {
+                    Image(systemName: "tag")
+                        .font(.system(size: 11))
+                        .foregroundStyle(theme.color(\.accent))
+                        .frame(width: 16)
+                        .accessibilityHidden(true)
+                    InlineTitleField(model: model, path: path, height: 30, font: .system(size: 13), focus: nil,
+                                     rename: { name in model.askRenameTag(node.tag, to: name) },
+                                     onEnd: { if namingTag == path { namingTag = nil } }, text: node.tag.name) {
+                        Text(node.tag.name)
+                    }
+                }
+                .padding(.leading, Self.treeInset)
+            } else {
+                SidebarRow(selected: model.domain == .tag(path) && !model.isSearching, height: 30, count: node.count,
+                           leading: Self.treeInset) {
+                    model.show(.tag(path))
+                    picked()
+                } icon: {
+                    Image(systemName: "tag")
+                        .font(.system(size: 11))
+                        .foregroundStyle(theme.color(\.accent))
+                        .frame(width: 16)
+                        .accessibilityHidden(true)
+                } label: {
+                    Text(node.tag.leaf)
+                }
+                .accessibilityLabel("Tag \(node.tag.name)")
+                .actionMenu(model, target: "tag:" + path) { tagActions(node.tag) }
+            }
         }
-        .accessibilityLabel("Tag \(node.tag.name)")
         .overlay(alignment: .leading) {
-            if !node.children.isEmpty {
+            if !node.children.isEmpty, namingTag != path {
                 Button { model.toggleTagFolded(path) } label: {
                     Image(systemName: folded ? "chevron.right" : "chevron.down")
                         .font(.system(size: 8, weight: .bold))
@@ -278,6 +299,16 @@ struct SidebarView: View {
             }
         }
         .padding(.leading, CGFloat(depth) * 16)
+    }
+
+    /// The tag menu: Rename, Delete Tag…
+    private func tagActions(_ tag: Tag) -> [FileMenuAction] {
+        [
+            FileMenuAction(title: "Rename", systemImage: "pencil", shortcut: "") { namingTag = tag.path },
+            FileMenuAction(title: "Delete Tag…", systemImage: "trash", shortcut: "", isDestructive: true, startsGroup: true) {
+                model.askDeleteTag(tag)
+            },
+        ]
     }
 
     /// A tree row's leading padding: 8, the 14pt chevron column, then 6 before its icon.

@@ -145,4 +145,103 @@ struct TagModelTests {
         #expect(source.tagSuggestions("hom").map(\.tag.path) == ["home", "home/garden"])
         #expect(LinkMenuSource(index: model.index).tagSuggestions("hom").map(\.tag.path).contains("homw"))
     }
+
+    // MARK: Renaming and deleting a tag
+
+    @Test func renamingATagWritesThroughAndStateFollows() async throws {
+        let model = await folder.model()
+        model.toggleTagFolded("home")
+        model.toggleFilterTag("home/garden", on: .agenda)
+        model.toggleFolded("Notes", in: "tag:home")
+        model.toggleFolded("Notes", in: "tag:errands")
+        model.show(.tag("home/garden"))
+        model.showPhoneTagPage("home")
+
+        await model.renameTag(try #require(model.tag(at: "home")), to: try #require(Tag("House")))
+        #expect(try folder.read("tasks/Weed.md") == "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-10-01\ntags: [House/garden]\n---\nPull them. #errands\n")
+        #expect(try folder.read("areas/Home.md") == "---\ntype: area\ntags: [House]\n---\n")
+        #expect(tree(model) == ["errands 1", "House 2", "House/garden 1"])
+        #expect(model.expandedTags == ["house"] && !model.isTagFolded("house"))
+        #expect(model.tagFilter(on: .agenda).picked == ["house/garden"])
+        #expect(model.isFolded("Notes", in: "tag:house") && model.isFolded("Notes", in: "tag:errands") && model.foldedGroups["tag:home"] == nil)
+        #expect(model.domain == .tag("house/garden") && model.shownTag?.name == "House/garden")
+        #expect(model.tagPage?.groups.flatMap(\.tasks).map(\.path) == ["tasks/Weed.md"])
+        #expect(model.phoneTagPages.keys.compactMap { $0 } == ["house"] && model.phoneTagPages["house"]?.groups.isEmpty == false)
+        #expect(model.errorMessage == nil)
+    }
+
+    @Test func renamingToTheSamePathChangesCase() async throws {
+        let model = await folder.model()
+        await model.renameTag(try #require(model.tag(at: "errands")), to: try #require(Tag("Errands")))
+        #expect(try folder.read("tasks/Weed.md").hasSuffix("Pull them. #Errands\n"))
+        #expect(model.tag(at: "errands")?.name == "Errands")
+    }
+
+    @Test func renamingIntoAnExistingTagMerges() async throws {
+        let model = await folder.model()
+        model.askRenameTag(try #require(model.tag(at: "errands")), to: "home")
+        #expect(model.tagRenameConfirmation?.merges == true && model.tagRenameConfirmation?.count == 1)
+        await model.renameTag(try #require(model.tag(at: "errands")), to: try #require(Tag("home")))
+        #expect(tree(model) == ["Home 2", "home/garden 1"])
+    }
+
+    @Test func renameAsksOnlyForAValidChangedName() async throws {
+        let model = await folder.model()
+        let home = try #require(model.tag(at: "home"))
+        model.askRenameTag(home, to: "Home")
+        model.askRenameTag(home, to: "has space #")
+        model.askRenameTag(home, to: "")
+        model.askRenameTag(home, to: "home/garden")
+        model.askRenameTag(home, to: "Home/Pond")
+        #expect(model.tagRenameConfirmation == nil)
+        #expect(AppModel.renameTarget(of: home, to: "HOME")?.name == "HOME" && AppModel.renameTarget(of: home, to: "homely")?.name == "homely")
+        model.askRenameTag(home, to: "house")
+        #expect(model.tagRenameConfirmation?.new?.name == "house" && model.tagRenameConfirmation?.merges == false)
+        #expect(model.tagRenameConfirmation?.count == 2)
+        model.askDeleteTag(home)
+        #expect(model.tagDeleteConfirmation?.count == 2)
+    }
+
+    @Test func deletingATagWritesThroughAndStateIsDropped() async throws {
+        let model = await folder.model()
+        model.toggleTagFolded("home")
+        model.toggleFilterTag("home/garden", on: .agenda)
+        model.toggleFilterTag("errands", on: .agenda)
+        model.toggleFolded("Notes", in: "tag:home")
+        model.show(.tag("home"))
+        model.showPhoneTagPage("home")
+        model.showPhoneTagPage("errands")
+
+        await model.deleteTag(try #require(model.tag(at: "home")))
+        #expect(try folder.read("tasks/Weed.md") == "---\ntype: task\nstatus: Doing\ncreatedDate: 2026-10-01\ntags:\n---\nPull them. #errands\n")
+        #expect(tree(model) == ["errands 1"])
+        #expect(model.expandedTags.isEmpty)
+        #expect(model.tagFilter(on: .agenda).picked == ["errands"])
+        #expect(model.foldedGroups["tag:home"] == nil)
+        #expect(model.domain == .tag(nil) && model.shownTag == nil)
+        #expect(model.phoneTagPages.keys.compactMap { $0 } == ["errands"])
+    }
+
+    @Test func aTagThatCantBeEditedReportsOnlyACount() async throws {
+        try folder.write("---\ntype: task\nstatus: Doing\ntags: [work, # c\n  b]\n---\n", "tasks/Stuck.md")
+        let model = await folder.model()
+        await model.renameTag(try #require(model.tag(at: "work")), to: try #require(Tag("job")))
+        #expect(model.errorMessage == "1 file still has “work”. Ta Da can’t edit its tags property.")
+        #expect(AppModel.tagFailureMessage(count: 2, tag: try #require(Tag("work"))) == "2 files still have “work”. Ta Da can’t edit their tags property.")
+        #expect(AppModel.renameTagMessage(count: 1) == "Changes 1 file, including child tags. This can’t be undone.")
+        #expect(AppModel.deleteTagMessage(count: 3) == "Removes it and its child tags from 3 files. This can’t be undone.")
+    }
+
+    @Test func stateStaysWhileAFileStillCarriesTheTag() async throws {
+        try folder.write("---\ntype: task\nstatus: Doing\ntags: [work, # c\n  b]\n---\n", "tasks/Stuck.md")
+        let model = await folder.model()
+        model.toggleFilterTag("work", on: .agenda)
+        model.show(.tag("work"))
+        let work = try #require(model.tag(at: "work"))
+        #expect(await model.renameTag(work, to: try #require(Tag("job"))) == false)
+        #expect(model.tagFilter(on: .agenda).picked == ["work"] && model.domain == .tag("work"))
+        #expect(await model.deleteTag(work) == false)
+        #expect(model.tagFilter(on: .agenda).picked == ["work"] && model.domain == .tag("work"))
+        #expect(await model.renameTag(try #require(model.tag(at: "errands")), to: try #require(Tag("Errands"))))
+    }
 }

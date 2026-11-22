@@ -21,6 +21,8 @@ struct InlineTitleField<Label: View>: View {
     /// Starts out editing, and runs `onEnd` once editing ends, also when the field goes away while editing, which then
     /// renames: the sidebar's folder name field.
     var onEnd: (() -> Void)? = nil
+    /// The text the field starts with and is compared to, instead of the file's title.
+    var text: String? = nil
     /// The title as it shows when not editing.
     @ViewBuilder var label: Label
     @State private var draft = ""
@@ -31,7 +33,7 @@ struct InlineTitleField<Label: View>: View {
     @State private var clickMonitor: Any?
     @Environment(\.theme) private var theme
 
-    private var title: String { Item.title(ofPath: path) }
+    private var title: String { text ?? Item.title(ofPath: path) }
 
     var body: some View {
         Group {

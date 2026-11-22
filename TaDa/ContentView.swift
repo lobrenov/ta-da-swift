@@ -62,7 +62,30 @@ struct ContentView: View {
         } message: { request in
             Text(request.count == 0 ? "It holds no notes." : "Its \(request.count == 1 ? "note goes" : "\(request.count) notes go") with it. You can restore them from Trash.")
         }
+        .alert(tagRenameTitle,
+               isPresented: Binding { model.tagRenameConfirmation != nil } set: { if !$0 { model.tagRenameConfirmation = nil } },
+               presenting: model.tagRenameConfirmation) { request in
+            Button(request.merges ? "Merge" : "Rename") {
+                if let new = request.new { Task { await model.renameTag(request.tag, to: new) } }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { request in
+            Text(AppModel.renameTagMessage(count: request.count))
+        }
+        .alert("Delete “\(model.tagDeleteConfirmation?.tag.name ?? "")”?",
+               isPresented: Binding { model.tagDeleteConfirmation != nil } set: { if !$0 { model.tagDeleteConfirmation = nil } },
+               presenting: model.tagDeleteConfirmation) { request in
+            Button("Delete", role: .destructive) { Task { await model.deleteTag(request.tag) } }
+            Button("Cancel", role: .cancel) {}
+        } message: { request in
+            Text(AppModel.deleteTagMessage(count: request.count))
+        }
         .task { await model.start() }
+    }
+
+    private var tagRenameTitle: String {
+        guard let request = model.tagRenameConfirmation, let new = request.new else { return "" }
+        return "\(request.merges ? "Merge" : "Rename") “\(request.tag.name)” \(request.merges ? "into" : "to") “\(new.name)”?"
     }
 
     private var folderTrashTitle: String {

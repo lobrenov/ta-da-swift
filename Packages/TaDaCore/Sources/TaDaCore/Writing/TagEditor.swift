@@ -86,7 +86,7 @@ extension FrontmatterEditor {
             for (item, new) in zip(value.items, results).reversed() {
                 guard let line = item.line, new != item.raw else { continue }
                 if let new {
-                    file.lines[line] = Substring("\(indent)- \(new)" + endingOf(file.lines[line]))
+                    file.lines[line] = Substring("\(indent)- \(new)\(item.tail)" + endingOf(file.lines[line]))
                 } else {
                     file.lines.remove(at: line)
                 }
@@ -135,6 +135,8 @@ extension FrontmatterEditor {
             var raw: String
             /// The file line of a block item.
             var line: Int?
+            /// What follows a block item's scalar on its line: spaces and a comment.
+            var tail = ""
             var tag: Tag? { (try? Yams.compose(yaml: raw))?.scalar.flatMap { Tag($0.string) } }
         }
 
@@ -152,7 +154,7 @@ extension FrontmatterEditor {
             if value.hasPrefix("[") {
                 if range.count > 1, comment != nil || continuation.contains(where: { Self.commentStart(in: $0) != nil }) { return nil }
                 let joined = ([String(line)] + continuation.map { $0.trimmingCharacters(in: .whitespaces) }).joined(separator: " ")
-                let parts = Self.flowItems(String(joined.drop { $0 != "[" }))
+                guard let parts = Self.flowItems(String(joined.drop { $0 != "[" })) else { return nil }
                 style = .flow
                 items = parts.items.map { Item(raw: $0) }
                 suffix = parts.suffix
@@ -165,8 +167,12 @@ extension FrontmatterEditor {
                     let rest = content.dropFirst(indent.count)
                     guard rest == "-" || rest.hasPrefix("- ") else { continue }
                     if case .empty = style { style = .block(indent: String(indent)) }
-                    let raw = rest.dropFirst().trimmingCharacters(in: .whitespaces)
-                    if !raw.isEmpty { items.append(Item(raw: raw, line: range.lowerBound + 1 + offset)) }
+                    let body = rest.dropFirst()
+                    let comment = Self.commentStart(in: body)
+                    let scalar = body[..<(comment ?? body.endIndex)]
+                    let raw = scalar.trimmingCharacters(in: .whitespaces)
+                    let tail = String(scalar.suffix(scalar.reversed().prefix { $0.isWhitespace }.count)) + (comment.map { String(body[$0...]) } ?? "")
+                    if !raw.isEmpty { items.append(Item(raw: raw, line: range.lowerBound + 1 + offset, tail: tail)) }
                 }
             } else {
                 guard range.count == 1, !value.hasPrefix("|"), !value.hasPrefix(">") else { return nil }
@@ -197,8 +203,8 @@ extension FrontmatterEditor {
             return nil
         }
 
-        /// The items between `[` and its `]`, split at commas outside quotes and brackets, and the text after `]`.
-        private static func flowItems(_ text: String) -> (items: [String], suffix: String) {
+        /// The items between `[` and its `]`, split at commas outside quotes and brackets, and the text after `]`. Nil when there's no `]`.
+        private static func flowItems(_ text: String) -> (items: [String], suffix: String)? {
             var items: [String] = [], current = "", depth = 0, quote: Character?
             var index = text.index(after: text.startIndex)
             while index < text.endIndex {
@@ -226,8 +232,7 @@ extension FrontmatterEditor {
                 default: current.append(c)
                 }
             }
-            let item = current.trimmingCharacters(in: .whitespaces)
-            return (item.isEmpty ? items : items + [item], "")
+            return nil
         }
     }
 }

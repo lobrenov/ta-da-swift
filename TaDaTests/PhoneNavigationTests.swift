@@ -193,4 +193,16 @@ struct PhoneNavigationTests {
         nav.tab = .tags
         #expect(nav.reselection(of: .tags, agenda: elsewhere, today: today) == nil, "only the Agenda goes to today")
     }
+
+    @Test func tagScreensFollowARenameAndCloseOnADelete() {
+        let nav = PhoneNavigation()
+        nav.stacks[.tags] = [.tag("work"), .tag("work/acem"), .tag("homework"), .tag(nil)]
+        nav.stacks[.agenda] = [.file("a.md"), .tag("work")]
+        nav.followTag("work", to: "job")
+        #expect(nav.stacks[.tags] == [.tag("job"), .tag("job/acem"), .tag("homework"), .tag(nil)])
+        #expect(nav.stacks[.agenda] == [.file("a.md"), .tag("job")])
+        nav.followTag("job", to: nil)
+        #expect(nav.stacks[.tags] == [.tag("homework"), .tag(nil)])
+        #expect(nav.stacks[.agenda] == [.file("a.md")])
+    }
 }

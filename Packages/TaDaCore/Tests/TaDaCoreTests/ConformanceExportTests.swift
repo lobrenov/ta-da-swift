@@ -372,6 +372,8 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         ("block with body", "---\ntype: note\ntags:\n  - work\n  - Home\n---\n#home #work\nplain\n"),
         ("body only", "Todo #home/garden; #home\n\n```\n#home\n```\n"),
         ("comment value with body", "---\ntype: task\ntags: [home, # c\n  work]\n---\n#home #work\n"),
+        ("flow closed on an unindented line", "---\ntype: task\ntags: [\n  home,\n  work\n]\n---\n#home\n"),
+        ("block item with comment", "---\ntype: task\ntags:\n  - home # main\n  - work\n---\n#home\n"),
     ]
     for (label, text) in tagged {
         for (from, to) in [("home", "house"), ("work", "Work"), ("home", "work")] {

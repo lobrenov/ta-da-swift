@@ -6,7 +6,12 @@ import TaDaCore
 
 struct PhoneTagsScreen: View {
     let model: AppModel
+    /// The tag a Rename… or Delete Tag… alert asks about, and the name typed in the rename alert.
+    @State private var renaming: AppModel.TagConfirmation?
+    @State private var deleting: AppModel.TagConfirmation?
+    @State private var newName = ""
     @Environment(\.theme) private var theme
+    @Environment(PhoneNavigation.self) private var nav
 
     var body: some View {
         let tagged = model.taggedCount
@@ -36,10 +41,44 @@ struct PhoneTagsScreen: View {
                                      isFolded: model.isTagFolded(path), isLast: node.id == rows.last?.node.id) {
                             model.toggleTagFolded(path)
                         }
+                        .contextMenu {
+                            Button { newName = node.tag.name; renaming = confirmation(node.tag) } label: { Label("Rename…", systemImage: "pencil") }
+                            Button(role: .destructive) { deleting = confirmation(node.tag) } label: { Label("Delete Tag…", systemImage: "trash") }
+                        }
                     }
                 }
             }
         }
+        .alert("Rename “\(renaming?.tag.name ?? "")”",
+               isPresented: Binding { renaming != nil } set: { if !$0 { renaming = nil } },
+               presenting: renaming) { request in
+            TextField("Tag", text: $newName)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            Button("Cancel", role: .cancel) {}
+            Button("Rename") {
+                if let new = AppModel.renameTarget(of: request.tag, to: newName) {
+                    Task { if await model.renameTag(request.tag, to: new) { nav.followTag(request.tag.path, to: new.path) } }
+                }
+            }
+            .disabled(AppModel.renameTarget(of: request.tag, to: newName) == nil)
+        } message: { request in
+            Text(AppModel.renameTagMessage(count: request.count))
+        }
+        .alert("Delete “\(deleting?.tag.name ?? "")”?",
+               isPresented: Binding { deleting != nil } set: { if !$0 { deleting = nil } },
+               presenting: deleting) { request in
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task { if await model.deleteTag(request.tag) { nav.followTag(request.tag.path, to: nil) } }
+            }
+        } message: { request in
+            Text(AppModel.deleteTagMessage(count: request.count))
+        }
+    }
+
+    private func confirmation(_ tag: Tag) -> AppModel.TagConfirmation {
+        AppModel.TagConfirmation(tag: tag, new: nil, count: model.fileCount(carryingOrUnder: tag))
     }
 
     private static func spoken(_ name: String, _ count: Int) -> String {
