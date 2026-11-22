@@ -71,6 +71,28 @@ public struct DayMarks: Hashable, Sendable {
     public var hasOpenBoxes: Bool
 }
 
+/// The app icon's badge: Today's open tasks now, and the count from each later day on which it goes up as tasks fall due.
+public struct BadgePlan: Hashable, Sendable {
+    public struct Change: Hashable, Sendable {
+        public var date: LocalDate
+        public var count: Int
+
+        public init(date: LocalDate, count: Int) {
+            self.date = date
+            self.count = count
+        }
+    }
+
+    public var count: Int
+    /// By date, each after today.
+    public var changes: [Change]
+
+    public init(count: Int, changes: [Change]) {
+        self.count = count
+        self.changes = changes
+    }
+}
+
 /// The saved queries behind the sidebar domains. `today` is always passed in. Today, Upcoming and
 /// Loose list tasks; projects show their dates on their own page. Each list applies a per-item test to
 /// every task, and the tests answer for one file too.
@@ -79,6 +101,23 @@ extension VaultIndex {
     /// Sorted by their earliest date, then title.
     public func today(_ today: LocalDate) -> [Item] {
         tasks.filter { isInToday($0, today: today) }.sorted { Self.byDate($0, $1) }
+    }
+
+    /// The badge for `today` and the days after it, while no file changes: an open task counts from its earlier date.
+    /// Holds the first `limit` changes.
+    public func badgePlan(today: LocalDate, limit: Int = 60) -> BadgePlan {
+        var count = 0
+        var later: [LocalDate: Int] = [:]
+        for task in tasks where !task.properties.status.isClosed {
+            guard let date = [task.properties.dueDate, task.properties.deadline].compactMap({ $0 }).min() else { continue }
+            if date <= today { count += 1 } else { later[date, default: 0] += 1 }
+        }
+        var running = count
+        let changes = later.keys.sorted().prefix(limit).map { date in
+            running += later[date]!
+            return BadgePlan.Change(date: date, count: running)
+        }
+        return BadgePlan(count: count, changes: changes)
     }
 
     /// The tasks an Agenda day lists. Today's list for `today`; for any other day, tasks due or at their deadline that

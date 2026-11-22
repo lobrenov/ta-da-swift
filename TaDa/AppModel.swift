@@ -594,6 +594,19 @@ import UIKit
     }
 
     #if os(iOS)
+    /// Background app refresh: reads the saved folder's tasks afresh and sets the badge and its schedule from them,
+    /// leaving the open folder as it is.
+    func refreshBadgeInBackground() async {
+        guard notifications.showsBadge, let bookmark = defaults.data(forKey: Keys.bookmark),
+              let folder = try? Vault.resolve(bookmark).folder else { return }
+        let didStart = folder.startAccessingSecurityScopedResource()
+        defer { if didStart { folder.stopAccessingSecurityScopedResource() } }
+        let vault = Vault(root: folder)
+        await Self.run { vault.downloadPlaceholders() }
+        let index = await vault.loadIndex()
+        notifications.update(index.badgePlan(today: LocalDate(Date())))
+    }
+
     /// Whether the app is in the background, where it can't answer file coordination.
     @ObservationIgnored private var isInBackground = false
 
@@ -2500,7 +2513,7 @@ import UIKit
         updateTags()
         updateNotes()
         updateAgenda()
-        notifications.update(count: todayCount)
+        notifications.update(index.badgePlan(today: today))
     }
 
     /// The selected period's tasks, entries and occurrences, the dots for the days shown, and the events and reminders to fetch.

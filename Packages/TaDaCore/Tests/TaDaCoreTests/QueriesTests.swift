@@ -24,6 +24,14 @@ private let index = VaultIndex(items)
     #expect(index.today(today).map(\.title) == ["Overdue due", "Overdue deadline", "Deadline today", "Due today", "Done today"])
 }
 
+@Test func badgePlanCountsTodaysOpenTasksThenEachDayTheyFallDue() {
+    let plan = index.badgePlan(today: today)
+    #expect(plan.count == index.today(today).count { !$0.properties.status.isClosed })
+    #expect(plan.count == 4)
+    #expect(plan.changes.map { "\($0.date) \($0.count)" } == ["2026-10-03 5", "2026-10-05 6"])
+    #expect(index.badgePlan(today: today, limit: 1).changes.map(\.count) == [5])
+}
+
 @Test func overdueIsOpenAndPastEitherDate() {
     let overdue = items.filter { index.isOverdue($0, today: today) }.map(\.title)
     #expect(overdue == ["Overdue due", "Overdue deadline"])

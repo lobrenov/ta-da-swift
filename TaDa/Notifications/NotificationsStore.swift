@@ -1,6 +1,8 @@
 // Settings ▸ Notifications' Badges switch: while it's on, the app icon's badge counts Today's open tasks, those due or at
-// their deadline today or earlier.
+// their deadline today or earlier. Badge-only notifications set the count at the start of each later day it goes up,
+// whether Ta Da is running or not.
 import Foundation
+import TaDaCore
 import UserNotifications
 #if os(iOS)
 import UIKit
@@ -24,20 +26,26 @@ final class NotificationsStore {
 
     private let defaults: any SettingsStore
     private let setBadge: (Int) -> Void
-    @ObservationIgnored private var count = 0
+    private let schedule: ([BadgePlan.Change]) -> Void
+    @ObservationIgnored private var plan = BadgePlan(count: 0, changes: [])
     /// The badge last set; 0 at launch while the switch is off, so an off switch never asks the notification center.
     @ObservationIgnored private var shown: Int?
+    /// The changes last scheduled; none at launch while the switch is off, for the same reason.
+    @ObservationIgnored private var scheduled: [BadgePlan.Change]?
 
     private enum Keys {
         static let showsBadge = "notifications.showsBadge"
     }
 
     init(defaults: any SettingsStore,
-         setBadge: @escaping (Int) -> Void = { UNUserNotificationCenter.current().setBadgeCount($0, withCompletionHandler: nil) }) {
+         setBadge: @escaping (Int) -> Void = { UNUserNotificationCenter.current().setBadgeCount($0, withCompletionHandler: nil) },
+         schedule: @escaping ([BadgePlan.Change]) -> Void = NotificationsStore.scheduleBadges) {
         self.defaults = defaults
         self.setBadge = setBadge
+        self.schedule = schedule
         showsBadge = defaults.bool(forKey: Keys.showsBadge)
         shown = showsBadge ? nil : 0
+        scheduled = showsBadge ? nil : []
     }
 
     var access: Access {
@@ -57,9 +65,9 @@ final class NotificationsStore {
         showsBadge = allowed
     }
 
-    /// Sets the number of Today's open tasks, shown while the switch is on.
-    func update(count: Int) {
-        self.count = count
+    /// Sets Today's open tasks and the later days the count goes up, shown and scheduled while the switch is on.
+    func update(_ plan: BadgePlan) {
+        self.plan = plan
         showBadge()
     }
 
@@ -88,9 +96,30 @@ final class NotificationsStore {
     }
 
     private func showBadge() {
-        let badge = showsBadge ? count : 0
-        guard badge != shown else { return }
-        shown = badge
-        setBadge(badge)
+        let badge = showsBadge ? plan.count : 0
+        if badge != shown {
+            shown = badge
+            setBadge(badge)
+        }
+        let changes = showsBadge ? plan.changes : []
+        if changes != scheduled {
+            scheduled = changes
+            schedule(changes)
+        }
+    }
+
+    /// Replaces the pending notifications with one per change, each setting the badge at the start of its day, with no
+    /// alert or sound. Ta Da schedules no other notifications.
+    nonisolated static func scheduleBadges(_ changes: [BadgePlan.Change]) {
+        let center = UNUserNotificationCenter.current()
+        center.removeAllPendingNotificationRequests()
+        for change in changes {
+            let content = UNMutableNotificationContent()
+            content.badge = NSNumber(value: change.count)
+            let start = DateComponents(year: change.date.year, month: change.date.month, day: change.date.day, hour: 0, minute: 0)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: start, repeats: false)
+            center.add(UNNotificationRequest(identifier: "badge.\(change.date)", content: content, trigger: trigger),
+                       withCompletionHandler: nil)
+        }
     }
 }

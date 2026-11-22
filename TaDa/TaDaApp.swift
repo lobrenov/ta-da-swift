@@ -1,5 +1,6 @@
 // App entry. On the Mac: one main window plus Settings, sharing one AppModel, which the app delegate owns.
-// On iOS: one window group; the model refreshes (and takes the date) when the scene becomes active and saves when it leaves.
+// On iOS: one window group; the model refreshes (and takes the date) when the scene becomes active and saves when it leaves,
+// and background app refresh sets the badge.
 import Combine
 import SwiftUI
 import TaDaCore
@@ -89,6 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 #else
+import BackgroundTasks
 
 @main
 struct TaDaApp: App {
@@ -102,6 +104,10 @@ struct TaDaApp: App {
                     model.today = LocalDate(Date())
                 }
         }
+        .backgroundTask(.appRefresh(Self.badgeRefresh)) {
+            await model.refreshBadgeInBackground()
+            await scheduleBadgeRefresh()
+        }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
@@ -114,10 +120,22 @@ struct TaDaApp: App {
                 if let document = model.document { Task { await model.save(document) } }
             case .background:
                 saveInBackground()
+                scheduleBadgeRefresh()
             @unknown default:
                 break
             }
         }
+    }
+
+    /// The background app refresh that sets the badge from the folder (`BGTaskSchedulerPermittedIdentifiers`).
+    private static let badgeRefresh = (Bundle.main.bundleIdentifier ?? "") + ".badge"
+
+    /// Asks for the next badge refresh, an hour on at the earliest, while the Badges switch is on. iOS picks the time.
+    private func scheduleBadgeRefresh() {
+        guard model.notifications.showsBadge else { return }
+        let request = BGAppRefreshTaskRequest(identifier: Self.badgeRefresh)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 3600)
+        try? BGTaskScheduler.shared.submit(request)
     }
 
     /// Saves the open file (keeping unsaved edits in a copy if it changed outside Ta Da) and stops presenting files,
