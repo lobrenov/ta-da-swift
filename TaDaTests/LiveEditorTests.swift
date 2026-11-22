@@ -17,6 +17,17 @@ struct LiveEditorTests {
     }
 }
 
+/// An embed of an existing file that isn't an image draws a file block.
+struct FileBlockTests {
+    @Test func onlyAnExistingNonImageEmbedIsAFile() {
+        let images = AttachmentImages(root: nil, paths: ["Ta Da/attachments/menu.pdf", "Ta Da/attachments/front.jpg"])
+        #expect(images.isFile(for: EmbeddedImageRequest(name: "menu.pdf")))
+        #expect(images.isFile(for: EmbeddedImageRequest(name: "Ta Da/attachments/menu.pdf")))
+        #expect(!images.isFile(for: EmbeddedImageRequest(name: "front.jpg")))
+        #expect(!images.isFile(for: EmbeddedImageRequest(name: "gone.pdf")))
+    }
+}
+
 /// A link to a task draws that task's status box.
 struct LinkMarkerTests {
     private func index() -> VaultIndex {

@@ -109,7 +109,7 @@ struct CleanUpDialog: View {
                     .overlay {
                         if isOn { Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).foregroundStyle(theme.color(\.bg)) }
                     }
-                ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, side: 34, cornerRadius: 5)
+                ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, name: image.name, side: 34, cornerRadius: 5)
                     .opacity(isOn ? 1 : 0.55)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(image.name).foregroundStyle(theme.color(isOn ? \.strong : \.fg))

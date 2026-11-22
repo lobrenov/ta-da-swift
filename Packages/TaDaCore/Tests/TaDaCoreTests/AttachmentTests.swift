@@ -27,10 +27,10 @@ import Testing
     }
 }
 
-@Test func attachmentPathsListImagesNewestFirstOutsideHiddenFolders() async throws {
+@Test func attachmentPathsListAttachmentsNewestFirstOutsideHiddenFolders() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        for path in ["Ta Da/attachments/old.png", "notes/new.JPG", ".trash/attachments/gone.png", "notes/readme.md", "notes/report.pdf"] {
+        for path in ["Ta Da/attachments/old.png", "notes/new.JPG", ".trash/attachments/gone.png", "notes/readme.md", "notes/README.MD", "notes/Makefile"] {
             try writeFile("x", path, in: folder)
         }
         try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSinceNow: -60)],
@@ -39,15 +39,35 @@ import Testing
     }
 }
 
-@Test func attachmentPathsListNotYetDownloadedImagesUnderTheirRealNames() async throws {
+@Test func attachmentPathsListNotYetDownloadedAttachmentsUnderTheirRealNames() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        for path in ["Ta Da/attachments/here.png", "notes/.Waiting.JPG.icloud", ".trash/attachments/.Gone.png.icloud", "notes/.Hidden.txt", ".Top.png.icloud"] {
+        for path in ["Ta Da/attachments/here.png", "notes/.Waiting.JPG.icloud", ".trash/attachments/.Gone.png.icloud", "notes/.Hidden.txt", ".Top.png.icloud",
+                     "notes/.kia-contract.pdf.icloud", "notes/.Note.md.icloud"] {
             try writeFile("x", path, in: folder)
         }
-        #expect(vault.attachmentPaths() == ["Ta Da/attachments/here.png", "Top.png", "notes/Waiting.JPG"])
+        #expect(vault.attachmentPaths() == ["Ta Da/attachments/here.png", "Top.png", "notes/Waiting.JPG", "notes/kia-contract.pdf"])
         #expect(vault.attachmentPath(for: try #require(WikiLink("[[waiting.jpg]]"))) == "notes/Waiting.JPG")
     }
+}
+
+@Test func attachmentPathsListAnyFileWithAnExtensionOtherThanMarkdown() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        for path in ["a.pdf", "notes/b.XLSX", "c.zip", "d.png", "notes.md", "LICENSE", ".hidden.pdf", ".obsidian/e.pdf", ".trash/f.pdf",
+                     "Ta Da/settings.json", "Ta Da/other.json"] {
+            try writeFile("x", path, in: folder)
+        }
+        #expect(Set(vault.attachmentPaths()) == ["a.pdf", "notes/b.XLSX", "c.zip", "d.png", "Ta Da/other.json"])
+        #expect(vault.attachmentPath(for: try #require(WikiLink("[[b.xlsx]]"))) == "notes/b.XLSX")
+        #expect(vault.attachmentPath(for: try #require(WikiLink("[[a.pdf|Contract]]"))) == "a.pdf")
+    }
+}
+
+@Test func anAttachmentHasAnExtensionOtherThanMarkdownAndAnImageHasAnImageOne() {
+    #expect(["a.pdf", "b.XLSX", "c.png", "dir/d.zip", "clip.mp3", "x.7z"].allSatisfy(Vault.isAttachment))
+    #expect(!["Note", "note.md", "Note.MD", "Ta Da/settings.json", "name.", ".hidden", "Version 1.2", "Meeting 2026.11.22", "a.b c"].contains(where: Vault.isAttachment))
+    #expect(Vault.isImage("c.PNG") && !Vault.isImage("a.pdf"))
 }
 
 @Test func anEmbedNamesAnImageByItsFilenameUnlessAnotherComesFirst() {
@@ -89,7 +109,7 @@ import Testing
 @Test func renamingAnImageKeepsItsFolderAndExtensionAndRefusesATakenName() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        for path in ["Ta Da/attachments/front.jpg", "notes/odometer.png"] { try writeFile("x", path, in: folder) }
+        for path in ["Ta Da/attachments/front.jpg", "notes/odometer.png", "docs/Contract.pdf"] { try writeFile("x", path, in: folder) }
         let paths = vault.attachmentPaths()
         let renamed = Vault.renamedAttachment("Ta Da/attachments/front.jpg", to: "Front: side?")
         #expect(renamed == "Ta Da/attachments/Front - side.jpg")
@@ -98,9 +118,10 @@ import Testing
         #expect(!Vault.attachmentName(of: renamed, isTakenBesides: "Ta Da/attachments/front.jpg", in: paths))
         #expect(Vault.attachmentName(of: "Ta Da/attachments/Odometer.PNG", isTakenBesides: "Ta Da/attachments/front.jpg", in: paths))
         #expect(!Vault.attachmentName(of: "Ta Da/attachments/Front.jpg", isTakenBesides: "Ta Da/attachments/front.jpg", in: paths))
+        #expect(Vault.attachmentName(of: "Ta Da/attachments/contract.PDF", isTakenBesides: "Ta Da/attachments/front.jpg", in: paths))
         try vault.renameAttachment("Ta Da/attachments/front.jpg", to: renamed)
         try vault.renameAttachment(renamed, to: "Ta Da/attachments/front side.jpg")
-        #expect(Set(vault.attachmentPaths()) == ["Ta Da/attachments/front side.jpg", "notes/odometer.png"])
+        #expect(Set(vault.attachmentPaths()) == ["Ta Da/attachments/front side.jpg", "notes/odometer.png", "docs/Contract.pdf"])
         try writeFile("y", "Ta Da/attachments/odometer.png", in: folder)
         #expect(throws: CocoaError.self) { try vault.renameAttachment("notes/odometer.png", to: "Ta Da/attachments/odometer.png") }
     }
@@ -113,4 +134,35 @@ import Testing
     let index = VaultIndex([a, b])
     #expect(index.embedders(ofAttachment: "Ta Da/attachments/front.jpg", among: paths).map { "\($0.item.title) \($0.count)" } == ["A 2"])
     #expect(index.embedders(ofAttachment: "notes/front.jpg", among: paths).map { "\($0.item.title) \($0.count)" } == ["B 1"])
+}
+
+@Test func renamingAPDFKeepsItsExtensionAndRetargetsItsEmbeds() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("x", "docs/old.pdf", in: folder)
+        let paths = vault.attachmentPaths()
+        let renamed = Vault.renamedAttachment("docs/old.pdf", to: "New contract")
+        #expect(renamed == "docs/New contract.pdf")
+        let text = "---\ntype: task\n---\n![[old.pdf]] ![[docs/old.pdf|Old]] [[old]]\n"
+        #expect(Vault.retargetEmbeds(in: text, from: "docs/old.pdf", to: renamed, paths: paths)
+                == "---\ntype: task\n---\n![[New contract.pdf]] ![[docs/New contract.pdf|Old]] [[old]]\n")
+    }
+}
+
+@Test func copyAttachmentCopiesTheFileAndRefusesATakenPath() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder.appending(path: "Vault"))
+        try writeFile("pdf", "Source/report.pdf", in: folder)
+        let source = folder.appending(path: "Source/report.pdf")
+        try vault.copyAttachment(from: source, to: "Ta Da/attachments/report.pdf")
+        #expect(try Data(contentsOf: vault.url(for: "Ta Da/attachments/report.pdf")) == Data("pdf".utf8))
+        #expect(throws: (any Error).self) { try vault.copyAttachment(from: source, to: "Ta Da/attachments/report.pdf") }
+    }
+}
+
+@Test func aSettingsPlaceholderIsNotAnAttachment() async throws {
+    try await withTemporaryFolder { folder in
+        for path in ["Ta Da/.settings.json.icloud", "notes/.settings.json.icloud"] { try writeFile("", path, in: folder) }
+        #expect(Vault(root: folder).attachmentPaths() == ["notes/settings.json"])
+    }
 }

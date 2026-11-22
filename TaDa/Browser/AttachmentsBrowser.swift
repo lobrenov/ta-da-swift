@@ -34,7 +34,7 @@ struct AttachmentsBrowser: View {
 
     private var empty: EmptyState {
         EmptyState(systemImage: AppModel.Domain.attachments.systemImage, title: "No attachments",
-                   message: "Images you paste or drop into a file are saved in `\(Vault.attachmentFolder)`.")
+                   message: "Images and files you paste or drop into a file are saved in `\(Vault.attachmentFolder)`.")
     }
 
     private func header(_ groups: AttachmentGroups, count total: Int) -> some View {
@@ -92,7 +92,7 @@ private struct AttachmentRow: View {
             model.attachmentNote = nil
         } label: {
             HStack(spacing: 12) {
-                ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, side: 34, cornerRadius: 5)
+                ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, name: image.name, side: 34, cornerRadius: 5)
                     .opacity(image.isDownloaded ? 1 : 0.45)
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
@@ -135,7 +135,7 @@ struct AttachmentDetail: View {
         let groups = model.attachmentGroups
         let picked = (groups.candidates + groups.inUse).filter { model.attachmentSelection.contains($0.id) }
         VStack(spacing: 0) {
-            crumb(picked.count == 1 ? picked[0].attachment.name : picked.count > 1 ? "\(picked.count) images" : nil)
+            crumb(picked.count == 1 ? picked[0].attachment.name : picked.count > 1 ? "\(picked.count) attachments" : nil)
             Hairline()
             if picked.count == 1 {
                 SingleAttachment(model: model, use: picked[0]).id(picked[0].id)
@@ -217,13 +217,13 @@ private struct SingleAttachment: View {
         }
         .task(id: image.path) {
             dimensions = nil
-            guard image.isDownloaded, let url = model.vault?.url(for: image.path), let size = await ImageMetadata.pixelSize(of: url) else { return }
+            guard image.isDownloaded, Vault.isImage(image.name), let url = model.vault?.url(for: image.path), let size = await ImageMetadata.pixelSize(of: url) else { return }
             dimensions = "\(size.width) × \(size.height)"
         }
     }
 
     private func preview(_ image: Attachment) -> some View {
-        AttachmentPreview(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil)
+        AttachmentPreview(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, name: image.name)
             .overlay {
                 if !image.isDownloaded {
                     VStack(spacing: 10) {
@@ -291,7 +291,7 @@ private struct SeveralAttachments: View {
             VStack(alignment: .leading, spacing: 14) {
                 ZStack(alignment: .topLeading) {
                     ForEach(Array(images.prefix(3).enumerated()), id: \.offset) { offset, image in
-                        ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, side: 150, cornerRadius: 10)
+                        ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, name: image.name, side: 150, cornerRadius: 10)
                             .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.bg), lineWidth: 2))
                             .shadow(color: .black.opacity(0.25), radius: 9, y: 3)
                             .rotationEffect(.degrees(Double(offset - 1) * 4))
@@ -300,7 +300,7 @@ private struct SeveralAttachments: View {
                 }
                 .frame(height: 200, alignment: .topLeading)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(images.count) images")
+                    Text(Attachment.countText(images.count))
                         .font(.system(size: 19, weight: .bold))
                         .foregroundStyle(theme.color(\.strong))
                     Text(Attachment.sizeText(Attachment.totalSize(of: images)) + " · " + images.map(\.name).joined(separator: ", "))
@@ -316,7 +316,7 @@ private struct SeveralAttachments: View {
                     .buttonStyle(ActionButtonStyle(height: 28))
                 }
                 Hairline().padding(.top, 4)
-                Text("⌘-click picks or unpicks an image, ⇧-click picks a run, ⌘A picks every image. ⌫ moves the picked images to Trash, asking first when an open file embeds one.")
+                Text("⌘-click picks or unpicks an attachment, ⇧-click picks a run, ⌘A picks every attachment. ⌫ moves the picked attachments to Trash, asking first when an open file embeds one.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(theme.color(\.muted))
             }

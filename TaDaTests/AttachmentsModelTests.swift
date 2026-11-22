@@ -27,6 +27,12 @@ struct AttachmentsModelTests {
         #expect(model.attachmentSelection.count == 3 && model.picked.count == 3)
     }
 
+    @Test func attachmentWordingCoversFilesAndOmitsPixelsForNonImages() {
+        #expect(Attachment.countText(1) == "1 attachment" && Attachment.countText(3) == "3 attachments")
+        let pdf = Attachment(path: "Ta Da/attachments/menu.pdf", size: 2_000_000, added: nil, isDownloaded: true)
+        #expect(pdf.metaText(dimensions: nil) == "PDF · 2 MB")
+    }
+
     @Test func movingUnusedImagesGoesStraightToTrashAndNotesIt() async throws {
         let model = await folder.model()
         model.show(.attachments)

@@ -1328,15 +1328,15 @@ import UIKit
 
     // MARK: Attachments
 
-    /// An image pasted or dropped into the editor.
+    /// An image or file pasted or dropped into the editor.
     enum PastedImage {
-        /// An image file: one in the folder is embedded where it is; another is copied into `Ta Da/attachments/`.
+        /// A file (not markdown): one in the folder is embedded where it is; another is copied into `Ta Da/attachments/`.
         case file(URL)
         /// Image data without a file, saved as `Pasted image <time>.<ext>`.
         case data(Data, extension: String)
     }
 
-    /// Saves a pasted or dropped image into `Ta Da/attachments/`, numbering a name taken there, and returns its `![[ ]]`. An image
+    /// Saves a pasted or dropped image or file into `Ta Da/attachments/`, numbering a name taken there, and returns its `![[ ]]`. A file
     /// already in the folder isn't copied. The file is written off the main actor, in order (`savingImage` finishes
     /// when they all are). Nil when it can't be saved, with the reason in `errorMessage`.
     func embed(_ image: PastedImage) -> String? {
@@ -1346,6 +1346,8 @@ import UIKit
         var save: (@Sendable () throws -> Void)?
         switch image {
         case .file(let url):
+            guard Vault.isAttachment(url.lastPathComponent),
+                  (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { return nil }
             let root = vault.root.resolvingSymlinksInPath().pathComponents
             let components = url.resolvingSymlinksInPath().pathComponents
             let relative = components.dropFirst(root.count)
@@ -1353,7 +1355,7 @@ import UIKit
                 path = relative.joined(separator: "/")
             } else {
                 path = Vault.attachmentPath(named: url.lastPathComponent, avoiding: taken)
-                save = { try vault.saveAttachment(Data(contentsOf: url), at: path) }
+                save = { try vault.copyAttachment(from: url, to: path) }
             }
         case .data(let data, let ext):
             path = Vault.attachmentPath(named: FileNaming.pastedImage(at: Date(), extension: ext), avoiding: taken)
@@ -1369,7 +1371,7 @@ import UIKit
                     try await Self.run(save)
                 } catch {
                     attachments.removeAll { $0 == path }
-                    errorMessage = Self.couldNot("save the image", error)
+                    errorMessage = Self.couldNot("save the file", error)
                 }
                 imageSaves -= 1
                 if imageSaves == 0 { attachments = await Self.run { vault.attachmentPaths() } }
@@ -1396,7 +1398,7 @@ import UIKit
         let newPath = Vault.renamedAttachment(path, to: name), oldName = Item.title(ofPath: path)
         guard newPath != path else { return }
         guard !Vault.attachmentName(of: newPath, isTakenBesides: path, in: attachments) else {
-            errorMessage = "An image named “\(Item.title(ofPath: newPath))” is already in the folder."
+            errorMessage = "A file named “\(Item.title(ofPath: newPath))” is already in the folder."
             return
         }
         let paths = attachments

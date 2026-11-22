@@ -32,7 +32,7 @@ struct PhoneAttachmentsScreen: View {
         .overlay {
             if all.isEmpty {
                 ContentUnavailableView("No attachments", systemImage: AppModel.Domain.attachments.systemImage,
-                                       description: Text("Images you paste or drop into a file are saved in `\(Vault.attachmentFolder)`."))
+                                       description: Text("Images and files you paste or drop into a file are saved in `\(Vault.attachmentFolder)`."))
             }
         }
         .overlay(alignment: .bottom) {
@@ -54,7 +54,7 @@ struct PhoneAttachmentsScreen: View {
             .accessibilityHidden(true)
     }
 
-    /// "12 images · 16.2 MB", or the picked images' count and size while picking.
+    /// "12 attachments · 16.2 MB", or the picked attachments' count and size while picking.
     private func subtitle(_ groups: AttachmentGroups, all: [AttachmentUse]) -> String {
         if nav.isPicking {
             let picked = all.filter { nav.picked.contains($0.id) }.map(\.attachment)
@@ -111,7 +111,7 @@ struct PhoneAttachmentsScreen: View {
         let unused = groups.candidates.count
         return PhoneBottomBar {
             HStack(spacing: 8) {
-                Text(unused == 0 ? "Every image is in an open file" : "\(unused) not in open files")
+                Text(unused == 0 ? "Every attachment is in an open file" : "\(unused) not in open files")
                     .scaledFont(size: 15)
                     .foregroundStyle(theme.color(\.muted))
                     .lineLimit(1)
@@ -183,7 +183,7 @@ private struct AttachmentRow: View {
                             .transition(.opacity.animation(PhoneNavigation.pickFade))
                             .accessibilityHidden(true)
                     }
-                    ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, side: 44, cornerRadius: 8)
+                    ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, name: image.name, side: 44, cornerRadius: 8)
                         .opacity(image.isDownloaded ? 1 : 0.45)
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(spacing: 6) {
@@ -265,7 +265,7 @@ struct PhoneAttachmentScreen: View {
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 14) {
-                    AttachmentPreview(url: image.isDownloaded ? url : nil, cornerRadius: 16)
+                    AttachmentPreview(url: image.isDownloaded ? url : nil, name: image.name, cornerRadius: 16)
                         .overlay { if !image.isDownloaded { downloading } }
                     VStack(alignment: .leading, spacing: 3) {
                         Text(image.name)
@@ -287,7 +287,7 @@ struct PhoneAttachmentScreen: View {
             dimensions = nil
             downloadFailed = false
             if image.isDownloaded {
-                guard let url, let size = await ImageMetadata.pixelSize(of: url) else { return }
+                guard Vault.isImage(image.name), let url, let size = await ImageMetadata.pixelSize(of: url) else { return }
                 dimensions = "\(size.width) × \(size.height)"
             } else {
                 await download(image)
@@ -541,7 +541,7 @@ private struct PhoneCleanUpSheet: View {
                     .scaledFont(size: 24)
                     .foregroundStyle(isOn ? theme.color(\.accent) : theme.color(\.muted))
                     .accessibilityHidden(true)
-                ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, side: 44, cornerRadius: 8)
+                ImageThumbnail(url: image.isDownloaded ? model.vault?.url(for: image.path) : nil, name: image.name, side: 44, cornerRadius: 8)
                     .opacity(isOn ? 1 : 0.55)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(image.name)

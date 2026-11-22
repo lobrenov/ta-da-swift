@@ -85,7 +85,7 @@ private func uses(_ files: [String: String], images: [String], in folder: URL) a
 @Test func onlyTheAttachmentsFolderIsListed() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
-        for path in ["Ta Da/attachments/a.png", "Ta Da/attachments/sub/b.png", "Ta Da/attachments/note.txt", "Ta Da/other/c.png",
+        for path in ["Ta Da/attachments/a.png", "Ta Da/attachments/sub/b.png", "Ta Da/attachments/Makefile", "Ta Da/other/c.png",
                      "attachments/d.png", "notes/e.png", ".trash/attachments/f.png"] {
             try writeFile("x", path, in: folder)
         }
@@ -157,5 +157,14 @@ private func uses(_ files: [String: String], images: [String], in folder: URL) a
         let found = vault.taDaAttachments()
         #expect(found.map(\.path) == ["Ta Da/attachments/a.png"])
         #expect(found.first?.isDownloaded == true && found.first?.size == 3)
+    }
+}
+
+@Test func aPDFEmbeddedByALiveFileIsInUse() async throws {
+    try await withTemporaryFolder { folder in
+        let files = ["Ta Da/tasks/Live.md": note(embedding: "kia-contract.pdf")]
+        let (_, byName) = try await uses(files, images: ["Ta Da/attachments/kia-contract.pdf", "Ta Da/attachments/spare.zip"], in: folder)
+        #expect(try #require(byName["kia-contract.pdf"]).isInUse)
+        #expect(try #require(byName["spare.zip"]).cleanUpReason != nil)
     }
 }

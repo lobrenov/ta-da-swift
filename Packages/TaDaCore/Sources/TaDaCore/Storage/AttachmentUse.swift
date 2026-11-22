@@ -1,6 +1,6 @@
 import Foundation
 
-/// An image in `Ta Da/attachments/`.
+/// An attachment in `Ta Da/attachments/`.
 public struct Attachment: Hashable, Sendable, Identifiable {
     /// Its vault-relative path, under its real name even when iCloud Drive hasn't downloaded it.
     public var path: String
@@ -155,7 +155,7 @@ extension Vault {
             let name = url.lastPathComponent
             let placeholder = Self.placeholderOriginal(name)
             let original = placeholder ?? name
-            guard placeholder != nil || !name.hasPrefix("."), Self.isImage(original),
+            guard placeholder != nil || !name.hasPrefix("."), Self.isAttachment(original),
                   let values = try? url.resourceValues(forKeys: Set(keys)), values.isRegularFile == true else { continue }
             let size = placeholder == nil ? values.fileSize.map(Int64.init) : Self.placeholderSize(at: url)
             let path = Self.attachmentFolder + "/" + original

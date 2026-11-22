@@ -55,7 +55,7 @@ Bring the project instruction files in line with how I actually work now.
 
 ## Body
 
-The body's syntax is the spec in the Live editor's package, at the tag Ta Da pins (`Packages/TaDaCore/Package.swift`): [`spec/`](https://github.com/lobrenov/swift-markdown-engine-extended/tree/0.16.0-live.1/spec) in swift-markdown-engine-extended. Its `README.md` says what each construct is (task markers, links, embeds, tags, callouts, tables) and its `edits/` how a change is written. TaDaCore reads it through the package's `MarkdownEngineSyntax` (`MarkdownFacts`). Ta Da's choices:
+The body's syntax is the spec in the Live editor's package, at the tag Ta Da pins (`Packages/TaDaCore/Package.swift`): [`spec/`](https://github.com/lobrenov/swift-markdown-engine-extended/tree/0.16.0-live.3/spec) in swift-markdown-engine-extended. Its `README.md` says what each construct is (task markers, links, embeds, tags, callouts, tables) and its `edits/` how a change is written. TaDaCore reads it through the package's `MarkdownEngineSyntax` (`MarkdownFacts`). Ta Da's choices:
 
 - **Description**: the whole body. Search also matches its first paragraph (the summary).
 - **Subtasks** are the checkboxes (the spec's task markers; `[y]` is text) in these states, anywhere in the body and at any depth, outside code, counted as done/total:
@@ -71,7 +71,7 @@ The body's syntax is the spec in the Live editor's package, at the tag Ta Da pin
 
   The other markers (`[?] [!] [*] ["] [l] [b] [i] [S] [I] [p] [c] [f] [k] [w] [u] [d]`) are icons only: they render as checkboxes, aren't subtasks and ignore clicks.
 - **Links** (`[[Title]]`, `[[Title|alias]]`, `[[Title#heading]]`, `[[Title#^block]]`, `[[folder/Title]]`) resolve to the file with that title, case-insensitively: a task, project or area first, then a note, then a logged file. A block reference is kept as a heading starting with `^`. A link within the file (`[[#heading]]`) links no file. Body links are links only; they never set a parent.
-- **Embeds** (a link with a leading `!`, e.g. `![[front.jpg]]` or `![[front.jpg|300]]`, where a number is the width) aren't links, so they aren't backlinks. An embed whose target ends in one of the spec's image extensions (`avif bmp gif heic jpeg jpg png svg tif tiff webp`, any case) shows that attachment.
+- **Embeds** (a link with a leading `!`, e.g. `![[front.jpg]]` or `![[front.jpg|300]]`, where a number is the width) aren't links, so they aren't backlinks. An embed whose target ends in one of the spec's image extensions (`avif bmp gif heic jpeg jpg png svg tif tiff webp`, any case) shows that attachment; an embed of another attachment shows it as a file block.
 - **Callouts** (`> [!type]`, folded with `-` or open with `+`) take their type's look; an unknown type looks like a note.
 - **Tables**: Ta Da edits one as the spec's edits say: the table's lines only, columns padded, alignment markers and indentation kept, a line break in a cell as `<br>` and a `|` as `\|`.
 
@@ -135,14 +135,15 @@ The settings that belong to the folder, not the device, are in `Ta Da/settings.j
 
 ## Attachments
 
-- An attachment is an image file in the folder. Ta Da saves new ones in `Ta Da/attachments/`, which it creates when needed, numbering a name taken there.
-- An embed resolves to its target as a path when that file exists, else to `Ta Da/attachments/<filename>`, else to the first file with that filename by path, ignoring case. Hidden folders, including `.trash`, are skipped. An embed that doesn't resolve is missing. On iOS an image iCloud Drive hasn't downloaded is a hidden `.Name.png.icloud` placeholder; it counts under its real name, and Ta Da asks iCloud Drive to download it.
+- An attachment is a file in the folder whose extension is ASCII letters and digits with at least one letter, other than `md` (any case), except `Ta Da/settings.json`. Images are the attachments with one of the spec's image extensions. A file without such an extension (`Version 1.2`) is a note. Ta Da saves new ones in `Ta Da/attachments/`, which it creates when needed, numbering a name taken there.
+- An embed resolves to its target as a path when that file exists, else to `Ta Da/attachments/<filename>`, else to the first file with that filename by path, ignoring case. Hidden folders, including `.trash`, are skipped. An embed that doesn't resolve is missing. On iOS an attachment iCloud Drive hasn't downloaded is a hidden `.Name.png.icloud` placeholder; it counts under its real name, and Ta Da asks iCloud Drive to download it if it's an image.
 - A pasted image without a name is saved as `Pasted image <yyyyMMddHHmmss>.png`, in local time.
-- **Listing**: Attachments lists the images directly in `Ta Da/attachments/`, iCloud placeholders included (their size is the one the placeholder records). Images elsewhere aren't listed.
-- **In use**: an image is in use when a live file embeds it: a task, project, area or note outside `Ta Da/logbook/` and `.trash/`. An embed counts for the image it resolves to, so a same-named image elsewhere that wins resolution doesn't make this one in use.
-- **Clean-up reasons**: an image not in use can be cleaned up, for one of four reasons: only logged files embed it, only trashed files, both, or nothing.
-- **Clean Up** moves the ticked images not in use to `.trash/attachments/` (as Deleting an attachment does) without rewriting any embed; logged and trashed files show them as missing until they're restored. While markdown files in the folder or `.trash/` are iCloud Drive placeholders, an image they embed can look unused.
-- **Renaming an attachment** keeps its folder and extension (the same extension typed in the new name is dropped); the name can't be another image's filename anywhere in the folder. Every embed in a file's body that resolved to it is rewritten to the new filename (to the new path where it was written as a path); anything after `|` stays, and embeds in code are left alone.
+- A pasted or dropped file is copied into `Ta Da/attachments/` keeping its name, unless it's already in the folder. Folders and packages aren't attachments.
+- **Listing**: Attachments lists the attachments directly in `Ta Da/attachments/`, iCloud placeholders included (their size is the one the placeholder records). Attachments elsewhere aren't listed.
+- **In use**: an attachment is in use when a live file embeds it: a task, project, area or note outside `Ta Da/logbook/` and `.trash/`. An embed counts for the attachment it resolves to, so a same-named attachment elsewhere that wins resolution doesn't make this one in use.
+- **Clean-up reasons**: an attachment not in use can be cleaned up, for one of four reasons: only logged files embed it, only trashed files, both, or nothing.
+- **Clean Up** moves the ticked attachments not in use to `.trash/attachments/` (as Deleting an attachment does) without rewriting any embed; logged and trashed files show them as missing until they're restored. While markdown files in the folder or `.trash/` are iCloud Drive placeholders, an attachment they embed can look unused.
+- **Renaming an attachment** keeps its folder and extension (the same extension typed in the new name is dropped); the name can't be another attachment's filename anywhere in the folder. Every embed in a file's body that resolved to it is rewritten to the new filename (to the new path where it was written as a path); anything after `|` stays, and embeds in code are left alone.
 
 ## Repeating tasks
 

@@ -58,6 +58,15 @@ public enum CoordinatedFileIO {
         }
     }
 
+    /// Copies a file, failing if the destination exists.
+    public static func copy(_ source: URL, to destination: URL) throws {
+        try coordinate { coordinator, error, body in
+            coordinator.coordinate(readingItemAt: source, options: [], writingItemAt: destination, options: [], error: error) { from, to in
+                body { try FileManager.default.copyItem(at: from, to: to) }
+            }
+        }
+    }
+
     /// Moves a file, telling other coordinated clients (e.g. iCloud Drive) about the move.
     public static func move(_ source: URL, to destination: URL) throws {
         try coordinate { coordinator, error, body in

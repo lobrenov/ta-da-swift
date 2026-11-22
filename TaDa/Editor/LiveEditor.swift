@@ -96,6 +96,8 @@ struct LiveEditor: View {
                        Vault.imageExtensions.contains(url.pathExtension.lowercased()) {
                         return embed(.file(url))
                     }
+                    let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+                    if let url = Self.pastedFile(in: urls) { return embed(.file(url)) }
                     // Rich text can carry a picture of itself; it pastes as text. An image file of another type pastes as PNG.
                     guard pasteboard.string(forType: .string) == nil,
                           let data = PasteboardImageReader.imageData(from: pasteboard) else { return nil }
@@ -187,6 +189,9 @@ struct LiveEditor: View {
                     if let url = pasteboard.urls?.first(where: { $0.isFileURL && Vault.imageExtensions.contains($0.pathExtension.lowercased()) }) {
                         return embed(.file(url))
                     }
+                    if let url = Self.pastedFile(in: pasteboard.urls ?? []) {
+                        return embed(.file(url))
+                    }
                     let types: [(UTType, String)] = [(.png, "png"), (.jpeg, "jpg"), (.heic, "heic"), (.gif, "gif"),
                                                      (.webP, "webp"), (.tiff, "tiff")]
                     for (type, ext) in types {
@@ -199,7 +204,7 @@ struct LiveEditor: View {
                 { request in
                     model.attachmentPath(forEmbed: request.name).map { path in
                         menuPresses += 1
-                        return EmbedMenu.menu(for: path, model: model, cut: { request.remove("Cut Image") },
+                        return EmbedMenu.menu(for: path, model: model, cut: { request.remove("Cut") },
                                               editMarkdown: request.revealSource)
                     }
                 }
@@ -469,12 +474,12 @@ struct LiveEditor: View {
         case .copy:
             model.copyImage(path)
         case .cut:
-            model.copyImage(path) { request.remove("Cut Image") }
+            model.copyImage(path) { request.remove("Cut") }
         case .delete:
             model.imageDialog = .delete(path)
         case .menu:
             guard let window = NSApp.keyWindow else { return request.close() }
-            FileMenu.shared.show(FileMenuAction.embedActions(for: path, model: model, cut: { request.remove("Cut Image") }),
+            FileMenu.shared.show(FileMenuAction.embedActions(for: path, model: model, cut: { request.remove("Cut") }),
                                  at: request.anchorRect.origin, in: window, theme: theme, onClose: request.close)
         }
     }
@@ -599,6 +604,11 @@ struct LiveEditor: View {
         // Images stay drawn as the caret passes; a missing one is muted and dashed, as an unresolved link.
         config.imageEmbed.revealsSourceAtCaret = false
         config.imageEmbed.missingText = theme.muted.withAlphaComponent(0.6)
+        config.imageEmbed.file.background = theme.code
+        config.imageEmbed.file.border = theme.border
+        config.imageEmbed.file.badge = theme.link
+        config.imageEmbed.file.text = theme.strong
+        config.imageEmbed.file.badgeFillAlpha = theme.isDark ? 0.2 : 0.14
         #if os(macOS)
         config.imageEmbed.cornerRadius = 6
         config.liveTables = true
@@ -615,6 +625,16 @@ struct LiveEditor: View {
         config.heightBehavior = fitsContent ? .fitsContent : .scrolls
         config.textInsets = TextInsets(horizontal: 16, vertical: 8)
         return config
+    }
+
+    /// The first file URL among `urls` that is a regular-file attachment, other than an image or a plain-text file.
+    private nonisolated static func pastedFile(in urls: [URL]) -> URL? {
+        urls.first { url in
+            let ext = url.pathExtension.lowercased()
+            return url.isFileURL && (try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true
+                && Vault.isAttachment(url.lastPathComponent) && !["markdown", "mdown", "mkd", "txt", "text"].contains(ext)
+                && UTType(filenameExtension: ext)?.conforms(to: .image) != true
+        }
     }
 
     /// The context the editor draws checkboxes and callout icons into.
@@ -672,7 +692,7 @@ nonisolated struct TitleResolver: WikiLinkResolver {
 }
 
 /// Draws `![[name.png]]` from the folder's images, found as `Vault.attachmentPath(for:in:)` finds them. An image keeps
-/// its pixel size in points, so the editor fits a large one to its width.
+/// its pixel size in points, so the editor fits a large one to its width. An embed of another kind of file is a file block.
 nonisolated struct AttachmentImages: EmbeddedImageProvider {
     let root: URL?
     let paths: [String]
@@ -681,6 +701,11 @@ nonisolated struct AttachmentImages: EmbeddedImageProvider {
         guard let root, let embed = WikiLink(inner: request.name),
               let path = Vault.attachmentPath(for: embed, in: paths) else { return nil }
         return Self.load(Vault(root: root).url(for: path))
+    }
+
+    func isFile(for request: EmbeddedImageRequest) -> Bool {
+        guard let embed = WikiLink(inner: request.name), let path = Vault.attachmentPath(for: embed, in: paths) else { return false }
+        return !Vault.isImage(path)
     }
 
     func fingerprint() -> AnyHashable { [root?.path ?? ""] + paths }

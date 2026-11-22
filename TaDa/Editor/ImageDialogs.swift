@@ -46,7 +46,7 @@ struct ImageDialogText {
         }
         guard !files.isEmpty else { return who + "." }
         let missing = files.count == 1 ? (sentences ? "The embed shows" : "its embed shows") : (sentences ? "Their embeds show" : "their embeds show")
-        return who + (sentences ? ". " : "; ") + missing + " as missing until you restore the image."
+        return who + (sentences ? ". " : "; ") + missing + " as missing until you restore the file."
     }
 
     func isOpen(_ item: Item) -> Bool { item.path == model.document?.path }
@@ -78,9 +78,12 @@ extension AppModel {
     }
 }
 
-/// An image file, scaled down to fill a rounded square. It decodes off the main actor, and `ThumbnailCache` keeps it.
+/// An image file, scaled down to fill a rounded square. It decodes off the main actor, and `ThumbnailCache` keeps it. Another
+/// kind of file shows its `FileBadge` on the square.
 struct ImageThumbnail: View {
     let url: URL?
+    /// The file's name, for the badge while `url` is nil (not downloaded yet).
+    var name: String? = nil
     let side: CGFloat
     var cornerRadius: CGFloat = 8
     @Environment(\.theme) private var theme
@@ -91,7 +94,9 @@ struct ImageThumbnail: View {
         Color.clear
             .frame(width: side, height: side)
             .overlay {
-                if let image = decoded ?? url.flatMap({ ThumbnailCache.cached($0, pixels: pixels) }) {
+                if let file = url?.lastPathComponent ?? name, !Vault.isImage(file) {
+                    FileBadge(ext: FileNaming.split(file).ext, height: side * 0.8)
+                } else if let image = decoded ?? url.flatMap({ ThumbnailCache.cached($0, pixels: pixels) }) {
                     Image(decorative: image, scale: 1).resizable().scaledToFill()
                 } else {
                     Image(systemName: "photo").font(.system(size: side * 0.4)).foregroundStyle(theme.color(\.muted))
@@ -101,7 +106,7 @@ struct ImageThumbnail: View {
         .clipShape(.rect(cornerRadius: cornerRadius))
         .accessibilityHidden(true)
         .task(id: url) {
-            guard let url else { return }
+            guard let url, Vault.isImage(url.lastPathComponent) else { return }
             decoded = await ThumbnailCache.load(url, pixels: pixels)
         }
     }
@@ -205,7 +210,7 @@ private struct RenameImageDialog: View {
             .background(theme.color(theme.isDark ? \.bg : \.side), in: .rect(cornerRadius: 7))
             .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(theme.color(isTaken ? \.deadline : \.border)))
             HStack(spacing: 10) {
-                Text(isTaken ? "An image named “\(Item.title(ofPath: newPath))” is already in the folder." : text.renameSummary)
+                Text(isTaken ? "A file named “\(Item.title(ofPath: newPath))” is already in the folder." : text.renameSummary)
                     .font(.system(size: 12))
                     .foregroundStyle(theme.color(isTaken ? \.deadline : \.muted))
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -254,7 +259,7 @@ private struct DeleteImageDialog: View {
                     Text("Delete “\(text.name)”?")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(theme.color(\.strong))
-                    Text("The image goes to Trash. \(text.deleteSummary())")
+                    Text("The file goes to Trash. \(text.deleteSummary())")
                         .foregroundStyle(theme.color(\.fg))
                         .fixedSize(horizontal: false, vertical: true)
                     Text(path + (size.map { " · \($0)" } ?? ""))
@@ -347,10 +352,10 @@ private struct DeleteImagesDialog: View {
         let files = Set(uses.flatMap(\.live).map(\.path)).count
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Move \(paths.count == 1 ? "1 image" : "\(paths.count) images") to Trash?")
+                Text("Move \(Attachment.countText(paths.count)) to Trash?")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(theme.color(\.strong))
-                Text("\(files == 1 ? "1 open file embeds" : "\(files) open files embed") some of them; their embeds show as missing until you restore the images.")
+                Text("\(files == 1 ? "1 open file embeds" : "\(files) open files embed") some of them; their embeds show as missing until you restore the attachments.")
                     .foregroundStyle(theme.color(\.fg))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -359,7 +364,7 @@ private struct DeleteImagesDialog: View {
                     ForEach(Array(uses.enumerated()), id: \.element.id) { offset, use in
                         if offset > 0 { Hairline() }
                         HStack(spacing: 12) {
-                            ImageThumbnail(url: use.attachment.isDownloaded ? model.vault?.url(for: use.id) : nil, side: 34, cornerRadius: 5)
+                            ImageThumbnail(url: use.attachment.isDownloaded ? model.vault?.url(for: use.id) : nil, name: use.attachment.name, side: 34, cornerRadius: 5)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(use.attachment.name).foregroundStyle(theme.color(\.strong))
                                 AttachmentWhereText(line: use.whereLine, linkTint: use.isInUse ? \.link : \.fg)
@@ -422,7 +427,7 @@ private struct PhoneRenameImageSheet: View {
             VStack(spacing: 16) {
                 VStack(spacing: 10) {
                     ImageThumbnail(url: model.vault?.url(for: path), side: 88, cornerRadius: 14)
-                    Text("Rename Image")
+                    Text("Rename Attachment")
                         .scaledFont(size: 22, weight: .bold)
                         .foregroundStyle(theme.color(\.strong))
                 }
@@ -439,7 +444,7 @@ private struct PhoneRenameImageSheet: View {
                 .frame(minHeight: 50)
                 .background(theme.color(theme.isDark ? \.code : \.side), in: .rect(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(theme.color(\.deadline), lineWidth: isTaken ? 1 : 0))
-                Text(isTaken ? "An image named “\(Item.title(ofPath: newPath))” is already in the folder." : text.renameSummary)
+                Text(isTaken ? "A file named “\(Item.title(ofPath: newPath))” is already in the folder." : text.renameSummary)
                     .scaledFont(size: 13)
                     .foregroundStyle(theme.color(isTaken ? \.deadline : \.muted))
                     .multilineTextAlignment(.center)
@@ -595,7 +600,7 @@ private struct PhoneDeleteImagesSheet: View {
                         Text("Move \(Attachment.countText(paths.count)) to Trash?")
                             .scaledFont(size: 22, weight: .bold)
                             .foregroundStyle(theme.color(\.strong))
-                        Text("\(files == 1 ? "1 open file embeds" : "\(files) open files embed") some of them. Their embeds show as missing until you restore the images.")
+                        Text("\(files == 1 ? "1 open file embeds" : "\(files) open files embed") some of them. Their embeds show as missing until you restore the attachments.")
                             .scaledFont(size: 15)
                             .foregroundStyle(theme.color(\.fg))
                     }
@@ -633,7 +638,7 @@ private struct PhoneDeleteImagesSheet: View {
 
     private func row(_ use: AttachmentUse) -> some View {
         HStack(spacing: 12) {
-            ImageThumbnail(url: use.attachment.isDownloaded ? model.vault?.url(for: use.id) : nil, side: 44, cornerRadius: 8)
+            ImageThumbnail(url: use.attachment.isDownloaded ? model.vault?.url(for: use.id) : nil, name: use.attachment.name, side: 44, cornerRadius: 8)
             VStack(alignment: .leading, spacing: 2) {
                 Text(use.attachment.name).scaledFont(size: 17).foregroundStyle(theme.color(\.strong))
                 AttachmentWhereText(line: use.whereLine, linkTint: use.isInUse ? \.link : \.fg)

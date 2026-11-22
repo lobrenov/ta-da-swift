@@ -29,11 +29,15 @@ import Testing
     #expect(WikiLink("[[#Heading only]]") == nil)
 }
 
-@Test func attachmentNameNeedsAnImageExtension() throws {
+@Test func attachmentNameNeedsAnExtensionOtherThanMarkdown() throws {
     #expect(try #require(WikiLink("[[Pasted image 20260930101522.png]]")).attachmentName == "Pasted image 20260930101522.png")
-    #expect(try #require(WikiLink("[[report.pdf]]")).attachmentName == nil)
+    #expect(try #require(WikiLink("[[kia-contract.pdf]]")).attachmentName == "kia-contract.pdf")
+    #expect(try #require(WikiLink("[[docs/Report.XLSX]]")).attachmentName == "Report.XLSX")
+    #expect(try #require(WikiLink("[[clip.mp3]]")).attachmentName == "clip.mp3")
+    #expect(try #require(WikiLink("[[Note]]")).attachmentName == nil)
     #expect(try #require(WikiLink("[[Version 1.2]]")).attachmentName == nil)
-    #expect(try #require(WikiLink("[[.png]]")).attachmentName == ".png")
+    #expect(try #require(WikiLink("[[Meeting 2026.11.22]]")).attachmentName == nil)
+    #expect(try #require(WikiLink("[[Note.md]]")).attachmentName == nil)
 }
 
 @Test func retargetingLinksKeepsTheirFolderHeadingAndAliasAndSkipsEmbedsAndCode() {

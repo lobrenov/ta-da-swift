@@ -29,7 +29,7 @@ public struct TrashedItem: Hashable, Sendable, Identifiable {
     }
 }
 
-/// An image in `.trash/attachments/`.
+/// An attachment in `.trash/attachments/`.
 public struct TrashedAttachment: Hashable, Sendable, Identifiable {
     /// Its path in `.trash/attachments/`.
     public var path: String
@@ -117,12 +117,12 @@ extension Vault {
         try paths.map { try moveFile($0, into: Self.trashedAttachmentFolder) }
     }
 
-    /// The images in `.trash/attachments/`, most recently deleted first. Other files are left out.
+    /// The attachments in `.trash/attachments/`, most recently deleted first. Notes are left out.
     public func trashedAttachments() -> [TrashedAttachment] {
         let keys: Set<URLResourceKey> = [.isRegularFileKey, .addedToDirectoryDateKey]
         let names = (try? FileManager.default.contentsOfDirectory(atPath: url(for: Self.trashedAttachmentFolder).path(percentEncoded: false))) ?? []
         var trashed: [TrashedAttachment] = []
-        for name in names where !name.hasPrefix(".") && Self.imageExtensions.contains(FileNaming.split(name).ext.lowercased()) {
+        for name in names where !name.hasPrefix(".") && Self.isAttachment(name) {
             let path = Self.trashedAttachmentFolder + "/" + name
             guard let values = try? url(for: path).resourceValues(forKeys: keys), values.isRegularFile == true else { continue }
             trashed.append(TrashedAttachment(path: path, deleted: values.addedToDirectoryDate))

@@ -21,6 +21,8 @@ struct AttachmentWhereText: View {
 /// An image shown whole in a rounded box; an icon while it isn't there to read.
 struct AttachmentPreview: View {
     let url: URL?
+    /// The file's name, for the badge while `url` is nil (not downloaded yet).
+    var name: String? = nil
     var cornerRadius: CGFloat = 10
     @State private var decoded: CGImage?
     @Environment(\.theme) private var theme
@@ -30,7 +32,9 @@ struct AttachmentPreview: View {
             .frame(height: 270)
             .frame(maxWidth: .infinity)
             .overlay {
-                if let decoded {
+                if let file = url?.lastPathComponent ?? name, !Vault.isImage(file) {
+                    FileBadge(ext: FileNaming.split(file).ext, height: 130)
+                } else if let decoded {
                     Image(decorative: decoded, scale: 1).resizable().scaledToFit()
                 } else {
                     Image(systemName: "photo")
@@ -44,7 +48,7 @@ struct AttachmentPreview: View {
             .accessibilityHidden(true)
             .task(id: url) {
                 decoded = nil
-                guard let url else { return }
+                guard let url, Vault.isImage(url.lastPathComponent) else { return }
                 decoded = await ThumbnailCache.load(url, pixels: 1600)
             }
     }

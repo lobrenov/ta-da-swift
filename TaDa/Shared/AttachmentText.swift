@@ -19,10 +19,10 @@ extension Attachment {
     /// "Fri 2 Oct"; nil when no date is recorded.
     var addedText: String? { added.map { LocalDate($0).formatted(.weekdayDayMonth) } }
 
-    /// "1 image", "3 images".
-    static func countText(_ n: Int) -> String { n == 1 ? "1 image" : "\(n) images" }
+    /// "1 attachment", "3 attachments".
+    static func countText(_ n: Int) -> String { n == 1 ? "1 attachment" : "\(n) attachments" }
 
-    /// "PNG · 2.1 MB · 1920 × 1440 · Added Mon 28 Sep", with "Not downloaded" while iCloud Drive hasn't sent it.
+    /// "PNG · 2.1 MB · 1920 × 1440 · Added Mon 28 Sep" (no dimensions for a file that isn't an image), with "Not downloaded" while iCloud Drive hasn't sent it.
     func metaText(dimensions: String?) -> String {
         [typeText, sizeText, dimensions, addedText.map { "Added \($0)" }, isDownloaded ? nil : "Not downloaded"]
             .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")

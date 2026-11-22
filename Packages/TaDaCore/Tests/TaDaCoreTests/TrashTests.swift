@@ -188,7 +188,7 @@ private let today = LocalDate("2026-10-09")!
         let vault = Vault(root: folder)
         try writeFile("x", "Ta Da/attachments/front.jpg", in: folder)
         try writeFile("x", "img/front.jpg", in: folder)
-        try writeFile("x", ".trash/attachments/notes.txt", in: folder)
+        try writeFile("x", ".trash/attachments/Makefile", in: folder)
         try writeFile(task + "![[Front.jpg]] ![[odometer.png]]", ".trash/Photo.md", in: folder)
         #expect(try vault.moveAttachmentsToTrash(["Ta Da/attachments/front.jpg", "img/front.jpg"])
                 == [".trash/attachments/front.jpg", ".trash/attachments/front 2.jpg"])
@@ -313,5 +313,18 @@ private let today = LocalDate("2026-10-09")!
         let text = try vault.read("Ta Da/tasks/F.md")
         #expect(text == task + "![[x 2.png]] ![[img/y.png]] ![[z 2.png]]")
         #expect(vault.trashedAttachments().map(\.id) == [".trash/attachments/x.png"])
+    }
+}
+
+@Test func aTrashedPDFIsListedAndGoesWithTheFileThatEmbedsIt() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("x", "docs/Contract.pdf", in: folder)
+        try writeFile(task + "![[contract.pdf]]", ".trash/Photo.md", in: folder)
+        #expect(try vault.moveAttachmentsToTrash(["docs/Contract.pdf"]) == [".trash/attachments/Contract.pdf"])
+        let attachments = vault.trashedAttachments()
+        #expect(attachments.map(\.id) == [".trash/attachments/Contract.pdf"])
+        let photo = try #require(vault.trashedItems().first)
+        #expect(TrashedAttachment.attachments(of: [photo], in: attachments, others: [photo], live: []).map(\.name) == ["Contract.pdf"])
     }
 }

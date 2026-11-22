@@ -12,12 +12,11 @@ public struct WikiLink: Hashable, Sendable {
     /// The title of the file the link points at: the target's last path component, without `.md`.
     public var title: String { Item.title(ofPath: target) }
 
-    /// The image filename the target names, e.g. `front.jpg` for `attachments/front.jpg`; nil when it isn't an image.
+    /// The attachment filename the target names, e.g. `front.jpg` for `attachments/front.jpg` or `kia.pdf`; nil when
+    /// the filename has no extension other than `md`.
     public var attachmentName: String? {
         let name = String(target.split(separator: "/").last ?? "")
-        guard let dot = name.lastIndex(of: "."),
-              Vault.imageExtensions.contains(name[name.index(after: dot)...].lowercased()) else { return nil }
-        return name
+        return Vault.isAttachment(name) ? name : nil
     }
 
     /// Parses the text between `[[` and `]]` (`WikiLinkParts`). A block reference is a heading starting with `^`.

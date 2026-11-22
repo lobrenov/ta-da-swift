@@ -125,7 +125,7 @@ public struct Vault: Sendable {
             && isDirectory.boolValue
     }
 
-    /// Markdown files and images that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show
+    /// Markdown files and attachments that iCloud Drive hasn't downloaded yet, by the path they'll have. On iOS they show
     /// as hidden `.Name.md.icloud` placeholders, which the scans skip. Hidden folders are skipped.
     public func placeholderPaths() -> [String] {
         guard let files = FileManager.default.enumerator(
@@ -139,7 +139,7 @@ public struct Vault: Sendable {
                 continue
             }
             guard let original = Self.placeholderOriginal(url.lastPathComponent),
-                  original.lowercased().hasSuffix(".md") || Self.isImage(original) else { continue }
+                  original.lowercased().hasSuffix(".md") || Self.isAttachment(original) else { continue }
             let folder = url.deletingLastPathComponent().standardizedFileURL.pathComponents.dropFirst(rootComponents)
             paths.append((folder + [original]).joined(separator: "/"))
         }
@@ -151,9 +151,14 @@ public struct Vault: Sendable {
         name.hasPrefix(".") && name.hasSuffix(".icloud") ? String(name.dropFirst().dropLast(".icloud".count)) : nil
     }
 
-    /// Asks iCloud Drive to download each placeholder. Each file joins the scans once it arrives.
+    /// The placeholders `downloadPlaceholders()` asks for: markdown files and images.
+    func downloadablePlaceholderPaths() -> [String] {
+        placeholderPaths().filter { $0.lowercased().hasSuffix(".md") || Self.isImage($0) }
+    }
+
+    /// Asks iCloud Drive to download each markdown and image placeholder. Each file joins the scans once it arrives.
     public func downloadPlaceholders() {
-        for path in placeholderPaths() {
+        for path in downloadablePlaceholderPaths() {
             try? FileManager.default.startDownloadingUbiquitousItem(at: url(for: path))
         }
     }

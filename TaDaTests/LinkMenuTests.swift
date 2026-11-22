@@ -92,6 +92,40 @@ struct LinkMenuTests {
         #expect(try Data(contentsOf: folder.url.appending(path: "Ta Da/attachments/front 2.jpg")) == Data([3]))
     }
 
+    @Test func pastedFilesAreCopiedIntoAttachmentsNumberedWhenTakenAndFolderFilesAreEmbeddedWhereTheyAre() async throws {
+        try folder.write("p", "notes/report.pdf")
+        try folder.write("q", "Ta Da/attachments/menu.pdf")
+        let model = await folder.model()
+        let outside = FileManager.default.temporaryDirectory.appending(path: "TaDaPaste-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: outside) }
+        let fresh = outside.appending(path: "invoice.pdf"), taken = outside.appending(path: "menu.pdf"), note = outside.appending(path: "plan.md")
+        try Data([1]).write(to: fresh)
+        try Data([2]).write(to: taken)
+        try Data([3]).write(to: note)
+        #expect(model.embed(.file(fresh)) == "![[invoice.pdf]]")
+        #expect(model.embed(.file(taken)) == "![[menu 2.pdf]]", "a copy numbers a taken name")
+        await model.savingImage?.value
+        #expect(try Data(contentsOf: folder.url.appending(path: "Ta Da/attachments/invoice.pdf")) == Data([1]))
+        #expect(try Data(contentsOf: folder.url.appending(path: "Ta Da/attachments/menu 2.pdf")) == Data([2]))
+        let count = model.attachments.count
+        #expect(model.embed(.file(folder.url.appending(path: "notes/report.pdf"))) == "![[report.pdf]]")
+        #expect(model.attachments.count == count, "a folder file isn't copied")
+        #expect(model.embed(.file(note)) == nil, "markdown isn't an attachment")
+        #expect(!FileManager.default.fileExists(atPath: folder.url.appending(path: "Ta Da/attachments/plan.md").path))
+    }
+
+    @Test func aPackageIsNotEmbeddedAsAFile() async throws {
+        let model = await folder.model()
+        let package = FileManager.default.temporaryDirectory.appending(path: "TaDaPackage-\(UUID().uuidString).pages", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: package, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: package) }
+        #expect(model.embed(.file(package)) == nil)
+        let inside = folder.url.appending(path: "notes/x.pages", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: inside, withIntermediateDirectories: true)
+        #expect(model.embed(.file(inside)) == nil, "nor one already in the folder")
+    }
+
     #if os(macOS)
     @Test func addLinkListsTheMatchesThenALinkToTheFieldsText() async {
         let model = await folder.model()

@@ -141,7 +141,9 @@ struct LinkChoiceIcon: View {
             case .note:
                 NoteIcon(size: size + 2)
             case .image(let url):
-                if let image = search.thumbnail(url) {
+                if !Vault.isImage(url.lastPathComponent) {
+                    FileBadge(ext: url.pathExtension, height: size * 10 / 7 * 0.8)
+                } else if let image = search.thumbnail(url) {
                     Image(decorative: image, scale: 1)
                         .resizable()
                         .aspectRatio(contentMode: .fill)

@@ -1,4 +1,4 @@
-// The embed menu, for an image an `![[ ]]` draws: Copy, Cut, Rename…, Reveal in Finder and Delete on the Mac (a
+// The embed menu, for an image or file an `![[ ]]` draws: Copy, Cut, Rename…, Reveal in Finder and Delete on the Mac (a
 // right-click, in the file menu's panel); Copy, Cut, Edit Markdown, Rename…, Show in Files and Delete on iPhone (press
 // and hold). Rename and Delete open the image dialogs (`ImageDialogs.swift`). LiveEditor opens it.
 import SwiftUI
@@ -11,14 +11,14 @@ import UIKit
 #endif
 
 extension AppModel {
-    /// Puts the image at `path` on the pasteboard: its file, which a paste in Ta Da embeds as it is, and its data for
-    /// other apps. The data is read off the main actor; `then` runs once the pasteboard has it.
+    /// Puts the attachment at `path` on the pasteboard: its file, which a paste in Ta Da embeds as it is, and for an image its
+    /// data for other apps. The data is read off the main actor; `then` runs once the pasteboard has it.
     func copyImage(_ path: String, then: @escaping () -> Void = {}) {
         guard let vault else { return }
         let url = vault.url(for: path)
         let type = UTType(filenameExtension: url.pathExtension) ?? .image
         Task {
-            let data = await Self.contents(of: url)
+            let data = Vault.isImage(path) ? await Self.contents(of: url) : nil
             #if os(macOS)
             let item = NSPasteboardItem()
             item.setString(url.absoluteString, forType: .fileURL)

@@ -40,10 +40,19 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
 @Test func placeholdersAreListedByThePathTheyWillHave() async throws {
     try await withTemporaryFolder { folder in
         for path in ["tasks/.Not here.md.icloud", ".Top.MD.icloud", ".obsidian/.Hidden.md.icloud", "tasks/.Image.png.icloud",
-                     "tasks/.Report.pdf.icloud", ".trash/attachments/.Gone.png.icloud", "tasks/Here.md"] {
+                     "tasks/.Report.pdf.icloud", ".trash/attachments/.Gone.png.icloud", "tasks/.Makefile.icloud", "tasks/Here.md"] {
             try writeFile("", path, in: folder)
         }
-        #expect(Vault(root: folder).placeholderPaths() == ["Top.MD", "tasks/Image.png", "tasks/Not here.md"])
+        #expect(Vault(root: folder).placeholderPaths() == ["Top.MD", "tasks/Image.png", "tasks/Not here.md", "tasks/Report.pdf"])
+    }
+}
+
+@Test func onlyMarkdownAndImagePlaceholdersAreDownloaded() async throws {
+    try await withTemporaryFolder { folder in
+        for path in ["tasks/.Not here.md.icloud", "tasks/.Image.png.icloud", "tasks/.Report.pdf.icloud", "tasks/.Clip.mov.icloud"] {
+            try writeFile("", path, in: folder)
+        }
+        #expect(Vault(root: folder).downloadablePlaceholderPaths() == ["tasks/Image.png", "tasks/Not here.md"])
     }
 }
 
