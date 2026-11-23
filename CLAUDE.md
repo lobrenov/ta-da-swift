@@ -7,7 +7,7 @@ Native SwiftUI task manager over a folder of markdown files (one file per task/p
 - Design canvas: https://claude.ai/artifact/A7c33hg9HUKz41u3wbki3V. Its reference pages show the app as built: macOS and iOS (each view), Menus (menus and components), Editors (markdown as the editor draws it), App (icon, themes). A feature is mocked up on a new page, built, then its boards are updated into the reference pages and the feature page is deleted. Docs name designs, not canvas pages or boards.
 - Architecture (layers, files, runtime, window, editors, shortcuts): `docs/architecture.md`. Schema: `docs/file-format.md` (the source of truth; update it with any format change).
 - Obsidian plugin: its own repo, `~/Projects/ta-da-obsidian`, a TypeScript port of TaDaCore kept in step by the conformance fixtures (Obsidian in `docs/architecture.md`).
-- Finished build plans are in `docs/archive/build plans/`, listed in its `completed plans.md`. To complete or archive a plan, move it there and add its line to `completed plans.md`.
+- Finished build plans are in `docs/build plans/archive/`, listed in its `completed plans.md`. To complete or archive a plan, move it there and add its line to `completed plans.md`.
 - Versioning (app and Obsidian plugin): `docs/versioning.md`.
 
 ## Commands

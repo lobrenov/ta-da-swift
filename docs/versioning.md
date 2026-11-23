@@ -4,7 +4,7 @@ The Ta Da app (Mac and iPhone) is versioned `x.y.z (n)`. The Obsidian plugin is 
 
 ## Version x.y.z
 - `x`: major version, bumped by decision. `y` and `z` reset to 0.
-- `y`: feature, bumped when a build plan is completed (moved to `docs/archive/build plans/`) or by decision. `z` resets to 0.
+- `y`: feature, bumped when a build plan is completed (moved to `docs/build plans/archive/`) or by decision. `z` resets to 0.
 - `z`: increment: a build plan stage, a logical group of commits, or a fix.
 
 ## Build n (app only)
