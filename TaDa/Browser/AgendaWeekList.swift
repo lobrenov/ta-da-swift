@@ -46,6 +46,7 @@ struct AgendaWeekList: View {
                     }
                 }
             }
+            SubtaskCards(model: model, cards: model.agendaSubtasks, context: .agendaWeek)
         }
         .showsAgendaNote(model)
     }

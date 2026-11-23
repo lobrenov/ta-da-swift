@@ -47,6 +47,7 @@ struct AreaBrowserView: View {
                     .foregroundStyle(theme.color(\.muted))
                     .padding(.horizontal, 10)
             }
+            SubtaskCards(model: model, cards: filter.isActive ? [] : model.subtaskCards(of: area), parent: area)
             NewLinkedTaskButton(model: model, title: "New task in \(area.title)").padding(.leading, 6)
         }
     }

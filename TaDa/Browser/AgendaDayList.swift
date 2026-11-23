@@ -20,6 +20,7 @@ struct AgendaDayList: View {
         let sections = grouping == .project ? [] : ListSection.sections(tasks, by: grouping, today: model.today)
         let events = filter.isActive ? [] : model.events(on: day), reminders = filter.isActive ? [] : model.reminders(on: day)
         let occurrences = model.agendaOccurrences.filter { filter.matches($0.item) }
+        let cards = filter.isActive ? [] : model.agendaSubtasks
         let shownPaths = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : ListSection.shownPaths(sections, by: grouping, in: list.foldKey, model: model)
 
@@ -57,7 +58,8 @@ struct AgendaDayList: View {
                     }
                 }
             }
-            if all.isEmpty, events.isEmpty, reminders.isEmpty, occurrences.isEmpty {
+            SubtaskCards(model: model, cards: cards, context: .agendaDay)
+            if all.isEmpty, events.isEmpty, reminders.isEmpty, occurrences.isEmpty, cards.isEmpty {
                 Text("Nothing scheduled").foregroundStyle(theme.color(\.muted)).padding(.horizontal, 10)
             }
             if !occurrences.isEmpty { AgendaRepeats(model: model, occurrences: occurrences) }

@@ -156,6 +156,13 @@ struct PhoneSettingsScreen: View {
                     Section("Links") {
                         Toggle("Task checkboxes on links", isOn: $model.taskLinkBoxes)
                     }
+                    Section {
+                        Toggle("Subtasks from notes", isOn: $model.noteSubtasks)
+                    } header: {
+                        Text("Subtasks")
+                    } footer: {
+                        Text("Lists open subtasks from notes in the Agenda, projects, areas and Loose tasks.")
+                    }
                 case .dailyNotes:
                     dailyNotes
                 case .notifications:

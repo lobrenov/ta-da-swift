@@ -47,6 +47,7 @@ private struct PhoneAgendaDay: View {
         let occurrences = (isSelected ? model.agendaOccurrences : model.index.occurrences(from: day, through: day, today: model.today))
             .filter { filter.matches($0.item) }
         let note = model.note(for: .day(day))
+        let cards = filter.isActive ? [] : isSelected ? model.agendaSubtasks : model.subtaskCards(on: day)
         let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : ListSection.shownPaths(sections, by: grouping, in: list.foldKey, model: model)
         let context: IntegrationRowContext = day == model.today ? .today : .upcoming
@@ -81,7 +82,9 @@ private struct PhoneAgendaDay: View {
                         PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey,
                                           dates: .agenda, place: { model.index.parent(of: $0)?.title })
                     }
-                } else if note == nil, events.isEmpty, reminders.isEmpty, occurrences.isEmpty {
+                }
+                SubtaskCards(model: model, cards: cards, context: .agendaDay)
+                if all.isEmpty, note == nil, events.isEmpty, reminders.isEmpty, occurrences.isEmpty, cards.isEmpty {
                     Text("Nothing scheduled").scaledFont(size: 15).foregroundStyle(theme.color(\.muted))
                         .frame(maxWidth: .infinity).padding(.top, 24)
                 }
@@ -136,6 +139,7 @@ private struct PhoneAgendaWeek: View {
                                      meta: .agenda(entry, place: model.index.parent(of: entry.item)?.title ?? "Loose task"))
                     }
                 }
+                SubtaskCards(model: model, cards: isSelected ? model.agendaSubtasks : model.subtaskCards(in: week), context: .agendaWeek)
                 PickingBarClearance()
             }
         }
@@ -151,7 +155,8 @@ private struct PhoneAgendaWeek: View {
         let note = model.index.dailyNote(for: day, names: model.dailyNoteNames)
         let counts = model.agendaDaySummary(day, entries: entries, occurrences: occurrences)
         let firstRepeat = model.firstRepeat(on: day, entries: entries, occurrences: occurrences)
-        let marks = model.index.dayMarks(from: day, through: day, today: model.today, names: model.dailyNoteNames)[day]
+        let marks = model.index.dayMarks(from: day, through: day, today: model.today, includingSubtasks: model.noteSubtasks,
+                                      names: model.dailyNoteNames)[day]
         return Button { withAnimation { model.agendaSelection = .day(day) } } label: {
             HStack(spacing: 12) {
                 Text(day.formatted(.weekdayDay))

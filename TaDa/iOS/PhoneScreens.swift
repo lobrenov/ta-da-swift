@@ -18,6 +18,7 @@ struct PhoneTaskListScreen: View {
         let groups = grouping == .project ? model.index.grouped(shownTasks) : []
         let sections = grouping == .project ? [] : ListSection.sections(shownTasks, by: grouping, today: model.today)
         let open = all.count { !$0.properties.status.isClosed }
+        let cards = filter.isActive ? [] : model.looseSubtasks
         let pickable = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : ListSection.shownPaths(sections, by: grouping, in: GroupedList.loose.foldKey, model: model)
 
@@ -25,7 +26,7 @@ struct PhoneTaskListScreen: View {
             PhoneGroupFilterItems(model: model, group: .loose, domain: .loose, items: all, isFiltering: $isFiltering)
         } content: {
             PhoneTagFilterBar(model: model, domain: .loose, items: all, shown: shownTasks.count)
-            if all.isEmpty {
+            if all.isEmpty, cards.isEmpty {
                 ContentUnavailableView("No loose tasks", systemImage: "tray")
                     .padding(.top, 60)
             } else if shownTasks.isEmpty, filter.isActive {
@@ -48,6 +49,7 @@ struct PhoneTaskListScreen: View {
             } else {
                 PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: GroupedList.loose.foldKey, dates: .elsewhere)
             }
+            SubtaskCards(model: model, cards: cards)
         }
         .sheet(isPresented: $isFiltering) { PhoneTagFilterSheet(model: model, domain: .loose, items: all) }
     }
@@ -249,6 +251,7 @@ struct PhoneProjectScreen: View {
                         .foregroundStyle(theme.color(\.muted))
                         .padding(16)
                 }
+                SubtaskCards(model: model, cards: filter.isActive ? [] : model.subtaskCards(of: project), parent: project)
             }
             .sheet(isPresented: $isFiltering) { PhoneTagFilterSheet(model: model, domain: .project(path), items: all) }
         } else {
@@ -396,6 +399,7 @@ struct PhoneAreaScreen: View {
                             ForEach(done) { PhoneTaskRow(model: model, item: $0) }
                         }
                     }
+                    SubtaskCards(model: model, cards: filter.isActive ? [] : model.subtaskCards(of: area), parent: area)
                 }
             }
             .alert("Rename Area", isPresented: $isRenaming) {

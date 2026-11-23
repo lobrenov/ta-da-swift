@@ -267,6 +267,16 @@ import UIKit
     var taskLinkBoxes = true {
         didSet { saveSettings() }
     }
+    /// Settings ▸ Editor ▸ Subtasks from notes: open subtask lines from notes show as cards in the Agenda, projects, areas
+    /// and Loose tasks, and dated lines count in the Agenda's dots.
+    var noteSubtasks = false {
+        didSet {
+            guard noteSubtasks != oldValue else { return }
+            saveSettings()
+            updateSubtaskLists()
+            updateAgendaMarks()
+        }
+    }
     /// Haptic feedback on iOS; Settings ▸ Haptics turns it off.
     var haptics: Bool {
         didSet { defaults.set(!haptics, forKey: Keys.hapticsOff) }
@@ -765,6 +775,7 @@ import UIKit
         autocomplete.tags = typed.tags ?? autocomplete.tags
         self.autocomplete = autocomplete
         taskLinkBoxes = file.taskLinkBoxes ?? true
+        noteSubtasks = file.noteSubtasks ?? false
         dailyFolder = daily.dailyFolder ?? defaults.string(forKey: Keys.dailyFolder) ?? obsidian.dailyFolder ?? names.dailyFolder
         weekFolder = daily.weekFolder ?? defaults.string(forKey: Keys.weekFolder) ?? names.weekFolder
         weekNotes = daily.weekNotes ?? !defaults.bool(forKey: Keys.weekNotesOff)
@@ -782,14 +793,15 @@ import UIKit
                                         lightScheme: lightScheme.name, darkScheme: darkScheme.name)
         let typed = VaultSettings.Autocomplete(brackets: autocomplete.brackets, formatting: autocomplete.formatting,
                                                wikiLinks: autocomplete.wikiLinks, tags: autocomplete.tags)
-        let boxes = taskLinkBoxes
+        let boxes = taskLinkBoxes, subtasks = noteSubtasks
         let previous = settingsSaving
         pendingSettingsWrites += 1
         settingsSaving = Task {
             await previous?.value
             do {
                 let date = try await Self.run {
-                    try vault.writeSettings(dailyNotes: daily, theme: theme, autocomplete: typed, taskLinkBoxes: boxes)
+                    try vault.writeSettings(dailyNotes: daily, theme: theme, autocomplete: typed, taskLinkBoxes: boxes,
+                                         noteSubtasks: subtasks)
                     return vault.modificationDate(of: Vault.settingsPath)
                 }
                 if self.vault?.root == vault.root, pendingSettingsWrites == 1 { settingsDate = date }
@@ -2594,6 +2606,9 @@ import UIKit
     private(set) var agendaWeekEntries: [AgendaEntry] = []
     /// The coming occurrences of repeating tasks on the selected day, or in the selected week.
     private(set) var agendaOccurrences: [Occurrence] = []
+    /// The subtask cards on the selected day or in the selected week, and in Loose tasks; empty while the setting is off.
+    private(set) var agendaSubtasks: [SubtaskCard] = []
+    private(set) var looseSubtasks: [SubtaskCard] = []
     /// What the days in `agendaMarksRange` show: their dots.
     private(set) var agendaMarks: [LocalDate: DayMarks] = [:]
     /// Active projects with their progress.
@@ -2662,6 +2677,7 @@ import UIKit
     private func updateIndex(replacing item: Item) {
         guard let old = index[item.path], old.properties == item.properties else { return updateIndex { $0.update(item) } }
         index.update(item)
+        if old.checkboxes != item.checkboxes, noteSubtasks { updateSubtaskLists() }
         if old.checkboxes != item.checkboxes, let date = dailyNoteNames.date(atPath: item.path), agendaMarksRange.contains(date) {
             updateAgendaMarks()
         }
@@ -2707,6 +2723,7 @@ import UIKit
         updateTags()
         updateNotes()
         updateAgenda()
+        updateSubtaskLists()
         notifications.update(index.badgePlan(today: today))
     }
 
@@ -2722,13 +2739,64 @@ import UIKit
             agendaWeekEntries = index.agendaWeek(week)
             agendaOccurrences = index.occurrences(from: week.firstDay, through: week.firstDay.adding(days: 6), today: today)
         }
+        updateSubtaskLists()
         updateAgendaMarks()
         updateIntegrations()
     }
 
     private func updateAgendaMarks() {
         let range = agendaMarksRange
-        agendaMarks = index.dayMarks(from: range.lowerBound, through: range.upperBound, today: today, names: dailyNoteNames)
+        agendaMarks = index.dayMarks(from: range.lowerBound, through: range.upperBound, today: today,
+                                     includingSubtasks: noteSubtasks, names: dailyNoteNames)
+    }
+
+    private func updateSubtaskLists() {
+        switch agendaSelection {
+        case let .day(day): agendaSubtasks = subtaskCards(on: day)
+        case let .week(week): agendaSubtasks = subtaskCards(in: week)
+        }
+        looseSubtasks = noteSubtasks ? index.looseNoteSubtasks() : []
+    }
+
+    /// The subtask cards due on `day` (today's include the overdue), in `week`, or filed under a project or area.
+    /// Empty while the setting is off.
+    func subtaskCards(on day: LocalDate) -> [SubtaskCard] {
+        noteSubtasks ? index.noteSubtasks(on: day, today: today) : []
+    }
+
+    func subtaskCards(in week: ISOWeek) -> [SubtaskCard] {
+        noteSubtasks ? index.noteSubtasks(from: week.firstDay, through: week.firstDay.adding(days: 6)) : []
+    }
+
+    func subtaskCards(of parent: Item) -> [SubtaskCard] {
+        noteSubtasks ? index.noteSubtasks(parent: parent) : []
+    }
+
+    /// Ticks a subtask line in its file.
+    func tick(_ box: Checkbox, in path: String) async {
+        await edit(path) { ChecklistEditor.click(box, in: $0) ?? $0 }
+    }
+
+    /// Sets a subtask line's marker in its file.
+    func setMarker(_ marker: Character, of box: Checkbox, in path: String) async {
+        await edit(path) { ChecklistEditor.setMarker(marker, of: box, in: $0) ?? $0 }
+    }
+
+    /// A file line the document opening next scrolls to.
+    var pendingLine: PendingLine?
+
+    struct PendingLine: Equatable {
+        var path: String
+        /// 0-based, in the whole file.
+        var line: Int
+    }
+
+    /// Shows a note's file with `box`'s line at the top of the page.
+    func open(_ box: Checkbox, in path: String) {
+        pendingLine = PendingLine(path: path, line: box.lineIndex)
+        #if os(macOS)
+        selection = path
+        #endif
     }
 
     /// The days the Agenda shows: the selected week, or when the month is open, every week of its month.

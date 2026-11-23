@@ -1,4 +1,4 @@
-// Settings ▸ Editor: the Autocomplete switches for brackets, text formatting, wikilinks and embeds, and tags, and the task checkboxes on links.
+// Settings ▸ Editor: the Autocomplete switches for brackets, text formatting, wikilinks and embeds, and tags, the task checkboxes on links, and subtasks from notes.
 #if os(macOS)
 import SwiftUI
 
@@ -25,6 +25,14 @@ struct EditorSettingsView: View {
                 SectionLabel(title: "Links")
                 row("Task checkboxes on links", isOn: $model.taskLinkBoxes)
                     .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                SectionLabel(title: "Subtasks")
+                row("Subtasks from notes", isOn: $model.noteSubtasks)
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
+                Text("Lists open subtasks from notes in the Agenda, projects, areas and Loose tasks.")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(theme.color(\.muted))
             }
         }
     }

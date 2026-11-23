@@ -19,9 +19,10 @@ struct TaskListView: View {
         let sections = grouping == .project ? [] : ListSection.sections(tasks, by: grouping, today: model.today)
         let paths = grouping == .project ? groups.flatMap(\.tasks).map(\.path)
             : ListSection.shownPaths(sections, by: grouping, in: list.foldKey, model: model)
+        let cards = filter.isActive ? [] : model.looseSubtasks
 
         BrowserColumn(model: model, paths: paths, spacing: 22,
-                      empty: all.isEmpty && !filter.isActive ? empty : tasks.isEmpty && filter.isActive ? .noTagMatch : nil) {
+                      empty: all.isEmpty && cards.isEmpty && !filter.isActive ? empty : tasks.isEmpty && filter.isActive ? .noTagMatch : nil) {
             VStack(alignment: .leading, spacing: 10) {
                 DomainHeader(.loose) { GroupFilterButton(model: model, list: list, domain: .loose, items: all) }
                 TagFilterRow(model: model, domain: .loose, items: all, shown: (tasks.count, all.count))
@@ -32,6 +33,7 @@ struct TaskListView: View {
             } else {
                 TaskSections(model: model, sections: sections, grouping: grouping, foldKey: list.foldKey, dates: .elsewhere)
             }
+            SubtaskCards(model: model, cards: cards)
         }
     }
 

@@ -85,6 +85,16 @@ struct BodyEditor: View {
         // The editor insets its text by 16pt; line it up with the title.
         .padding(.horizontal, -16)
         .accessibilityLabel("Body")
+        .task(id: [model.pendingLine?.line ?? -1, document.path.hashValue]) { await scrollToPendingLine() }
+    }
+
+    /// Scrolls to the line a subtask card opened this file at, once the editor has laid out.
+    private func scrollToPendingLine() async {
+        guard let pending = model.pendingLine, pending.path == document.path, let scroll = toc?.scroll else { return }
+        try? await Task.sleep(for: .milliseconds(150))
+        guard !Task.isCancelled else { return }
+        scroll.toLine(max(0, pending.line - FrontmatterSplitter.split(document.text).bodyFirstLineIndex))
+        model.pendingLine = nil
     }
 
     private var visibleLinesReport: ((ClosedRange<Int>) -> Void)? {

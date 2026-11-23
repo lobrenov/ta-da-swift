@@ -30,6 +30,7 @@ struct ProjectBrowserView: View {
                     .foregroundStyle(theme.color(\.muted))
                     .padding(.horizontal, 10)
             }
+            SubtaskCards(model: model, cards: filter.isActive ? [] : model.subtaskCards(of: project), parent: project)
             NewLinkedTaskButton(model: model).padding(.leading, 6)
         }
     }
