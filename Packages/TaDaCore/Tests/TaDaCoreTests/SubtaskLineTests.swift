@@ -176,3 +176,18 @@ private let nextWeek = LocalDate("2026-10-09")
     #expect(SubtaskLine.setDue(nextWeek, in: "- [ ] last", line: 0) == "- [ ] last >2026-10-09")
     #expect(SubtaskLine.setDue(nextWeek, in: lf, line: 0) == nil && SubtaskLine.setDue(nextWeek, in: lf, line: 9) == nil)
 }
+
+@Test func aLineStillEndingInCarriageReturnKeepsIt() {
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [ ] a\r") == "- [ ] a >2026-10-09\r")
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [ ] a  \r") == "- [ ] a >2026-10-09  \r")
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [ ] a >2026-10-01\r") == "- [ ] a >2026-10-09\r")
+    #expect(SubtaskLine.settingDue(nil, inLine: "- [ ] a >2026-10-01\r") == "- [ ] a\r")
+    #expect(SubtaskLine.settingParent("P", inLine: "- [ ] a\r") == "- [ ] a @[[P]]\r")
+    #expect(SubtaskLine.settingParent(nil, inLine: "- [ ] a\r") == "- [ ] a\r")
+}
+
+@Test func removingAttributesTakesOneSpace() {
+    #expect(SubtaskLine.settingDue(nil, inLine: "- [ ] a  >2026-10-01  b") == "- [ ] a   b")
+    #expect(SubtaskLine.settingParent(nil, inLine: "- [ ] a  @[[A]]") == "- [ ] a ")
+    #expect(SubtaskLine.settingDue(nil, inLine: "- [ ] >2026-10-01  b") == "- [ ]  b")
+}

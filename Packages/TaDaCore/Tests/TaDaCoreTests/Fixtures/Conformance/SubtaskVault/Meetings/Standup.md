@@ -23,3 +23,5 @@ tags: []
 ```
 - [ ] Two dates >2026-10-04 >2026-10-02
 - [ ] Two parents @[[Work]] @[[Ta Da MVP]]
+- [ ] Logged parent @[[Old project]]
+- [ ] Logged parent but dated >2026-10-03 @[[Old project]]

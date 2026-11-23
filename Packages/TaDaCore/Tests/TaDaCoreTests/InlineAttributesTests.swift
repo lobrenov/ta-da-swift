@@ -78,3 +78,31 @@ private func parse(_ text: String) -> (due: String?, parent: String?) {
     let found = InlineAttributes.parse("Café ☕️ >2026-10-09")
     #expect(found.due?.range == NSRange(location: 8, length: 11))
 }
+
+@Test func removingTakesOneSpaceBeforeElseAfter() {
+    func stripped(_ text: String) -> String { InlineAttributes.parse(text).stripped(from: text) }
+    func removed(_ text: String) -> String {
+        InlineAttributes.removing(InlineAttributes.parse(text).due!.range, from: text as NSString)
+    }
+    #expect(removed("a  >2026-10-09  b") == "a   b")
+    #expect(removed("a\t >2026-10-09") == "a\t")
+    #expect(removed(">2026-10-09  b") == " b")
+    #expect(removed("a >2026-10-09 b") == "a b")
+    #expect(stripped("a  >2026-10-09  b") == "a   b")
+}
+
+@Test func linkTextHoldsNoAttributesWhateverItsBrackets() {
+    #expect(parse("[a [b] >2026-10-09 c](https://x.y) d") == (nil, nil))
+    #expect(parse("[a [b] >2026-10-09 c][ref] d") == (nil, nil))
+    #expect(parse("[text >2026-10-09][ref] >2026-10-10") == ("2026-10-10", nil))
+    #expect(parse("[a [b](u) @[[A]] c](https://x.y) @[[B]]") == (nil, "B"))
+    #expect(parse("[a \\] >2026-10-09 b](https://x.y)") == (nil, nil))
+    #expect(parse("[a `]` >2026-10-09](https://x.y)") == (nil, nil))
+    #expect(parse("[url](https://x.y/(a) >2026-10-09) z") == (nil, nil))
+}
+
+@Test func bracketsThatAreNoLinkLeaveAttributesAlone() {
+    #expect(parse("[a [b] >2026-10-09 c] d") == ("2026-10-09", nil))
+    #expect(parse("[x] >2026-10-09") == ("2026-10-09", nil))
+    #expect(parse("[unclosed >2026-10-09") == ("2026-10-09", nil))
+}

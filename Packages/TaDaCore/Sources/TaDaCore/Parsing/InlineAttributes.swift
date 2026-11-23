@@ -20,8 +20,8 @@ public struct InlineAttributes: Equatable, Sendable {
     public var due: Due?
     public var parent: Parent?
 
-    private static let (space, tab, backtick, greater, at, open, close, paren, closeParen, newline): (UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16)
-        = (0x20, 0x09, 0x60, 0x3E, 0x40, 0x5B, 0x5D, 0x28, 0x29, 0x0A)
+    private static let (space, tab, backtick, greater, at, open, close, paren, closeParen, newline, backslash): (UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16)
+        = (0x20, 0x09, 0x60, 0x3E, 0x40, 0x5B, 0x5D, 0x28, 0x29, 0x0A, 0x5C)
 
     /// The attributes in `text`, the text after a checkbox's box.
     public static func parse(_ text: String) -> InlineAttributes {
@@ -63,14 +63,14 @@ public struct InlineAttributes: Equatable, Sendable {
         return (result as String).trimmingCharacters(in: .whitespaces)
     }
 
-    /// `text` less `range` and the whitespace run before it, or after it when the range starts the text.
+    /// `text` less `range` and the one space or tab before it, or after it when the range starts the text.
     static func removing(_ range: NSRange, from text: NSString) -> String {
         var (start, end) = (range.location, NSMaxRange(range))
         func isSpace(_ i: Int) -> Bool { text.character(at: i) == space || text.character(at: i) == tab }
         if start > 0 {
-            while start > 0, isSpace(start - 1) { start -= 1 }
-        } else {
-            while end < text.length, isSpace(end) { end += 1 }
+            if isSpace(start - 1) { start -= 1 }
+        } else if end < text.length, isSpace(end) {
+            end += 1
         }
         return text.replacingCharacters(in: NSRange(location: start, length: end - start), with: "")
     }
@@ -106,7 +106,8 @@ public struct InlineAttributes: Equatable, Sendable {
         return i + length
     }
 
-    /// The index after the `[[…]]` or `[text](target)` that starts at `i`, or after the bracket when it isn't one.
+    /// The index after the `[[…]]`, `[text](target)` or `[text][ref]` that starts at `i`, or after the bracket when it isn't
+    /// one. The text's brackets nest.
     private static func afterLink(_ u: [UInt16], at i: Int) -> Int {
         if i + 1 < u.count, u[i + 1] == open {
             var j = i + 2
@@ -116,8 +117,41 @@ public struct InlineAttributes: Equatable, Sendable {
             }
             return i + 1
         }
-        guard let end = u[(i + 1)...].firstIndex(of: close), end + 1 < u.count, u[end + 1] == paren,
-              let closing = u[(end + 2)...].firstIndex(of: closeParen) else { return i + 1 }
-        return closing + 1
+        guard let end = closingBracket(u, from: i), end + 1 < u.count else { return i + 1 }
+        if u[end + 1] == open {
+            return u[(end + 2)...].firstIndex(of: close).map { $0 + 1 } ?? i + 1
+        }
+        guard u[end + 1] == paren else { return i + 1 }
+        var depth = 0, j = end + 1
+        while j < u.count {
+            switch u[j] {
+            case backslash: j += 1
+            case paren: depth += 1
+            case closeParen:
+                depth -= 1
+                if depth == 0 { return j + 1 }
+            default: break
+            }
+            j += 1
+        }
+        return i + 1
+    }
+
+    /// The `]` that closes the `[` at `i`, skipping nested brackets, escapes and code spans.
+    private static func closingBracket(_ u: [UInt16], from i: Int) -> Int? {
+        var depth = 0, j = i
+        while j < u.count {
+            switch u[j] {
+            case backslash: j += 1
+            case backtick: j = afterCodeSpan(u, at: j) - 1
+            case open: depth += 1
+            case close:
+                depth -= 1
+                if depth == 0 { return j }
+            default: break
+            }
+            j += 1
+        }
+        return nil
     }
 }

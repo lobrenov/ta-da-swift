@@ -249,6 +249,7 @@ private func subtaskQueries(_ vault: LoadedVault) -> [String: Any] {
                                       "cards": json(index.noteSubtasks(from: $0, through: $1))] as [String: Any] },
         "subtasksIn": Dictionary(uniqueKeysWithValues: parents.map { ($0.path, json(index.noteSubtasks(parent: $0)) as Any) }),
         "subtasksLoose": json(index.looseNoteSubtasks()),
+        "subtasksByParent": Dictionary(uniqueKeysWithValues: index.noteSubtasksByParent().map { ($0.key, json($0.value) as Any) }),
         "dayMarksWithoutSubtasks": index.dayMarks(from: LocalDate("2026-10-01")!, through: LocalDate("2026-10-31")!, today: today,
                                                    includingSubtasks: false).keys.sorted().map(\.description),
     ]
@@ -526,6 +527,9 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         "a `unclosed >2026-10-09", "a `x` >2026-10-09", "see [[Note >2026-10-09]] b", "see [[Note >2026-10-09]] >2026-10-10",
         "see ![[pic >2026-10-09.png]]", "see [the >2026-10-09 doc](https://x.y/ >2026-10-08) b", "[ ] >2026-10-09",
         "Café ☕️ >2026-10-09", "🥛 @[[Ünï]] >2026-10-09 x", ">2026-10-09", "",
+        "[a [b] >2026-10-09 c](https://x.y) d", "[a [b] >2026-10-09 c][ref] d", "[text >2026-10-09][ref] >2026-10-10",
+        "[a [b](u) @[[A]] c](https://x.y) @[[B]]", "[a \\] >2026-10-09 b](https://x.y)", "[url](https://x.y/(a) >2026-10-09) z",
+        "[a [b] >2026-10-09 c] d", "[x] >2026-10-09", "a  >2026-10-09  b", "a\t >2026-10-09", ">2026-10-09  b",
     ]
     for text in attributeTexts {
         add("InlineAttributes.parse", text.debugDescription, ["text": text], input: nil) { _ in
@@ -552,6 +556,20 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
             add("SubtaskLine.setParent", "\(label) \(title ?? "nil")", ["line": 0, "title": orNull(title)], input: text + "\nnext\n") { text in
                 SubtaskLine.setParent(title, in: text, line: 0)
             }
+        }
+    }
+    for (label, line) in [("plain", "- [ ] a\r"), ("trailing spaces", "- [ ] a  \r"), ("dated", "- [ ] a >2026-10-01\r"),
+                          ("double space", "- [ ] a  >2026-10-01  b\r"), ("at start", "- [ ] >2026-10-01  b")] {
+        for date in ["2026-10-09", nil] as [String?] {
+            add("SubtaskLine.settingDue", "\(label) \(date ?? "nil")", ["line": line, "date": orNull(date)], input: nil) { _ in
+                SubtaskLine.settingDue(date.flatMap { LocalDate($0) }, inLine: line)
+            }
+        }
+        add("SubtaskLine.settingParent", "\(label) P", ["line": line, "title": "P"], input: nil) { _ in
+            SubtaskLine.settingParent("P", inLine: line)
+        }
+        add("SubtaskLine.settingParent", "\(label) nil", ["line": line, "title": NSNull()], input: nil) { _ in
+            SubtaskLine.settingParent(nil, inLine: line)
         }
     }
     add("SubtaskLine.setDue", "second line", ["line": 1, "date": "2026-10-09"], input: "Intro\n- [ ] a\n- [ ] b\n") {

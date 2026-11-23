@@ -41,16 +41,43 @@ extension VaultIndex {
         }
     }
 
-    /// The project a `@[[Title]]` resolves to, else the area: the first of each by path.
+    /// Every project's and area's cards at once, by the parent's path, as `noteSubtasks(parent:)` gives them, in one pass.
+    public func noteSubtasksByParent() -> [String: [SubtaskCard]] {
+        var resolved: [String: String?] = [:]
+        func path(of title: String) -> String? {
+            let key = title.lowercased()
+            if let known = resolved[key] { return known }
+            let found = parentItem(titled: title)?.path
+            resolved[key] = found
+            return found
+        }
+        var grouped: [String: [(Item, [Checkbox])]] = [:]
+        for item in items.values where !item.checkboxes.isEmpty {
+            var byParent: [String: [Checkbox]] = [:]
+            for box in item.checkboxes where isOpenLine(box, in: item) {
+                if let parent = box.parent.flatMap(path(of:)), parent != item.path { byParent[parent, default: []].append(box) }
+            }
+            for (parent, lines) in byParent { grouped[parent, default: []].append((item, lines)) }
+        }
+        return grouped.mapValues { $0.sorted { Self.byTitle($0.0, $1.0) }.map { SubtaskCard(path: $0.0.path, lines: $0.1) } }
+    }
+
+    /// The live project a `@[[Title]]` resolves to, else the live area: the first of each by path. A logged file
+    /// resolves nothing.
     public func parentItem(titled title: String) -> Item? {
-        let found = items(titled: title)
+        let found = items(titled: title).filter { !$0.isLogged }
         return found.first { $0.properties.kind == .project } ?? found.first { $0.properties.kind == .area }
     }
 
     /// Whether `box` in `item` is a listed line.
     func isListed(_ box: Checkbox, in item: Item) -> Bool {
-        guard box.state == .open, !box.isNested, !box.isQuoted, !item.isLogged, !item.properties.status.isClosed else { return false }
+        guard isOpenLine(box, in: item) else { return false }
         return item.properties.kind == .note || box.due != nil || box.parent.flatMap(parentItem(titled:)) != nil
+    }
+
+    /// An open box that isn't nested or quoted, in a file that isn't logged or closed.
+    private func isOpenLine(_ box: Checkbox, in item: Item) -> Bool {
+        box.state == .open && !box.isNested && !box.isQuoted && !item.isLogged && !item.properties.status.isClosed
     }
 
     private func cards(where keep: (Item, Checkbox) -> Bool) -> [SubtaskCard] {

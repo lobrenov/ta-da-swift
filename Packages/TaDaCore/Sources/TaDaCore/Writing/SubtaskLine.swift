@@ -120,7 +120,7 @@ public enum SubtaskLine {
 
     /// The line with its due date set to `date`: an existing `>YYYY-MM-DD` is replaced, or removed for nil, else the
     /// token is added at the end of the text. Only that token changes. `line` is a subtask's content without its line
-    /// ending; nil when it isn't one (an icon box isn't).
+    /// ending, or with a `\r` that's kept; nil when it isn't one (an icon box isn't).
     public static func settingDue(_ date: LocalDate?, inLine line: String) -> String? {
         splicing(line) { rest in
             let attributes = InlineAttributes.parse(rest)
@@ -152,7 +152,10 @@ public enum SubtaskLine {
     /// `line` with the text after its box edited by `edit`, which gets that text and says which token to replace (if any)
     /// and with what (nil removes it, or adds nothing).
     private static func splicing(_ line: String, _ edit: (String) -> (range: NSRange?, token: String?)) -> String? {
-        let bytes = Array(line.utf8)
+        var bytes = Array(line.utf8)
+        let ending = bytes.last == UInt8(ascii: "\r") ? "\r" : ""
+        if !ending.isEmpty { bytes.removeLast() }
+        let line = String(decoding: bytes, as: UTF8.self)
         guard let markerEnd = CheckboxSyntax.markerEnd(in: bytes, at: CheckboxSyntax.markerStart(in: bytes)),
               let box = CheckboxSyntax.box(in: bytes, after: markerEnd),
               let state = Checkbox.State(marker: box.marker), state != .icon else { return nil }
@@ -164,15 +167,15 @@ public enum SubtaskLine {
         let text = rest as NSString
         switch (range, token) {
         case let (range?, token?):
-            return head + text.replacingCharacters(in: range, with: token)
+            return head + text.replacingCharacters(in: range, with: token) + ending
         case let (range?, nil):
-            return head + InlineAttributes.removing(range, from: text)
+            return head + InlineAttributes.removing(range, from: text) + ending
         case let (nil, token?):
             let trailing = String(rest.suffix(rest.reversed().prefix(while: { $0 == " " || $0 == "\t" }).count))
             let base = rest.dropLast(trailing.count)
-            return head + (base.isEmpty ? token : base + " " + token) + trailing
+            return head + (base.isEmpty ? token : base + " " + token) + trailing + ending
         case (nil, nil):
-            return line
+            return line + ending
         }
     }
 

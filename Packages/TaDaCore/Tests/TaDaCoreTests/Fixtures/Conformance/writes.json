@@ -18356,6 +18356,192 @@
     },
     {
       "args" : {
+        "text" : "[a [b] >2026-10-09 c](https://x.y) d"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "[a [b] >2026-10-09 c](https://x.y) d"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[a [b] >2026-10-09 c](https://x.y) d\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "[a [b] >2026-10-09 c][ref] d"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "[a [b] >2026-10-09 c][ref] d"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[a [b] >2026-10-09 c][ref] d\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "[text >2026-10-09][ref] >2026-10-10"
+      },
+      "expected" : {
+        "due" : "2026-10-10",
+        "dueRange" : [
+          24,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "[text >2026-10-09][ref]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[text >2026-10-09][ref] >2026-10-10\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "[a [b](u) @[[A]] c](https://x.y) @[[B]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : "B",
+        "parentRange" : [
+          33,
+          6
+        ],
+        "stripped" : "[a [b](u) @[[A]] c](https://x.y)"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[a [b](u) @[[A]] c](https://x.y) @[[B]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "[a \\] >2026-10-09 b](https://x.y)"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "[a \\] >2026-10-09 b](https://x.y)"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[a \\\\] >2026-10-09 b](https://x.y)\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "[url](https://x.y/(a) >2026-10-09) z"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "[url](https://x.y/(a) >2026-10-09) z"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[url](https://x.y/(a) >2026-10-09) z\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "[a [b] >2026-10-09 c] d"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          7,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "[a [b] c] d"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[a [b] >2026-10-09 c] d\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "[x] >2026-10-09"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          4,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "[x]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[x] >2026-10-09\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a  >2026-10-09  b"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          3,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a   b"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a  >2026-10-09  b\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a\t >2026-10-09"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          3,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a\\t >2026-10-09\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : ">2026-10-09  b"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          0,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "b"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \">2026-10-09  b\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
         "date" : "2026-10-09",
         "line" : 0
       },
@@ -19913,6 +20099,206 @@
       "input" : "- [ ] 🥛 Café >2026-10-01\r\nnext\r\n",
       "name" : "SubtaskLine.setParent emoji nil (CRLF)",
       "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : "- [ ] a\r"
+      },
+      "expected" : "- [ ] a >2026-10-09\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue plain 2026-10-09",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : "- [ ] a\r"
+      },
+      "expected" : "- [ ] a\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue plain nil",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] a\r",
+        "title" : "P"
+      },
+      "expected" : "- [ ] a @[[P]]\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent plain P",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] a\r",
+        "title" : null
+      },
+      "expected" : "- [ ] a\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent plain nil",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : "- [ ] a  \r"
+      },
+      "expected" : "- [ ] a >2026-10-09  \r",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue trailing spaces 2026-10-09",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : "- [ ] a  \r"
+      },
+      "expected" : "- [ ] a  \r",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue trailing spaces nil",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] a  \r",
+        "title" : "P"
+      },
+      "expected" : "- [ ] a @[[P]]  \r",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent trailing spaces P",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] a  \r",
+        "title" : null
+      },
+      "expected" : "- [ ] a  \r",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent trailing spaces nil",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : "- [ ] a >2026-10-01\r"
+      },
+      "expected" : "- [ ] a >2026-10-09\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue dated 2026-10-09",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : "- [ ] a >2026-10-01\r"
+      },
+      "expected" : "- [ ] a\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue dated nil",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] a >2026-10-01\r",
+        "title" : "P"
+      },
+      "expected" : "- [ ] a >2026-10-01 @[[P]]\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent dated P",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] a >2026-10-01\r",
+        "title" : null
+      },
+      "expected" : "- [ ] a >2026-10-01\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent dated nil",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : "- [ ] a  >2026-10-01  b\r"
+      },
+      "expected" : "- [ ] a  >2026-10-09  b\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue double space 2026-10-09",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : "- [ ] a  >2026-10-01  b\r"
+      },
+      "expected" : "- [ ] a   b\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue double space nil",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] a  >2026-10-01  b\r",
+        "title" : "P"
+      },
+      "expected" : "- [ ] a  >2026-10-01  b @[[P]]\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent double space P",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] a  >2026-10-01  b\r",
+        "title" : null
+      },
+      "expected" : "- [ ] a  >2026-10-01  b\r",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent double space nil",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : "- [ ] >2026-10-01  b"
+      },
+      "expected" : "- [ ] >2026-10-09  b",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue at start 2026-10-09",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : "- [ ] >2026-10-01  b"
+      },
+      "expected" : "- [ ]  b",
+      "input" : null,
+      "name" : "SubtaskLine.settingDue at start nil",
+      "op" : "SubtaskLine.settingDue"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] >2026-10-01  b",
+        "title" : "P"
+      },
+      "expected" : "- [ ] >2026-10-01  b @[[P]]",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent at start P",
+      "op" : "SubtaskLine.settingParent"
+    },
+    {
+      "args" : {
+        "line" : "- [ ] >2026-10-01  b",
+        "title" : null
+      },
+      "expected" : "- [ ] >2026-10-01  b",
+      "input" : null,
+      "name" : "SubtaskLine.settingParent at start nil",
+      "op" : "SubtaskLine.settingParent"
     },
     {
       "args" : {

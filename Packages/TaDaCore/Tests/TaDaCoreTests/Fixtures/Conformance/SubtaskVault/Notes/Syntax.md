@@ -14,3 +14,6 @@
 - [ ] Case @[[ta da mvp]]
 - [ ] Tabbed	>2026-10-02	end
 1. [ ] Numbered >2026-10-02
+- [ ] Nested brackets [a [b] >2026-10-05 c](https://a.b) @[[Work]]
+- [ ] Reference [text >2026-10-06][ref] >2026-10-07
+- [ ] Spaced  >2026-10-08  twice

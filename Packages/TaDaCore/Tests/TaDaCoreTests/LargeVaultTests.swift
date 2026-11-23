@@ -111,6 +111,43 @@ struct LargeVaultTests {
         #expect(weekTime < 0.5 && monthTime < 0.5)
     }
 
+    @Test func subtaskListsOverNotesWithDatedAndParentedBoxesAreQuick() async throws {
+        let today = Self.today
+        let base = VaultIndex(GeneratedVault.files(today: today).compactMap { Item(parsing: $0.text, path: $0.path) })
+        let parents = base.projects.map(\.title) + base.areas.map(\.title) + ["Missing parent"]
+        let texts = (0..<400).map { n -> (String, String) in
+            let lines = (0..<10).map { k -> String in
+                switch k % 5 {
+                case 0: "- [ ] Dated \(k) >\(today.adding(days: (n + k) % 30 - 10))"
+                case 1: "- [ ] Parented \(k) @[[\(parents[(n + k) % parents.count])]]"
+                case 2: "- [/] Both \(k) >\(today.adding(days: k)) @[[\(parents[(n * 3 + k) % parents.count])]]"
+                case 3: "- [ ] Loose \(k)\n  - [ ] Nested \(k) >\(today)"
+                default: "- [x] Done \(k) >\(today)"
+                }
+            }
+            return ("Notes/Subtasks \(n).md", "---\ntags: []\n---\n" + lines.joined(separator: "\n") + "\n")
+        }
+        let (items, parseTime) = await time("parse 400 notes with 4,000 attribute boxes") {
+            texts.compactMap { Item(parsing: $0.1, path: $0.0) }
+        }
+        #expect(items.count == 400 && parseTime < 2)
+        var index = base
+        for item in items { index.update(item) }
+
+        let (day, dayTime) = await time("note subtasks on a day") { index.noteSubtasks(on: today, today: today) }
+        let (range, rangeTime) = await time("note subtasks over a week") {
+            index.noteSubtasks(from: today, through: today.adding(days: 6))
+        }
+        let (loose, looseTime) = await time("loose note subtasks") { index.looseNoteSubtasks() }
+        let (byParent, byParentTime) = await time("note subtasks of every parent at once") { index.noteSubtasksByParent() }
+        let (marks, marksTime) = await time("day marks, one month, 4,000 attribute boxes") {
+            index.dayMarks(from: today, through: today.adding(days: 34), today: today)
+        }
+        #expect(!day.isEmpty && !range.isEmpty && !loose.isEmpty && !byParent.isEmpty && !marks.isEmpty)
+        #expect(dayTime < 0.5 && rangeTime < 0.5 && looseTime < 0.5 && byParentTime < 0.5 && marksTime < 0.5)
+        for parent in (index.projects + index.areas).prefix(5) { #expect(byParent[parent.path] ?? [] == index.noteSubtasks(parent: parent)) }
+    }
+
     @Test func attachmentGroupsListQuicklyWithEveryFileEmbeddingImages() async throws {
         try await withTemporaryFolder { folder in
             try GeneratedVault.write(to: folder, today: Self.today)

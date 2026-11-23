@@ -9,6 +9,7 @@ private func note(_ path: String, _ body: String) -> Item { makeItem(path, "tags
 private func vault() -> VaultIndex {
     VaultIndex([
         makeItem("Ta Da/areas/Work.md", "type: area"),
+        makeItem("Ta Da/logbook/2026-09/Old project.md", "type: project\nstatus: Done\ncompletedDate: 2026-09-01", body: "- [ ] Logged own\n"),
         makeItem("Ta Da/projects/Ta Da MVP.md", "type: project\nstatus: Doing\narea: \"[[Work]]\"", body: """
         - [ ] Own dated >2026-10-09
         - [ ] Own plain
@@ -39,6 +40,8 @@ private func vault() -> VaultIndex {
         - [ ] Code >2026-10-02
         ```
         - [ ] Two dates >2026-10-04 >2026-10-02
+        - [ ] Logged parent @[[Old project]]
+        - [ ] Logged parent but dated >2026-10-02 @[[Old project]]
         """),
         note("Daily/A note.md", "- [ ] Dated >2026-10-02\n- [ ] Another >2026-10-09\n"),
     ])
@@ -54,7 +57,7 @@ private func day(_ text: String) -> LocalDate { LocalDate(text)! }
     let index = vault()
     #expect(summary(index.noteSubtasks(on: today, today: today)) == [
         "Daily/A note.md: Dated",
-        "Meetings/Standup.md: Overdue | Unresolved but dated",
+        "Meetings/Standup.md: Overdue | Unresolved but dated | Logged parent but dated",
     ])
     #expect(summary(index.noteSubtasks(on: day("2026-10-03"), today: today)) == ["Meetings/Standup.md: Both"])
     #expect(summary(index.noteSubtasks(on: day("2026-09-30"), today: today)) == ["Meetings/Standup.md: Overdue"])
@@ -90,7 +93,7 @@ private func day(_ text: String) -> LocalDate { LocalDate(text)! }
 }
 
 @Test func looseLinesAreANotesOpenLinesWithNeitherAttribute() {
-    #expect(summary(vault().looseNoteSubtasks()) == ["Meetings/Standup.md: Loose | Unresolved"])
+    #expect(summary(vault().looseNoteSubtasks()) == ["Meetings/Standup.md: Loose | Unresolved | Logged parent"])
 }
 
 @Test func anUnresolvedParentDoesNotPlaceTheLine() throws {
@@ -141,4 +144,21 @@ private func day(_ text: String) -> LocalDate { LocalDate(text)! }
     #expect(marks.keys.sorted() == ["2026-09-30", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-09"].map(day))
     #expect(marks.values.allSatisfy { $0.hasOpenTasks })
     #expect(index.dayMarks(from: day("2026-09-28"), through: day("2026-10-10"), today: today, includingSubtasks: false).isEmpty)
+}
+
+@Test func aLoggedParentPlacesNothing() throws {
+    let index = vault()
+    #expect(index.parentItem(titled: "Old project") == nil)
+    let logged = try #require(index["Ta Da/logbook/2026-09/Old project.md"])
+    #expect(index.noteSubtasks(parent: logged).isEmpty)
+    #expect(index.looseNoteSubtasks().flatMap(\.lines).map(\.title).contains("Logged parent"))
+}
+
+@Test func oneBoxPassGivesEveryParentsCards() throws {
+    let index = vault()
+    let byParent = index.noteSubtasksByParent()
+    for parent in index.projects + index.areas {
+        #expect(byParent[parent.path] ?? [] == index.noteSubtasks(parent: parent), "\(parent.path)")
+    }
+    #expect(Set(byParent.keys) == ["Ta Da/projects/Ta Da MVP.md", "Ta Da/areas/Work.md"])
 }

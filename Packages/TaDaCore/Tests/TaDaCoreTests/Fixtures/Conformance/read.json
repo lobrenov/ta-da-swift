@@ -3867,6 +3867,30 @@
                 "state" : "open",
                 "text" : "Two parents @[[Work]] @[[Ta Da MVP]]",
                 "title" : "Two parents @[[Ta Da MVP]]"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 25,
+                "marker" : " ",
+                "parent" : "Old project",
+                "state" : "open",
+                "text" : "Logged parent @[[Old project]]",
+                "title" : "Logged parent"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-03",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 26,
+                "marker" : " ",
+                "parent" : "Old project",
+                "state" : "open",
+                "text" : "Logged parent but dated >2026-10-03 @[[Old project]]",
+                "title" : "Logged parent but dated"
               }
             ],
             "completedDate" : null,
@@ -3920,6 +3944,16 @@
                 "alias" : null,
                 "heading" : null,
                 "target" : "Ta Da MVP"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Old project"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Old project"
               }
             ],
             "path" : "Meetings/Standup.md",
@@ -3928,7 +3962,7 @@
             "status" : "Not Started",
             "subtasks" : {
               "done" : 1,
-              "total" : 14
+              "total" : 16
             },
             "summary" : null,
             "tags" : [
@@ -4139,6 +4173,42 @@
                 "state" : "open",
                 "text" : "Numbered >2026-10-02",
                 "title" : "Numbered"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 16,
+                "marker" : " ",
+                "parent" : "Work",
+                "state" : "open",
+                "text" : "Nested brackets [a [b] >2026-10-05 c](https://a.b) @[[Work]]",
+                "title" : "Nested brackets [a [b] >2026-10-05 c](https://a.b)"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-07",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 17,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Reference [text >2026-10-06][ref] >2026-10-07",
+                "title" : "Reference [text >2026-10-06][ref]"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-08",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 18,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Spaced  >2026-10-08  twice",
+                "title" : "Spaced   twice"
               }
             ],
             "completedDate" : null,
@@ -4187,6 +4257,11 @@
                 "alias" : null,
                 "heading" : null,
                 "target" : "ta da mvp"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work"
               }
             ],
             "path" : "Notes/Syntax.md",
@@ -4195,7 +4270,7 @@
             "status" : "Not Started",
             "subtasks" : {
               "done" : 0,
-              "total" : 16
+              "total" : 19
             },
             "summary" : null,
             "tags" : [
@@ -4426,6 +4501,59 @@
             ]
           },
           "path" : "Ta Da/areas/Work.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Logged own >2026-10-02",
+                "title" : "Logged own"
+              }
+            ],
+            "completedDate" : "2026-09-01",
+            "createdDate" : "2026-08-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : true,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/logbook/2026-09/Old project.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 1
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Old project",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/logbook/2026-09/Old project.md"
         },
         {
           "item" : {
