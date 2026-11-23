@@ -2231,11 +2231,13 @@ import UIKit
         let parent: String?
     }
 
-    /// Creates the task Extract to Task makes from a subtask in the file at `path`, filed under the file itself when
-    /// it's a project or area, else under the file's project or area. Returns what `extracted` shows for it.
+    /// Creates the task Extract to Task makes from a subtask in the file at `path`, filed under the project or area its `@`
+    /// names, else under the file itself when it's a project or area, else under the file's project or area. Returns what
+    /// `extracted` shows for it.
     func extractTask(_ extract: SubtaskExtraction.Extract, from path: String) async -> Extracted? {
         let host = index[path]
-        let parent = host?.properties.kind == .project || host?.properties.kind == .area ? host : host.flatMap { index.parent(of: $0) }
+        let hostParent = host?.properties.kind == .project || host?.properties.kind == .area ? host : host.flatMap { index.parent(of: $0) }
+        let parent = extract.parent.flatMap { index.parentItem(titled: $0) } ?? hostParent
         let isProject = parent?.properties.kind == .project
         let text = SubtaskExtraction.taskText(extract, project: isProject ? parent?.title : nil,
                                               area: isProject ? nil : parent?.title, today: today)

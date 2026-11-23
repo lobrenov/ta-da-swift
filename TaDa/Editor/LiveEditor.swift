@@ -4,6 +4,7 @@ import SwiftUI
 import AppKit
 #else
 import UIKit
+import Combine
 #endif
 import MarkdownEngine
 import TaDaCore
@@ -37,6 +38,8 @@ struct LiveEditor: View {
     var imageActions: AppModel? = nil
     /// Extracts subtasks to tasks from the checkbox menu (`ExtractTask.swift`, Mac); without it, the menu has no Extract to Task row.
     var taskExtraction: AppModel? = nil
+    /// Draws and edits a subtask's `>YYYY-MM-DD` due date and `@[[Title]]` parent (`TaskAttributeMenus.swift`); without it, they stay text.
+    var taskAttributes: AppModel? = nil
     /// Gives the editor the keyboard, caret at the start, once its text view is in a window; then calls `onTookFocus`.
     var takesFocus = false
     var onTookFocus: () -> Void = {}
@@ -63,6 +66,10 @@ struct LiveEditor: View {
     @State private var linkMenu = LinkMenuController()
     @State private var addLinkMenu = AddLinkMenuController()
     @State private var tagMenu = TagMenuController()
+    @State private var dateMenu = DateMenuController()
+    @State private var parentMenu = ParentMenuController(takesKeys: false)
+    @State private var parentChipMenu = ParentMenuController(takesKeys: true)
+    @State private var calendar = CalendarPicker()
     #else
     /// The open `/` query's choices, the one ↵ picks, and the query's state, which a pick inserts against.
     @State private var slashChoices: [SlashCommand] = []
@@ -75,6 +82,13 @@ struct LiveEditor: View {
     /// The open `#` query's choices (empty: "New tag"), and the one ↵ picks.
     @State private var tagChoices: [TagNode]?
     @State private var tagHighlight = 0
+    /// The open `>` query's choices, and the one ↵ picks.
+    @State private var dateChoices: [DateChoice] = []
+    @State private var dateHighlight = 0
+    /// The open `@` query's choices, and the one ↵ picks.
+    @State private var parentChoices: [ParentChoice] = []
+    @State private var parentHighlight = 0
+    @State private var attributeMenu: MenuRequest<TaskAttributeClick>?
     @State private var checkboxMenu: MenuRequest<TaskMarkerMenuRequest>?
     @State private var calloutMenu: MenuRequest<CalloutMenuRequest>?
     @State private var toggles = 0
@@ -106,14 +120,7 @@ struct LiveEditor: View {
             },
             onLinkClick: onLinkClick,
             // Keys for any open picker come here (a query, upstream's `[[…]]` preview); each menu ignores them unless it's open.
-            onInlinePreviewKey: { key in
-                switch key {
-                case .moveUp: slashMenu.handle(.up) || linkMenu.handle(.up) || tagMenu.handle(.up)
-                case .moveDown: slashMenu.handle(.down) || linkMenu.handle(.down) || tagMenu.handle(.down)
-                case .confirm: slashMenu.handle(.confirm) || linkMenu.handle(.confirm) || tagMenu.handle(.confirm)
-                case .confirmAndOpen, .cancel: false
-                }
-            },
+            onInlinePreviewKey: handleMenuKey,
             header: header,
             isCursorExcluded: isCursorExcluded,
             onSlashCommandChange: showQueryMenu,
@@ -122,6 +129,7 @@ struct LiveEditor: View {
             onCalloutMenu: showCalloutMenu,
             onImageEmbed: imageActions.map { model in { request in handleImage(request, model: model) } },
             onTagClick: onTagClick,
+            onTaskAttributeClick: attributeClick,
             onRightClickMenu: showRightClickMenu,
             onTextMenu: showTextMenu,
             onVisibleLines: onVisibleLines
@@ -143,6 +151,10 @@ struct LiveEditor: View {
             slashMenu.hide()
             linkMenu.hide()
             tagMenu.hide()
+            dateMenu.hide()
+            parentMenu.hide()
+            parentChipMenu.hide()
+            calendar.hide()
             checkboxMenu.hide()
             calloutMenu.hide()
             rightClickMenu.hide()
@@ -181,8 +193,14 @@ struct LiveEditor: View {
                 if let tagChoices {
                     PhoneTagList(choices: tagChoices, highlight: tagHighlight, theme: theme, pick: insertTag)
                 }
+                if !dateChoices.isEmpty {
+                    PhoneDateList(choices: dateChoices, highlight: dateHighlight, theme: theme, pick: insertDate)
+                }
+                if !parentChoices.isEmpty {
+                    PhoneParentList(choices: parentChoices, highlight: parentHighlight, theme: theme, pick: insertParent)
+                }
                 EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks, haptics: haptics,
-                                  hideKeyboard: { focused = false })
+                                  hasAttributeKeys: taskAttributes != nil, hideKeyboard: { focused = false })
             }),
             onPasteImage: embedImage.map { embed in
                 { pasteboard in
@@ -210,6 +228,10 @@ struct LiveEditor: View {
                 }
             },
             onTagClick: onTagClick,
+            onTaskAttributeClick: taskAttributes == nil ? nil : { click in
+                attributeMenu = MenuRequest(click, anchor: localRect(click.anchorRect))
+                menuPresses += 1
+            },
             onVisibleLines: onVisibleLines
         )
         .onAppear {
@@ -226,6 +248,13 @@ struct LiveEditor: View {
                 toggles += 1
             }
             .presentationCompactAdaptation(.popover)
+        }
+        .background {
+            Color.clear
+                .popover(item: $attributeMenu, attachmentAnchor: .rect(.rect(attributeMenu?.anchor ?? .zero))) { menu in
+                    attributePopover(menu.request)
+                        .presentationCompactAdaptation(.popover)
+                }
         }
         .background {
             Color.clear
@@ -246,10 +275,11 @@ struct LiveEditor: View {
     }
     #endif
 
-    /// The queries typing opens: `/`, and with `links`, `[[`, `![[` and (by Autocomplete) `#`.
+    /// The queries typing opens: `/`; with `links`, `[[`, `![[` and (by Autocomplete) `#`; with `taskAttributes`, `>` and `@`.
     private var triggers: Set<SlashCommandState.Trigger> {
         var triggers: Set<SlashCommandState.Trigger> = [.slash]
         if links != nil { triggers.formUnion(autocomplete.tags ? [.link, .embed, .tag] : [.link, .embed]) }
+        if taskAttributes != nil { triggers.formUnion([.date, .parent]) }
         return triggers
     }
 
@@ -265,14 +295,106 @@ struct LiveEditor: View {
         slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
     }
 
+    #if os(macOS)
+    private var attributeClick: ((TaskAttributeClick) -> Void)? {
+        taskAttributes == nil ? nil : { showAttributeMenu($0) }
+    }
+    #endif
+
+    /// Replaces the `>` query with the day's `>YYYY-MM-DD` and a space, and puts the caret after it.
+    private func insertDate(_ choice: DateChoice) {
+        guard let text = choice.markdown else { return }
+        slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
+    }
+
+    /// Replaces the `@` query with the parent's `@[[Title]]` and a space, and puts the caret after it. New project makes the
+    /// project first.
+    private func insertParent(_ choice: ParentChoice) {
+        let text = choice.markdown
+        let insert = { [slashCommand] in
+            slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
+        }
+        guard choice.kind == .new, let model = taskAttributes else { return insert() }
+        Task {
+            await model.newProject(named: choice.title, linking: [])
+            insert()
+        }
+    }
+
+    /// Deletes a clicked attribute, with a space beside it.
+    private func removeAttribute(_ click: TaskAttributeClick) {
+        guard let textView = slashCommand.textView else { return }
+        #if os(macOS)
+        guard let range = TaskAttributeText.removalRange(of: click.source, at: click.range, in: textView.string) else { return }
+        textView.insertText("", replacementRange: range)
+        #else
+        guard let range = TaskAttributeText.removalRange(of: click.source, at: click.range, in: textView.text) else { return }
+        textView.selectedRange = range
+        textView.insertText("")
+        #endif
+    }
+
+    /// The chips' look: a date as a task row labels it, accent or `deadline` when overdue; a parent as its icon (a project's
+    /// ring in `accent`, an area's cube in `doing`) and title in `link`, or its title struck and muted when it isn't a project or area.
+    nonisolated static func taskAttributeStyle(theme: Theme, index: VaultIndex, today: LocalDate) -> TaskAttributeStyle {
+        TaskAttributeStyle(
+            due: { text in
+                guard let date = LocalDate(text) else { return TaskAttributeChip(label: text, tint: theme.muted) }
+                return TaskAttributeChip(label: MainActor.assumeIsolated { date.rowLabel(today: today) },
+                                         tint: date < today ? theme.deadline : theme.accent)
+            },
+            parent: { title, _ in
+                guard let place = index.parentItem(titled: title) else {
+                    return TaskAttributeChip(label: title, tint: theme.muted, strikethrough: true)
+                }
+                let icon: @Sendable (CGRect, PlatformColor) -> Void
+                if place.properties.kind == .area {
+                    let tint = theme.doing
+                    icon = { rect, _ in
+                        guard let context = Self.currentContext else { return }
+                        TaskAttributeIcons.cube(in: rect, tint: tint, context: context)
+                    }
+                } else {
+                    let tint = theme.accent, fraction = index.progress(of: place).fraction
+                    icon = { rect, _ in
+                        guard let context = Self.currentContext else { return }
+                        TaskAttributeIcons.ring(fraction: fraction, in: rect, tint: tint, context: context)
+                    }
+                }
+                return TaskAttributeChip(label: place.title, tint: theme.link, drawIcon: icon)
+            }
+        )
+    }
+
     #if os(iOS)
+    /// The content of the popover a tap on a drawn date or parent opens.
+    @ViewBuilder private func attributePopover(_ click: TaskAttributeClick) -> some View {
+        if let model = taskAttributes {
+            switch click.kind {
+            case .due:
+                PhoneDatePopover(current: LocalDate(String(click.source.dropFirst())), today: model.today, theme: theme, pick: { date in
+                    attributeMenu = nil
+                    click.replace(">\(date)")
+                }, remove: {
+                    attributeMenu = nil
+                    removeAttribute(click)
+                })
+            case .parent:
+                PhoneParentPopover(choices: ParentChoice.choices(index: model.index, query: "") + [.remove], theme: theme) { choice in
+                    attributeMenu = nil
+                    if choice.kind == .remove { removeAttribute(click) } else { click.replace(choice.token) }
+                }
+            }
+        }
+    }
+
     /// Replaces the `/query` with the command's markdown and selects its placeholder.
     private func insertSlashCommand(_ command: SlashCommand) {
         let insertion = command.insertion(followsBlankLine: slashState?.followsBlankLine ?? true)
         slashCommand.insert(insertion.text, selecting: insertion.selection)
     }
 
-    /// Lists the open `/`, `[[`, `![[` or `#` query's choices above the keyboard bar.
+    /// Lists the open `/`, `[[`, `![[`, `#`, `>` or `@` query's choices above the keyboard bar.
     private func showLinkChoices(_ state: SlashCommandState?) {
         if let state, state.trigger == .slash {
             let choices = SlashCommand.matching(state.query, atLineStart: state.isAtLineStart)
@@ -284,6 +406,27 @@ struct LiveEditor: View {
             linkChoices = []
             return
         }
+        if let state, let model = taskAttributes, state.trigger == .date || state.trigger == .parent {
+            slashChoices = []
+            slashState = nil
+            tagChoices = nil
+            linkChoices = []
+            if state.trigger == .date {
+                let choices = DateChoice.choices(query: state.query, today: model.today, firstWeekday: Calendar.current.firstWeekday,
+                                                 order: .system, includesPick: false)
+                if choices != dateChoices { dateHighlight = 0 }
+                dateChoices = choices
+                parentChoices = []
+            } else {
+                let choices = ParentChoice.choices(index: model.index, query: state.query)
+                if choices != parentChoices { parentHighlight = 0 }
+                parentChoices = choices
+                dateChoices = []
+            }
+            return
+        }
+        dateChoices = []
+        parentChoices = []
         slashChoices = []
         slashState = nil
         if let state, let links, state.trigger == .tag {
@@ -311,6 +454,24 @@ struct LiveEditor: View {
             case .moveUp: slashHighlight = (slashHighlight + slashChoices.count - 1) % slashChoices.count
             case .moveDown: slashHighlight = (slashHighlight + 1) % slashChoices.count
             case .confirm: insertSlashCommand(slashChoices[min(slashHighlight, slashChoices.count - 1)])
+            case .confirmAndOpen, .cancel: return false
+            }
+            return true
+        }
+        if !dateChoices.isEmpty {
+            switch key {
+            case .moveUp: dateHighlight = (dateHighlight + dateChoices.count - 1) % dateChoices.count
+            case .moveDown: dateHighlight = (dateHighlight + 1) % dateChoices.count
+            case .confirm: insertDate(dateChoices[min(dateHighlight, dateChoices.count - 1)])
+            case .confirmAndOpen, .cancel: return false
+            }
+            return true
+        }
+        if !parentChoices.isEmpty {
+            switch key {
+            case .moveUp: parentHighlight = (parentHighlight + parentChoices.count - 1) % parentChoices.count
+            case .moveDown: parentHighlight = (parentHighlight + 1) % parentChoices.count
+            case .confirm: insertParent(parentChoices[min(parentHighlight, parentChoices.count - 1)])
             case .confirmAndOpen, .cancel: return false
             }
             return true
@@ -487,23 +648,95 @@ struct LiveEditor: View {
     private func showQueryMenu(_ state: SlashCommandState?) {
         switch state?.trigger {
         case nil:
-            slashMenu.hide()
-            linkMenu.hide()
-            tagMenu.hide()
+            hideQueryMenus()
         case .slash:
-            linkMenu.hide()
-            tagMenu.hide()
+            hideQueryMenus(except: .slash)
             showSlashMenu(state!)
         case .link, .embed:
-            slashMenu.hide()
-            tagMenu.hide()
+            hideQueryMenus(except: .link)
             showLinkMenu(state!)
         case .tag:
-            slashMenu.hide()
-            linkMenu.hide()
+            hideQueryMenus(except: .tag)
             showTagMenu(state!)
-        case .date, .parent:
-            break
+        case .date:
+            hideQueryMenus(except: .date)
+            showDateMenu(state!)
+        case .parent:
+            hideQueryMenus(except: .parent)
+            showParentMenu(state!)
+        }
+    }
+
+    /// Keys for any open picker come here (a query, upstream's `[[…]]` preview); each menu ignores them unless it's open.
+    private func handleMenuKey(_ key: InlinePreviewKey) -> Bool {
+        switch key {
+        case .moveUp: slashMenu.handle(.up) || linkMenu.handle(.up) || tagMenu.handle(.up) || handleChoiceMenus(.up)
+        case .moveDown: slashMenu.handle(.down) || linkMenu.handle(.down) || tagMenu.handle(.down) || handleChoiceMenus(.down)
+        case .confirm: slashMenu.handle(.confirm) || linkMenu.handle(.confirm) || tagMenu.handle(.confirm) || handleChoiceMenus(.confirm)
+        case .confirmAndOpen, .cancel: false
+        }
+    }
+
+    private func handleChoiceMenus(_ key: ChoiceMenuKey) -> Bool {
+        dateMenu.handle(key) || parentMenu.handle(key)
+    }
+
+    private func hideQueryMenus(except open: SlashCommandState.Trigger? = nil) {
+        if open != .slash { slashMenu.hide() }
+        if open != .link { linkMenu.hide() }
+        if open != .tag { tagMenu.hide() }
+        if open != .date { dateMenu.hide() }
+        if open != .parent { parentMenu.hide() }
+    }
+
+    /// The `>` menu: the day the phrase gives, highlighted, then Today, Tomorrow, Next week and Pick a date….
+    private func showDateMenu(_ state: SlashCommandState) {
+        guard let model = taskAttributes else { return }
+        let choices = DateChoice.choices(query: state.query, today: model.today, firstWeekday: Calendar.current.firstWeekday,
+                                         order: .system, includesPick: true)
+        dateMenu.show(choices, anchor: state.anchorRect, theme: theme, pick: { [self] choice in
+            if choice.kind == .pick { pickDate(in: state) } else { insertDate(choice) }
+        }, dismiss: { [slashCommand] in slashCommand.dismiss() })
+    }
+
+    /// Opens the calendar for the `>` query; its pick replaces the typed `>…` with the day.
+    private func pickDate(in state: SlashCommandState) {
+        guard let model = taskAttributes, let textView = slashCommand.textView, let window = NSApp.keyWindow else { return }
+        dateMenu.hide()
+        calendar.show(.due, selected: nil, other: nil, today: model.today, theme: theme, below: state.anchorRect, in: window) { [calendar] date in
+            calendar.hide()
+            window.makeFirstResponder(textView)
+            let text = textView.string as NSString
+            guard let date, NSMaxRange(state.range) <= text.length, text.substring(with: state.range).hasPrefix(">") else { return }
+            textView.insertText(">\(date) ", replacementRange: state.range)
+        }
+    }
+
+    /// The `@` menu: the areas and projects the typed text is in, and New project for it.
+    private func showParentMenu(_ state: SlashCommandState) {
+        guard let model = taskAttributes else { return }
+        parentMenu.show(ParentChoice.choices(index: model.index, query: state.query), anchor: state.anchorRect, theme: theme,
+                        pick: insertParent, dismiss: { [slashCommand] in slashCommand.dismiss() })
+    }
+
+    /// A click on a drawn date opens the calendar, and on a parent the areas and projects and Remove; a pick replaces the attribute.
+    private func showAttributeMenu(_ click: TaskAttributeClick) {
+        guard let model = taskAttributes, let window = NSApp.keyWindow else { return }
+        switch click.kind {
+        case .due:
+            let current = LocalDate(String(click.source.dropFirst()))
+            calendar.show(.due, selected: current, other: nil, today: model.today, theme: theme, below: click.anchorRect, in: window) { [calendar] date in
+                calendar.hide()
+                if let date { click.replace(">\(date)") } else { removeAttribute(click) }
+            }
+        case .parent:
+            let current = String(click.source.dropFirst(3).dropLast(2))
+            let choices = ParentChoice.choices(index: model.index, query: "") + [.remove]
+            parentChipMenu.show(choices, highlight: choices.firstIndex { $0.title == current }, anchor: click.anchorRect, theme: theme,
+                                pick: { [parentChipMenu] choice in
+                parentChipMenu.hide()
+                if choice.kind == .remove { removeAttribute(click) } else { click.replace(choice.token) }
+            }, dismiss: { [parentChipMenu] in parentChipMenu.hide() })
         }
     }
 
@@ -621,6 +854,9 @@ struct LiveEditor: View {
         #else
         config.imageEmbed.cornerRadius = 8
         #endif
+        if let model = taskAttributes {
+            config.taskAttributes = Self.taskAttributeStyle(theme: theme, index: model.index, today: model.today)
+        }
         config.lists.autoClosePairsEnabled = autocomplete.brackets
         config.lists.autoCloseFormattingEnabled = autocomplete.formatting
         config.lists.autoCloseWikiLinksEnabled = autocomplete.wikiLinks
@@ -898,8 +1134,12 @@ private struct EditorKeyboardBar: View {
     /// Settings ▸ Editor's Wikilinks switch.
     let closesWikiLinks: Bool
     let haptics: Bool
+    /// Whether `>` and `@` show on a subtask's line.
+    let hasAttributeKeys: Bool
     let hideKeyboard: () -> Void
     @State private var hides = 0
+    @State private var onSubtask = false
+    @State private var selectionChanges: AnyCancellable?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -925,6 +1165,10 @@ private struct EditorKeyboardBar: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Insert #")
+                    if hasAttributeKeys, onSubtask {
+                        attributeKey(">", "Insert due date")
+                        attributeKey("@", "Insert parent")
+                    }
                     button("Bold", "bold") { proxy.apply(.bold) }
                     button("Italic", "italic") { proxy.apply(.italic) }
                     button("Code", "chevron.left.forwardslash.chevron.right") { proxy.apply(.inlineCode) }
@@ -950,6 +1194,37 @@ private struct EditorKeyboardBar: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .sensoryFeedback(.impact(weight: .light), trigger: hides) { _, _ in haptics }
+        .onAppear {
+            refreshSubtask()
+            selectionChanges = proxy.textView?.publisher(for: \.selectedTextRange).sink { _ in refreshSubtask() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidChangeNotification)) { _ in refreshSubtask() }
+        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidBeginEditingNotification)) { _ in refreshSubtask() }
+    }
+
+    /// Whether the caret is on a subtask's line, where `>` and `@` open their menus.
+    private func refreshSubtask() {
+        guard let textView = proxy.textView else { return }
+        onSubtask = TaskAttributeText.isSubtaskLine(in: textView.text, at: textView.selectedRange.location)
+    }
+
+    /// Types `key` as the keyboard does, after a space when the caret follows text.
+    private func attributeKey(_ key: String, _ label: String) -> some View {
+        Button {
+            if let textView = proxy.textView, let text = textView.text as NSString?, textView.selectedRange.location > 0,
+               !CharacterSet.whitespacesAndNewlines.contains(Unicode.Scalar(text.character(at: textView.selectedRange.location - 1)) ?? "a") {
+                proxy.type(" ")
+            }
+            proxy.type(key)
+        } label: {
+            Text(verbatim: key)
+                .font(.system(size: 18, weight: .semibold, design: .monospaced))
+                .foregroundStyle(theme.color(\.fg))
+                .frame(width: 40, height: 36)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     private func button(_ title: String, _ symbol: String, action: @escaping () -> Void) -> some View {

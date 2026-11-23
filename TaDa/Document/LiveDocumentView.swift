@@ -71,6 +71,7 @@ struct BodyEditor: View {
             embedImage: model.embed,
             imageActions: model,
             taskExtraction: model,
+            taskAttributes: model,
             takesFocus: model.bodyFocus == document.path,
             onTookFocus: { model.bodyFocus = nil },
             onLinkClick: openLink,
