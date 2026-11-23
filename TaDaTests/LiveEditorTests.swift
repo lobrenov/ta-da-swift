@@ -75,3 +75,50 @@ struct LinkMarkerTests {
         #expect(before != after)
     }
 }
+
+/// The editor's chips for a subtask's `>date` and `@[[parent]]`.
+struct TaskAttributeChipTests {
+    let today = LocalDate("2026-10-02")!
+
+    private func index() -> VaultIndex {
+        let files = [
+            ("Ta Da/projects/Ta Da MVP.md", "---\ntype: project\nstatus: Doing\n---\n"),
+            ("Ta Da/areas/Home.md", "---\ntype: area\n---\n"),
+            ("Ta Da/tasks/Plan.md", "---\ntype: task\nstatus: Doing\n---\n"),
+        ]
+        return VaultIndex(files.compactMap { Item(parsing: $0.1, path: $0.0) })
+    }
+
+    @Test @MainActor func datesAreLabelledAsTaskRowsAreAndOverdueOnesTintedDeadline() {
+        let theme = Theme.all[0]
+        let style = LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today)
+        let due = style.due("2026-10-02")
+        #expect(due.label == "Today" && due.tint == theme.accent)
+        #expect(style.due("2026-10-04").label == LocalDate("2026-10-04")!.rowLabel(today: today))
+        let overdue = style.due("2026-10-01")
+        #expect(overdue.label == LocalDate("2026-10-01")!.rowLabel(today: today) && overdue.tint == theme.deadline)
+        #expect(style.due("2026-10-09").tint == theme.accent)
+    }
+
+    @Test @MainActor func parentsDrawTheirIconInLinkAndUnresolvedOnesStruckAndMuted() {
+        let theme = Theme.all[0]
+        let style = LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today)
+        for title in ["Ta Da MVP", "Home", "Ta Da MVP#Notes", "Projects/Ta Da MVP"] {
+            let chip = style.parent(title, nil)
+            #expect(chip.label == (title.hasPrefix("Home") ? "Home" : "Ta Da MVP") && chip.tint == theme.link && !chip.strikethrough
+                    && chip.drawIcon != nil, "\(title)")
+        }
+        for title in ["Nowhere", "Plan"] {
+            let chip = style.parent(title, nil)
+            #expect(chip.label == title && chip.tint == theme.muted && chip.strikethrough && chip.drawIcon == nil, "\(title): not a project or area")
+        }
+    }
+
+    @Test @MainActor func theStyleRestylesWhenTheIndexOrTheDayChanges() {
+        let theme = Theme.all[0]
+        let a = LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today, generation: 1).fingerprint()
+        #expect(a == LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today, generation: 1).fingerprint())
+        #expect(a != LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today, generation: 2).fingerprint())
+        #expect(a != LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today.adding(days: 1), generation: 1).fingerprint())
+    }
+}

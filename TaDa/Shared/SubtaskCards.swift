@@ -22,9 +22,19 @@ struct SubtaskCards: View {
     #endif
     @Environment(\.theme) private var theme
 
-    private struct Tick: Hashable {
+    /// A line ticked and not yet reloaded: its place, marker and text.
+    struct Tick: Hashable {
         var path: String
         var line: Int
+        var marker: Character
+        var text: String
+    }
+
+    /// The ticks whose line is still in `lines` (the cards' lines by file path) as it was.
+    static func current(_ ticked: Set<Tick>, in lines: [String: [Checkbox]]) -> Set<Tick> {
+        ticked.filter { tick in
+            lines[tick.path]?.contains { $0.lineIndex == tick.line && $0.marker == tick.marker && $0.text == tick.text } == true
+        }
     }
 
     var body: some View {
@@ -37,6 +47,7 @@ struct SubtaskCards: View {
             .padding(.horizontal, 16)
             .padding(.top, 18)
             #endif
+            .onChange(of: cards) { ticked = Self.current(ticked, in: Dictionary(cards.map { ($0.path, $0.lines) }) { $0 + $1 }) }
         }
     }
 
@@ -68,7 +79,7 @@ struct SubtaskCards: View {
     }
 
     private func line(_ box: Checkbox, in path: String, item: Item?) -> some View {
-        let isTicked = ticked.contains(Tick(path: path, line: box.lineIndex))
+        let isTicked = ticked.contains(Tick(path: path, line: box.lineIndex, marker: box.marker, text: box.text))
         let hasChildren = item.map { Self.hasChildren(box, in: $0) } ?? false
         let place = box.parent.flatMap { model.index.parentItem(titled: $0) }
         return HStack(spacing: 10) {
@@ -160,13 +171,15 @@ struct SubtaskCards: View {
     }
 
     private func tick(_ box: Checkbox, in path: String) {
-        ticked.insert(Tick(path: path, line: box.lineIndex))
-        Task { await model.tick(box, in: path) }
+        let tick = Tick(path: path, line: box.lineIndex, marker: box.marker, text: box.text)
+        ticked.insert(tick)
+        Task { if !(await model.tick(box, in: path)) { ticked.remove(tick) } }
     }
 
     private func setMarker(_ marker: Character, of box: Checkbox, in path: String) {
-        ticked.insert(Tick(path: path, line: box.lineIndex))
-        Task { await model.setMarker(marker, of: box, in: path) }
+        let tick = Tick(path: path, line: box.lineIndex, marker: box.marker, text: box.text)
+        ticked.insert(tick)
+        Task { if !(await model.setMarker(marker, of: box, in: path)) { ticked.remove(tick) } }
     }
 
     private func open(_ box: Checkbox, in path: String) {

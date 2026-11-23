@@ -36,7 +36,7 @@ private let coreTexts = [
 
 /// Link forms the editor's parser reads differently: it counts an attribute in a reference link's text (`[t][ref]`), after an
 /// escaped `]` in link text, and inside a url with nested parentheses. Core follows `docs/file-format.md`: links hold none.
-private let editorDiffers = [
+private let linkTexts = [
     "[a [b] >2026-10-09 c][ref] d", "[text >2026-10-09][ref] >2026-10-10", "[a \\] >2026-10-09 b](https://x.y)",
     "[url](https://x.y/(a) >2026-10-09) z",
 ]
@@ -50,15 +50,15 @@ private func readings(_ text: String) -> (core: (String?, String?), editor: (Str
 
 @Test func coreAndTheEditorReadTheSameAttributes() {
     var disagreements: [String] = []
-    for text in specLines + coreTexts where !editorDiffers.contains(text) {
+    for text in specLines + coreTexts + linkTexts {
         guard let (core, editor) = readings(text) else { disagreements.append("\(text.debugDescription): no task"); continue }
         if core != editor { disagreements.append("\(text.debugDescription): core \(core), editor \(editor)") }
     }
     #expect(disagreements.isEmpty, "\(disagreements.joined(separator: "\n"))")
 }
 
-@Test func coreReadsNoAttributesInTheLinksTheEditorReadsDifferently() {
-    for text in editorDiffers {
+@Test func linkTextAndTargetsHoldNoAttributes() {
+    for text in linkTexts {
         let found = readings(text)?.core
         #expect(found?.0 == nil || text.hasSuffix(">2026-10-10"), "\(text)")
         #expect(found?.1 == nil)

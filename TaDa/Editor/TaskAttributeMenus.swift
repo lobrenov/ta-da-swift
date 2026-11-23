@@ -139,7 +139,7 @@ extension ChoiceMenuController where Choice == ParentChoice, Row == ParentChoice
 /// The `>` query's choices, above the keyboard bar: a tap picks one.
 struct PhoneDateList: View {
     let choices: [DateChoice]
-    let highlight: Int
+    let highlight: Int?
     let theme: Theme
     let pick: (DateChoice) -> Void
 
@@ -153,7 +153,7 @@ struct PhoneDateList: View {
 /// The `@` query's choices, above the keyboard bar: a tap picks one.
 struct PhoneParentList: View {
     let choices: [ParentChoice]
-    let highlight: Int
+    let highlight: Int?
     let theme: Theme
     let pick: (ParentChoice) -> Void
 
@@ -166,7 +166,7 @@ struct PhoneParentList: View {
 
 private struct PhoneChoiceList<Choice: Identifiable, Row: View>: View {
     let choices: [Choice]
-    let highlight: Int
+    let highlight: Int?
     let theme: Theme
     let pick: (Choice) -> Void
     @ViewBuilder let row: (Choice, Bool) -> Row

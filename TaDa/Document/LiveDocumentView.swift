@@ -91,11 +91,12 @@ struct BodyEditor: View {
 
     /// Scrolls to the line a subtask card opened this file at, once the editor has laid out.
     private func scrollToPendingLine() async {
-        guard let pending = model.pendingLine, pending.path == document.path, let scroll = toc?.scroll else { return }
+        guard let pending = model.pendingLine, pending.path == document.path else { return }
+        defer { if model.pendingLine == pending { model.pendingLine = nil } }
+        guard let scroll = toc?.scroll else { return }
         try? await Task.sleep(for: .milliseconds(150))
         guard !Task.isCancelled else { return }
         scroll.toLine(max(0, pending.line - FrontmatterSplitter.split(document.text).bodyFirstLineIndex))
-        model.pendingLine = nil
     }
 
     private var visibleLinesReport: ((ClosedRange<Int>) -> Void)? {

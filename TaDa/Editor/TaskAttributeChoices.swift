@@ -52,6 +52,11 @@ struct DateChoice: Equatable, Identifiable {
     }
 }
 
+extension DateChoice {
+    /// The row ↵ picks: the typed phrase's day; none when the text gives no day, so ↵ is a newline.
+    static func highlight(in choices: [DateChoice]) -> Int? { choices.first?.kind == .typed ? 0 : nil }
+}
+
 /// A row of the `@` parent menu: an area, a project, or New project for the typed name.
 struct ParentChoice: Equatable, Identifiable {
     enum Kind: Equatable {
@@ -103,30 +108,30 @@ struct ParentChoice: Equatable, Identifiable {
 }
 
 enum TaskAttributeText {
-    /// The range to delete to remove an attribute: its `source` at `range` in `text`, with the space after it, else the one
-    /// before it unless that follows a box's `]`. Nil when the text there isn't `source`.
-    static func removalRange(of source: String, at range: NSRange, in text: String) -> NSRange? {
+    /// The range to delete to remove an attribute: its `source` at `range` in `text`, with the space core's line writers take
+    /// with it (the one before it, else the one after it when it starts the text after the box). Nil when the text there isn't
+    /// `source` on a subtask line.
+    static func removalRange(of source: String, isDue: Bool, at range: NSRange, in text: String) -> NSRange? {
         let text = text as NSString
         guard NSMaxRange(range) <= text.length, text.substring(with: range) == source else { return nil }
-        var range = range
-        if NSMaxRange(range) < text.length, text.character(at: NSMaxRange(range)) == 0x20 {
-            range.length += 1
-        } else if range.location > 0, text.character(at: range.location - 1) == 0x20,
-                  range.location < 2 || text.character(at: range.location - 2) != 0x5D {
-            range.location -= 1
-            range.length += 1
-        }
-        return range
+        var start = 0, end = 0, contentsEnd = 0
+        text.getLineStart(&start, end: &end, contentsEnd: &contentsEnd, for: range)
+        let old = text.substring(with: NSRange(location: start, length: contentsEnd - start))
+        guard let new = isDue ? SubtaskLine.settingDue(nil, inLine: old) : SubtaskLine.settingParent(nil, inLine: old) else { return nil }
+        let (before, after) = (old as NSString, new as NSString)
+        var prefix = 0
+        while prefix < after.length, before.character(at: prefix) == after.character(at: prefix) { prefix += 1 }
+        var suffix = 0
+        while suffix < after.length - prefix, before.character(at: before.length - 1 - suffix) == after.character(at: after.length - 1 - suffix) { suffix += 1 }
+        let removed = NSRange(location: start + prefix, length: before.length - prefix - suffix)
+        guard removed.length > 0, after.length == before.length - removed.length else { return nil }
+        return removed
     }
 }
 
-extension TaskAttributeText {
-    /// Whether the line holding UTF-16 `caret` in `text` is a subtask (a box that can be ticked), where `>` and `@` open their menus.
-    static func isSubtaskLine(in text: String, at caret: Int) -> Bool {
-        let text = text as NSString
-        let line = text.lineRange(for: NSRange(location: min(max(caret, 0), text.length), length: 0))
-        let content = text.substring(with: line).trimmingCharacters(in: .newlines)
-        if case .setMarker = SubtaskLine.edit(for: Substring(content)) { return true }
-        return false
+extension ParentChoice {
+    /// The row ↵ picks: the first; none when the only row is New project, which needs a click or an arrow first.
+    static func highlight(in choices: [ParentChoice]) -> Int? {
+        choices.contains { $0.kind != .new } ? 0 : nil
     }
 }

@@ -116,6 +116,8 @@ private struct PhoneAgendaWeek: View {
         var seen = Set<String>()
         // A task can have two entries (due and deadline); picking lists it once.
         let paths = entries.map(\.item.path).filter { seen.insert($0).inserted }
+        let marks = model.index.dayMarks(from: week.firstDay, through: week.firstDay.adding(days: 6), today: model.today,
+                                         includingSubtasks: model.noteSubtasks, names: model.dailyNoteNames)
 
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -124,7 +126,7 @@ private struct PhoneAgendaWeek: View {
                     AgendaNote(model: model, period: .week(week), note: model.note(for: .week(week)), isInline: true)
                 }
                 Color.clear.frame(height: 10)
-                ForEach(week.days, id: \.self) { dayRow($0, entries: entries, occurrences: occurrences) }
+                ForEach(week.days, id: \.self) { dayRow($0, entries: entries, occurrences: occurrences, marks: marks[$0]) }
                 if !entries.isEmpty {
                     VStack(spacing: 7) {
                         Text("Due this week").scaledFont(size: 15, weight: .semibold).foregroundStyle(theme.color(\.strong))
@@ -151,12 +153,10 @@ private struct PhoneAgendaWeek: View {
     }
 
     /// A day: its label, its note's first paragraph with its dots, and what it holds. A tap picks the day.
-    private func dayRow(_ day: LocalDate, entries: [AgendaEntry], occurrences: [Occurrence]) -> some View {
+    private func dayRow(_ day: LocalDate, entries: [AgendaEntry], occurrences: [Occurrence], marks: DayMarks?) -> some View {
         let note = model.index.dailyNote(for: day, names: model.dailyNoteNames)
         let counts = model.agendaDaySummary(day, entries: entries, occurrences: occurrences)
         let firstRepeat = model.firstRepeat(on: day, entries: entries, occurrences: occurrences)
-        let marks = model.index.dayMarks(from: day, through: day, today: model.today, includingSubtasks: model.noteSubtasks,
-                                      names: model.dailyNoteNames)[day]
         return Button { withAnimation { model.agendaSelection = .day(day) } } label: {
             HStack(spacing: 12) {
                 Text(day.formatted(.weekdayDay))

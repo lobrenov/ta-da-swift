@@ -7,6 +7,7 @@ import UIKit
 import Combine
 #endif
 import MarkdownEngine
+import MarkdownEngineSyntax
 import TaDaCore
 import ImageIO
 import UniformTypeIdentifiers
@@ -84,10 +85,12 @@ struct LiveEditor: View {
     @State private var tagHighlight = 0
     /// The open `>` query's choices, and the one ↵ picks.
     @State private var dateChoices: [DateChoice] = []
-    @State private var dateHighlight = 0
+    @State private var dateHighlight: Int?
     /// The open `@` query's choices, and the one ↵ picks.
     @State private var parentChoices: [ParentChoice] = []
-    @State private var parentHighlight = 0
+    @State private var parentHighlight: Int?
+    /// The open `>` or `@` query, which a pick replaces.
+    @State private var attributeState: SlashCommandState?
     @State private var attributeMenu: MenuRequest<TaskAttributeClick>?
     @State private var checkboxMenu: MenuRequest<TaskMarkerMenuRequest>?
     @State private var calloutMenu: MenuRequest<CalloutMenuRequest>?
@@ -197,7 +200,7 @@ struct LiveEditor: View {
                     PhoneDateList(choices: dateChoices, highlight: dateHighlight, theme: theme, pick: insertDate)
                 }
                 if !parentChoices.isEmpty {
-                    PhoneParentList(choices: parentChoices, highlight: parentHighlight, theme: theme, pick: insertParent)
+                    PhoneParentList(choices: parentChoices, highlight: parentHighlight, theme: theme) { insertParent($0, in: attributeState) }
                 }
                 EditorKeyboardBar(theme: theme, proxy: slashCommand, closesWikiLinks: autocomplete.wikiLinks, haptics: haptics,
                                   hasAttributeKeys: taskAttributes != nil, hideKeyboard: { focused = false })
@@ -308,16 +311,50 @@ struct LiveEditor: View {
     }
 
     /// Replaces the `@` query with the parent's `@[[Title]]` and a space, and puts the caret after it. New project makes the
-    /// project first.
-    private func insertParent(_ choice: ParentChoice) {
+    /// project first and links the title it has; the link goes in over the query as it was at the pick, if the text there is
+    /// unchanged.
+    private func insertParent(_ choice: ParentChoice, in state: SlashCommandState?) {
         let text = choice.markdown
-        let insert = { [slashCommand] in
-            slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
+        guard choice.kind == .new, let model = taskAttributes else {
+            return slashCommand.insert(text, selecting: NSRange(location: (text as NSString).length, length: 0))
         }
-        guard choice.kind == .new, let model = taskAttributes else { return insert() }
+        let replace = state.flatMap(replacingQuery)
+        slashCommand.dismiss()
         Task {
-            await model.newProject(named: choice.title, linking: [])
-            insert()
+            guard let project = await model.newProject(named: choice.title, linking: []) else { return }
+            _ = replace?("@[[\(project.title)]] ")
+        }
+    }
+
+    /// A way to replace `state`'s query as it is now with text, once, if the text there is still the same; the caret goes after it.
+    private func replacingQuery(_ state: SlashCommandState) -> ((String) -> Bool)? {
+        guard let textView = slashCommand.textView else { return nil }
+        func string() -> NSString {
+            #if os(macOS)
+            textView.string as NSString
+            #else
+            textView.text as NSString
+            #endif
+        }
+        guard NSMaxRange(state.range) <= string().length else { return nil }
+        var range = state.range
+        let source = string().substring(with: range)
+        // The `]]` an auto-pair closed `@[[` with goes too.
+        var closers = source.hasPrefix("@[[") ? 2 : (source.hasPrefix("@[") ? 1 : 0)
+        while closers > 0, NSMaxRange(range) < string().length, string().character(at: NSMaxRange(range)) == 0x5D {
+            range.length += 1
+            closers -= 1
+        }
+        let expected = string().substring(with: range)
+        return { text in
+            guard NSMaxRange(range) <= string().length, string().substring(with: range) == expected else { return false }
+            #if os(macOS)
+            textView.insertText(text, replacementRange: range)
+            #else
+            textView.selectedRange = range
+            textView.insertText(text)
+            #endif
+            return true
         }
     }
 
@@ -325,10 +362,10 @@ struct LiveEditor: View {
     private func removeAttribute(_ click: TaskAttributeClick) {
         guard let textView = slashCommand.textView else { return }
         #if os(macOS)
-        guard let range = TaskAttributeText.removalRange(of: click.source, at: click.range, in: textView.string) else { return }
+        guard let range = TaskAttributeText.removalRange(of: click.source, isDue: click.kind == .due, at: click.range, in: textView.string) else { return }
         textView.insertText("", replacementRange: range)
         #else
-        guard let range = TaskAttributeText.removalRange(of: click.source, at: click.range, in: textView.text) else { return }
+        guard let range = TaskAttributeText.removalRange(of: click.source, isDue: click.kind == .due, at: click.range, in: textView.text) else { return }
         textView.selectedRange = range
         textView.insertText("")
         #endif
@@ -336,7 +373,7 @@ struct LiveEditor: View {
 
     /// The chips' look: a date as a task row labels it, accent or `deadline` when overdue; a parent as its icon (a project's
     /// ring in `accent`, an area's cube in `doing`) and title in `link`, or its title struck and muted when it isn't a project or area.
-    nonisolated static func taskAttributeStyle(theme: Theme, index: VaultIndex, today: LocalDate) -> TaskAttributeStyle {
+    nonisolated static func taskAttributeStyle(theme: Theme, index: VaultIndex, today: LocalDate, generation: Int = 0) -> TaskAttributeStyle {
         TaskAttributeStyle(
             due: { text in
                 guard let date = LocalDate(text) else { return TaskAttributeChip(label: text, tint: theme.muted) }
@@ -344,7 +381,7 @@ struct LiveEditor: View {
                                          tint: date < today ? theme.deadline : theme.accent)
             },
             parent: { title, _ in
-                guard let place = index.parentItem(titled: title) else {
+                guard let place = index.parentItem(titled: WikiLink(inner: title)?.title ?? title) else {
                     return TaskAttributeChip(label: title, tint: theme.muted, strikethrough: true)
                 }
                 let icon: @Sendable (CGRect, PlatformColor) -> Void
@@ -362,7 +399,8 @@ struct LiveEditor: View {
                     }
                 }
                 return TaskAttributeChip(label: place.title, tint: theme.link, drawIcon: icon)
-            }
+            },
+            fingerprint: { [generation, today] as [AnyHashable] }
         )
     }
 
@@ -404,6 +442,8 @@ struct LiveEditor: View {
             slashState = state
             tagChoices = nil
             linkChoices = []
+            dateChoices = []
+            parentChoices = []
             return
         }
         if let state, let model = taskAttributes, state.trigger == .date || state.trigger == .parent {
@@ -411,15 +451,16 @@ struct LiveEditor: View {
             slashState = nil
             tagChoices = nil
             linkChoices = []
+            attributeState = state
             if state.trigger == .date {
                 let choices = DateChoice.choices(query: state.query, today: model.today, firstWeekday: Calendar.current.firstWeekday,
                                                  order: .system, includesPick: false)
-                if choices != dateChoices { dateHighlight = 0 }
+                if choices != dateChoices { dateHighlight = DateChoice.highlight(in: choices) }
                 dateChoices = choices
                 parentChoices = []
             } else {
                 let choices = ParentChoice.choices(index: model.index, query: state.query)
-                if choices != parentChoices { parentHighlight = 0 }
+                if choices != parentChoices { parentHighlight = ParentChoice.highlight(in: choices) }
                 parentChoices = choices
                 dateChoices = []
             }
@@ -447,6 +488,19 @@ struct LiveEditor: View {
         linkChoices = choices
     }
 
+    private enum ChoiceKey { case highlight(Int), confirm }
+
+    /// What a key does in a list with `count` choices and `highlight` highlighted: ↑ and ↓ move, wrapping (from nothing, to the last
+    /// or first), and ↵ picks. Nil when the editor keeps the key.
+    private static func move(_ highlight: Int?, count: Int, key: InlinePreviewKey) -> ChoiceKey? {
+        switch key {
+        case .moveUp: .highlight(highlight.map { ($0 + count - 1) % count } ?? count - 1)
+        case .moveDown: .highlight(highlight.map { ($0 + 1) % count } ?? 0)
+        case .confirm: .confirm
+        case .confirmAndOpen, .cancel: nil
+        }
+    }
+
     /// A hardware keyboard's ↑/↓ move through the choices and ↵ picks one.
     private func handleLinkKey(_ key: InlinePreviewKey) -> Bool {
         if !slashChoices.isEmpty {
@@ -459,20 +513,22 @@ struct LiveEditor: View {
             return true
         }
         if !dateChoices.isEmpty {
-            switch key {
-            case .moveUp: dateHighlight = (dateHighlight + dateChoices.count - 1) % dateChoices.count
-            case .moveDown: dateHighlight = (dateHighlight + 1) % dateChoices.count
-            case .confirm: insertDate(dateChoices[min(dateHighlight, dateChoices.count - 1)])
-            case .confirmAndOpen, .cancel: return false
+            guard let next = Self.move(dateHighlight, count: dateChoices.count, key: key) else { return false }
+            switch next {
+            case .highlight(let index): dateHighlight = index
+            case .confirm:
+                guard let dateHighlight else { return false }
+                insertDate(dateChoices[min(dateHighlight, dateChoices.count - 1)])
             }
             return true
         }
         if !parentChoices.isEmpty {
-            switch key {
-            case .moveUp: parentHighlight = (parentHighlight + parentChoices.count - 1) % parentChoices.count
-            case .moveDown: parentHighlight = (parentHighlight + 1) % parentChoices.count
-            case .confirm: insertParent(parentChoices[min(parentHighlight, parentChoices.count - 1)])
-            case .confirmAndOpen, .cancel: return false
+            guard let next = Self.move(parentHighlight, count: parentChoices.count, key: key) else { return false }
+            switch next {
+            case .highlight(let index): parentHighlight = index
+            case .confirm:
+                guard let parentHighlight else { return false }
+                insertParent(parentChoices[min(parentHighlight, parentChoices.count - 1)], in: attributeState)
             }
             return true
         }
@@ -694,29 +750,29 @@ struct LiveEditor: View {
         guard let model = taskAttributes else { return }
         let choices = DateChoice.choices(query: state.query, today: model.today, firstWeekday: Calendar.current.firstWeekday,
                                          order: .system, includesPick: true)
-        dateMenu.show(choices, anchor: state.anchorRect, theme: theme, pick: { [self] choice in
+        dateMenu.show(choices, highlight: DateChoice.highlight(in: choices), anchor: state.anchorRect, theme: theme, pick: { [self] choice in
             if choice.kind == .pick { pickDate(in: state) } else { insertDate(choice) }
         }, dismiss: { [slashCommand] in slashCommand.dismiss() })
     }
 
     /// Opens the calendar for the `>` query; its pick replaces the typed `>…` with the day.
     private func pickDate(in state: SlashCommandState) {
-        guard let model = taskAttributes, let textView = slashCommand.textView, let window = NSApp.keyWindow else { return }
+        guard let model = taskAttributes, let textView = slashCommand.textView, let window = NSApp.keyWindow,
+              let replace = replacingQuery(state) else { return }
         dateMenu.hide()
         calendar.show(.due, selected: nil, other: nil, today: model.today, theme: theme, below: state.anchorRect, in: window) { [calendar] date in
             calendar.hide()
             window.makeFirstResponder(textView)
-            let text = textView.string as NSString
-            guard let date, NSMaxRange(state.range) <= text.length, text.substring(with: state.range).hasPrefix(">") else { return }
-            textView.insertText(">\(date) ", replacementRange: state.range)
+            if let date { _ = replace(">\(date) ") }
         }
     }
 
     /// The `@` menu: the areas and projects the typed text is in, and New project for it.
     private func showParentMenu(_ state: SlashCommandState) {
         guard let model = taskAttributes else { return }
-        parentMenu.show(ParentChoice.choices(index: model.index, query: state.query), anchor: state.anchorRect, theme: theme,
-                        pick: insertParent, dismiss: { [slashCommand] in slashCommand.dismiss() })
+        let choices = ParentChoice.choices(index: model.index, query: state.query)
+        parentMenu.show(choices, highlight: ParentChoice.highlight(in: choices), anchor: state.anchorRect, theme: theme,
+                        pick: { [self] in insertParent($0, in: state) }, dismiss: { [slashCommand] in slashCommand.dismiss() })
     }
 
     /// A click on a drawn date opens the calendar, and on a parent the areas and projects and Remove; a pick replaces the attribute.
@@ -855,7 +911,7 @@ struct LiveEditor: View {
         config.imageEmbed.cornerRadius = 8
         #endif
         if let model = taskAttributes {
-            config.taskAttributes = Self.taskAttributeStyle(theme: theme, index: model.index, today: model.today)
+            config.taskAttributes = Self.taskAttributeStyle(theme: theme, index: model.index, today: model.today, generation: model.indexGeneration)
         }
         config.lists.autoClosePairsEnabled = autocomplete.brackets
         config.lists.autoCloseFormattingEnabled = autocomplete.formatting
@@ -1202,10 +1258,13 @@ private struct EditorKeyboardBar: View {
         .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidBeginEditingNotification)) { _ in refreshSubtask() }
     }
 
-    /// Whether the caret is on a subtask's line, where `>` and `@` open their menus.
+    /// Whether the caret is on a task line after its box, where `>` and `@` open their menus (the editor's rule).
     private func refreshSubtask() {
         guard let textView = proxy.textView else { return }
-        onSubtask = TaskAttributeText.isSubtaskLine(in: textView.text, at: textView.selectedRange.location)
+        let text = textView.text as NSString
+        let caret = min(textView.selectedRange.location, text.length)
+        let line = text.lineRange(for: NSRange(location: caret, length: 0))
+        onSubtask = TaskAttributeSyntax.isTaskAttributeLine(text.substring(with: NSRange(location: line.location, length: caret - line.location)))
     }
 
     /// Types `key` as the keyboard does, after a space when the caret follows text.

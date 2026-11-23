@@ -2254,12 +2254,14 @@ import UIKit
         open(path)
     }
 
-    /// Creates a project called `title` and files the tasks at `paths` under it.
-    func newProject(named title: String, linking paths: [String]) async {
+    /// Creates a project called `title` and files the tasks at `paths` under it. Returns the project, nil when it couldn't be made.
+    @discardableResult
+    func newProject(named title: String, linking paths: [String]) async -> Item? {
         guard let path = await create(NewFile.project(today: today), in: Vault.projectFolder, title: title,
                                       taken: index.projectFilenames()),
-              let project = index[path] else { return }
+              let project = index[path] else { return nil }
         await setParent(project, of: paths)
+        return project
     }
 
     /// Creates an untitled area and opens its page with its title ready to type.
@@ -2611,6 +2613,8 @@ import UIKit
     /// The subtask cards on the selected day or in the selected week, and in Loose tasks; empty while the setting is off.
     private(set) var agendaSubtasks: [SubtaskCard] = []
     private(set) var looseSubtasks: [SubtaskCard] = []
+    /// The cards filed under each project and area, by its path.
+    private(set) var parentSubtasks: [String: [SubtaskCard]] = [:]
     /// What the days in `agendaMarksRange` show: their dots.
     private(set) var agendaMarks: [LocalDate: DayMarks] = [:]
     /// Active projects with their progress.
@@ -2679,9 +2683,11 @@ import UIKit
     private func updateIndex(replacing item: Item) {
         guard let old = index[item.path], old.properties == item.properties else { return updateIndex { $0.update(item) } }
         index.update(item)
-        if old.checkboxes != item.checkboxes, noteSubtasks { updateSubtaskLists() }
-        if old.checkboxes != item.checkboxes, let date = dailyNoteNames.date(atPath: item.path), agendaMarksRange.contains(date) {
-            updateAgendaMarks()
+        if old.checkboxes != item.checkboxes {
+            if noteSubtasks { updateSubtaskLists() }
+            let datedLines: (Item) -> [Checkbox] = { $0.checkboxes.filter { $0.due != nil } }
+            let datesChanged = noteSubtasks && datedLines(old) != datedLines(item)
+            if datesChanged || dailyNoteNames.date(atPath: item.path).map(agendaMarksRange.contains) == true { updateAgendaMarks() }
         }
         if let i = todayTasks.firstIndex(where: { $0.path == item.path }) { todayTasks[i] = item }
         if let i = looseTasks.firstIndex(where: { $0.path == item.path }) { looseTasks[i] = item }
@@ -2712,8 +2718,13 @@ import UIKit
         if !phoneTagPages.isEmpty { phoneTagPages = phoneTagPages.mapValues(patch) }
     }
 
+    /// Counts the index changes that can alter what a project or area is or how far along it is, for views that draw them
+    /// from the index (the editor's parent chips).
+    private(set) var indexGeneration = 0
+
     /// Assigning a list equal to the old one doesn't notify the views that show it.
     private func updateLists() {
+        indexGeneration += 1
         todayTasks = index.today(today)
         looseTasks = index.loose()
         upcoming = index.upcoming(after: today)
@@ -2725,7 +2736,6 @@ import UIKit
         updateTags()
         updateNotes()
         updateAgenda()
-        updateSubtaskLists()
         notifications.update(index.badgePlan(today: today))
     }
 
@@ -2758,6 +2768,7 @@ import UIKit
         case let .week(week): agendaSubtasks = subtaskCards(in: week)
         }
         looseSubtasks = noteSubtasks ? index.looseNoteSubtasks() : []
+        parentSubtasks = noteSubtasks ? index.noteSubtasksByParent() : [:]
     }
 
     /// The subtask cards due on `day` (today's include the overdue), in `week`, or filed under a project or area.
@@ -2771,17 +2782,34 @@ import UIKit
     }
 
     func subtaskCards(of parent: Item) -> [SubtaskCard] {
-        noteSubtasks ? index.noteSubtasks(parent: parent) : []
+        parentSubtasks[parent.path] ?? []
     }
 
-    /// Ticks a subtask line in its file.
-    func tick(_ box: Checkbox, in path: String) async {
-        await edit(path) { ChecklistEditor.click(box, in: $0) ?? $0 }
+    /// Ticks a subtask line in its file. False, with an error shown, when the file no longer has the box there.
+    @discardableResult
+    func tick(_ box: Checkbox, in path: String) async -> Bool {
+        await write(box, in: path) { ChecklistEditor.click(box, in: $0) }
     }
 
-    /// Sets a subtask line's marker in its file.
-    func setMarker(_ marker: Character, of box: Checkbox, in path: String) async {
-        await edit(path) { ChecklistEditor.setMarker(marker, of: box, in: $0) ?? $0 }
+    /// Sets a subtask line's marker in its file. False, with an error shown, when the file no longer has the box there.
+    @discardableResult
+    func setMarker(_ marker: Character, of box: Checkbox, in path: String) async -> Bool {
+        await write(box, in: path) { ChecklistEditor.setMarker(marker, of: box, in: $0) }
+    }
+
+    nonisolated private final class Wrote: @unchecked Sendable { var value = false }
+
+    private func write(_ box: Checkbox, in path: String, _ change: @escaping @Sendable (String) -> String?) async -> Bool {
+        let wrote = Wrote()
+        await edit(path) { text in
+            guard let changed = change(text) else { return text }
+            wrote.value = true
+            return changed
+        }
+        if !wrote.value, errorMessage == nil {
+            errorMessage = "Couldn’t change “\(box.title)” in “\(Item.title(ofPath: path))”: the line changed meanwhile."
+        }
+        return wrote.value
     }
 
     /// A file line the document opening next scrolls to.

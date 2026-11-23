@@ -1,5 +1,4 @@
 import Foundation
-import MarkdownEngine
 import Testing
 import TaDaCore
 @testable import TaDa
@@ -57,49 +56,27 @@ struct TaskAttributeTests {
         #expect(ParentChoice.choices(index: index, query: "home").first?.kind == .area)
     }
 
-    @Test func removingAnAttributeTakesASpaceWithIt() {
+    @Test func removingAnAttributeTakesTheSpaceCoreTakes() {
         func removed(_ text: String, _ source: String) -> String? {
             let ns = text as NSString
-            return TaskAttributeText.removalRange(of: source, at: ns.range(of: source), in: text).map { ns.replacingCharacters(in: $0, with: "") }
+            return TaskAttributeText.removalRange(of: source, isDue: source.hasPrefix(">"), at: ns.range(of: source), in: text)
+                .map { ns.replacingCharacters(in: $0, with: "") }
         }
         #expect(removed("- [ ] Buy milk >2026-10-09", ">2026-10-09") == "- [ ] Buy milk")
-        #expect(removed("- [ ] >2026-10-09 Buy milk", ">2026-10-09") == "- [ ] Buy milk")
-        #expect(removed("- [ ] Buy >2026-10-09 milk", ">2026-10-09") == "- [ ] Buy milk")
-        #expect(removed("- [ ] Buy @[[Home]]", "@[[Home]]") == "- [ ] Buy")
-        #expect(TaskAttributeText.removalRange(of: ">2026-10-09", at: NSRange(location: 0, length: 3), in: "- [ ] x") == nil)
+        #expect(removed("- [ ] >2026-10-09 Buy milk", ">2026-10-09") == "- [ ] Buy milk", "first after the box: the space after it")
+        #expect(removed("- [ ] Buy >2026-10-09 milk", ">2026-10-09") == "- [ ] Buy milk", "else the space before it")
+        #expect(removed("- [ ] Buy @[[Home]]\n- [ ] Next", "@[[Home]]") == "- [ ] Buy\n- [ ] Next")
+        #expect(TaskAttributeText.removalRange(of: ">2026-10-09", isDue: true, at: NSRange(location: 0, length: 3), in: "- [ ] x") == nil)
+        #expect(TaskAttributeText.removalRange(of: ">2026-10-09", isDue: true, at: NSRange(location: 0, length: 11), in: ">2026-10-09") == nil, "not a subtask line")
     }
 
-    @Test func theBarOffersAttributesOnSubtaskLinesOnly() {
-        let text = "Notes\n- [ ] Buy milk\n- plain\n> quote\n- [x] Done\n"
-        func on(_ marker: String) -> Bool {
-            TaskAttributeText.isSubtaskLine(in: text, at: (text as NSString).range(of: marker).location + 2)
-        }
-        #expect(on("Buy milk") && on("Done"))
-        #expect(!on("Notes") && !on("plain") && !on("quote"))
-    }
-
-    @Test func chipsLabelDatesAsTaskRowsDoAndTintOverdueOnes() {
-        let theme = Theme.all[0]
-        let style = LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today)
-        let due = style.due("2026-10-02")
-        #expect(due.label == "Today" && due.tint == theme.accent)
-        #expect(style.due("2026-10-04").label == LocalDate("2026-10-04")!.rowLabel(today: today))
-        let overdue = style.due("2026-10-01")
-        #expect(overdue.label == LocalDate("2026-10-01")!.rowLabel(today: today) && overdue.tint == theme.deadline)
-        #expect(style.due("2026-10-09").tint == theme.accent)
-    }
-
-    @Test func parentChipsDrawTheirIconInLinkAndUnresolvedOnesStruckAndMuted() {
-        let theme = Theme.all[0]
-        let style = LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today)
-        for title in ["Ta Da MVP", "Home"] {
-            let chip = style.parent(title, nil)
-            #expect(chip.label == title && chip.tint == theme.link && !chip.strikethrough && chip.drawIcon != nil, "\(title)")
-        }
-        for title in ["Nowhere", "Plan"] {
-            let chip = style.parent(title, nil)
-            #expect(chip.label == title && chip.tint == theme.muted && chip.strikethrough && chip.drawIcon == nil, "\(title): not a project or area")
-        }
+    @Test func returnPicksOnlyWhatTheUserMeant() {
+        #expect(DateChoice.highlight(in: dates("fri")) == 0)
+        #expect(DateChoice.highlight(in: dates("")) == nil, "no day typed: ↵ is a newline")
+        #expect(DateChoice.highlight(in: dates("zzz")) == nil)
+        let index = index()
+        #expect(ParentChoice.highlight(in: ParentChoice.choices(index: index, query: "mvp")) == 0)
+        #expect(ParentChoice.highlight(in: ParentChoice.choices(index: index, query: "zzz")) == nil, "only New project: needs a click or an arrow")
     }
 
     @Test func extractTakesTheDueDateAndTheNamedParentOverTheHosts() async throws {
@@ -125,5 +102,51 @@ struct TaskAttributeTests {
         #expect(plants.text.contains("area: \"[[Home]]\""))
         let nothing = try await extract("Nothing")
         #expect(nothing.extracted.parent == nil)
+    }
+
+    @Test func newProjectReturnsTheProjectItMade() async throws {
+        let folder = try TestFolder(["Ta Da/areas/Home.md": "---\ntype: area\n---\n"])
+        let model = await folder.model(today: today)
+        let project = try #require(await model.newProject(named: "Garden Shed", linking: []))
+        #expect(project.title == "Garden Shed" && project.properties.kind == .project)
+        #expect(model.index.parentItem(titled: "Garden Shed")?.path == project.path)
+    }
+
+    @Test func tickingALineThatChangedWritesNothingAndSaysSo() async throws {
+        let folder = try TestFolder(["Meetings/Kickoff.md": "- [ ] Book venue\n"])
+        let model = await folder.model(today: today)
+        let box = try #require(model.index["Meetings/Kickoff.md"]?.checkboxes.first)
+        #expect(await model.tick(box, in: "Meetings/Kickoff.md"))
+        #expect(model.errorMessage == nil)
+        #expect(try folder.read("Meetings/Kickoff.md") == "- [x] Book venue\n")
+        #expect(await model.tick(box, in: "Meetings/Kickoff.md") == false, "the stale box no longer matches")
+        #expect(model.errorMessage?.contains("Book venue") == true)
+        #expect(try folder.read("Meetings/Kickoff.md") == "- [x] Book venue\n")
+    }
+
+    @Test func staleTicksAreDropped() {
+        let tick = SubtaskCards.Tick(path: "A.md", line: 3, marker: " ", text: "Book venue")
+        func lines(_ line: Int, _ text: String) -> [String: [Checkbox]] { ["A.md": [Checkbox(marker: " ", lineIndex: line, column: 3, text: text)]] }
+        #expect(SubtaskCards.current([tick], in: lines(3, "Book venue")) == [tick])
+        #expect(SubtaskCards.current([tick], in: [:]).isEmpty, "the line left the list")
+        #expect(SubtaskCards.current([tick], in: lines(4, "Book venue")).isEmpty, "another line now")
+        #expect(SubtaskCards.current([tick], in: lines(3, "Book hall")).isEmpty)
+    }
+
+    @Test func datingALineUpdatesTheDotsAndTheParentCardsAreStored() async throws {
+        let folder = try TestFolder([
+            "Ta Da/projects/Launch.md": "---\ntype: project\nstatus: Doing\n---\n",
+            "Meetings/Kickoff.md": "- [ ] Book venue @[[Launch]]\n- [ ] Call\n",
+        ])
+        let model = await folder.model(today: today)
+        model.noteSubtasks = true
+        let launch = try #require(model.index["Ta Da/projects/Launch.md"])
+        #expect(model.subtaskCards(of: launch).flatMap(\.lines).map(\.title) == ["Book venue"])
+        #expect(model.parentSubtasks[launch.path]?.count == 1)
+        let day = LocalDate("2026-10-03")!
+        #expect(model.agendaMarks[day]?.hasOpenTasks != true)
+
+        await model.edit("Meetings/Kickoff.md") { $0.replacingOccurrences(of: "- [ ] Call", with: "- [ ] Call >2026-10-03") }
+        #expect(model.agendaMarks[day]?.hasOpenTasks == true, "a date added to a line shows its dot")
     }
 }
