@@ -8,6 +8,7 @@ protocol SettingsStore: AnyObject {
     func data(forKey key: String) -> Data?
     func dictionary(forKey key: String) -> [String: Any]?
     func stringArray(forKey key: String) -> [String]?
+    func array(forKey key: String) -> [Any]?
     func set(_ value: Any?, forKey key: String)
 }
 

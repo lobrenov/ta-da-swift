@@ -75,6 +75,17 @@ struct SidebarStateTests {
         #expect(!state.floatsForSearch)
     }
 
+    @Test func theVaultMenuFloatsTheHiddenSidebar() {
+        var state = SidebarState()
+        state.vaultMenuRequested()
+        #expect(!state.floats)
+        slide(&state, to: state.fit(narrow: true))
+        state.vaultMenuRequested()
+        #expect(state.floats && state.floatsForVaultMenu && !state.floatsForSearch)
+        state.floats = false
+        #expect(!state.floatsForVaultMenu)
+    }
+
     @Test func swipes() {
         var state = SidebarState()
         #expect(state.switchesViews(overSidebar: true, swiping: true), "over the docked sidebar a swipe switches its view")

@@ -39,6 +39,7 @@ struct SidebarSplitView: View {
         .onChange(of: state.columns) { slide(to: state.columnsChanged()) }
         .onChange(of: model.sidebarToggleRequest) { slide(to: state.toggle()) }
         .onChange(of: model.searchFocusRequest) { state.searchRequested() }
+        .onChange(of: VaultMenu.shared.request) { state.vaultMenuRequested() }
         .onChange(of: model.domain) { state.floats = false }
     }
 
@@ -57,7 +58,7 @@ struct SidebarSplitView: View {
                     .contentShape(Rectangle())
                     .onTapGesture { state.floats = false }
                     .accessibilityHidden(true)
-                SidebarView(model: model, focusesSearch: state.floatsForSearch) { state.floats = false }
+                SidebarView(model: model, focusesSearch: state.floatsForSearch, opensVaultMenu: state.floatsForVaultMenu) { state.floats = false }
                     .frame(width: sidebarWidth)
                     .background { model.theme.color(\.side).ignoresSafeArea() }
                     .overlay(alignment: .trailing) { Hairline(axis: .vertical).ignoresSafeArea() }

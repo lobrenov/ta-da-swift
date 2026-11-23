@@ -18,6 +18,7 @@ struct ContentView: View {
             }
         }
         .imageDialogs(model)
+        .folderImporter(isPresented: Bindable(VaultMenu.shared).isChoosingFolder, model: model)
         .onChange(of: model.quickSwitcherRequest) { quickSwitcher.toggle(model) }
         .sheet(item: Binding { model.trashConfirmation.flatMap { $0.images.isEmpty ? nil : $0 } }
                          set: { if $0 == nil { model.trashConfirmation = nil } }) { request in

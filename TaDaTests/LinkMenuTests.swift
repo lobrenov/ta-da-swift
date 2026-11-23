@@ -27,7 +27,9 @@ struct LinkMenuTests {
         #expect(model.recentFiles == ["Ta Da/projects/Sell the Kombi.md", "Ta Da/tasks/Submit timesheet.md"])
         await model.rename("Ta Da/tasks/Submit timesheet.md", to: "Submit the timesheet")
         #expect(model.recentFiles == ["Ta Da/projects/Sell the Kombi.md", "Ta Da/tasks/Submit the timesheet.md"])
-        #expect(AppModel(defaults: folder.defaults).recentFiles == model.recentFiles)
+        let relaunched = AppModel(defaults: folder.defaults)
+        await relaunched.start()
+        #expect(relaunched.recentFiles == model.recentFiles)
     }
 
     @Test func anEmptyLinkQueryListsRecentFilesButTheOpenOne() async {

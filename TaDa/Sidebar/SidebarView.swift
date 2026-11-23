@@ -13,6 +13,8 @@ struct SidebarView: View {
     var takesSearchFocus = true
     /// The search field has the keyboard as the sidebar appears.
     var focusesSearch = false
+    /// The vault menu opens over the folder line as the sidebar appears.
+    var opensVaultMenu = false
     /// A domain, area or project was picked, the open one included.
     var picked: () -> Void = {}
     @Environment(\.theme) private var theme
@@ -24,12 +26,16 @@ struct SidebarView: View {
     /// The list on show: `model.sidebarMode`, swapped with a slide, toward the trailing edge when the new one is to the right.
     @State private var listed: AppModel.SidebarMode
     @State private var slidesForward = true
+    @State private var folderAnchor = ScreenAnchor()
+    @State private var hoversFolderLine = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(model: AppModel, takesSearchFocus: Bool = true, focusesSearch: Bool = false, picked: @escaping () -> Void = {}) {
+    init(model: AppModel, takesSearchFocus: Bool = true, focusesSearch: Bool = false, opensVaultMenu: Bool = false,
+         picked: @escaping () -> Void = {}) {
         self.model = model
         self.takesSearchFocus = takesSearchFocus
         self.focusesSearch = focusesSearch
+        self.opensVaultMenu = opensVaultMenu
         self.picked = picked
         _listed = State(initialValue: model.sidebarMode)
     }
@@ -76,6 +82,13 @@ struct SidebarView: View {
             withAnimation(.sidebarSlide) { listed = new }
         }
         .onChange(of: model.searchFocusRequest) { if takesSearchFocus { searchFocused = true } }
+        .onChange(of: VaultMenu.shared.request) { if takesSearchFocus, folderAnchor.window?.isMainWindow == true { openVaultMenu() } }
+        .task {
+            // The floating sidebar's slide in has to finish for the line to be where the menu opens.
+            guard opensVaultMenu else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            openVaultMenu()
+        }
         .onChange(of: model.folderNameFocus, initial: true) {
             // A hidden sidebar leaves it to the floating one, as it does search.
             guard takesSearchFocus, let path = model.folderNameFocus else { return }
@@ -388,21 +401,39 @@ struct SidebarView: View {
 
     /// The folder, and whether Ta Da is watching it for changes made by other apps.
     private var folderLine: some View {
-        HStack(spacing: 8) {
-            Image(systemName: model.isInICloud ? "icloud" : "folder")
-                .foregroundStyle(theme.color(model.isWatching ? \.done : \.muted))
-                .accessibilityHidden(true)
-            Text("\(model.isWatching ? "Watching" : "Not watching") · \(model.folderDisplayName)")
-                .lineLimit(1)
-                .truncationMode(.middle)
+        Button(action: openVaultMenu) {
+            HStack(spacing: 8) {
+                Image(systemName: model.isInICloud ? "icloud" : "folder")
+                    .foregroundStyle(theme.color(model.isWatching ? \.done : \.muted))
+                    .accessibilityHidden(true)
+                Text("\(model.isWatching ? "Watching" : "Not watching") · \(model.folderDisplayName)")
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 9, weight: .semibold))
+                    .accessibilityHidden(true)
+                Spacer(minLength: 0)
+            }
+            .font(.system(size: 12))
+            .foregroundStyle(theme.color(\.muted))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(theme.color(\.surface).opacity(hoversFolderLine || VaultMenu.shared.isOpen ? 1 : 0), in: .rect(cornerRadius: 7))
+            .background(ScreenAnchorReader(anchor: folderAnchor))
+            .contentShape(.rect)
         }
-        .font(.system(size: 12))
-        .foregroundStyle(theme.color(\.muted))
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
+        .buttonStyle(.plain)
+        .onHover { hoversFolderLine = $0 }
+        .accessibilityHint("Opens the vault menu")
+        .padding(.horizontal, 10)
+        .padding(.vertical, 2)
         .help(model.isWatching
             ? "Changes made in other apps show up within a few seconds.\n\(model.vault?.root.path(percentEncoded: false) ?? "")"
             : "Ta Da can’t watch this folder, so it checks for changes when you switch back to it.")
+    }
+
+    private func openVaultMenu() {
+        VaultMenu.shared.toggle(model: model, anchor: folderAnchor)
     }
 
     private var settingsRow: some View {

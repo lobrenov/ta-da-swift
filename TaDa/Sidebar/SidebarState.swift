@@ -12,10 +12,12 @@ struct SidebarState {
     /// The sidebar hid because the window got narrow; it comes back when there's room.
     private(set) var autoHidden = false
     var floats = false {
-        didSet { if !floats { floatsForSearch = false } }
+        didSet { if !floats { floatsForSearch = false; floatsForVaultMenu = false } }
     }
     /// The sidebar floats for Search Files, with its search field taking the keyboard.
     private(set) var floatsForSearch = false
+    /// The sidebar floats for the vault menu, which opens over its folder line.
+    private(set) var floatsForVaultMenu = false
     /// Our sidebar button in place of the split view's, once the sidebar has slid away in a narrow window.
     private(set) var usesOwnToggle = false
 
@@ -69,6 +71,13 @@ struct SidebarState {
         guard columns == .detailOnly, !floats else { return }
         floats = true
         floatsForSearch = true
+    }
+
+    /// ⇧⌘O: the hidden sidebar floats, to open the vault menu over its folder line.
+    mutating func vaultMenuRequested() {
+        guard columns == .detailOnly, !floats else { return }
+        floats = true
+        floatsForVaultMenu = true
     }
 
     /// Whether a swipe, or the mouse's back and forward buttons, with the pointer `overSidebar` switch its Projects |

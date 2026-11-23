@@ -1,14 +1,19 @@
-// The Other tab: Logbook, Attachments and Trash, and Settings (Vault, Themes, Editor, Daily notes, Integrations, Notifications, Haptics, About), each line its own page, with the folder's sync state under them.
+// The Other tab: Logbook, Attachments and Trash, and Settings (Vault, Themes, Editor, Daily notes, Integrations, Notifications, Haptics, About), each line its own page, under a card for the open vault that opens the Vaults sheet.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
 
 struct PhoneOtherScreen: View {
     let model: AppModel
+    @State private var isShowingVaults = false
     @Environment(\.theme) private var theme
 
     var body: some View {
         List {
+            Section {
+                vaultCard
+            }
+            .listRowBackground(theme.color(\.code))
             Section {
                 NavigationLink(value: PhoneRoute.logbook) {
                     row("Logbook", AppModel.Domain.logbook.systemImage, tint: \.done, value: "")
@@ -49,8 +54,6 @@ struct PhoneOtherScreen: View {
                 }
             } header: {
                 Text("Settings")
-            } footer: {
-                SyncLine(model: model)
             }
             .listRowBackground(theme.color(\.code))
         }
@@ -58,6 +61,34 @@ struct PhoneOtherScreen: View {
         .scrollContentBackground(.hidden)
         .background(theme.color(\.bg))
         .navigationTitle("Other")
+        .sheet(isPresented: $isShowingVaults) { PhoneVaultsSheet(model: model) }
+    }
+
+    /// The open vault's name, whether it's watched and where it is; opens the Vaults sheet.
+    private var vaultCard: some View {
+        Button { isShowingVaults = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: model.isInICloud ? "icloud" : "folder")
+                    .scaledFont(size: 22)
+                    .foregroundStyle(theme.color(model.isWatching ? \.done : \.muted))
+                    .frame(width: 30)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.vault?.root.lastPathComponent ?? "")
+                        .scaledFont(size: 17, weight: .semibold)
+                        .foregroundStyle(theme.color(\.fg))
+                    Text("\(model.isWatching ? "Watching" : "Not watching") · \(model.vaults.first(where: \.isOpen)?.location ?? "")")
+                        .scaledFont(size: 13)
+                        .foregroundStyle(theme.color(\.muted))
+                }
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .scaledFont(size: 13)
+                    .foregroundStyle(theme.color(\.muted))
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Vaults")
     }
 
     /// "Events and reminders", "Events", "Reminders" or "Off".
@@ -80,23 +111,6 @@ struct PhoneOtherScreen: View {
             Spacer()
             Text(value).foregroundStyle(theme.color(\.muted))
         }
-    }
-}
-
-/// "Watching · iCloud Drive › Ta Da": whether changes are picked up as they happen, and where the folder is.
-private struct SyncLine: View {
-    let model: AppModel
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        Label {
-            Text("\(model.isWatching ? "Watching" : "Checks when you open Ta Da") · \(model.folderDisplayName.replacing("/", with: " › "))")
-        } icon: {
-            Image(systemName: model.isInICloud ? "icloud" : "folder")
-                .foregroundStyle(theme.color(model.isWatching ? \.done : \.blocked))
-        }
-        .scaledFont(size: 13)
-        .foregroundStyle(theme.color(\.muted))
     }
 }
 

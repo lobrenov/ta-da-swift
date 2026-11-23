@@ -30,6 +30,8 @@ struct FileMenuAction: PopupMenuItem {
     var isDestructive = false
     /// Drawn after a divider.
     var startsGroup = false
+    /// Drawn dimmed and not picked.
+    var isEnabled = true
     let run: () -> Void
 
     /// Move (to a project or area for tasks, to an area for projects), Schedule, Set Deadline…, Tags… (only when the
@@ -398,7 +400,7 @@ private struct FileMenuTrigger: ViewModifier {
 }
 
 /// A transparent view that takes only right-clicks and control-clicks; every other event goes to the row.
-private struct RightClickReader: NSViewRepresentable {
+struct RightClickReader: NSViewRepresentable {
     let action: (CGPoint, NSWindow) -> Void
 
     func makeNSView(context: Context) -> Reader { Reader() }

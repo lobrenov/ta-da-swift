@@ -318,10 +318,18 @@ import UIKit
     private(set) var expandedFolders: Set<String> {
         didSet { defaults.set(expandedFolders.sorted(), forKey: Keys.expandedFolders) }
     }
-    /// The files opened last, most recent first, for the link menu's Recent: eight besides the open one.
-    private(set) var recentFiles: [String] {
-        didSet { defaults.set(recentFiles, forKey: Keys.recentFiles) }
+    /// The open folder's files opened last, most recent first, for the link menu's Recent: eight besides the open one.
+    /// Kept per folder, by path.
+    private(set) var recentFiles: [String] = [] {
+        didSet {
+            guard let root = vault?.root else { return }
+            var lists = defaults.dictionary(forKey: Keys.recentFiles) ?? [:]
+            lists[root.resolvingSymlinksInPath().path] = recentFiles
+            defaults.set(lists, forKey: Keys.recentFiles)
+        }
     }
+    /// The folders opened on this device, most recent first, for the vault switcher.
+    private(set) var vaults: [RememberedVault] = []
     /// The global hotkey that opens Quick Entry; nil when cleared.
     var quickEntryHotkey: Hotkey? {
         didSet { defaults.set(quickEntryHotkey?.dictionary ?? [:], forKey: Keys.quickEntryHotkey) }
@@ -463,6 +471,7 @@ import UIKit
     /// file lacks them, no longer written.
     enum Keys {
         static let bookmark = "vaultBookmark"
+        static let vaults = "vaults"
         static let themeSet = "themeSet"
         static let appearance = "appearance"
         static let usesSchemePerAppearance = "usesSchemePerAppearance"
@@ -498,7 +507,6 @@ import UIKit
         foldedGroups = defaults.dictionary(forKey: Keys.foldedGroups) as? [String: [String]] ?? [:]
         autocomplete = Autocomplete(defaults.dictionary(forKey: Keys.autocomplete))
         haptics = !defaults.bool(forKey: Keys.hapticsOff)
-        recentFiles = defaults.stringArray(forKey: Keys.recentFiles) ?? []
         sidebarMode = defaults.string(forKey: Keys.sidebarMode).flatMap(SidebarMode.init) ?? .projects
         expandedTags = Set(defaults.stringArray(forKey: Keys.expandedTags) ?? [])
         expandedFolders = Set(defaults.stringArray(forKey: Keys.expandedFolders) ?? [])
@@ -538,6 +546,7 @@ import UIKit
             let resolved = try Vault.resolve(bookmark)
             if let refreshed = resolved.refreshed { defaults.set(refreshed, forKey: Keys.bookmark) }
             await open(resolved.folder)
+            remember(resolved.refreshed ?? bookmark, at: resolved.folder)
         } catch {
             state = .failed(Self.couldNot("open the saved folder. It may have been moved or deleted", error))
         }
@@ -547,14 +556,56 @@ import UIKit
     func choose(_ folder: URL) async {
         let didStart = folder.startAccessingSecurityScopedResource()
         defer { if didStart { folder.stopAccessingSecurityScopedResource() } }
+        let bookmark: Data
         do {
-            defaults.set(try Vault.bookmark(for: folder), forKey: Keys.bookmark)
+            bookmark = try Vault.bookmark(for: folder)
         } catch {
             state = .failed(Self.couldNot("keep access to “\(folder.lastPathComponent)”", error))
             return
         }
+        await openVault(bookmark)
+    }
+
+    /// Opens a remembered folder. The caller offers the folder picker for a missing one.
+    func switchVault(to remembered: RememberedVault) async {
+        guard !remembered.isMissing, !remembered.isOpen else { return }
+        await openVault(remembered.bookmark)
+    }
+
+    /// Saves the open file and settings, then opens the folder `bookmark` points at and saves it as the folder to open.
+    /// Does nothing while a folder is loading; a folder that can't be found leaves the open one as it is.
+    private func openVault(_ bookmark: Data) async {
+        guard state != .loading else { return }
+        guard (try? Vault.resolve(bookmark)) != nil else {
+            errorMessage = "Couldn’t open the folder. It may have been moved or deleted."
+            reloadVaults()
+            return
+        }
+        await saveBeforeQuitting()
+        defaults.set(bookmark, forKey: Keys.bookmark)
         domain = .agenda
         await openSavedFolder()
+    }
+
+    /// Puts `folder` first in `vaults`.
+    private func remember(_ bookmark: Data, at folder: URL) {
+        reloadVaults()
+        let path = folder.resolvingSymlinksInPath().path
+        defaults.set([bookmark] + vaults.filter { $0.path != path }.map(\.bookmark), forKey: Keys.vaults)
+        reloadVaults()
+    }
+
+    /// Reads `vaults` again, so a folder that went missing or came back shows as such.
+    func reloadVaults() {
+        let openPath = vault?.root.resolvingSymlinksInPath().path
+        vaults = (defaults.array(forKey: Keys.vaults) as? [Data] ?? []).map { RememberedVault(bookmark: $0, openPath: openPath) }
+    }
+
+    /// Removes a folder other than the open one from `vaults`, leaving its files as they are.
+    func forget(_ remembered: RememberedVault) {
+        guard !remembered.isOpen else { return }
+        defaults.set(vaults.filter { $0.bookmark != remembered.bookmark }.map(\.bookmark), forKey: Keys.vaults)
+        reloadVaults()
     }
 
     private func open(_ folder: URL) async {
@@ -562,7 +613,14 @@ import UIKit
         accessedFolder = folder.startAccessingSecurityScopedResource() ? folder : nil
         let vault = Vault(root: folder)
         self.vault = vault
+        // A plain list, one for every folder, goes to the first folder opened.
+        let lists = defaults.dictionary(forKey: Keys.recentFiles)
+        recentFiles = lists.map { $0[folder.resolvingSymlinksInPath().path] as? [String] ?? [] }
+            ?? defaults.stringArray(forKey: Keys.recentFiles) ?? []
         selection = nil
+        multiSelection = []
+        trashSelection = []
+        attachmentSelection = []
         document = nil
         watcher = nil
         state = .loading

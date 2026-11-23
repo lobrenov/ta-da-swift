@@ -109,12 +109,14 @@ final class PopupPanel<Content: View> {
     }
 
     /// Shows the panel at `size` below `anchor` (screen coordinates), `inset` points left of it and `gap` below,
-    /// or above it when there's no room below. Moves and resizes it when it's already open.
-    func show(size: CGSize, below anchor: CGRect, inset: CGFloat, gap: CGFloat, in parent: NSWindow) {
+    /// or above it when there's no room below; with `above`, above it when there's room above. Moves and resizes it
+    /// when it's already open.
+    func show(size: CGSize, below anchor: CGRect, inset: CGFloat, gap: CGFloat, above: Bool = false, in parent: NSWindow) {
         let panel = panel ?? makePanel()
         var origin = CGPoint(x: anchor.minX - inset, y: anchor.minY - gap - size.height)
         if let visible = parent.screen?.visibleFrame {
-            if origin.y < visible.minY { origin.y = anchor.maxY + gap }
+            if above, anchor.maxY + gap + size.height <= visible.maxY { origin.y = anchor.maxY + gap }
+            else if origin.y < visible.minY { origin.y = anchor.maxY + gap }
             origin.x = min(max(origin.x, visible.minX + 4), visible.maxX - size.width - 4)
         }
         place(panel, at: CGRect(origin: origin, size: size), in: parent)
@@ -270,11 +272,12 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
     var highlight: Int? { model.highlight }
 
     /// Shows `sections` below `anchor` (screen coordinates), `inset` points left of it and `gap` below, or above
-    /// it when there's no room below. Refreshes the menu when it's already open.
+    /// it when there's no room below; with `above`, above it when there's room above. Refreshes the menu when it's
+    /// already open.
     /// `header` is drawn above the list, `height` tall, with a divider under it.
     func show(_ sections: [PopupMenuSection<Item>], highlight: Int?, theme: Theme, below anchor: CGRect,
-              inset: CGFloat, gap: CGFloat, in parent: NSWindow, header: (height: CGFloat, view: AnyView)? = nil,
-              pick: @escaping (Item) -> Void) {
+              inset: CGFloat, gap: CGFloat, above: Bool = false, in parent: NSWindow,
+              header: (height: CGFloat, view: AnyView)? = nil, pick: @escaping (Item) -> Void) {
         closeSubmenu()
         let opening = !panel.isOpen
         model.header = header
@@ -285,7 +288,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         parentWindow = parent
         model.revision += 1
         if opening, selectsQueryOnOpen { model.selectionRevision += 1 }
-        panel.show(size: model.size, below: anchor, inset: inset, gap: gap, in: parent)
+        panel.show(size: model.size, below: anchor, inset: inset, gap: gap, above: above, in: parent)
         if opening { announceHighlight() }
     }
 

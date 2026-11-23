@@ -1,4 +1,4 @@
-// Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; ⌘O the quick switcher; File ▸ Convert to for the open or
+// Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; ⌘O the quick switcher; File ▸ Open Vault and ⇧⌘O the vault menu; File ▸ Convert to for the open or
 // picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
 // Task ▸ complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on, Extract to Task for the caret's subtask, ⌘P move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu;
@@ -43,6 +43,18 @@ struct AppCommands: Commands {
             Button("Quick Switcher…") { model.quickSwitcherRequest += 1 }
                 .keyboardShortcut("o")
                 .disabled(model.state != .ready)
+            Menu("Open Vault") {
+                Button("Show Vaults") { VaultMenu.shared.request += 1 }
+                    .keyboardShortcut("o", modifiers: [.command, .shift])
+                    .disabled(model.state != .ready)
+                Divider()
+                ForEach(model.vaults) { vault in
+                    Toggle(vault.isMissing ? "\(vault.name) (Not found)" : vault.name,
+                           isOn: Binding { vault.isOpen } set: { _ in VaultMenu.shared.pick(.vault(vault), model: model) })
+                }
+                Divider()
+                Button("Open Another Vault…") { VaultMenu.shared.pick(.openAnother, model: model) }
+            }
             Divider()
             Menu("Convert to") {
                 Button("Task…") { convert(to: .task) }
