@@ -502,6 +502,8 @@ struct LiveEditor: View {
             slashMenu.hide()
             linkMenu.hide()
             showTagMenu(state!)
+        case .date, .parent:
+            break
         }
     }
 
