@@ -84,3 +84,22 @@ private func extract(_ marked: String) -> (SubtaskExtraction.Extract, String)? {
     #expect(extracts[1].body == "- [ ] B1")
     #expect(text == "> - [ ] Quoted\nText\n")
 }
+
+@Test func attributesLeaveTheTitleAndFillDueAndParent() throws {
+    let (e, rest) = try #require(extract("- [ ] |Call Sam >2026-10-09 @[[Ta Da MVP]]\n  detail\n- [ ] next\n"))
+    #expect(e.title == "Call Sam" && e.due == LocalDate("2026-10-09") && e.parent == "Ta Da MVP" && e.body == "detail")
+    #expect(rest == "- [ ] next\n")
+    let plain = try #require(extract("- [ ] |Call Sam")).0
+    #expect(plain.due == nil && plain.parent == nil)
+    #expect(try #require(extract("- [ ] |>2026-10-09 Call @[[A]] Sam")).0.title == "Call Sam")
+}
+
+@Test func aLineOfOnlyAttributesIsNotExtracted() {
+    #expect(extract("- [ ] |>2026-10-09 @[[A]]") == nil)
+}
+
+@Test func theDueDateIsWrittenToTheNewTask() throws {
+    let e = try #require(extract("- [ ] |Call >2026-10-09 @[[A]]")).0
+    let text = SubtaskExtraction.taskText(e, project: "A", today: LocalDate("2026-10-02")!)
+    #expect(text == "---\ntype: task\nstatus: Not Started\nproject: \"[[A]]\"\ncreatedDate: 2026-10-02\ndueDate: 2026-10-09\n---\n")
+}

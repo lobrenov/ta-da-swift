@@ -15701,6 +15701,20 @@
     },
     {
       "args" : {
+        "area" : null,
+        "dueDate" : "2026-10-09",
+        "project" : "Garden",
+        "tags" : [
+
+        ]
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Garden]]\"\ncreatedDate: 2026-10-02\ndueDate: 2026-10-09\n---\n",
+      "input" : null,
+      "name" : "NewFile.task project Garden due tags []",
+      "op" : "NewFile.task"
+    },
+    {
+      "args" : {
         "tags" : [
           "work/admin"
         ]
@@ -15820,6 +15834,20 @@
       "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Say \\\"hi\\\": now]]\"\ncreatedDate: 2026-10-02\ntags: [work/admin]\n---\n",
       "input" : null,
       "name" : "NewFile.task project Say \"hi\": now area nil tags [\"work/admin\"]",
+      "op" : "NewFile.task"
+    },
+    {
+      "args" : {
+        "area" : null,
+        "dueDate" : "2026-10-09",
+        "project" : "Garden",
+        "tags" : [
+          "work/admin"
+        ]
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Garden]]\"\ncreatedDate: 2026-10-02\ndueDate: 2026-10-09\ntags: [work/admin]\n---\n",
+      "input" : null,
+      "name" : "NewFile.task project Garden due tags [\"work/admin\"]",
       "op" : "NewFile.task"
     },
     {
@@ -15987,6 +16015,24 @@
     },
     {
       "args" : {
+        "area" : null,
+        "dueDate" : "2026-10-09",
+        "project" : "Garden",
+        "tags" : [
+          "Café",
+          "two words",
+          "#hash",
+          "a",
+          "A"
+        ]
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Garden]]\"\ncreatedDate: 2026-10-02\ndueDate: 2026-10-09\ntags: [Café, two words, hash, a]\n---\n",
+      "input" : null,
+      "name" : "NewFile.task project Garden due tags [\"Café\", \"two words\", \"#hash\", \"a\", \"A\"]",
+      "op" : "NewFile.task"
+    },
+    {
+      "args" : {
         "tags" : [
           "a, b",
           "yes",
@@ -16126,6 +16172,22 @@
       "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Say \\\"hi\\\": now]]\"\ncreatedDate: 2026-10-02\ntags: [\"a, b\", \"yes\", \"-x\"]\n---\n",
       "input" : null,
       "name" : "NewFile.task project Say \"hi\": now area nil tags [\"a, b\", \"yes\", \"-x\"]",
+      "op" : "NewFile.task"
+    },
+    {
+      "args" : {
+        "area" : null,
+        "dueDate" : "2026-10-09",
+        "project" : "Garden",
+        "tags" : [
+          "a, b",
+          "yes",
+          "-x"
+        ]
+      },
+      "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Garden]]\"\ncreatedDate: 2026-10-02\ndueDate: 2026-10-09\ntags: [\"a, b\", \"yes\", \"-x\"]\n---\n",
+      "input" : null,
+      "name" : "NewFile.task project Garden due tags [\"a, b\", \"yes\", \"-x\"]",
       "op" : "NewFile.task"
     },
     {
@@ -17724,10 +17786,2202 @@
     },
     {
       "args" : {
+        "text" : "Call Sam >2026-10-09 @[[Ta Da MVP]]"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          9,
+          11
+        ],
+        "parent" : "Ta Da MVP",
+        "parentRange" : [
+          21,
+          14
+        ],
+        "stripped" : "Call Sam"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"Call Sam >2026-10-09 @[[Ta Da MVP]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : ">2026-10-09 first"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          0,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "first"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \">2026-10-09 first\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "@[[Home]] first"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : "Home",
+        "parentRange" : [
+          0,
+          9
+        ],
+        "stripped" : "first"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"@[[Home]] first\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a>2026-10-09"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a>2026-10-09"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a>2026-10-09\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "mail@[[Home]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "mail@[[Home]]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"mail@[[Home]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a\t>2026-10-09\tb"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          2,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a\tb"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a\\t>2026-10-09\\tb\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a >2026-10-09 >2026-11-01 @[[A]] @[[B]]"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          2,
+          11
+        ],
+        "parent" : "A",
+        "parentRange" : [
+          26,
+          6
+        ],
+        "stripped" : "a >2026-11-01 @[[B]]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a >2026-10-09 >2026-11-01 @[[A]] @[[B]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a >2026-02-30 >2026-11-01"
+      },
+      "expected" : {
+        "due" : "2026-11-01",
+        "dueRange" : [
+          14,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a >2026-02-30"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a >2026-02-30 >2026-11-01\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a >2026-13-01"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a >2026-13-01"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a >2026-13-01\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a >2026-10-9"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a >2026-10-9"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a >2026-10-9\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a >soon"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a >soon"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a >soon\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a >2026-10-091"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a >2026-10-091"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a >2026-10-091\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a >2026-10-09, b"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          2,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a, b"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a >2026-10-09, b\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a @ [[Home]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a @ [[Home]]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a @ [[Home]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a @Home"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a @Home"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a @Home\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a @[[Home"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a @[[Home"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a @[[Home\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a @[[]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a @[[]]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a @[[]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a @[[#heading]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a @[[#heading]]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a @[[#heading]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a @[[Ta Da MVP|the MVP]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : "Ta Da MVP",
+        "parentRange" : [
+          2,
+          22
+        ],
+        "stripped" : "a"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a @[[Ta Da MVP|the MVP]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a @[[Ta Da MVP#Goals]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : "Ta Da MVP",
+        "parentRange" : [
+          2,
+          20
+        ],
+        "stripped" : "a"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a @[[Ta Da MVP#Goals]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a @[[Projects/Ta Da MVP.md]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : "Ta Da MVP",
+        "parentRange" : [
+          2,
+          26
+        ],
+        "stripped" : "a"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a @[[Projects/Ta Da MVP.md]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a `>2026-10-09 @[[A]]` b"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a `>2026-10-09 @[[A]]` b"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a `>2026-10-09 @[[A]]` b\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a ``x ` >2026-10-09`` b"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a ``x ` >2026-10-09`` b"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a ``x ` >2026-10-09`` b\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a `unclosed >2026-10-09"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          12,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a `unclosed"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a `unclosed >2026-10-09\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "a `x` >2026-10-09"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          6,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "a `x`"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"a `x` >2026-10-09\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "see [[Note >2026-10-09]] b"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "see [[Note >2026-10-09]] b"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"see [[Note >2026-10-09]] b\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "see [[Note >2026-10-09]] >2026-10-10"
+      },
+      "expected" : {
+        "due" : "2026-10-10",
+        "dueRange" : [
+          25,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "see [[Note >2026-10-09]]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"see [[Note >2026-10-09]] >2026-10-10\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "see ![[pic >2026-10-09.png]]"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "see ![[pic >2026-10-09.png]]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"see ![[pic >2026-10-09.png]]\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "see [the >2026-10-09 doc](https://x.y/ >2026-10-08) b"
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "see [the >2026-10-09 doc](https://x.y/ >2026-10-08) b"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"see [the >2026-10-09 doc](https://x.y/ >2026-10-08) b\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "[ ] >2026-10-09"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          4,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "[ ]"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"[ ] >2026-10-09\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "Café ☕️ >2026-10-09"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          8,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : "Café ☕️"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"Café ☕️ >2026-10-09\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : "🥛 @[[Ünï]] >2026-10-09 x"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          12,
+          11
+        ],
+        "parent" : "Ünï",
+        "parentRange" : [
+          3,
+          8
+        ],
+        "stripped" : "🥛 x"
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"🥛 @[[Ünï]] >2026-10-09 x\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : ">2026-10-09"
+      },
+      "expected" : {
+        "due" : "2026-10-09",
+        "dueRange" : [
+          0,
+          11
+        ],
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : ""
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \">2026-10-09\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "text" : ""
+      },
+      "expected" : {
+        "due" : null,
+        "dueRange" : null,
+        "parent" : null,
+        "parentRange" : null,
+        "stripped" : ""
+      },
+      "input" : null,
+      "name" : "InlineAttributes.parse \"\"",
+      "op" : "InlineAttributes.parse"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam >2026-10-09\nnext\n",
+      "input" : "- [ ] Call Sam\nnext\n",
+      "name" : "SubtaskLine.setDue plain 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam >2026-10-09\r\nnext\r\n",
+      "input" : "- [ ] Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue plain 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam\nnext\n",
+      "input" : "- [ ] Call Sam\nnext\n",
+      "name" : "SubtaskLine.setDue plain nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam\r\nnext\r\n",
+      "input" : "- [ ] Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue plain nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] Call Sam @[[Ta Da MVP]]\nnext\n",
+      "input" : "- [ ] Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent plain Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] Call Sam @[[Ta Da MVP]]\r\nnext\r\n",
+      "input" : "- [ ] Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent plain Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] Call Sam @[[Ünï]]\nnext\n",
+      "input" : "- [ ] Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent plain Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] Call Sam @[[Ünï]]\r\nnext\r\n",
+      "input" : "- [ ] Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent plain Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent plain a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent plain a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] Call Sam\nnext\n",
+      "input" : "- [ ] Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent plain nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] Call Sam\r\nnext\r\n",
+      "input" : "- [ ] Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent plain nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam >2026-10-09  \nnext\n",
+      "input" : "- [ ] Call Sam  \nnext\n",
+      "name" : "SubtaskLine.setDue trailing spaces 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam >2026-10-09  \r\nnext\r\n",
+      "input" : "- [ ] Call Sam  \r\nnext\r\n",
+      "name" : "SubtaskLine.setDue trailing spaces 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam  \nnext\n",
+      "input" : "- [ ] Call Sam  \nnext\n",
+      "name" : "SubtaskLine.setDue trailing spaces nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam  \r\nnext\r\n",
+      "input" : "- [ ] Call Sam  \r\nnext\r\n",
+      "name" : "SubtaskLine.setDue trailing spaces nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] Call Sam @[[Ta Da MVP]]  \nnext\n",
+      "input" : "- [ ] Call Sam  \nnext\n",
+      "name" : "SubtaskLine.setParent trailing spaces Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] Call Sam @[[Ta Da MVP]]  \r\nnext\r\n",
+      "input" : "- [ ] Call Sam  \r\nnext\r\n",
+      "name" : "SubtaskLine.setParent trailing spaces Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] Call Sam @[[Ünï]]  \nnext\n",
+      "input" : "- [ ] Call Sam  \nnext\n",
+      "name" : "SubtaskLine.setParent trailing spaces Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] Call Sam @[[Ünï]]  \r\nnext\r\n",
+      "input" : "- [ ] Call Sam  \r\nnext\r\n",
+      "name" : "SubtaskLine.setParent trailing spaces Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] Call Sam  \nnext\n",
+      "name" : "SubtaskLine.setParent trailing spaces a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] Call Sam  \r\nnext\r\n",
+      "name" : "SubtaskLine.setParent trailing spaces a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] Call Sam  \nnext\n",
+      "input" : "- [ ] Call Sam  \nnext\n",
+      "name" : "SubtaskLine.setParent trailing spaces nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] Call Sam  \r\nnext\r\n",
+      "input" : "- [ ] Call Sam  \r\nnext\r\n",
+      "name" : "SubtaskLine.setParent trailing spaces nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] >2026-10-09\nnext\n",
+      "input" : "- [ ] \nnext\n",
+      "name" : "SubtaskLine.setDue empty text 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] >2026-10-09\r\nnext\r\n",
+      "input" : "- [ ] \r\nnext\r\n",
+      "name" : "SubtaskLine.setDue empty text 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] \nnext\n",
+      "input" : "- [ ] \nnext\n",
+      "name" : "SubtaskLine.setDue empty text nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] \r\nnext\r\n",
+      "input" : "- [ ] \r\nnext\r\n",
+      "name" : "SubtaskLine.setDue empty text nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] @[[Ta Da MVP]]\nnext\n",
+      "input" : "- [ ] \nnext\n",
+      "name" : "SubtaskLine.setParent empty text Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] @[[Ta Da MVP]]\r\nnext\r\n",
+      "input" : "- [ ] \r\nnext\r\n",
+      "name" : "SubtaskLine.setParent empty text Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] @[[Ünï]]\nnext\n",
+      "input" : "- [ ] \nnext\n",
+      "name" : "SubtaskLine.setParent empty text Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] @[[Ünï]]\r\nnext\r\n",
+      "input" : "- [ ] \r\nnext\r\n",
+      "name" : "SubtaskLine.setParent empty text Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] \nnext\n",
+      "name" : "SubtaskLine.setParent empty text a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] \r\nnext\r\n",
+      "name" : "SubtaskLine.setParent empty text a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] \nnext\n",
+      "input" : "- [ ] \nnext\n",
+      "name" : "SubtaskLine.setParent empty text nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] \r\nnext\r\n",
+      "input" : "- [ ] \r\nnext\r\n",
+      "name" : "SubtaskLine.setParent empty text nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] Call >2026-10-09 Sam\nnext\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\nnext\n",
+      "name" : "SubtaskLine.setDue due 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] Call >2026-10-09 Sam\r\nnext\r\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue due 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam\nnext\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\nnext\n",
+      "name" : "SubtaskLine.setDue due nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam\r\nnext\r\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue due nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] Call >2026-10-01 Sam @[[Ta Da MVP]]\nnext\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\nnext\n",
+      "name" : "SubtaskLine.setParent due Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] Call >2026-10-01 Sam @[[Ta Da MVP]]\r\nnext\r\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] Call >2026-10-01 Sam @[[Ünï]]\nnext\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\nnext\n",
+      "name" : "SubtaskLine.setParent due Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] Call >2026-10-01 Sam @[[Ünï]]\r\nnext\r\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] Call >2026-10-01 Sam\nnext\n",
+      "name" : "SubtaskLine.setParent due a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] Call >2026-10-01 Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] Call >2026-10-01 Sam\nnext\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\nnext\n",
+      "name" : "SubtaskLine.setParent due nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] Call >2026-10-01 Sam\r\nnext\r\n",
+      "input" : "- [ ] Call >2026-10-01 Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] >2026-10-09 Call Sam\nnext\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\nnext\n",
+      "name" : "SubtaskLine.setDue due at start 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] >2026-10-09 Call Sam\r\nnext\r\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue due at start 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam\nnext\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\nnext\n",
+      "name" : "SubtaskLine.setDue due at start nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam\r\nnext\r\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue due at start nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] >2026-10-01 Call Sam @[[Ta Da MVP]]\nnext\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent due at start Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] >2026-10-01 Call Sam @[[Ta Da MVP]]\r\nnext\r\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due at start Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] >2026-10-01 Call Sam @[[Ünï]]\nnext\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent due at start Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] >2026-10-01 Call Sam @[[Ünï]]\r\nnext\r\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due at start Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] >2026-10-01 Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent due at start a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] >2026-10-01 Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due at start a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] >2026-10-01 Call Sam\nnext\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent due at start nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] >2026-10-01 Call Sam\r\nnext\r\n",
+      "input" : "- [ ] >2026-10-01 Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due at start nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam >2026-10-09\nnext\n",
+      "input" : "- [ ] Call Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setDue due at end 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam >2026-10-09\r\nnext\r\n",
+      "input" : "- [ ] Call Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue due at end 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam\nnext\n",
+      "input" : "- [ ] Call Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setDue due at end nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] Call Sam\r\nnext\r\n",
+      "input" : "- [ ] Call Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue due at end nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] Call Sam >2026-10-01 @[[Ta Da MVP]]\nnext\n",
+      "input" : "- [ ] Call Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent due at end Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] Call Sam >2026-10-01 @[[Ta Da MVP]]\r\nnext\r\n",
+      "input" : "- [ ] Call Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due at end Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] Call Sam >2026-10-01 @[[Ünï]]\nnext\n",
+      "input" : "- [ ] Call Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent due at end Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] Call Sam >2026-10-01 @[[Ünï]]\r\nnext\r\n",
+      "input" : "- [ ] Call Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due at end Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] Call Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent due at end a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] Call Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due at end a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] Call Sam >2026-10-01\nnext\n",
+      "input" : "- [ ] Call Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent due at end nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] Call Sam >2026-10-01\r\nnext\r\n",
+      "input" : "- [ ] Call Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent due at end nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [x] Call @[[A|alias]] Sam >2026-10-09\nnext\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setDue parent 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [x] Call @[[A|alias]] Sam >2026-10-09\r\nnext\r\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue parent 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [x] Call @[[A|alias]] Sam\nnext\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setDue parent nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [x] Call @[[A|alias]] Sam\r\nnext\r\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue parent nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [x] Call @[[Ta Da MVP]] Sam >2026-10-01\nnext\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent parent Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [x] Call @[[Ta Da MVP]] Sam >2026-10-01\r\nnext\r\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent parent Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [x] Call @[[Ünï]] Sam >2026-10-01\nnext\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent parent Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [x] Call @[[Ünï]] Sam >2026-10-01\r\nnext\r\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent parent Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent parent a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent parent a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [x] Call Sam >2026-10-01\nnext\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent parent nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [x] Call Sam >2026-10-01\r\nnext\r\n",
+      "input" : "- [x] Call @[[A|alias]] Sam >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent parent nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "  1. [/] a >2026-10-09 b @[[A]] c >2026-10-02\nnext\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\nnext\n",
+      "name" : "SubtaskLine.setDue both 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "  1. [/] a >2026-10-09 b @[[A]] c >2026-10-02\r\nnext\r\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue both 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "  1. [/] a b @[[A]] c >2026-10-02\nnext\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\nnext\n",
+      "name" : "SubtaskLine.setDue both nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "  1. [/] a b @[[A]] c >2026-10-02\r\nnext\r\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue both nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "  1. [/] a >2026-10-01 b @[[Ta Da MVP]] c >2026-10-02\nnext\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\nnext\n",
+      "name" : "SubtaskLine.setParent both Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "  1. [/] a >2026-10-01 b @[[Ta Da MVP]] c >2026-10-02\r\nnext\r\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent both Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "  1. [/] a >2026-10-01 b @[[Ünï]] c >2026-10-02\nnext\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\nnext\n",
+      "name" : "SubtaskLine.setParent both Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "  1. [/] a >2026-10-01 b @[[Ünï]] c >2026-10-02\r\nnext\r\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent both Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\nnext\n",
+      "name" : "SubtaskLine.setParent both a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent both a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "  1. [/] a >2026-10-01 b c >2026-10-02\nnext\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\nnext\n",
+      "name" : "SubtaskLine.setParent both nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "  1. [/] a >2026-10-01 b c >2026-10-02\r\nnext\r\n",
+      "input" : "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent both nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] `>2026-10-01` b >2026-10-09\nnext\n",
+      "input" : "- [ ] `>2026-10-01` b\nnext\n",
+      "name" : "SubtaskLine.setDue code span 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] `>2026-10-01` b >2026-10-09\r\nnext\r\n",
+      "input" : "- [ ] `>2026-10-01` b\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue code span 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] `>2026-10-01` b\nnext\n",
+      "input" : "- [ ] `>2026-10-01` b\nnext\n",
+      "name" : "SubtaskLine.setDue code span nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] `>2026-10-01` b\r\nnext\r\n",
+      "input" : "- [ ] `>2026-10-01` b\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue code span nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] `>2026-10-01` b @[[Ta Da MVP]]\nnext\n",
+      "input" : "- [ ] `>2026-10-01` b\nnext\n",
+      "name" : "SubtaskLine.setParent code span Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] `>2026-10-01` b @[[Ta Da MVP]]\r\nnext\r\n",
+      "input" : "- [ ] `>2026-10-01` b\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent code span Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] `>2026-10-01` b @[[Ünï]]\nnext\n",
+      "input" : "- [ ] `>2026-10-01` b\nnext\n",
+      "name" : "SubtaskLine.setParent code span Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] `>2026-10-01` b @[[Ünï]]\r\nnext\r\n",
+      "input" : "- [ ] `>2026-10-01` b\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent code span Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] `>2026-10-01` b\nnext\n",
+      "name" : "SubtaskLine.setParent code span a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] `>2026-10-01` b\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent code span a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] `>2026-10-01` b\nnext\n",
+      "input" : "- [ ] `>2026-10-01` b\nnext\n",
+      "name" : "SubtaskLine.setParent code span nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] `>2026-10-01` b\r\nnext\r\n",
+      "input" : "- [ ] `>2026-10-01` b\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent code span nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "Call Sam\nnext\n",
+      "name" : "SubtaskLine.setDue not a subtask 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue not a subtask 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "Call Sam\nnext\n",
+      "name" : "SubtaskLine.setDue not a subtask nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue not a subtask nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : null,
+      "input" : "Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent not a subtask Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : null,
+      "input" : "Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent not a subtask Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : null,
+      "input" : "Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent not a subtask Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : null,
+      "input" : "Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent not a subtask Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent not a subtask a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent not a subtask a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : null,
+      "input" : "Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent not a subtask nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : null,
+      "input" : "Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent not a subtask nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "- Call Sam\nnext\n",
+      "name" : "SubtaskLine.setDue plain bullet 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "- Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue plain bullet 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "- Call Sam\nnext\n",
+      "name" : "SubtaskLine.setDue plain bullet nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "- Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue plain bullet nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : null,
+      "input" : "- Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent plain bullet Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : null,
+      "input" : "- Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent plain bullet Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : null,
+      "input" : "- Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent plain bullet Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : null,
+      "input" : "- Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent plain bullet Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent plain bullet a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent plain bullet a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : null,
+      "input" : "- Call Sam\nnext\n",
+      "name" : "SubtaskLine.setParent plain bullet nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : null,
+      "input" : "- Call Sam\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent plain bullet nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\nnext\n",
+      "name" : "SubtaskLine.setDue icon 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue icon 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\nnext\n",
+      "name" : "SubtaskLine.setDue icon nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue icon nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\nnext\n",
+      "name" : "SubtaskLine.setParent icon Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent icon Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\nnext\n",
+      "name" : "SubtaskLine.setParent icon Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent icon Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\nnext\n",
+      "name" : "SubtaskLine.setParent icon a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent icon a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\nnext\n",
+      "name" : "SubtaskLine.setParent icon nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : null,
+      "input" : "- [!] Icon\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent icon nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] 🥛 Café >2026-10-09\nnext\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setDue emoji 2026-10-09 (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 0
+      },
+      "expected" : "- [ ] 🥛 Café >2026-10-09\r\nnext\r\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue emoji 2026-10-09 (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] 🥛 Café\nnext\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setDue emoji nil (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : null,
+        "line" : 0
+      },
+      "expected" : "- [ ] 🥛 Café\r\nnext\r\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setDue emoji nil (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] 🥛 Café >2026-10-01 @[[Ta Da MVP]]\nnext\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent emoji Ta Da MVP (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ta Da MVP"
+      },
+      "expected" : "- [ ] 🥛 Café >2026-10-01 @[[Ta Da MVP]]\r\nnext\r\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent emoji Ta Da MVP (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] 🥛 Café >2026-10-01 @[[Ünï]]\nnext\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent emoji Ünï (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "Ünï"
+      },
+      "expected" : "- [ ] 🥛 Café >2026-10-01 @[[Ünï]]\r\nnext\r\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent emoji Ünï (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] 🥛 Café >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent emoji a]b (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : "a]b"
+      },
+      "expected" : null,
+      "input" : "- [ ] 🥛 Café >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent emoji a]b (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] 🥛 Café >2026-10-01\nnext\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\nnext\n",
+      "name" : "SubtaskLine.setParent emoji nil (LF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "line" : 0,
+        "title" : null
+      },
+      "expected" : "- [ ] 🥛 Café >2026-10-01\r\nnext\r\n",
+      "input" : "- [ ] 🥛 Café >2026-10-01\r\nnext\r\n",
+      "name" : "SubtaskLine.setParent emoji nil (CRLF)",
+      "op" : "SubtaskLine.setParent"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 1
+      },
+      "expected" : "Intro\n- [ ] a >2026-10-09\n- [ ] b\n",
+      "input" : "Intro\n- [ ] a\n- [ ] b\n",
+      "name" : "SubtaskLine.setDue second line (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 1
+      },
+      "expected" : "Intro\r\n- [ ] a >2026-10-09\r\n- [ ] b\r\n",
+      "input" : "Intro\r\n- [ ] a\r\n- [ ] b\r\n",
+      "name" : "SubtaskLine.setDue second line (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 1
+      },
+      "expected" : "Intro\n- [ ] a >2026-10-09",
+      "input" : "Intro\n- [ ] a",
+      "name" : "SubtaskLine.setDue last line without a newline (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 1
+      },
+      "expected" : "Intro\r\n- [ ] a >2026-10-09",
+      "input" : "Intro\r\n- [ ] a",
+      "name" : "SubtaskLine.setDue last line without a newline (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 9
+      },
+      "expected" : null,
+      "input" : "- [ ] a\n",
+      "name" : "SubtaskLine.setDue missing line (LF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
+        "date" : "2026-10-09",
+        "line" : 9
+      },
+      "expected" : null,
+      "input" : "- [ ] a\r\n",
+      "name" : "SubtaskLine.setDue missing line (CRLF)",
+      "op" : "SubtaskLine.setDue"
+    },
+    {
+      "args" : {
         "lineIndex" : 1
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           6,
           16
@@ -17745,6 +19999,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           7,
           17
@@ -17762,6 +20018,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           15
@@ -17779,6 +20037,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           16
@@ -17796,6 +20056,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           14
@@ -17813,6 +20075,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           15
@@ -17830,6 +20094,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           14
@@ -17847,6 +20113,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           15
@@ -17864,6 +20132,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           14
@@ -17881,6 +20151,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           15
@@ -17898,6 +20170,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           16
@@ -17915,6 +20189,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           17
@@ -17932,6 +20208,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           16
@@ -17949,6 +20227,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           17
@@ -18056,6 +20336,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           16
@@ -18073,6 +20355,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           17
@@ -18090,6 +20374,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           11
@@ -18107,6 +20393,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           12
@@ -18124,6 +20412,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           11,
           11
@@ -18141,6 +20431,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           12,
           12
@@ -18248,6 +20540,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           8,
           12
@@ -18265,6 +20559,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           10,
           13
@@ -18282,6 +20578,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           8,
           8
@@ -18299,6 +20597,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           10,
           9
@@ -18352,6 +20652,8 @@
       },
       "expected" : {
         "body" : "- [ ] Child\n  - [ ] Grandchild\ntext",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           55
@@ -18369,6 +20671,8 @@
       },
       "expected" : {
         "body" : "- [ ] Child\n  - [ ] Grandchild\ntext",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           59
@@ -18386,6 +20690,8 @@
       },
       "expected" : {
         "body" : "- [ ] Grandchild",
+        "due" : null,
+        "parent" : null,
         "range" : [
           13,
           32
@@ -18403,6 +20709,8 @@
       },
       "expected" : {
         "body" : "- [ ] Grandchild",
+        "due" : null,
+        "parent" : null,
         "range" : [
           14,
           34
@@ -18420,6 +20728,8 @@
       },
       "expected" : {
         "body" : "- [ ] Tag it\n\tdeeper\nmore",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           40
@@ -18437,6 +20747,8 @@
       },
       "expected" : {
         "body" : "- [ ] Tag it\n\tdeeper\nmore",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           44
@@ -18454,6 +20766,8 @@
       },
       "expected" : {
         "body" : "- [ ] B",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           22
@@ -18471,6 +20785,8 @@
       },
       "expected" : {
         "body" : "- [ ] B",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           24
@@ -18488,6 +20804,8 @@
       },
       "expected" : {
         "body" : "one\n\ntwo",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           21
@@ -18505,6 +20823,8 @@
       },
       "expected" : {
         "body" : "one\n\ntwo",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           25
@@ -18522,6 +20842,8 @@
       },
       "expected" : {
         "body" : "one",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           14
@@ -18539,6 +20861,8 @@
       },
       "expected" : {
         "body" : "one",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           16
@@ -18556,6 +20880,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           6,
           10
@@ -18573,6 +20899,8 @@
       },
       "expected" : {
         "body" : "",
+        "due" : null,
+        "parent" : null,
         "range" : [
           7,
           10
@@ -18590,6 +20918,8 @@
       },
       "expected" : {
         "body" : "child",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           15
@@ -18607,6 +20937,8 @@
       },
       "expected" : {
         "body" : "child",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           16
@@ -18624,6 +20956,8 @@
       },
       "expected" : {
         "body" : "b",
+        "due" : null,
+        "parent" : null,
         "range" : [
           19,
           12
@@ -18641,6 +20975,8 @@
       },
       "expected" : {
         "body" : "b",
+        "due" : null,
+        "parent" : null,
         "range" : [
           22,
           14
@@ -18658,6 +20994,8 @@
       },
       "expected" : {
         "body" : "2 🥛",
+        "due" : null,
+        "parent" : null,
         "range" : [
           9,
           20
@@ -18675,6 +21013,8 @@
       },
       "expected" : {
         "body" : "2 🥛",
+        "due" : null,
+        "parent" : null,
         "range" : [
           10,
           22
@@ -18692,6 +21032,8 @@
       },
       "expected" : {
         "body" : "naïve",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           25
@@ -18709,6 +21051,8 @@
       },
       "expected" : {
         "body" : "naïve",
+        "due" : null,
+        "parent" : null,
         "range" : [
           0,
           27
@@ -18722,12 +21066,146 @@
     },
     {
       "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "detail",
+        "due" : "2026-10-09",
+        "parent" : "Ta Da MVP",
+        "range" : [
+          0,
+          51
+        ],
+        "status" : "Not Started",
+        "title" : "Call Sam"
+      },
+      "input" : "- [ ] Call Sam >2026-10-09 @[[Ta Da MVP]]\n  detail\n",
+      "name" : "SubtaskExtraction.extract due and parent (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "detail",
+        "due" : "2026-10-09",
+        "parent" : "Ta Da MVP",
+        "range" : [
+          0,
+          53
+        ],
+        "status" : "Not Started",
+        "title" : "Call Sam"
+      },
+      "input" : "- [ ] Call Sam >2026-10-09 @[[Ta Da MVP]]\r\n  detail\r\n",
+      "name" : "SubtaskExtraction.extract due and parent (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "due" : "2026-10-09",
+        "parent" : "Home",
+        "range" : [
+          0,
+          37
+        ],
+        "status" : "Not Started",
+        "title" : "Call Sam"
+      },
+      "input" : "- [ ] >2026-10-09 @[[Home]] Call Sam\n",
+      "name" : "SubtaskExtraction.extract attributes at the start (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "due" : "2026-10-09",
+        "parent" : "Home",
+        "range" : [
+          0,
+          38
+        ],
+        "status" : "Not Started",
+        "title" : "Call Sam"
+      },
+      "input" : "- [ ] >2026-10-09 @[[Home]] Call Sam\r\n",
+      "name" : "SubtaskExtraction.extract attributes at the start (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [ ] >2026-10-09 @[[Home]]\n",
+      "name" : "SubtaskExtraction.extract only attributes (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : null,
+      "input" : "- [ ] >2026-10-09 @[[Home]]\r\n",
+      "name" : "SubtaskExtraction.extract only attributes (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "due" : "2026-10-09",
+        "parent" : null,
+        "range" : [
+          0,
+          39
+        ],
+        "status" : "Not Started",
+        "title" : "Call Sam >2026-10-10"
+      },
+      "input" : "- [ ] Call >2026-10-09 Sam >2026-10-10\n",
+      "name" : "SubtaskExtraction.extract second date stays (LF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
+        "lineIndex" : 0
+      },
+      "expected" : {
+        "body" : "",
+        "due" : "2026-10-09",
+        "parent" : null,
+        "range" : [
+          0,
+          40
+        ],
+        "status" : "Not Started",
+        "title" : "Call Sam >2026-10-10"
+      },
+      "input" : "- [ ] Call >2026-10-09 Sam >2026-10-10\r\n",
+      "name" : "SubtaskExtraction.extract second date stays (CRLF)",
+      "op" : "SubtaskExtraction.extract"
+    },
+    {
+      "args" : {
 
       },
       "expected" : {
         "extracts" : [
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               6,
               8
@@ -18737,6 +21215,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               6,
               8
@@ -18746,6 +21226,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               6,
               8
@@ -18768,6 +21250,8 @@
         "extracts" : [
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               7,
               9
@@ -18777,6 +21261,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               7,
               9
@@ -18786,6 +21272,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               7,
               9
@@ -18808,6 +21296,8 @@
         "extracts" : [
           {
             "body" : "- [ ] A1\n- [x] A2",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               30
@@ -18817,6 +21307,8 @@
           },
           {
             "body" : "text",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               14
@@ -18839,6 +21331,8 @@
         "extracts" : [
           {
             "body" : "- [ ] A1\n- [x] A2",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               33
@@ -18848,6 +21342,8 @@
           },
           {
             "body" : "text",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               16
@@ -18898,6 +21394,8 @@
         "extracts" : [
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               34,
               11
@@ -18920,6 +21418,8 @@
         "extracts" : [
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               38,
               12
@@ -18942,6 +21442,8 @@
         "extracts" : [
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               8
@@ -18951,6 +21453,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               7
@@ -18973,6 +21477,8 @@
         "extracts" : [
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               9
@@ -18982,6 +21488,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               7
@@ -19004,6 +21512,8 @@
         "extracts" : [
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               8
@@ -19013,6 +21523,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               8
@@ -19035,6 +21547,8 @@
         "extracts" : [
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               9
@@ -19044,6 +21558,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               0,
               9
@@ -19066,6 +21582,8 @@
         "extracts" : [
           {
             "body" : "note",
+            "due" : null,
+            "parent" : null,
             "range" : [
               29,
               15
@@ -19075,6 +21593,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               30,
               8
@@ -19097,6 +21617,8 @@
         "extracts" : [
           {
             "body" : "note",
+            "due" : null,
+            "parent" : null,
             "range" : [
               33,
               17
@@ -19106,6 +21628,8 @@
           },
           {
             "body" : "",
+            "due" : null,
+            "parent" : null,
             "range" : [
               35,
               9
@@ -19122,67 +21646,192 @@
     },
     {
       "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "due" : "2026-10-09",
+            "parent" : null,
+            "range" : [
+              0,
+              20
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "due" : null,
+            "parent" : "Home",
+            "range" : [
+              0,
+              18
+            ],
+            "status" : "Not Started",
+            "title" : "B"
+          },
+          {
+            "body" : "",
+            "due" : "2026-10-10",
+            "parent" : "Garden",
+            "range" : [
+              0,
+              32
+            ],
+            "status" : "Not Started",
+            "title" : "C"
+          }
+        ],
+        "text" : ""
+      },
+      "input" : "- [ ] A >2026-10-09\n- [ ] B @[[Home]]\n- [ ] >2026-10-10 @[[Garden]] C\n",
+      "name" : "SubtaskExtraction.extractAll attributes (LF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
+
+      },
+      "expected" : {
+        "extracts" : [
+          {
+            "body" : "",
+            "due" : "2026-10-09",
+            "parent" : null,
+            "range" : [
+              0,
+              21
+            ],
+            "status" : "Not Started",
+            "title" : "A"
+          },
+          {
+            "body" : "",
+            "due" : null,
+            "parent" : "Home",
+            "range" : [
+              0,
+              19
+            ],
+            "status" : "Not Started",
+            "title" : "B"
+          },
+          {
+            "body" : "",
+            "due" : "2026-10-10",
+            "parent" : "Garden",
+            "range" : [
+              0,
+              33
+            ],
+            "status" : "Not Started",
+            "title" : "C"
+          }
+        ],
+        "text" : ""
+      },
+      "input" : "- [ ] A >2026-10-09\r\n- [ ] B @[[Home]]\r\n- [ ] >2026-10-10 @[[Garden]] C\r\n",
+      "name" : "SubtaskExtraction.extractAll attributes (CRLF)",
+      "op" : "SubtaskExtraction.extractAll"
+    },
+    {
+      "args" : {
         "area" : null,
         "body" : "",
+        "due" : null,
         "project" : null,
         "status" : "Not Started",
         "title" : "Buy milk"
       },
       "expected" : "---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-10-02\n---\n",
       "input" : null,
-      "name" : "SubtaskExtraction.taskText Buy milk Not Started project nil area nil",
+      "name" : "SubtaskExtraction.taskText Buy milk Not Started project nil area nil due nil",
       "op" : "SubtaskExtraction.taskText"
     },
     {
       "args" : {
         "area" : null,
-        "body" : "- [ ] Tag it\n  deeper",
+        "body" : "",
+        "due" : "2026-10-09",
         "project" : "Ark",
-        "status" : "Done",
-        "title" : "Ship"
+        "status" : "Not Started",
+        "title" : "Call Sam"
       },
-      "expected" : "---\ntype: task\nstatus: Done\nproject: \"[[Ark]]\"\ncreatedDate: 2026-10-02\ncompletedDate: 2026-10-02\n---\n- [ ] Tag it\n  deeper\n",
+      "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Ark]]\"\ncreatedDate: 2026-10-02\ndueDate: 2026-10-09\n---\n",
       "input" : null,
-      "name" : "SubtaskExtraction.taskText Ship Done project Ark area nil",
+      "name" : "SubtaskExtraction.taskText Call Sam Not Started project Ark area nil due 2026-10-09",
       "op" : "SubtaskExtraction.taskText"
     },
     {
       "args" : {
         "area" : "Home",
         "body" : "",
+        "due" : "2026-10-09",
+        "project" : null,
+        "status" : "Done",
+        "title" : "Call Sam"
+      },
+      "expected" : "---\ntype: task\nstatus: Done\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\ndueDate: 2026-10-09\ncompletedDate: 2026-10-02\n---\n",
+      "input" : null,
+      "name" : "SubtaskExtraction.taskText Call Sam Done project nil area Home due 2026-10-09",
+      "op" : "SubtaskExtraction.taskText"
+    },
+    {
+      "args" : {
+        "area" : null,
+        "body" : "- [ ] Tag it\n  deeper",
+        "due" : null,
+        "project" : "Ark",
+        "status" : "Done",
+        "title" : "Ship"
+      },
+      "expected" : "---\ntype: task\nstatus: Done\nproject: \"[[Ark]]\"\ncreatedDate: 2026-10-02\ncompletedDate: 2026-10-02\n---\n- [ ] Tag it\n  deeper\n",
+      "input" : null,
+      "name" : "SubtaskExtraction.taskText Ship Done project Ark area nil due nil",
+      "op" : "SubtaskExtraction.taskText"
+    },
+    {
+      "args" : {
+        "area" : "Home",
+        "body" : "",
+        "due" : null,
         "project" : null,
         "status" : "Doing",
         "title" : "Dig"
       },
       "expected" : "---\ntype: task\nstatus: Doing\narea: \"[[Home]]\"\ncreatedDate: 2026-10-02\n---\n",
       "input" : null,
-      "name" : "SubtaskExtraction.taskText Dig Doing project nil area Home",
+      "name" : "SubtaskExtraction.taskText Dig Doing project nil area Home due nil",
       "op" : "SubtaskExtraction.taskText"
     },
     {
       "args" : {
         "area" : "Home",
         "body" : "text",
+        "due" : null,
         "project" : "Ark",
         "status" : "Cancelled",
         "title" : "Dropped"
       },
       "expected" : "---\ntype: task\nstatus: Cancelled\nproject: \"[[Ark]]\"\ncreatedDate: 2026-10-02\ncompletedDate: 2026-10-02\n---\ntext\n",
       "input" : null,
-      "name" : "SubtaskExtraction.taskText Dropped Cancelled project Ark area Home",
+      "name" : "SubtaskExtraction.taskText Dropped Cancelled project Ark area Home due nil",
       "op" : "SubtaskExtraction.taskText"
     },
     {
       "args" : {
         "area" : null,
         "body" : "line one\n\nline two",
+        "due" : null,
         "project" : "Say \"hi\": now",
         "status" : "Not Started",
         "title" : "Say \"hi\": now"
       },
       "expected" : "---\ntype: task\nstatus: Not Started\nproject: \"[[Say \\\"hi\\\": now]]\"\ncreatedDate: 2026-10-02\n---\nline one\n\nline two\n",
       "input" : null,
-      "name" : "SubtaskExtraction.taskText Say \"hi\": now Not Started project Say \"hi\": now area nil",
+      "name" : "SubtaskExtraction.taskText Say \"hi\": now Not Started project Say \"hi\": now area nil due nil",
       "op" : "SubtaskExtraction.taskText"
     },
     {

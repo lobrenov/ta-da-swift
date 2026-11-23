@@ -38,16 +38,46 @@ public enum BodyScanner {
         if !facts.tasks.isEmpty {
             for i in 0..<ns.length where ns.character(at: i) == 0x0A { newlines.append(i) }
         }
-        let checkboxes = facts.tasks.map { task in
+        func lineStart(_ line: Int) -> Int { line == 0 ? 0 : newlines[line - 1] + 1 }
+        let lines = facts.tasks.map { task -> (index: Int, marker: Int) in
             let marker = task.box.location + 1
             var (low, high) = (0, newlines.count)
             while low < high {
                 let mid = (low + high) / 2
                 if newlines[mid] < marker { low = mid + 1 } else { high = mid }
             }
-            let lineStart = low == 0 ? 0 : newlines[low - 1] + 1
-            let column = ns.substring(with: NSRange(location: lineStart, length: marker - lineStart)).utf8.count
-            return Checkbox(marker: task.marker, lineIndex: firstLineIndex + low, column: column)
+            return (low, marker)
+        }
+        let boxLines = Set(lines.map(\.index))
+        /// A line's indent in columns (a tab moving to the next multiple of 4) and its first other character; nil when blank.
+        func indent(ofLine line: Int) -> (columns: Int, first: unichar)? {
+            var (i, columns) = (lineStart(line), 0)
+            while i < ns.length {
+                let c = ns.character(at: i)
+                if c == 0x20 { columns += 1 } else if c == 0x09 { columns = columns / 4 * 4 + 4 } else {
+                    return c == 0x0A || c == 0x0D ? nil : (columns, c)
+                }
+                i += 1
+            }
+            return nil
+        }
+        func isNested(line: Int, columns: Int) -> Bool {
+            guard columns > 0 else { return false }
+            for earlier in stride(from: line - 1, through: 0, by: -1) {
+                guard let above = indent(ofLine: earlier), above.columns < columns else { continue }
+                return boxLines.contains(earlier)
+            }
+            return false
+        }
+        let checkboxes = zip(facts.tasks, lines).map { task, line in
+            let start = lineStart(line.index)
+            let column = ns.substring(with: NSRange(location: start, length: line.marker - start)).utf8.count
+            let indented = indent(ofLine: line.index)
+            let attributes = InlineAttributes.parse(task.text)
+            return Checkbox(marker: task.marker, lineIndex: firstLineIndex + line.index, column: column, text: task.text,
+                            due: attributes.due?.date, parent: attributes.parent?.title,
+                            isNested: isNested(line: line.index, columns: indented?.columns ?? 0),
+                            isQuoted: indented?.first == 0x3E)
         }
         return BodyScan(
             summary: facts.summary,

@@ -115,4 +115,79 @@ public enum SubtaskLine {
             return nil
         }
     }
+
+    // MARK: Attributes
+
+    /// The line with its due date set to `date`: an existing `>YYYY-MM-DD` is replaced, or removed for nil, else the
+    /// token is added at the end of the text. Only that token changes. `line` is a subtask's content without its line
+    /// ending; nil when it isn't one (an icon box isn't).
+    public static func settingDue(_ date: LocalDate?, inLine line: String) -> String? {
+        splicing(line) { rest in
+            let attributes = InlineAttributes.parse(rest)
+            return (attributes.due?.range, date.map { ">\($0)" })
+        }
+    }
+
+    /// The line with its parent set to `@[[title]]`, as `settingDue` does. Nil also when `title` has a bracket or a
+    /// line break.
+    public static func settingParent(_ title: String?, inLine line: String) -> String? {
+        if let title, title.isEmpty || title.contains(where: { "[]\n\r".contains($0) }) { return nil }
+        return splicing(line) { rest in
+            let attributes = InlineAttributes.parse(rest)
+            return (attributes.parent?.range, title.map { "@[[\($0)]]" })
+        }
+    }
+
+    /// `settingDue` on line `line` (0-based) of `text`, keeping every other byte, line endings included. Nil when the
+    /// text has no such line.
+    public static func setDue(_ date: LocalDate?, in text: String, line: Int) -> String? {
+        replacingLine(line, in: text) { settingDue(date, inLine: $0) }
+    }
+
+    /// `settingParent` on line `line` (0-based) of `text`.
+    public static func setParent(_ title: String?, in text: String, line: Int) -> String? {
+        replacingLine(line, in: text) { settingParent(title, inLine: $0) }
+    }
+
+    /// `line` with the text after its box edited by `edit`, which gets that text and says which token to replace (if any)
+    /// and with what (nil removes it, or adds nothing).
+    private static func splicing(_ line: String, _ edit: (String) -> (range: NSRange?, token: String?)) -> String? {
+        let bytes = Array(line.utf8)
+        guard let markerEnd = CheckboxSyntax.markerEnd(in: bytes, at: CheckboxSyntax.markerStart(in: bytes)),
+              let box = CheckboxSyntax.box(in: bytes, after: markerEnd),
+              let state = Checkbox.State(marker: box.marker), state != .icon else { return nil }
+        var start = box.offset + 2
+        while start < bytes.count, bytes[start] == UInt8(ascii: " ") || bytes[start] == UInt8(ascii: "\t") { start += 1 }
+        let head = String(decoding: bytes[..<start], as: UTF8.self)
+        let rest = String(decoding: bytes[start...], as: UTF8.self)
+        let (range, token) = edit(rest)
+        let text = rest as NSString
+        switch (range, token) {
+        case let (range?, token?):
+            return head + text.replacingCharacters(in: range, with: token)
+        case let (range?, nil):
+            return head + InlineAttributes.removing(range, from: text)
+        case let (nil, token?):
+            let trailing = String(rest.suffix(rest.reversed().prefix(while: { $0 == " " || $0 == "\t" }).count))
+            let base = rest.dropLast(trailing.count)
+            return head + (base.isEmpty ? token : base + " " + token) + trailing
+        case (nil, nil):
+            return line
+        }
+    }
+
+    /// `text` with line `line` replaced by `edit`'s result, its `\r` before the line ending kept.
+    private static func replacingLine(_ line: Int, in text: String, _ edit: (String) -> String?) -> String? {
+        var bytes = Array(text.utf8)
+        var start = 0
+        for _ in 0..<line {
+            guard let newline = bytes[start...].firstIndex(of: UInt8(ascii: "\n")) else { return nil }
+            start = newline + 1
+        }
+        var end = bytes[start...].firstIndex(of: UInt8(ascii: "\n")) ?? bytes.count
+        if end > start, bytes[end - 1] == UInt8(ascii: "\r") { end -= 1 }
+        guard let replaced = edit(String(decoding: bytes[start..<end], as: UTF8.self)) else { return nil }
+        bytes.replaceSubrange(start..<end, with: Array(replaced.utf8))
+        return String(decoding: bytes, as: UTF8.self)
+    }
 }

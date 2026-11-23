@@ -133,14 +133,23 @@ extension VaultIndex {
     }
 
     /// For each date from `from` through `through` that has either mark. An occurrence marks its day like an open task,
-    /// except those of `every day` and `every weekday` rules. The daily note is looked up by `names`.
-    public func dayMarks(from: LocalDate, through: LocalDate, today: LocalDate,
+    /// except those of `every day` and `every weekday` rules. A listed subtask line with a due date marks its day as an open
+    /// task does, unless `includingSubtasks` is false. The daily note is looked up by `names`.
+    public func dayMarks(from: LocalDate, through: LocalDate, today: LocalDate, includingSubtasks: Bool = true,
                          names: DailyNoteNames = DailyNoteNames()) -> [LocalDate: DayMarks] {
         guard from <= through else { return [:] }
         var marks: [LocalDate: DayMarks] = [:]
         for task in tasks where !task.properties.status.isClosed {
             for date in [task.properties.dueDate, task.properties.deadline].compactMap({ $0 }) where (from...through).contains(date) {
                 marks[date, default: DayMarks(hasOpenTasks: false, hasOpenBoxes: false)].hasOpenTasks = true
+            }
+        }
+        if includingSubtasks {
+            for item in items.values {
+                for box in item.checkboxes {
+                    guard let due = box.due, (from...through).contains(due), isListed(box, in: item) else { continue }
+                    marks[due, default: DayMarks(hasOpenTasks: false, hasOpenBoxes: false)].hasOpenTasks = true
+                }
             }
         }
         for task in tasks {

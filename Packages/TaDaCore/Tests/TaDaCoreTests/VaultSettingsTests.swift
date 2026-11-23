@@ -121,3 +121,17 @@ private let daily = VaultSettings.DailyNotes(dailyFolder: "Journal", dailyTempla
         #expect(vault.readObsidianDailyNotes() == .init(dailyFolder: "Journal", dailyTemplate: "Daily.md"))
     }
 }
+
+@Test func noteSubtasksReadsAndWritesKeepingTheEditorsOtherKeys() throws {
+    #expect(VaultSettings(data: data("{\"editor\": {\"noteSubtasks\": true}}")).noteSubtasks == true)
+    #expect(VaultSettings(data: data("{\"editor\": {\"noteSubtasks\": 1}}")).noteSubtasks == nil)
+    #expect(VaultSettings(data: data("{}")).noteSubtasks == nil)
+    let existing = data("{\"future\": 1, \"editor\": {\"font\": \"Mono\", \"taskLinkBoxes\": false, \"autocomplete\": {\"tags\": false}}}")
+    let written = try parsed(VaultSettings.updated(existing, noteSubtasks: true))
+    let editor = try #require(written["editor"] as? [String: Any])
+    #expect(editor["noteSubtasks"] as? Bool == true && editor["font"] as? String == "Mono" && editor["taskLinkBoxes"] as? Bool == false)
+    #expect((editor["autocomplete"] as? [String: Bool]) == ["tags": false] && written["future"] as? Int == 1)
+    let again = VaultSettings(data: VaultSettings.updated(VaultSettings.updated(nil, noteSubtasks: true), taskLinkBoxes: true))
+    #expect(again.noteSubtasks == true && again.taskLinkBoxes == true)
+    #expect(VaultSettings(data: VaultSettings.updated(existing, noteSubtasks: false)).noteSubtasks == false)
+}

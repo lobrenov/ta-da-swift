@@ -139,6 +139,19 @@
           "hasOpenTasks" : true
         }
       ],
+      "dayMarksWithoutSubtasks" : [
+        "2026-10-01",
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-07",
+        "2026-10-08",
+        "2026-10-09",
+        "2026-10-14",
+        "2026-10-16",
+        "2026-10-30"
+      ],
       "folderTree" : [
         {
           "children" : [
@@ -517,6 +530,117 @@
             }
           ]
         }
+      },
+      "subtasksFrom" : [
+        {
+          "cards" : [
+
+          ],
+          "from" : "2026-09-28",
+          "through" : "2026-10-04"
+        },
+        {
+          "cards" : [
+
+          ],
+          "from" : "2026-10-03",
+          "through" : "2026-10-09"
+        }
+      ],
+      "subtasksIn" : {
+        "Ta Da/projects/Atlas Billing.md" : [
+
+        ],
+        "Ta Da/projects/End of year reviews.md" : [
+
+        ],
+        "Ta Da/projects/Game Jam - Starfall.md" : [
+
+        ],
+        "Ta Da/projects/Sell the Kombi.md" : [
+
+        ],
+        "Ta Da/projects/Ta Da MVP.md" : [
+
+        ]
+      },
+      "subtasksLoose" : [
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 4,
+              "parent" : null,
+              "text" : "Sketch the tab bar options"
+            }
+          ],
+          "path" : "Periodic Notes/Daily Notes/2026-10-01.md"
+        },
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 7,
+              "parent" : null,
+              "text" : "Draft the Starfall rules summary"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 8,
+              "parent" : null,
+              "text" : "Book the Kombi’s roadworthy"
+            }
+          ],
+          "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+        },
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 4,
+              "parent" : null,
+              "text" : "Ship the Today redesign"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 6,
+              "parent" : null,
+              "text" : "Run the Starfall playtest"
+            }
+          ],
+          "path" : "Periodic Notes/Weekly Notes/2026-W40.md"
+        },
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 2,
+              "parent" : null,
+              "text" : "This is not a subtask of anything"
+            }
+          ],
+          "path" : "notes/Not a task.md"
+        }
+      ],
+      "subtasksOn" : {
+        "2026-09-30" : [
+
+        ],
+        "2026-10-01" : [
+
+        ],
+        "2026-10-02" : [
+
+        ],
+        "2026-10-03" : [
+
+        ],
+        "2026-10-04" : [
+
+        ],
+        "2026-10-09" : [
+
+        ]
       },
       "tagBrowsers" : {
         "" : {
@@ -966,6 +1090,14 @@
           "hasOpenBoxes" : false,
           "hasOpenTasks" : true
         }
+      ],
+      "dayMarksWithoutSubtasks" : [
+        "2026-10-02",
+        "2026-10-03",
+        "2026-10-04",
+        "2026-10-05",
+        "2026-10-06",
+        "2026-10-09"
       ],
       "folderTree" : [
         {
@@ -1497,6 +1629,75 @@
             }
           ]
         }
+      },
+      "subtasksFrom" : [
+        {
+          "cards" : [
+
+          ],
+          "from" : "2026-09-28",
+          "through" : "2026-10-04"
+        },
+        {
+          "cards" : [
+
+          ],
+          "from" : "2026-10-03",
+          "through" : "2026-10-09"
+        }
+      ],
+      "subtasksIn" : {
+        "Ta Da/areas/Home.md" : [
+
+        ],
+        "Ta Da/areas/Work.md" : [
+
+        ],
+        "Ta Da/projects/Garden.md" : [
+
+        ],
+        "Ta Da/projects/Office.md" : [
+
+        ],
+        "Ta Da/projects/Résumé.md" : [
+
+        ],
+        "Ta Da/projects/Taxes.md" : [
+
+        ]
+      },
+      "subtasksLoose" : [
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 4,
+              "parent" : null,
+              "text" : "Mow the lawn"
+            }
+          ],
+          "path" : "Periodic Notes/Daily Notes/2026-10-03.md"
+        }
+      ],
+      "subtasksOn" : {
+        "2026-09-30" : [
+
+        ],
+        "2026-10-01" : [
+
+        ],
+        "2026-10-02" : [
+
+        ],
+        "2026-10-03" : [
+
+        ],
+        "2026-10-04" : [
+
+        ],
+        "2026-10-09" : [
+
+        ]
       },
       "tagBrowsers" : {
         "" : {
@@ -2964,6 +3165,818 @@
             "key" : "tags"
           }
         ]
+      }
+    },
+    {
+      "activeProjects" : [
+        {
+          "done" : 0,
+          "path" : "Ta Da/projects/Ta Da MVP.md",
+          "total" : 1
+        }
+      ],
+      "agendaWeek" : [
+
+      ],
+      "areaProjects" : [
+        {
+          "area" : "Ta Da/areas/Work.md",
+          "projects" : [
+            {
+              "done" : 0,
+              "path" : "Ta Da/projects/Ta Da MVP.md",
+              "total" : 1
+            }
+          ]
+        }
+      ],
+      "areas" : [
+        "Ta Da/areas/Work.md"
+      ],
+      "dayMarks" : [
+        {
+          "date" : "2026-10-02",
+          "hasOpenBoxes" : true,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-03",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-04",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        },
+        {
+          "date" : "2026-10-09",
+          "hasOpenBoxes" : false,
+          "hasOpenTasks" : true
+        }
+      ],
+      "dayMarksWithoutSubtasks" : [
+        "2026-10-02"
+      ],
+      "folderTree" : [
+        {
+          "children" : [
+
+          ],
+          "count" : 1,
+          "name" : "Meetings",
+          "path" : "Meetings"
+        },
+        {
+          "children" : [
+
+          ],
+          "count" : 2,
+          "name" : "Notes",
+          "path" : "Notes"
+        },
+        {
+          "children" : [
+            {
+              "children" : [
+
+              ],
+              "count" : 1,
+              "name" : "Daily Notes",
+              "path" : "Periodic Notes/Daily Notes"
+            }
+          ],
+          "count" : 1,
+          "name" : "Periodic Notes",
+          "path" : "Periodic Notes"
+        }
+      ],
+      "liveTasks" : [
+        "Ta Da/tasks/Draft.md",
+        "Ta Da/tasks/Finished.md"
+      ],
+      "logged" : [
+
+      ],
+      "loose" : [
+
+      ],
+      "looseProjects" : [
+
+      ],
+      "name" : "SubtaskVault",
+      "notes" : [
+        "Meetings/Standup.md",
+        "Notes/Syntax.md",
+        "Notes/Windows.md",
+        "Periodic Notes/Daily Notes/2026-10-02.md"
+      ],
+      "notesIn" : {
+        "" : [
+
+        ],
+        "Meetings" : [
+          "Meetings/Standup.md"
+        ],
+        "Notes" : [
+          "Notes/Syntax.md",
+          "Notes/Windows.md"
+        ],
+        "Periodic Notes" : [
+
+        ],
+        "Periodic Notes/Daily Notes" : [
+          "Periodic Notes/Daily Notes/2026-10-02.md"
+        ]
+      },
+      "overdue" : [
+
+      ],
+      "parents" : {
+        "Meetings/Standup.md" : null,
+        "Notes/Syntax.md" : null,
+        "Notes/Windows.md" : null,
+        "Periodic Notes/Daily Notes/2026-10-02.md" : null,
+        "Ta Da/areas/Work.md" : null,
+        "Ta Da/projects/Ta Da MVP.md" : "Ta Da/areas/Work.md",
+        "Ta Da/tasks/Draft.md" : "Ta Da/projects/Ta Da MVP.md",
+        "Ta Da/tasks/Finished.md" : null
+      },
+      "projects" : [
+        "Ta Da/projects/Ta Da MVP.md"
+      ],
+      "sections" : {
+        "loose" : {
+          "Date" : [
+
+          ],
+          "Open" : [
+
+          ],
+          "Project" : [
+
+          ],
+          "Status" : [
+
+          ],
+          "Tag" : [
+
+          ]
+        },
+        "today" : {
+          "Date" : [
+
+          ],
+          "Open" : [
+
+          ],
+          "Project" : [
+
+          ],
+          "Status" : [
+
+          ],
+          "Tag" : [
+
+          ]
+        }
+      },
+      "subtasksFrom" : [
+        {
+          "cards" : [
+            {
+              "lines" : [
+                {
+                  "due" : "2026-10-02",
+                  "lineIndex" : 5,
+                  "parent" : null,
+                  "text" : "Call Sam >2026-10-02"
+                },
+                {
+                  "due" : "2026-10-03",
+                  "lineIndex" : 6,
+                  "parent" : "Ta Da MVP",
+                  "text" : "Tomorrow >2026-10-03 @[[Ta Da MVP]]"
+                }
+              ],
+              "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+            },
+            {
+              "lines" : [
+                {
+                  "due" : "2026-10-03",
+                  "lineIndex" : 8,
+                  "parent" : null,
+                  "text" : "Dated here >2026-10-03"
+                }
+              ],
+              "path" : "Ta Da/tasks/Draft.md"
+            },
+            {
+              "lines" : [
+                {
+                  "due" : "2026-09-30",
+                  "lineIndex" : 9,
+                  "parent" : null,
+                  "text" : "Overdue >2026-09-30"
+                },
+                {
+                  "due" : "2026-10-03",
+                  "lineIndex" : 10,
+                  "parent" : "Ta Da MVP",
+                  "text" : "Both >2026-10-03 @[[Ta Da MVP]]"
+                },
+                {
+                  "due" : "2026-10-02",
+                  "lineIndex" : 12,
+                  "parent" : "Nowhere",
+                  "text" : "Unresolved but dated >2026-10-02 @[[Nowhere]]"
+                },
+                {
+                  "due" : "2026-10-02",
+                  "lineIndex" : 16,
+                  "parent" : null,
+                  "text" : "Under a bullet >2026-10-02"
+                },
+                {
+                  "due" : "2026-10-04",
+                  "lineIndex" : 23,
+                  "parent" : null,
+                  "text" : "Two dates >2026-10-04 >2026-10-02"
+                }
+              ],
+              "path" : "Meetings/Standup.md"
+            },
+            {
+              "lines" : [
+                {
+                  "due" : "2026-10-02",
+                  "lineIndex" : 3,
+                  "parent" : null,
+                  "text" : ">2026-10-02 at the start"
+                },
+                {
+                  "due" : "2026-10-02",
+                  "lineIndex" : 4,
+                  "parent" : null,
+                  "text" : "Ends with a date >2026-10-02."
+                },
+                {
+                  "due" : "2026-10-02",
+                  "lineIndex" : 14,
+                  "parent" : null,
+                  "text" : "Tabbed\t>2026-10-02\tend"
+                },
+                {
+                  "due" : "2026-10-02",
+                  "lineIndex" : 15,
+                  "parent" : null,
+                  "text" : "Numbered >2026-10-02"
+                }
+              ],
+              "path" : "Notes/Syntax.md"
+            },
+            {
+              "lines" : [
+                {
+                  "due" : "2026-10-02",
+                  "lineIndex" : 4,
+                  "parent" : null,
+                  "text" : "Windows >2026-10-02"
+                }
+              ],
+              "path" : "Notes/Windows.md"
+            }
+          ],
+          "from" : "2026-09-28",
+          "through" : "2026-10-04"
+        },
+        {
+          "cards" : [
+            {
+              "lines" : [
+                {
+                  "due" : "2026-10-03",
+                  "lineIndex" : 6,
+                  "parent" : "Ta Da MVP",
+                  "text" : "Tomorrow >2026-10-03 @[[Ta Da MVP]]"
+                }
+              ],
+              "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+            },
+            {
+              "lines" : [
+                {
+                  "due" : "2026-10-03",
+                  "lineIndex" : 8,
+                  "parent" : null,
+                  "text" : "Dated here >2026-10-03"
+                }
+              ],
+              "path" : "Ta Da/tasks/Draft.md"
+            },
+            {
+              "lines" : [
+                {
+                  "due" : "2026-10-09",
+                  "lineIndex" : 5,
+                  "parent" : null,
+                  "text" : "Doing >2026-10-09"
+                },
+                {
+                  "due" : "2026-10-03",
+                  "lineIndex" : 10,
+                  "parent" : "Ta Da MVP",
+                  "text" : "Both >2026-10-03 @[[Ta Da MVP]]"
+                },
+                {
+                  "due" : "2026-10-04",
+                  "lineIndex" : 23,
+                  "parent" : null,
+                  "text" : "Two dates >2026-10-04 >2026-10-02"
+                }
+              ],
+              "path" : "Meetings/Standup.md"
+            },
+            {
+              "lines" : [
+                {
+                  "due" : "2026-10-09",
+                  "lineIndex" : 6,
+                  "parent" : null,
+                  "text" : "Own dated >2026-10-09"
+                },
+                {
+                  "due" : "2026-10-09",
+                  "lineIndex" : 9,
+                  "parent" : "Ta Da MVP",
+                  "text" : "Own to self and dated >2026-10-09 @[[Ta Da MVP]]"
+                }
+              ],
+              "path" : "Ta Da/projects/Ta Da MVP.md"
+            }
+          ],
+          "from" : "2026-10-03",
+          "through" : "2026-10-09"
+        }
+      ],
+      "subtasksIn" : {
+        "Ta Da/areas/Work.md" : [
+          {
+            "lines" : [
+              {
+                "due" : null,
+                "lineIndex" : 7,
+                "parent" : "Work",
+                "text" : "Filed elsewhere @[[Work]]"
+              }
+            ],
+            "path" : "Ta Da/tasks/Draft.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : null,
+                "lineIndex" : 24,
+                "parent" : "Work",
+                "text" : "Two parents @[[Work]] @[[Ta Da MVP]]"
+              }
+            ],
+            "path" : "Meetings/Standup.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : null,
+                "lineIndex" : 10,
+                "parent" : "Work",
+                "text" : "Heading @[[Work#Goals]]"
+              }
+            ],
+            "path" : "Notes/Syntax.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : null,
+                "lineIndex" : 7,
+                "parent" : "Work",
+                "text" : "Windows parent @[[Work]]"
+              }
+            ],
+            "path" : "Notes/Windows.md"
+          }
+        ],
+        "Ta Da/projects/Ta Da MVP.md" : [
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-03",
+                "lineIndex" : 6,
+                "parent" : "Ta Da MVP",
+                "text" : "Tomorrow >2026-10-03 @[[Ta Da MVP]]"
+              }
+            ],
+            "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-03",
+                "lineIndex" : 10,
+                "parent" : "Ta Da MVP",
+                "text" : "Both >2026-10-03 @[[Ta Da MVP]]"
+              },
+              {
+                "due" : null,
+                "lineIndex" : 13,
+                "parent" : "Ta Da MVP",
+                "text" : "Parent with nest @[[Ta Da MVP]]"
+              }
+            ],
+            "path" : "Meetings/Standup.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : null,
+                "lineIndex" : 9,
+                "parent" : "Ta Da MVP",
+                "text" : "Alias @[[Ta Da MVP|the MVP]]"
+              },
+              {
+                "due" : null,
+                "lineIndex" : 11,
+                "parent" : "Ta Da MVP",
+                "text" : "Folder @[[Ta Da/projects/Ta Da MVP.md]]"
+              },
+              {
+                "due" : null,
+                "lineIndex" : 13,
+                "parent" : "ta da mvp",
+                "text" : "Case @[[ta da mvp]]"
+              }
+            ],
+            "path" : "Notes/Syntax.md"
+          }
+        ]
+      },
+      "subtasksLoose" : [
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 4,
+              "parent" : null,
+              "text" : "Plain daily line"
+            }
+          ],
+          "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+        },
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 4,
+              "parent" : null,
+              "text" : "Loose"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 11,
+              "parent" : "Nowhere",
+              "text" : "Unresolved @[[Nowhere]]"
+            }
+          ],
+          "path" : "Meetings/Standup.md"
+        },
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 0,
+              "parent" : null,
+              "text" : "`>2026-10-02` in code"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 1,
+              "parent" : null,
+              "text" : "a>2026-10-02 glued"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 2,
+              "parent" : null,
+              "text" : "mail@[[Work]] glued"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 5,
+              "parent" : null,
+              "text" : "Bad date >2026-02-30"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 6,
+              "parent" : null,
+              "text" : "Short date >2026-10-2"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 7,
+              "parent" : null,
+              "text" : "Longer >2026-10-021"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 8,
+              "parent" : null,
+              "text" : "At sign @ [[Work]] apart"
+            },
+            {
+              "due" : null,
+              "lineIndex" : 12,
+              "parent" : null,
+              "text" : "Link text [[Work >2026-10-02]] and [x >2026-10-03](https://a.b/ >2026-10-04) end"
+            }
+          ],
+          "path" : "Notes/Syntax.md"
+        },
+        {
+          "lines" : [
+            {
+              "due" : null,
+              "lineIndex" : 6,
+              "parent" : null,
+              "text" : "Windows loose"
+            }
+          ],
+          "path" : "Notes/Windows.md"
+        }
+      ],
+      "subtasksOn" : {
+        "2026-09-30" : [
+          {
+            "lines" : [
+              {
+                "due" : "2026-09-30",
+                "lineIndex" : 9,
+                "parent" : null,
+                "text" : "Overdue >2026-09-30"
+              }
+            ],
+            "path" : "Meetings/Standup.md"
+          }
+        ],
+        "2026-10-01" : [
+
+        ],
+        "2026-10-02" : [
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-02",
+                "lineIndex" : 5,
+                "parent" : null,
+                "text" : "Call Sam >2026-10-02"
+              }
+            ],
+            "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : "2026-09-30",
+                "lineIndex" : 9,
+                "parent" : null,
+                "text" : "Overdue >2026-09-30"
+              },
+              {
+                "due" : "2026-10-02",
+                "lineIndex" : 12,
+                "parent" : "Nowhere",
+                "text" : "Unresolved but dated >2026-10-02 @[[Nowhere]]"
+              },
+              {
+                "due" : "2026-10-02",
+                "lineIndex" : 16,
+                "parent" : null,
+                "text" : "Under a bullet >2026-10-02"
+              }
+            ],
+            "path" : "Meetings/Standup.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-02",
+                "lineIndex" : 3,
+                "parent" : null,
+                "text" : ">2026-10-02 at the start"
+              },
+              {
+                "due" : "2026-10-02",
+                "lineIndex" : 4,
+                "parent" : null,
+                "text" : "Ends with a date >2026-10-02."
+              },
+              {
+                "due" : "2026-10-02",
+                "lineIndex" : 14,
+                "parent" : null,
+                "text" : "Tabbed\t>2026-10-02\tend"
+              },
+              {
+                "due" : "2026-10-02",
+                "lineIndex" : 15,
+                "parent" : null,
+                "text" : "Numbered >2026-10-02"
+              }
+            ],
+            "path" : "Notes/Syntax.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-02",
+                "lineIndex" : 4,
+                "parent" : null,
+                "text" : "Windows >2026-10-02"
+              }
+            ],
+            "path" : "Notes/Windows.md"
+          }
+        ],
+        "2026-10-03" : [
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-03",
+                "lineIndex" : 6,
+                "parent" : "Ta Da MVP",
+                "text" : "Tomorrow >2026-10-03 @[[Ta Da MVP]]"
+              }
+            ],
+            "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-03",
+                "lineIndex" : 8,
+                "parent" : null,
+                "text" : "Dated here >2026-10-03"
+              }
+            ],
+            "path" : "Ta Da/tasks/Draft.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-03",
+                "lineIndex" : 10,
+                "parent" : "Ta Da MVP",
+                "text" : "Both >2026-10-03 @[[Ta Da MVP]]"
+              }
+            ],
+            "path" : "Meetings/Standup.md"
+          }
+        ],
+        "2026-10-04" : [
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-04",
+                "lineIndex" : 23,
+                "parent" : null,
+                "text" : "Two dates >2026-10-04 >2026-10-02"
+              }
+            ],
+            "path" : "Meetings/Standup.md"
+          }
+        ],
+        "2026-10-09" : [
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-09",
+                "lineIndex" : 5,
+                "parent" : null,
+                "text" : "Doing >2026-10-09"
+              }
+            ],
+            "path" : "Meetings/Standup.md"
+          },
+          {
+            "lines" : [
+              {
+                "due" : "2026-10-09",
+                "lineIndex" : 6,
+                "parent" : null,
+                "text" : "Own dated >2026-10-09"
+              },
+              {
+                "due" : "2026-10-09",
+                "lineIndex" : 9,
+                "parent" : "Ta Da MVP",
+                "text" : "Own to self and dated >2026-10-09 @[[Ta Da MVP]]"
+              }
+            ],
+            "path" : "Ta Da/projects/Ta Da MVP.md"
+          }
+        ]
+      },
+      "tagBrowsers" : {
+        "" : {
+          "areasAndProjects" : [
+            "Ta Da/areas/Work.md",
+            "Ta Da/projects/Ta Da MVP.md"
+          ],
+          "children" : [
+
+          ],
+          "completed" : [
+            "Ta Da/tasks/Finished.md"
+          ],
+          "groups" : [
+            {
+              "parent" : "Ta Da/areas/Work.md",
+              "tasks" : [
+
+              ]
+            },
+            {
+              "parent" : "Ta Da/projects/Ta Da MVP.md",
+              "tasks" : [
+                "Ta Da/tasks/Draft.md"
+              ]
+            }
+          ],
+          "notes" : [
+            "Periodic Notes/Daily Notes/2026-10-02.md",
+            "Meetings/Standup.md",
+            "Notes/Syntax.md",
+            "Notes/Windows.md"
+          ]
+        }
+      },
+      "tagFilterTags" : [
+
+      ],
+      "tagged" : {
+
+      },
+      "tagSuggestions" : {
+        "" : [
+
+        ],
+        "c" : [
+
+        ],
+        "ca" : [
+
+        ],
+        "work/" : [
+
+        ]
+      },
+      "tagTree" : [
+
+      ],
+      "today" : [
+
+      ],
+      "trash" : [
+
+      ],
+      "trashContentsOf" : {
+
+      },
+      "trashContentsOfTrashed" : {
+
+      },
+      "trashTasksOf" : {
+
+      },
+      "trashTasksOfTrashed" : {
+
+      },
+      "untagged" : [
+        "Periodic Notes/Daily Notes/2026-10-02.md",
+        "Ta Da/tasks/Draft.md",
+        "Ta Da/tasks/Finished.md",
+        "Meetings/Standup.md",
+        "Notes/Syntax.md",
+        "Ta Da/projects/Ta Da MVP.md",
+        "Notes/Windows.md",
+        "Ta Da/areas/Work.md"
+      ],
+      "upcoming" : [
+
+      ],
+      "warnings" : {
+
       }
     }
   ]

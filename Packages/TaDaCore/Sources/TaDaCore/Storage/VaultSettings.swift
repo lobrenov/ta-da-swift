@@ -53,6 +53,7 @@ public struct VaultSettings: Equatable, Sendable {
     public var theme = Theme()
     public var autocomplete = Autocomplete()
     public var taskLinkBoxes: Bool?
+    public var noteSubtasks: Bool?
 
     public init() {}
 
@@ -74,12 +75,13 @@ public struct VaultSettings: Equatable, Sendable {
             brackets: Self.bool(autocomplete["brackets"]), formatting: Self.bool(autocomplete["formatting"]),
             wikiLinks: Self.bool(autocomplete["wikiLinks"]), tags: Self.bool(autocomplete["tags"]))
         taskLinkBoxes = Self.bool(editor["taskLinkBoxes"])
+        noteSubtasks = Self.bool(editor["noteSubtasks"])
     }
 
     /// `data` with the keys of each group and the keys given (the ones a side owns) set, and everything else kept, unknown keys and
     /// groups included. A nil key in a group isn't written. Pretty-printed JSON with a final newline.
     public static func updated(_ data: Data?, dailyNotes: DailyNotes? = nil, theme: Theme? = nil, autocomplete: Autocomplete? = nil,
-                               taskLinkBoxes: Bool? = nil) -> Data {
+                               taskLinkBoxes: Bool? = nil, noteSubtasks: Bool? = nil) -> Data {
         var root = object(data)
         if let dailyNotes {
             root["dailyNotes"] = set(root["dailyNotes"], [
@@ -93,9 +95,10 @@ public struct VaultSettings: Equatable, Sendable {
                 "lightScheme": theme.lightScheme, "darkScheme": theme.darkScheme,
             ])
         }
-        if autocomplete != nil || taskLinkBoxes != nil {
+        if autocomplete != nil || taskLinkBoxes != nil || noteSubtasks != nil {
             var editor = root["editor"] as? [String: Any] ?? [:]
             if let taskLinkBoxes { editor["taskLinkBoxes"] = taskLinkBoxes }
+            if let noteSubtasks { editor["noteSubtasks"] = noteSubtasks }
             if let autocomplete {
                 editor["autocomplete"] = set(editor["autocomplete"], [
                     "brackets": autocomplete.brackets, "formatting": autocomplete.formatting,
@@ -173,11 +176,12 @@ extension Vault {
     /// Sets the keys of the groups given in the settings file, creating it if needed (see `VaultSettings.updated`), in
     /// one coordinated access.
     public func writeSettings(dailyNotes: VaultSettings.DailyNotes? = nil, theme: VaultSettings.Theme? = nil,
-                              autocomplete: VaultSettings.Autocomplete? = nil, taskLinkBoxes: Bool? = nil) throws {
+                              autocomplete: VaultSettings.Autocomplete? = nil, taskLinkBoxes: Bool? = nil,
+                              noteSubtasks: Bool? = nil) throws {
         let url = url(for: Self.settingsPath)
         func updated(_ data: Data?) -> Data {
             VaultSettings.updated(data, dailyNotes: dailyNotes, theme: theme, autocomplete: autocomplete,
-                                  taskLinkBoxes: taskLinkBoxes)
+                                  taskLinkBoxes: taskLinkBoxes, noteSubtasks: noteSubtasks)
         }
         do {
             try CoordinatedFileIO.create(updated(nil), at: url)

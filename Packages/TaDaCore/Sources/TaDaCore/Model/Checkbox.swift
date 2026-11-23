@@ -37,5 +37,34 @@ public struct Checkbox: Hashable, Sendable {
     /// UTF-8 offset of `marker` within its line.
     public var column: Int
 
+    /// The rest of the box's first line, trimmed, as written: its attributes included.
+    public var text: String = ""
+    /// The first `>YYYY-MM-DD` in `text` (see `InlineAttributes`).
+    public var due: LocalDate?
+    /// The target title of the first `@[[…]]` in `text`.
+    public var parent: String?
+    /// Indented under another checkbox, which lists it as a subtask line of its own.
+    public var isNested = false
+    /// In a quote or callout.
+    public var isQuoted = false
+
     public var state: State { State(marker: marker)! }
+
+    /// `text` without its due date and parent.
+    public var title: String {
+        let attributes = InlineAttributes.parse(text)
+        return attributes.stripped(from: text)
+    }
+
+    public init(marker: Character, lineIndex: Int, column: Int, text: String = "", due: LocalDate? = nil, parent: String? = nil,
+                isNested: Bool = false, isQuoted: Bool = false) {
+        self.marker = marker
+        self.lineIndex = lineIndex
+        self.column = column
+        self.text = text
+        self.due = due
+        self.parent = parent
+        self.isNested = isNested
+        self.isQuoted = isQuoted
+    }
 }

@@ -128,6 +128,7 @@
             "tags" : false,
             "wikiLinks" : true
           },
+          "noteSubtasks" : true,
           "taskLinkBoxes" : false
         },
         "theme" : {
@@ -137,7 +138,7 @@
           "usesSchemePerAppearance" : true
         }
       },
-      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false}}",
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false, \"noteSubtasks\": true}}",
       "name" : "full file"
     },
     {
@@ -188,7 +189,7 @@
 
         }
       },
-      "input" : "{\"dailyNotes\": {\"dailyFolder\": 3, \"dailyTemplate\": 4, \"weekNotes\": 1, \"weekFolder\": null, \"weekTemplate\": [\"a\"]},\n \"theme\": {\"themeSet\": true, \"usesSchemePerAppearance\": \"yes\", \"lightScheme\": 5, \"darkScheme\": {}},\n \"editor\": {\"autocomplete\": {\"brackets\": 0, \"formatting\": \"no\", \"wikiLinks\": null, \"tags\": []}, \"taskLinkBoxes\": \"no\"}}",
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": 3, \"dailyTemplate\": 4, \"weekNotes\": 1, \"weekFolder\": null, \"weekTemplate\": [\"a\"]},\n \"theme\": {\"themeSet\": true, \"usesSchemePerAppearance\": \"yes\", \"lightScheme\": 5, \"darkScheme\": {}},\n \"editor\": {\"autocomplete\": {\"brackets\": 0, \"formatting\": \"no\", \"wikiLinks\": null, \"tags\": []}, \"taskLinkBoxes\": \"no\", \"noteSubtasks\": \"yes\"}}",
       "name" : "wrong types"
     },
     {
@@ -362,6 +363,7 @@
             "tags" : false,
             "wikiLinks" : true
           },
+          "noteSubtasks" : true,
           "taskLinkBoxes" : false
         },
         "theme" : {
@@ -371,7 +373,7 @@
           "usesSchemePerAppearance" : true
         }
       },
-      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false}}",
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false, \"noteSubtasks\": true}}",
       "name" : "full file"
     },
     {
@@ -397,6 +399,7 @@
             "tags" : false,
             "wikiLinks" : true
           },
+          "noteSubtasks" : true,
           "taskLinkBoxes" : false
         },
         "theme" : {
@@ -406,7 +409,7 @@
           "usesSchemePerAppearance" : true
         }
       },
-      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false}}",
+      "input" : "{\"dailyNotes\": {\"dailyFolder\": \"Journal\", \"dailyTemplate\": \"Templates/Daily.md\", \"weekNotes\": false, \"weekFolder\": \"\", \"weekTemplate\": null},\n \"theme\": {\"themeSet\": \"Ayu\", \"usesSchemePerAppearance\": true, \"lightScheme\": \"Ayu Light\", \"darkScheme\": \"Ayu Mirage\"},\n \"editor\": {\"autocomplete\": {\"brackets\": true, \"formatting\": false, \"wikiLinks\": true, \"tags\": false}, \"taskLinkBoxes\": false, \"noteSubtasks\": true}}",
       "name" : "clearing templates"
     },
     {
@@ -501,6 +504,120 @@
       },
       "input" : "{\"future\": {\"a\": [1, 2]}, \"dailyNotes\": {\"dailyFolder\": \"Old\", \"extra\": true}, \"theme\": {\"font\": \"Mono\"}}",
       "name" : "unknown keys kept"
+    }
+  ],
+  "writeNoteSubtasks" : [
+    {
+      "expected" : {
+        "editor" : {
+          "noteSubtasks" : true
+        }
+      },
+      "input" : null,
+      "name" : "no file true",
+      "noteSubtasks" : true
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "noteSubtasks" : false
+        }
+      },
+      "input" : null,
+      "name" : "no file false",
+      "noteSubtasks" : false
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "autocomplete" : {
+            "tags" : false
+          },
+          "font" : "Mono",
+          "noteSubtasks" : true,
+          "taskLinkBoxes" : false
+        },
+        "future" : 1
+      },
+      "input" : "{\"future\": 1, \"editor\": {\"taskLinkBoxes\": false, \"font\": \"Mono\", \"autocomplete\": {\"tags\": false}}}",
+      "name" : "editor with other keys true",
+      "noteSubtasks" : true
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "autocomplete" : {
+            "tags" : false
+          },
+          "font" : "Mono",
+          "noteSubtasks" : false,
+          "taskLinkBoxes" : false
+        },
+        "future" : 1
+      },
+      "input" : "{\"future\": 1, \"editor\": {\"taskLinkBoxes\": false, \"font\": \"Mono\", \"autocomplete\": {\"tags\": false}}}",
+      "name" : "editor with other keys false",
+      "noteSubtasks" : false
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "noteSubtasks" : true
+        }
+      },
+      "input" : "{\"editor\": {\"noteSubtasks\": true}}",
+      "name" : "already set true",
+      "noteSubtasks" : true
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "noteSubtasks" : false
+        }
+      },
+      "input" : "{\"editor\": {\"noteSubtasks\": true}}",
+      "name" : "already set false",
+      "noteSubtasks" : false
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "noteSubtasks" : true
+        }
+      },
+      "input" : "{\"editor\": {\"noteSubtasks\": \"yes\"}}",
+      "name" : "wrong type replaced true",
+      "noteSubtasks" : true
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "noteSubtasks" : false
+        }
+      },
+      "input" : "{\"editor\": {\"noteSubtasks\": \"yes\"}}",
+      "name" : "wrong type replaced false",
+      "noteSubtasks" : false
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "noteSubtasks" : true
+        }
+      },
+      "input" : "{\"editor\": 3}",
+      "name" : "editor of the wrong type true",
+      "noteSubtasks" : true
+    },
+    {
+      "expected" : {
+        "editor" : {
+          "noteSubtasks" : false
+        }
+      },
+      "input" : "{\"editor\": 3}",
+      "name" : "editor of the wrong type false",
+      "noteSubtasks" : false
     }
   ],
   "writeTaskLinkBoxes" : [

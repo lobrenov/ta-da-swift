@@ -5,7 +5,7 @@ import MarkdownEngineSyntax
 /// the text it was in.
 public enum SubtaskExtraction {
     public struct Extract: Equatable, Sendable {
-        /// The line's text after its box, trimmed.
+        /// The line's text after its box, trimmed, without its due date and parent.
         public let title: String
         /// From the box: `/` Doing, `x` Done, `-` Cancelled, any other open box Not Started.
         public let status: Status
@@ -13,12 +13,18 @@ public enum SubtaskExtraction {
         public let body: String
         /// The UTF-16 range of the subtask line and the lines under it, line endings included, which the edit deletes.
         public let range: NSRange
+        /// The line's `>YYYY-MM-DD`.
+        public let due: LocalDate?
+        /// The target title of the line's `@[[…]]`: a project or area for the host to resolve.
+        public let parent: String?
 
-        public init(title: String, status: Status, body: String, range: NSRange) {
+        public init(title: String, status: Status, body: String, range: NSRange, due: LocalDate? = nil, parent: String? = nil) {
             self.title = title
             self.status = status
             self.body = body
             self.range = range
+            self.due = due
+            self.parent = parent
         }
     }
 
@@ -34,7 +40,9 @@ public enum SubtaskExtraction {
               let markerEnd = CheckboxSyntax.markerEnd(in: bytes, at: start),
               let box = CheckboxSyntax.box(in: bytes, after: markerEnd),
               let state = Checkbox.State(marker: box.marker), state != .icon else { return nil }
-        let title = String(decoding: bytes[(box.offset + 2)...], as: UTF8.self).trimmingCharacters(in: .whitespaces)
+        let text = String(decoding: bytes[(box.offset + 2)...], as: UTF8.self).trimmingCharacters(in: .whitespaces)
+        let attributes = InlineAttributes.parse(text)
+        let title = attributes.stripped(from: text)
         guard !title.isEmpty else { return nil }
 
         var end = NSMaxRange(line), children: [String] = [], location = end
@@ -61,7 +69,8 @@ public enum SubtaskExtraction {
         default: box.marker == "/" ? .doing : .notStarted
         }
         return Extract(title: title, status: status, body: body,
-                       range: NSRange(location: line.location, length: end - line.location))
+                       range: NSRange(location: line.location, length: end - line.location),
+                       due: attributes.due?.date, parent: attributes.parent?.title)
     }
 
     /// Every subtask in `text` extracted, first to last, each with the lines indented under it (so a subtask under
@@ -106,9 +115,9 @@ public enum SubtaskExtraction {
         return inCode
     }
 
-    /// The new task's text: a task filed under `project` or else `area`, with the extract's status and its body.
+    /// The new task's text: a task filed under `project` or else `area`, with the extract's status, due date and body.
     public static func taskText(_ extract: Extract, project: String? = nil, area: String? = nil, today: LocalDate) -> String {
-        let text = Completion.setStatus(extract.status, in: NewFile.task(project: project, area: area, today: today), today: today)
+        let text = Completion.setStatus(extract.status, in: NewFile.task(project: project, area: area, dueDate: extract.due, today: today), today: today)
         return extract.body.isEmpty ? text : text + extract.body + "\n"
     }
 }

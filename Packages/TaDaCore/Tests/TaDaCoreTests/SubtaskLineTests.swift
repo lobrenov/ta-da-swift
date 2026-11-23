@@ -131,3 +131,48 @@ private func plan(_ text: String, selection: NSRange? = nil) -> (result: String,
     #expect(plan("- [?] A", selection: NSRange(location: 0, length: 0)) == nil)
     #expect(plan("- [ ] A", selection: NSRange(location: 2, length: 3))?.result == "- [x] A", "within one line")
 }
+
+// MARK: Attributes
+
+private let nextWeek = LocalDate("2026-10-09")
+
+@Test func aDueDateIsAddedReplacedAndRemoved() {
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [ ] Call Sam") == "- [ ] Call Sam >2026-10-09")
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [ ] Call Sam  ") == "- [ ] Call Sam >2026-10-09  ")
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [ ] ") == "- [ ] >2026-10-09")
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [ ] Call >2026-10-01 Sam") == "- [ ] Call >2026-10-09 Sam")
+    #expect(SubtaskLine.settingDue(nil, inLine: "- [ ] Call >2026-10-01 Sam") == "- [ ] Call Sam")
+    #expect(SubtaskLine.settingDue(nil, inLine: "- [ ] >2026-10-01 Call Sam") == "- [ ] Call Sam")
+    #expect(SubtaskLine.settingDue(nil, inLine: "- [ ] Call Sam >2026-10-01") == "- [ ] Call Sam")
+    #expect(SubtaskLine.settingDue(nil, inLine: "- [ ] Call Sam") == "- [ ] Call Sam")
+}
+
+@Test func onlyTheFirstDueDateIsReplaced() {
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "  1. [/] a >2026-10-01 b >2026-10-02") == "  1. [/] a >2026-10-09 b >2026-10-02")
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [ ] `>2026-10-01` b") == "- [ ] `>2026-10-01` b >2026-10-09")
+}
+
+@Test func aParentIsAddedReplacedAndRemoved() {
+    #expect(SubtaskLine.settingParent("Ta Da MVP", inLine: "- [x] Call Sam >2026-10-09") == "- [x] Call Sam >2026-10-09 @[[Ta Da MVP]]")
+    #expect(SubtaskLine.settingParent("B", inLine: "- [ ] Call @[[A|alias]] Sam") == "- [ ] Call @[[B]] Sam")
+    #expect(SubtaskLine.settingParent(nil, inLine: "- [ ] Call Sam @[[A]] >2026-10-09") == "- [ ] Call Sam >2026-10-09")
+    #expect(SubtaskLine.settingParent("a]b", inLine: "- [ ] Call") == nil)
+    #expect(SubtaskLine.settingParent("", inLine: "- [ ] Call") == nil)
+}
+
+@Test func attributesAreOnlyWrittenToSubtaskLines() {
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "Call Sam") == nil)
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- Call Sam") == nil)
+    #expect(SubtaskLine.settingDue(nextWeek, inLine: "- [!] Icon") == nil)
+}
+
+@Test func attributeWritesSpliceOneLineAndKeepLineEndings() {
+    let lf = "Intro\n- [ ] a\n- [ ] b >2026-10-01\nEnd"
+    #expect(SubtaskLine.setDue(nextWeek, in: lf, line: 1) == "Intro\n- [ ] a >2026-10-09\n- [ ] b >2026-10-01\nEnd")
+    #expect(SubtaskLine.setDue(nil, in: lf, line: 2) == "Intro\n- [ ] a\n- [ ] b\nEnd")
+    let crlf = lf.replacingOccurrences(of: "\n", with: "\r\n")
+    #expect(SubtaskLine.setDue(nextWeek, in: crlf, line: 1) == "Intro\r\n- [ ] a >2026-10-09\r\n- [ ] b >2026-10-01\r\nEnd")
+    #expect(SubtaskLine.setParent("P", in: crlf, line: 2) == "Intro\r\n- [ ] a\r\n- [ ] b >2026-10-01 @[[P]]\r\nEnd")
+    #expect(SubtaskLine.setDue(nextWeek, in: "- [ ] last", line: 0) == "- [ ] last >2026-10-09")
+    #expect(SubtaskLine.setDue(nextWeek, in: lf, line: 0) == nil && SubtaskLine.setDue(nextWeek, in: lf, line: 9) == nil)
+}

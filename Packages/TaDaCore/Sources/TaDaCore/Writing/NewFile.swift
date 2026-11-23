@@ -1,7 +1,8 @@
 /// The text of a file Ta Da creates. The title isn't written: it's the filename. Tags go in `tags:` as a flow list.
 public enum NewFile {
-    /// A task names one parent: its project, or else its area.
-    public static func task(project: String? = nil, area: String? = nil, tags: [Tag] = [], today: LocalDate) -> String {
+    /// A task names one parent: its project, or else its area. `dueDate` is written after `createdDate`.
+    public static func task(project: String? = nil, area: String? = nil, tags: [Tag] = [], dueDate: LocalDate? = nil,
+                            today: LocalDate) -> String {
         var keys = ["type: task", "status: Not Started"]
         if let project {
             keys.append("project: \(FrontmatterEditor.quoted("[[\(project)]]"))")
@@ -9,6 +10,7 @@ public enum NewFile {
             keys.append("area: \(FrontmatterEditor.quoted("[[\(area)]]"))")
         }
         keys.append("createdDate: \(today)")
+        if let dueDate { keys.append("dueDate: \(dueDate)") }
         return block(keys, tags: tags)
     }
 

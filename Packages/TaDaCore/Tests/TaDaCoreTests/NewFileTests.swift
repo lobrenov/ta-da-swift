@@ -65,3 +65,11 @@ private let today = LocalDate("2026-10-02")!
     let note = try #require(Item(parsing: text, path: "Meetings/Untitled.md"))
     #expect(note.properties.kind == .note && note.properties.createdDate == today && note.warnings.isEmpty)
 }
+
+@Test func newTaskWithADueDateParsesBack() throws {
+    let text = NewFile.task(project: "Ta Da MVP", tags: [Tag("errands")!], dueDate: LocalDate("2026-10-09"), today: today)
+    #expect(text == "---\ntype: task\nstatus: Not Started\nproject: \"[[Ta Da MVP]]\"\ncreatedDate: 2026-10-02\ndueDate: 2026-10-09\ntags: [errands]\n---\n")
+    let item = try #require(Item(parsing: text, path: "t.md"))
+    #expect(item.properties.dueDate == LocalDate("2026-10-09") && item.warnings.isEmpty)
+    #expect(NewFile.task(dueDate: nil, today: today) == NewFile.task(today: today))
+}

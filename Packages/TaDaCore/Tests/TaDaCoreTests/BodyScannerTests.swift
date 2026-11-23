@@ -240,3 +240,48 @@ private func markers(_ scan: BodyScan) -> String { String(scan.checkboxes.map(\.
 @Test func scannerHeadingTextIsPlainText() {
     #expect(BodyScanner.scan("## **Bold** and `code` with [[Target|Alias]]\n# [[Plain]]").headings.map(\.text) == ["Bold and code with Alias", "Plain"])
 }
+
+@Test func scannerReadsEachCheckboxsTextAndAttributes() {
+    let body = "- [ ] Call Sam >2026-10-09 @[[Ta Da MVP|MVP]]\n- [x] Plain\n- [ ] Later >2026-10-10 >2026-10-11\n"
+    let boxes = BodyScanner.scan(body).checkboxes
+    #expect(boxes.map(\.text) == ["Call Sam >2026-10-09 @[[Ta Da MVP|MVP]]", "Plain", "Later >2026-10-10 >2026-10-11"])
+    #expect(boxes.map(\.due) == [LocalDate("2026-10-09"), nil, LocalDate("2026-10-10")])
+    #expect(boxes.map(\.parent) == ["Ta Da MVP", nil, nil])
+    #expect(boxes[0].title == "Call Sam")
+}
+
+@Test func attributesInCodeAndAtTheStartOfALineAreText() {
+    let body = "- [ ] `>2026-10-09` code\n- [ ] a>2026-10-09\n>2026-10-09 a quote\n```\n- [ ] x >2026-10-09\n```\n"
+    let boxes = BodyScanner.scan(body).checkboxes
+    #expect(boxes.map(\.due) == [nil, nil])
+}
+
+@Test func scannerMarksNestedAndQuotedCheckboxes() {
+    let body = """
+    - [ ] Top
+      - [ ] Child
+        - [ ] Grandchild
+    \t- [ ] Tab child
+    - Plain parent
+      - [ ] Under a bullet
+
+    - [ ] Next top
+    > - [ ] Quoted
+    > [!note]
+    > - [ ] In callout
+
+    1. [ ] Numbered
+       1. [ ] Numbered child
+    """
+    let boxes = BodyScanner.scan(body).checkboxes
+    #expect(boxes.map(\.isNested) == [false, true, true, true, false, false, false, false, false, true])
+    #expect(boxes.map(\.isQuoted) == [false, false, false, false, false, false, true, true, false, false])
+}
+
+@Test func nestingSurvivesCRLFAndAFrontmatterOffset() {
+    let body = "- [ ] Top\r\n  - [ ] Child\r\n- [ ] Next\r\n"
+    let boxes = BodyScanner.scan(body, firstLineIndex: 4).checkboxes
+    #expect(boxes.map(\.isNested) == [false, true, false])
+    #expect(boxes.map(\.lineIndex) == [4, 5, 6])
+    #expect(boxes[0].text == "Top")
+}

@@ -9,15 +9,27 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 4,
                 "marker" : "/",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Sketch the tab bar options",
+                "title" : "Sketch the tab bar options"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 5,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Send the Starfall rules draft",
+                "title" : "Send the Starfall rules draft"
               }
             ],
             "completedDate" : null,
@@ -62,21 +74,39 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 6,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Call the bank about the card",
+                "title" : "Call the bank about the card"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 7,
                 "marker" : "/",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Draft the Starfall rules summary",
+                "title" : "Draft the Starfall rules summary"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 8,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Book the Kombi’s roadworthy",
+                "title" : "Book the Kombi’s roadworthy"
               }
             ],
             "completedDate" : null,
@@ -121,21 +151,39 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 4,
                 "marker" : "/",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Ship the Today redesign",
+                "title" : "Ship the Today redesign"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 5,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Book Melbourne",
+                "title" : "Book Melbourne"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 6,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Run the Starfall playtest",
+                "title" : "Run the Starfall playtest"
               }
             ],
             "completedDate" : null,
@@ -553,27 +601,51 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 14,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Scope the modules",
+                "title" : "Scope the modules"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 15,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Assign owners",
+                "title" : "Assign owners"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 16,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Entry and exit criteria",
+                "title" : "Entry and exit criteria"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 17,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Review with the team",
+                "title" : "Review with the team"
               }
             ],
             "completedDate" : null,
@@ -723,27 +795,51 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 15,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Pin the engine version",
+                "title" : "Pin the engine version"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 16,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Hide syntax off the cursor line",
+                "title" : "Hide syntax off the cursor line"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 17,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Render task checkboxes",
+                "title" : "Render task checkboxes"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 18,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Round-trip test against swift-markdown",
+                "title" : "Round-trip test against swift-markdown"
               }
             ],
             "completedDate" : null,
@@ -890,33 +986,63 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 14,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Spike NSFileCoordinator",
+                "title" : "Spike NSFileCoordinator"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 15,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Watch for remote changes",
+                "title" : "Watch for remote changes"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 16,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Resolve version conflicts",
+                "title" : "Resolve version conflicts"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 17,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Handle offline edits",
+                "title" : "Handle offline edits"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 18,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Test with 1,000 files",
+                "title" : "Test with 1,000 files"
               }
             ],
             "completedDate" : null,
@@ -972,15 +1098,27 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 13,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Check the bank transfer",
+                "title" : "Check the bank transfer"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 14,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Send the remaining amount",
+                "title" : "Send the remaining amount"
               }
             ],
             "completedDate" : null,
@@ -1215,21 +1353,39 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 15,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Collect the new copy",
+                "title" : "Collect the new copy"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 16,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Swap the hero image",
+                "title" : "Swap the hero image"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 17,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Publish",
+                "title" : "Publish"
               }
             ],
             "completedDate" : null,
@@ -1285,33 +1441,63 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 17,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Audit the global file",
+                "title" : "Audit the global file"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 18,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Trim the Ta Da repo file",
+                "title" : "Trim the Ta Da repo file"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 19,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Add Swift test conventions",
+                "title" : "Add Swift test conventions"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 20,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Remove stale Obsidian vault paths",
+                "title" : "Remove stale Obsidian vault paths"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 21,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Commit and push",
+                "title" : "Commit and push"
               }
             ],
             "completedDate" : null,
@@ -1360,9 +1546,15 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 2,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "This is not a subtask of anything",
+                "title" : "This is not a subtask of anything"
               }
             ],
             "completedDate" : null,
@@ -1935,15 +2127,27 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 4,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Mow the lawn",
+                "title" : "Mow the lawn"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 5,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Rake leaves",
+                "title" : "Rake leaves"
               }
             ],
             "completedDate" : null,
@@ -2176,15 +2380,27 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 10,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Order compost",
+                "title" : "Order compost"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 11,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Clear the shed",
+                "title" : "Clear the shed"
               }
             ],
             "completedDate" : null,
@@ -2412,9 +2628,15 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 6,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "still a box",
+                "title" : "still a box"
               }
             ],
             "completedDate" : null,
@@ -2467,51 +2689,99 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 16,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Tomatoes #garden",
+                "title" : "Tomatoes #garden"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 17,
                 "marker" : "/",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Basil",
+                "title" : "Basil"
               },
               {
                 "column" : 5,
+                "due" : null,
+                "isNested" : true,
+                "isQuoted" : false,
                 "lineIndex" : 18,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Check the label",
+                "title" : "Check the label"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 19,
                 "marker" : ">",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Carrots",
+                "title" : "Carrots"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 20,
                 "marker" : "<",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "Peas",
+                "title" : "Peas"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 21,
                 "marker" : "X",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Lettuce",
+                "title" : "Lettuce"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 22,
                 "marker" : "-",
-                "state" : "cancelled"
+                "parent" : null,
+                "state" : "cancelled",
+                "text" : "Radishes",
+                "title" : "Radishes"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 23,
                 "marker" : "?",
-                "state" : "icon"
+                "parent" : null,
+                "state" : "icon",
+                "text" : "Ask the neighbour",
+                "title" : "Ask the neighbour"
               }
             ],
             "completedDate" : null,
@@ -3173,15 +3443,27 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 8,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Indoor",
+                "title" : "Indoor"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 9,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "Balcony",
+                "title" : "Balcony"
               }
             ],
             "completedDate" : "2026-10-02",
@@ -3230,21 +3512,39 @@
             "checkboxes" : [
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 7,
                 "marker" : " ",
-                "state" : "open"
+                "parent" : null,
+                "state" : "open",
+                "text" : "one",
+                "title" : "one"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 8,
                 "marker" : "x",
-                "state" : "done"
+                "parent" : null,
+                "state" : "done",
+                "text" : "two",
+                "title" : "two"
               },
               {
                 "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
                 "lineIndex" : 9,
                 "marker" : "-",
-                "state" : "cancelled"
+                "parent" : null,
+                "state" : "cancelled",
+                "text" : "three",
+                "title" : "three"
               }
             ],
             "completedDate" : null,
@@ -3369,6 +3669,1006 @@
         }
       ],
       "name" : "HomeVault"
+    },
+    {
+      "files" : [
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 4,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Loose",
+                "title" : "Loose"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-09",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 5,
+                "marker" : "/",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Doing >2026-10-09",
+                "title" : "Doing"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-09",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 6,
+                "marker" : "x",
+                "parent" : null,
+                "state" : "done",
+                "text" : "Done >2026-10-09",
+                "title" : "Done"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-09",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 7,
+                "marker" : "-",
+                "parent" : null,
+                "state" : "cancelled",
+                "text" : "Cancelled >2026-10-09",
+                "title" : "Cancelled"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-09",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 8,
+                "marker" : "?",
+                "parent" : null,
+                "state" : "icon",
+                "text" : "Icon >2026-10-09",
+                "title" : "Icon"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-09-30",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 9,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Overdue >2026-09-30",
+                "title" : "Overdue"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-03",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 10,
+                "marker" : " ",
+                "parent" : "Ta Da MVP",
+                "state" : "open",
+                "text" : "Both >2026-10-03 @[[Ta Da MVP]]",
+                "title" : "Both"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 11,
+                "marker" : " ",
+                "parent" : "Nowhere",
+                "state" : "open",
+                "text" : "Unresolved @[[Nowhere]]",
+                "title" : "Unresolved"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 12,
+                "marker" : " ",
+                "parent" : "Nowhere",
+                "state" : "open",
+                "text" : "Unresolved but dated >2026-10-02 @[[Nowhere]]",
+                "title" : "Unresolved but dated"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 13,
+                "marker" : " ",
+                "parent" : "Ta Da MVP",
+                "state" : "open",
+                "text" : "Parent with nest @[[Ta Da MVP]]",
+                "title" : "Parent with nest"
+              },
+              {
+                "column" : 5,
+                "due" : "2026-10-02",
+                "isNested" : true,
+                "isQuoted" : false,
+                "lineIndex" : 14,
+                "marker" : " ",
+                "parent" : "Work",
+                "state" : "open",
+                "text" : "Child >2026-10-02 @[[Work]]",
+                "title" : "Child"
+              },
+              {
+                "column" : 5,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 16,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Under a bullet >2026-10-02",
+                "title" : "Under a bullet"
+              },
+              {
+                "column" : 5,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : true,
+                "lineIndex" : 17,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Quoted >2026-10-02",
+                "title" : "Quoted"
+              },
+              {
+                "column" : 5,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : true,
+                "lineIndex" : 19,
+                "marker" : " ",
+                "parent" : "Work",
+                "state" : "open",
+                "text" : "Callout @[[Work]]",
+                "title" : "Callout"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-04",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 23,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Two dates >2026-10-04 >2026-10-02",
+                "title" : "Two dates >2026-10-02"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 24,
+                "marker" : " ",
+                "parent" : "Work",
+                "state" : "open",
+                "text" : "Two parents @[[Work]] @[[Ta Da MVP]]",
+                "title" : "Two parents @[[Ta Da MVP]]"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-20",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : true,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Ta Da MVP"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Nowhere"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Nowhere"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Ta Da MVP"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Ta Da MVP"
+              }
+            ],
+            "path" : "Meetings/Standup.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 1,
+              "total" : 14
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Standup",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Meetings/Standup.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 0,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "`>2026-10-02` in code",
+                "title" : "`>2026-10-02` in code"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 1,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "a>2026-10-02 glued",
+                "title" : "a>2026-10-02 glued"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 2,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "mail@[[Work]] glued",
+                "title" : "mail@[[Work]] glued"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 3,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : ">2026-10-02 at the start",
+                "title" : "at the start"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 4,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Ends with a date >2026-10-02.",
+                "title" : "Ends with a date."
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 5,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Bad date >2026-02-30",
+                "title" : "Bad date >2026-02-30"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Short date >2026-10-2",
+                "title" : "Short date >2026-10-2"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 7,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Longer >2026-10-021",
+                "title" : "Longer >2026-10-021"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 8,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "At sign @ [[Work]] apart",
+                "title" : "At sign @ [[Work]] apart"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 9,
+                "marker" : " ",
+                "parent" : "Ta Da MVP",
+                "state" : "open",
+                "text" : "Alias @[[Ta Da MVP|the MVP]]",
+                "title" : "Alias"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 10,
+                "marker" : " ",
+                "parent" : "Work",
+                "state" : "open",
+                "text" : "Heading @[[Work#Goals]]",
+                "title" : "Heading"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 11,
+                "marker" : " ",
+                "parent" : "Ta Da MVP",
+                "state" : "open",
+                "text" : "Folder @[[Ta Da/projects/Ta Da MVP.md]]",
+                "title" : "Folder"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 12,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Link text [[Work >2026-10-02]] and [x >2026-10-03](https://a.b/ >2026-10-04) end",
+                "title" : "Link text [[Work >2026-10-02]] and [x >2026-10-03](https://a.b/ >2026-10-04) end"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 13,
+                "marker" : " ",
+                "parent" : "ta da mvp",
+                "state" : "open",
+                "text" : "Case @[[ta da mvp]]",
+                "title" : "Case"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 14,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Tabbed\t>2026-10-02\tend",
+                "title" : "Tabbed\tend"
+              },
+              {
+                "column" : 4,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 15,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Numbered >2026-10-02",
+                "title" : "Numbered"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : null,
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work"
+              },
+              {
+                "alias" : "the MVP",
+                "heading" : null,
+                "target" : "Ta Da MVP"
+              },
+              {
+                "alias" : null,
+                "heading" : "Goals",
+                "target" : "Work"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Ta Da/projects/Ta Da MVP.md"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work >2026-10-02"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "ta da mvp"
+              }
+            ],
+            "path" : "Notes/Syntax.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 16
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Syntax",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Notes/Syntax.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 4,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Windows >2026-10-02",
+                "title" : "Windows"
+              },
+              {
+                "column" : 5,
+                "due" : null,
+                "isNested" : true,
+                "isQuoted" : false,
+                "lineIndex" : 5,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Nested",
+                "title" : "Nested"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Windows loose",
+                "title" : "Windows loose"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 7,
+                "marker" : " ",
+                "parent" : "Work",
+                "state" : "open",
+                "text" : "Windows parent @[[Work]]",
+                "title" : "Windows parent"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-20",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work"
+              }
+            ],
+            "path" : "Notes/Windows.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 4
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Windows",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Notes/Windows.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 4,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Plain daily line",
+                "title" : "Plain daily line"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-02",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 5,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Call Sam >2026-10-02",
+                "title" : "Call Sam"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-03",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "parent" : "Ta Da MVP",
+                "state" : "open",
+                "text" : "Tomorrow >2026-10-03 @[[Ta Da MVP]]",
+                "title" : "Tomorrow"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-10-02",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : true,
+            "kind" : "note",
+            "links" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Ta Da MVP"
+              }
+            ],
+            "path" : "Periodic Notes/Daily Notes/2026-10-02.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 3
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "2026-10-02",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Periodic Notes/Daily Notes/2026-10-02.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "area",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/areas/Work.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Not Started",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 0
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Work",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/areas/Work.md"
+        },
+        {
+          "item" : {
+            "area" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Work"
+            },
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "due" : "2026-10-09",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Own dated >2026-10-09",
+                "title" : "Own dated"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 7,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Own plain",
+                "title" : "Own plain"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 8,
+                "marker" : " ",
+                "parent" : "Ta Da MVP",
+                "state" : "open",
+                "text" : "Own to self @[[Ta Da MVP]]",
+                "title" : "Own to self"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-09",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 9,
+                "marker" : " ",
+                "parent" : "Ta Da MVP",
+                "state" : "open",
+                "text" : "Own to self and dated >2026-10-09 @[[Ta Da MVP]]",
+                "title" : "Own to self and dated"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-01",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "project",
+            "links" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Ta Da MVP"
+              },
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Ta Da MVP"
+              }
+            ],
+            "path" : "Ta Da/projects/Ta Da MVP.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 4
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Ta Da MVP",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/projects/Ta Da MVP.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Plain subtask",
+                "title" : "Plain subtask"
+              },
+              {
+                "column" : 3,
+                "due" : null,
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 7,
+                "marker" : " ",
+                "parent" : "Work",
+                "state" : "open",
+                "text" : "Filed elsewhere @[[Work]]",
+                "title" : "Filed elsewhere"
+              },
+              {
+                "column" : 3,
+                "due" : "2026-10-03",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 8,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Dated here >2026-10-03",
+                "title" : "Dated here"
+              }
+            ],
+            "completedDate" : null,
+            "createdDate" : "2026-09-02",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+              {
+                "alias" : null,
+                "heading" : null,
+                "target" : "Work"
+              }
+            ],
+            "path" : "Ta Da/tasks/Draft.md",
+            "project" : {
+              "alias" : null,
+              "heading" : null,
+              "target" : "Ta Da MVP"
+            },
+            "repeat" : null,
+            "status" : "Doing",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 3
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Draft",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Draft.md"
+        },
+        {
+          "item" : {
+            "area" : null,
+            "checkboxes" : [
+              {
+                "column" : 3,
+                "due" : "2026-10-09",
+                "isNested" : false,
+                "isQuoted" : false,
+                "lineIndex" : 6,
+                "marker" : " ",
+                "parent" : null,
+                "state" : "open",
+                "text" : "Stale >2026-10-09",
+                "title" : "Stale"
+              }
+            ],
+            "completedDate" : "2026-09-30",
+            "createdDate" : "2026-09-02",
+            "deadline" : null,
+            "dueDate" : null,
+            "embeds" : [
+
+            ],
+            "hasNote" : false,
+            "isLogged" : false,
+            "isNotePath" : false,
+            "kind" : "task",
+            "links" : [
+
+            ],
+            "path" : "Ta Da/tasks/Finished.md",
+            "project" : null,
+            "repeat" : null,
+            "status" : "Done",
+            "subtasks" : {
+              "done" : 0,
+              "total" : 1
+            },
+            "summary" : null,
+            "tags" : [
+
+            ],
+            "tagUses" : [
+
+            ],
+            "title" : "Finished",
+            "warnings" : [
+
+            ]
+          },
+          "path" : "Ta Da/tasks/Finished.md"
+        }
+      ],
+      "name" : "SubtaskVault"
     }
   ]
 }

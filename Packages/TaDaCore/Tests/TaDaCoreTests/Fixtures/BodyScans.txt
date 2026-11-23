@@ -285,6 +285,41 @@ checkboxes: [x]10:3 [/]11:3 [-]12:3 [ ]13:3
 
 ## Conformance/RecurrenceVault/Ta Da/tasks/Yearly.md
 
+## Conformance/SubtaskVault/Meetings/Standup.md
+checkboxes: [ ]4:3 [/]5:3 [x]6:3 [-]7:3 [?]8:3 [ ]9:3 [ ]10:3 [ ]11:3 [ ]12:3 [ ]13:3 [ ]14:5 [ ]16:5 [ ]17:5 [ ]19:5 [ ]23:3 [ ]24:3
+links: Ta Da MVP, Nowhere, Nowhere, Ta Da MVP, Work, Work, Work, Ta Da MVP
+linkTargets: 162+9 194+7 246+7 282+9 323+4 436+4 535+4 545+9
+
+## Conformance/SubtaskVault/Notes/Syntax.md
+checkboxes: [ ]0:3 [ ]1:3 [ ]2:3 [ ]3:3 [ ]4:3 [ ]5:3 [ ]6:3 [ ]7:3 [ ]8:3 [ ]9:3 [ ]10:3 [ ]11:3 [ ]12:3 [ ]13:3 [ ]14:3 [ ]15:4
+links: Work, Work, Ta Da MVP|the MVP, Work#Goals, Ta Da/projects/Ta Da MVP.md, Work >2026-10-02, ta da mvp
+linkTargets: 66+4 245+4 273+9 310+4 339+27 387+16 470+9
+
+## Conformance/SubtaskVault/Notes/Windows.md
+checkboxes: [ ]4:3 [ ]5:5 [ ]6:3 [ ]7:3
+links: Work
+linkTargets: 88+4
+
+## Conformance/SubtaskVault/Periodic Notes/Daily Notes/2026-10-02.md
+checkboxes: [ ]4:3 [ ]5:3 [ ]6:3
+links: Ta Da MVP
+linkTargets: 80+9
+
+## Conformance/SubtaskVault/Ta Da/areas/Work.md
+
+## Conformance/SubtaskVault/Ta Da/projects/Ta Da MVP.md
+checkboxes: [ ]6:3 [ ]7:3 [ ]8:3 [ ]9:3
+links: Ta Da MVP, Ta Da MVP
+linkTargets: 65+9 120+9
+
+## Conformance/SubtaskVault/Ta Da/tasks/Draft.md
+checkboxes: [ ]6:3 [ ]7:3 [ ]8:3
+links: Work
+linkTargets: 45+4
+
+## Conformance/SubtaskVault/Ta Da/tasks/Finished.md
+checkboxes: [ ]6:3
+
 ## DesignVault/Periodic Notes/Daily Notes/2026-10-01.md
 summary: Two tab bar options sketched; Other stays as the fifth tab.
 checkboxes: [/]4:3 [x]5:3

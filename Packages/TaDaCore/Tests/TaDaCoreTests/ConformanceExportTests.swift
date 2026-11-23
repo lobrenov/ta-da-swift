@@ -34,7 +34,8 @@ private func loadVault(_ name: String, at folder: URL) throws -> LoadedVault {
 
 private func vaults() throws -> [LoadedVault] {
     [try loadVault("DesignVault", at: sampleVault),
-     try loadVault("HomeVault", at: conformanceFolder.appending(path: "HomeVault"))]
+     try loadVault("HomeVault", at: conformanceFolder.appending(path: "HomeVault")),
+     try loadVault("SubtaskVault", at: conformanceFolder.appending(path: "SubtaskVault"))]
 }
 
 private func write(_ object: Any, to name: String) throws {
@@ -49,12 +50,15 @@ private func json(_ link: WikiLink) -> [String: Any] {
 }
 
 private func json(_ box: Checkbox) -> [String: Any] {
-    ["marker": String(box.marker), "lineIndex": box.lineIndex, "column": box.column, "state": "\(box.state)"]
+    ["marker": String(box.marker), "lineIndex": box.lineIndex, "column": box.column, "state": "\(box.state)",
+     "text": box.text, "title": box.title, "due": orNull(box.due?.description), "parent": orNull(box.parent),
+     "isNested": box.isNested, "isQuoted": box.isQuoted]
 }
 
 private func json(_ extract: SubtaskExtraction.Extract) -> [String: Any] {
     ["title": extract.title, "status": extract.status.rawValue, "body": extract.body,
-     "range": [extract.range.location, extract.range.length]]
+     "range": [extract.range.location, extract.range.length],
+     "due": orNull(extract.due?.description), "parent": orNull(extract.parent)]
 }
 
 private func json(_ warning: Warning) -> [String: Any] {
@@ -139,6 +143,7 @@ private func progress(_ list: [ProjectProgress]) -> [[String: Any]] {
                 }),
             ]
             queries.merge(b1Queries(vault)) { _, new in new }
+            queries.merge(subtaskQueries(vault)) { _, new in new }
             return queries
         },
     ] as [String: Any], to: "queries.json")
@@ -223,6 +228,29 @@ private func b1Queries(_ vault: LoadedVault) -> [String: Any] {
         "trash": trashed.map { ["path": $0.item.path, "item": json($0.item)] as [String: Any] },
         "trashTasksOf": tasksOf, "trashContentsOf": contentsOf,
         "trashTasksOfTrashed": tasksOfTrashed, "trashContentsOfTrashed": contentsOfTrashed,
+    ]
+}
+
+private func json(_ cards: [SubtaskCard]) -> [[String: Any]] {
+    cards.map { card in
+        ["path": card.path, "lines": card.lines.map { ["lineIndex": $0.lineIndex, "text": $0.text, "due": orNull($0.due?.description),
+                                                       "parent": orNull($0.parent)] as [String: Any] }]
+    }
+}
+
+private func subtaskQueries(_ vault: LoadedVault) -> [String: Any] {
+    let index = vault.index
+    let days = ["2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-09"].map { LocalDate($0)! }
+    let ranges = [(today.isoWeek.days.first!, today.isoWeek.days.last!), (LocalDate("2026-10-03")!, LocalDate("2026-10-09")!)]
+    let parents = (index.projects + index.areas).sorted { $0.path < $1.path }
+    return [
+        "subtasksOn": Dictionary(uniqueKeysWithValues: days.map { ($0.description, json(index.noteSubtasks(on: $0, today: today)) as Any) }),
+        "subtasksFrom": ranges.map { ["from": $0.description, "through": $1.description,
+                                      "cards": json(index.noteSubtasks(from: $0, through: $1))] as [String: Any] },
+        "subtasksIn": Dictionary(uniqueKeysWithValues: parents.map { ($0.path, json(index.noteSubtasks(parent: $0)) as Any) }),
+        "subtasksLoose": json(index.looseNoteSubtasks()),
+        "dayMarksWithoutSubtasks": index.dayMarks(from: LocalDate("2026-10-01")!, through: LocalDate("2026-10-31")!, today: today,
+                                                   includingSubtasks: false).keys.sorted().map(\.description),
     ]
 }
 
@@ -450,6 +478,9 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
                 NewFile.task(project: project, area: area, tags: tags(names), today: today)
             }
         }
+        add("NewFile.task", "project Garden due \(label)", ["project": "Garden", "area": NSNull(), "tags": names, "dueDate": "2026-10-09"], input: nil) { _ in
+            NewFile.task(project: "Garden", tags: tags(names), dueDate: LocalDate("2026-10-09"), today: today)
+        }
     }
 
     // FileNaming
@@ -484,6 +515,53 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         add("DatePhrase.parse", "\(phrase.debugDescription) monthDay Monday", ["phrase": phrase, "order": "monthDay", "firstWeekday": 2], input: nil) { _ in
             DatePhrase.parse(phrase, today: today, order: .monthDay, firstWeekday: 2)?.description
         }
+    }
+
+    // InlineAttributes and SubtaskLine attributes
+    let attributeTexts = [
+        "Call Sam >2026-10-09 @[[Ta Da MVP]]", ">2026-10-09 first", "@[[Home]] first", "a>2026-10-09", "mail@[[Home]]", "a\t>2026-10-09\tb",
+        "a >2026-10-09 >2026-11-01 @[[A]] @[[B]]", "a >2026-02-30 >2026-11-01", "a >2026-13-01", "a >2026-10-9", "a >soon", "a >2026-10-091",
+        "a >2026-10-09, b", "a @ [[Home]]", "a @Home", "a @[[Home", "a @[[]]", "a @[[#heading]]", "a @[[Ta Da MVP|the MVP]]",
+        "a @[[Ta Da MVP#Goals]]", "a @[[Projects/Ta Da MVP.md]]", "a `>2026-10-09 @[[A]]` b", "a ``x ` >2026-10-09`` b",
+        "a `unclosed >2026-10-09", "a `x` >2026-10-09", "see [[Note >2026-10-09]] b", "see [[Note >2026-10-09]] >2026-10-10",
+        "see ![[pic >2026-10-09.png]]", "see [the >2026-10-09 doc](https://x.y/ >2026-10-08) b", "[ ] >2026-10-09",
+        "Café ☕️ >2026-10-09", "🥛 @[[Ünï]] >2026-10-09 x", ">2026-10-09", "",
+    ]
+    for text in attributeTexts {
+        add("InlineAttributes.parse", text.debugDescription, ["text": text], input: nil) { _ in
+            let found = InlineAttributes.parse(text)
+            return ["due": orNull(found.due?.date.description), "dueRange": orNull(found.due.map { [$0.range.location, $0.range.length] }),
+                    "parent": orNull(found.parent?.title), "parentRange": orNull(found.parent.map { [$0.range.location, $0.range.length] }),
+                    "stripped": found.stripped(from: text)] as [String: Any]
+        }
+    }
+    let attributeLines: [(label: String, text: String)] = [
+        ("plain", "- [ ] Call Sam"), ("trailing spaces", "- [ ] Call Sam  "), ("empty text", "- [ ] "),
+        ("due", "- [ ] Call >2026-10-01 Sam"), ("due at start", "- [ ] >2026-10-01 Call Sam"), ("due at end", "- [ ] Call Sam >2026-10-01"),
+        ("parent", "- [x] Call @[[A|alias]] Sam >2026-10-01"), ("both", "  1. [/] a >2026-10-01 b @[[A]] c >2026-10-02"),
+        ("code span", "- [ ] `>2026-10-01` b"), ("not a subtask", "Call Sam"), ("plain bullet", "- Call Sam"), ("icon", "- [!] Icon"),
+        ("emoji", "- [ ] 🥛 Café >2026-10-01"),
+    ]
+    for (label, text) in attributeLines {
+        for date in ["2026-10-09", nil] as [String?] {
+            add("SubtaskLine.setDue", "\(label) \(date ?? "nil")", ["line": 0, "date": orNull(date)], input: text + "\nnext\n") { text in
+                SubtaskLine.setDue(date.flatMap { LocalDate($0) }, in: text, line: 0)
+            }
+        }
+        for title in ["Ta Da MVP", "Ünï", "a]b", nil] as [String?] {
+            add("SubtaskLine.setParent", "\(label) \(title ?? "nil")", ["line": 0, "title": orNull(title)], input: text + "\nnext\n") { text in
+                SubtaskLine.setParent(title, in: text, line: 0)
+            }
+        }
+    }
+    add("SubtaskLine.setDue", "second line", ["line": 1, "date": "2026-10-09"], input: "Intro\n- [ ] a\n- [ ] b\n") {
+        SubtaskLine.setDue(LocalDate("2026-10-09"), in: $0, line: 1)
+    }
+    add("SubtaskLine.setDue", "last line without a newline", ["line": 1, "date": "2026-10-09"], input: "Intro\n- [ ] a") {
+        SubtaskLine.setDue(LocalDate("2026-10-09"), in: $0, line: 1)
+    }
+    add("SubtaskLine.setDue", "missing line", ["line": 9, "date": "2026-10-09"], input: "- [ ] a\n") {
+        SubtaskLine.setDue(LocalDate("2026-10-09"), in: $0, line: 9)
     }
 
     // SubtaskExtraction
@@ -528,6 +606,10 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         ("with frontmatter", "---\ntype: task\n---\n- [ ] A\n  b\n", 3),
         ("astral emoji", "🥛 Intro\n- [ ] Buy 🥛\n  2 🥛\n", 1),
         ("emoji title", "- [ ] Café ☕️ 日本\n  naïve\n", 0),
+        ("due and parent", "- [ ] Call Sam >2026-10-09 @[[Ta Da MVP]]\n  detail\n", 0),
+        ("attributes at the start", "- [ ] >2026-10-09 @[[Home]] Call Sam\n", 0),
+        ("only attributes", "- [ ] >2026-10-09 @[[Home]]\n", 0),
+        ("second date stays", "- [ ] Call >2026-10-09 Sam >2026-10-10\n", 0),
     ]
     for (label, text, line) in extractInputs {
         add("SubtaskExtraction.extract", label, ["lineIndex": line], input: text) { text in
@@ -542,6 +624,7 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
         ("no trailing newline", "- [ ] A\n- [ ] B"),
         ("all lines", "- [ ] A\n- [ ] B\n"),
         ("with frontmatter", "---\ntype: project\n---\n# Plan\n- [ ] A\n  note\n\n- [>] B\n"),
+        ("attributes", "- [ ] A >2026-10-09\n- [ ] B @[[Home]]\n- [ ] >2026-10-10 @[[Garden]] C\n"),
     ]
     for (label, text) in extractAllInputs {
         add("SubtaskExtraction.extractAll", label, [:], input: text) { text in
@@ -549,17 +632,21 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
             return ["text": result.text, "extracts": result.extracts.map(json)] as [String: Any]
         }
     }
-    let taskTexts: [(title: String, status: Status, body: String, project: String?, area: String?)] = [
-        ("Buy milk", .notStarted, "", nil, nil),
-        ("Ship", .done, "- [ ] Tag it\n  deeper", "Ark", nil),
-        ("Dig", .doing, "", nil, "Home"),
-        ("Dropped", .cancelled, "text", "Ark", "Home"),
-        ("Say \"hi\": now", .notStarted, "line one\n\nline two", "Say \"hi\": now", nil),
+    let taskTexts: [(title: String, status: Status, body: String, project: String?, area: String?, due: String?)] = [
+        ("Buy milk", .notStarted, "", nil, nil, nil),
+        ("Call Sam", .notStarted, "", "Ark", nil, "2026-10-09"),
+        ("Call Sam", .done, "", nil, "Home", "2026-10-09"),
+        ("Ship", .done, "- [ ] Tag it\n  deeper", "Ark", nil, nil),
+        ("Dig", .doing, "", nil, "Home", nil),
+        ("Dropped", .cancelled, "text", "Ark", "Home", nil),
+        ("Say \"hi\": now", .notStarted, "line one\n\nline two", "Say \"hi\": now", nil, nil),
     ]
-    for (title, status, body, project, area) in taskTexts {
-        let extract = SubtaskExtraction.Extract(title: title, status: status, body: body, range: NSRange(location: 0, length: 0))
-        add("SubtaskExtraction.taskText", "\(title) \(status.rawValue) project \(project ?? "nil") area \(area ?? "nil")",
-            ["title": title, "status": status.rawValue, "body": body, "project": orNull(project), "area": orNull(area)], input: nil) { _ in
+    for (title, status, body, project, area, due) in taskTexts {
+        let extract = SubtaskExtraction.Extract(title: title, status: status, body: body, range: NSRange(location: 0, length: 0),
+                                                due: due.flatMap { LocalDate($0) })
+        add("SubtaskExtraction.taskText", "\(title) \(status.rawValue) project \(project ?? "nil") area \(area ?? "nil") due \(due ?? "nil")",
+            ["title": title, "status": status.rawValue, "body": body, "project": orNull(project), "area": orNull(area),
+             "due": orNull(due)], input: nil) { _ in
             SubtaskExtraction.taskText(extract, project: project, area: area, today: today)
         }
     }
@@ -601,7 +688,7 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
         "theme": keep(["themeSet": t.themeSet, "usesSchemePerAppearance": t.usesSchemePerAppearance,
                        "lightScheme": t.lightScheme, "darkScheme": t.darkScheme]),
         "editor": keep(["autocomplete": keep(["brackets": a.brackets, "formatting": a.formatting, "wikiLinks": a.wikiLinks, "tags": a.tags]),
-                        "taskLinkBoxes": settings.taskLinkBoxes]),
+                        "taskLinkBoxes": settings.taskLinkBoxes, "noteSubtasks": settings.noteSubtasks]),
     ]
 }
 
@@ -609,14 +696,14 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
     let full = """
     {"dailyNotes": {"dailyFolder": "Journal", "dailyTemplate": "Templates/Daily.md", "weekNotes": false, "weekFolder": "", "weekTemplate": null},
      "theme": {"themeSet": "Ayu", "usesSchemePerAppearance": true, "lightScheme": "Ayu Light", "darkScheme": "Ayu Mirage"},
-     "editor": {"autocomplete": {"brackets": true, "formatting": false, "wikiLinks": true, "tags": false}, "taskLinkBoxes": false}}
+     "editor": {"autocomplete": {"brackets": true, "formatting": false, "wikiLinks": true, "tags": false}, "taskLinkBoxes": false, "noteSubtasks": true}}
     """
     let reads: [(name: String, input: String?)] = [
         ("no file", nil), ("empty file", ""), ("empty object", "{}"), ("full file", full), ("not an object", "[1, 2]"), ("not json", "nope"),
         ("wrong types", """
          {"dailyNotes": {"dailyFolder": 3, "dailyTemplate": 4, "weekNotes": 1, "weekFolder": null, "weekTemplate": ["a"]},
           "theme": {"themeSet": true, "usesSchemePerAppearance": "yes", "lightScheme": 5, "darkScheme": {}},
-          "editor": {"autocomplete": {"brackets": 0, "formatting": "no", "wikiLinks": null, "tags": []}, "taskLinkBoxes": "no"}}
+          "editor": {"autocomplete": {"brackets": 0, "formatting": "no", "wikiLinks": null, "tags": []}, "taskLinkBoxes": "no", "noteSubtasks": "yes"}}
          """),
         ("groups of the wrong type", "{\"dailyNotes\": 3, \"theme\": [], \"editor\": {\"autocomplete\": \"x\"}}"),
         ("null template", "{\"dailyNotes\": {\"dailyTemplate\": null, \"weekTemplate\": null}}"),
@@ -650,9 +737,17 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
         ("editor with autocomplete and an unknown key", "{\"editor\": {\"autocomplete\": {\"tags\": false}, \"font\": \"Mono\"}}"),
         ("editor of the wrong type", "{\"editor\": 3}"),
     ]
-    let names = reads.map(\.name) + obsidian.map(\.name) + writes.map(\.name) + boxWrites.map(\.name)
+    let subtaskWrites: [(name: String, input: String?)] = [
+        ("no file", nil),
+        ("editor with other keys", "{\"future\": 1, \"editor\": {\"taskLinkBoxes\": false, \"font\": \"Mono\", \"autocomplete\": {\"tags\": false}}}"),
+        ("already set", "{\"editor\": {\"noteSubtasks\": true}}"),
+        ("wrong type replaced", "{\"editor\": {\"noteSubtasks\": \"yes\"}}"),
+        ("editor of the wrong type", "{\"editor\": 3}"),
+    ]
+    let names = reads.map(\.name) + obsidian.map(\.name) + writes.map(\.name) + boxWrites.map(\.name) + subtaskWrites.map(\.name)
     #expect(Set(reads.map(\.name)).count == reads.count && Set(obsidian.map(\.name)).count == obsidian.count
-            && Set(writes.map(\.name)).count == writes.count && Set(boxWrites.map(\.name)).count == boxWrites.count, "duplicate case names in \(names)")
+            && Set(writes.map(\.name)).count == writes.count && Set(boxWrites.map(\.name)).count == boxWrites.count
+            && Set(subtaskWrites.map(\.name)).count == subtaskWrites.count, "duplicate case names in \(names)")
 
     try write([
         "read": reads.map { ["name": $0.name, "input": orNull($0.input), "expected": json(VaultSettings(data: $0.input.map { Data($0.utf8) }))] as [String: Any] },
@@ -675,6 +770,13 @@ private func json(_ settings: VaultSettings) -> [String: Any] {
             let result = VaultSettings.updated($0.input.map { Data($0.utf8) }, taskLinkBoxes: false)
             return ["name": $0.name, "input": orNull($0.input), "taskLinkBoxes": false,
                     "expected": try JSONSerialization.jsonObject(with: result)] as [String: Any]
+        },
+        "writeNoteSubtasks": try subtaskWrites.flatMap { write in
+            try [true, false].map { value in
+                let result = VaultSettings.updated(write.input.map { Data($0.utf8) }, noteSubtasks: value)
+                return ["name": "\(write.name) \(value)", "input": orNull(write.input), "noteSubtasks": value,
+                        "expected": try JSONSerialization.jsonObject(with: result)] as [String: Any]
+            }
         },
     ] as [String: Any], to: "settings.json")
 }
