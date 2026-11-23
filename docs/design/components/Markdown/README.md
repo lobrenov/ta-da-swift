@@ -13,6 +13,7 @@ How the Live editor draws a file's markdown. Every marker stays in the file; the
 - `td-code` — inline code: `code-text` (12.5px mono) in `strong` on `code`, a 1px `border` ring, `radius-sm`, padding 2px 6px.
 - `td-mark` — `==highlight==`: `due` at 30% (26% on dark schemes) behind `strong` text, `radius-sm`, padding 2px 4px.
 - Both repeat their corners and padding on each line they wrap onto (`box-decoration-break: clone`).
+- Task attributes, off the caret's line: `>2026-10-02` is a pill with the date as a task row words it, tinted `accent` (`deadline` once past); `@[[Title]]` is a chip with the project's ring in `accent` or the area's cube in `doing` and the title in `link`, struck through in `muted` when it resolves nothing.
 
 ## Links
 
