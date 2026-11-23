@@ -1182,8 +1182,8 @@ private struct CalloutMenu: View {
     }
 }
 
-/// Above the keyboard: `/`, subtask box, `#`, bold, italic, code, wikilink, callout and indent buttons, and hide
-/// keyboard. It's hosted outside SwiftUI's environment, so it takes the theme.
+/// Above the keyboard: undo, redo, `/`, subtask box, `#`, `>` and `@`, Aa (the formatting keyboard) and hide keyboard.
+/// It's hosted outside SwiftUI's environment, so it takes the theme.
 private struct EditorKeyboardBar: View {
     let theme: Theme
     let proxy: SlashCommandProxy
@@ -1195,17 +1195,37 @@ private struct EditorKeyboardBar: View {
     let hideKeyboard: () -> Void
     @State private var hides = 0
     @State private var onSubtask = false
+    @State private var canUndo = false
+    @State private var canRedo = false
     @State private var selectionChanges: AnyCancellable?
+    @State private var formats = FormattingState()
+    /// The formatting keyboard, while it's the text view's input view.
+    @State private var formattingKeyboard: UIHostingController<FormattingKeyboard>?
+    /// The system keyboard's height without the bar, which the formatting keyboard takes.
+    @State private var keyboardHeight: CGFloat = 291
 
     var body: some View {
         HStack(spacing: 0) {
             ScrollView(.horizontal) {
                 HStack(spacing: 2) {
+                    button("Undo", "arrow.uturn.backward") {
+                        proxy.textView?.undoManager?.undo()
+                        Task { refresh() }
+                    }
+                        .disabled(!canUndo)
+                        .opacity(canUndo ? 1 : 0.35)
+                    button("Redo", "arrow.uturn.forward") {
+                        proxy.textView?.undoManager?.redo()
+                        Task { refresh() }
+                    }
+                        .disabled(!canRedo)
+                        .opacity(canRedo ? 1 : 0.35)
+                    Divider().frame(height: 24).padding(.horizontal, 2)
                     Button { proxy.type("/") } label: {
                         Text(verbatim: "/")
                             .font(.system(size: 18, weight: .semibold, design: .monospaced))
                             .foregroundStyle(theme.color(\.accent))
-                            .frame(width: 40, height: 36)
+                            .frame(width: 34, height: 36)
                             .background(theme.tagFill(), in: .capsule)
                             .contentShape(.rect)
                     }
@@ -1216,7 +1236,7 @@ private struct EditorKeyboardBar: View {
                         Text(verbatim: "#")
                             .font(.system(size: 18, weight: .semibold, design: .monospaced))
                             .foregroundStyle(theme.color(\.fg))
-                            .frame(width: 40, height: 36)
+                            .frame(width: 34, height: 36)
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
@@ -1225,19 +1245,21 @@ private struct EditorKeyboardBar: View {
                         attributeKey(">", "Insert due date")
                         attributeKey("@", "Insert parent")
                     }
-                    button("Bold", "bold") { proxy.apply(.bold) }
-                    button("Italic", "italic") { proxy.apply(.italic) }
-                    button("Code", "chevron.left.forwardslash.chevron.right") { proxy.apply(.inlineCode) }
-                    button("Wikilink", "link") {
-                        PhoneWikiLink.perform(with: proxy, closes: closesWikiLinks)
-                    }
-                    button("Callout", "text.bubble") { insert(SlashCommand.callout.insertion()) }
-                    button("Outdent", "decrease.indent") { proxy.outdent() }
-                    button("Indent", "increase.indent") { proxy.indent() }
                 }
                 .padding(.horizontal, 6)
             }
             .scrollIndicators(.never)
+            Button(action: toggleFormattingKeyboard) {
+                Text(verbatim: formattingKeyboard == nil ? "Aa" : "ABC")
+                    .font(.system(size: formattingKeyboard == nil ? 17 : 15, weight: .semibold))
+                    .foregroundStyle(theme.color(formattingKeyboard == nil ? \.fg : \.accent))
+                    .frame(width: formattingKeyboard == nil ? 44 : 52, height: 36)
+                    .background(formattingKeyboard == nil ? .clear : theme.tagFill(), in: .capsule)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(formattingKeyboard == nil ? "Show Formatting Keyboard" : "Show Letters Keyboard")
+            .padding(.horizontal, 2)
             Divider().frame(height: 24)
             button("Hide Keyboard", "keyboard.chevron.compact.down") {
                 hides += 1
@@ -1251,20 +1273,100 @@ private struct EditorKeyboardBar: View {
         .padding(.vertical, 4)
         .sensoryFeedback(.impact(weight: .light), trigger: hides) { _, _ in haptics }
         .onAppear {
-            refreshSubtask()
-            selectionChanges = proxy.textView?.publisher(for: \.selectedTextRange).sink { _ in refreshSubtask() }
+            refresh()
+            selectionChanges = proxy.textView?.publisher(for: \.selectedTextRange).sink { _ in refresh() }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidChangeNotification)) { _ in refreshSubtask() }
-        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidBeginEditingNotification)) { _ in refreshSubtask() }
+        .onChange(of: theme) { formattingKeyboard?.rootView = formattingKeyboardView() }
+        .onChange(of: haptics) { formattingKeyboard?.rootView = formattingKeyboardView() }
+        .onChange(of: closesWikiLinks) { formattingKeyboard?.rootView = formattingKeyboardView() }
+        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidChangeNotification)) { _ in refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidBeginEditingNotification)) { _ in refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: UITextView.textDidEndEditingNotification)) { note in
+            if note.object as? UITextView === proxy.textView, formattingKeyboard != nil { toggleFormattingKeyboard() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { note in
+            guard formattingKeyboard == nil, let frame = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+                  let bar = proxy.textView?.inputAccessoryView?.bounds.height, frame.height - bar > 200 else { return }
+            keyboardHeight = frame.height - bar
+        }
     }
 
-    /// Whether the caret is on a task line after its box, where `>` and `@` open their menus (the editor's rule).
-    private func refreshSubtask() {
+    /// Whether the caret is on a task line after its box, where `>` and `@` open their menus (the editor's rule); the
+    /// formats at the caret; and whether there's an undo or redo.
+    private func refresh() {
         guard let textView = proxy.textView else { return }
         let text = textView.text as NSString
         let caret = min(textView.selectedRange.location, text.length)
-        let line = text.lineRange(for: NSRange(location: caret, length: 0))
-        onSubtask = TaskAttributeSyntax.isTaskAttributeLine(text.substring(with: NSRange(location: line.location, length: caret - line.location)))
+        var start = 0, end = 0, contentsEnd = 0
+        text.getLineStart(&start, end: &end, contentsEnd: &contentsEnd, for: NSRange(location: caret, length: 0))
+        onSubtask = TaskAttributeSyntax.isTaskAttributeLine(text.substring(with: NSRange(location: start, length: caret - start)))
+        let line = text.substring(with: NSRange(location: start, length: contentsEnd - start))
+        formats.line = LineFormat.state(of: line[...])
+        formats.inline = LineFormat.inlineFormats(in: line, at: caret - start)
+        canUndo = textView.undoManager?.canUndo ?? false
+        canRedo = textView.undoManager?.canRedo ?? false
+    }
+
+    /// Swaps the system keyboard for the formatting keyboard, at its height, or back.
+    private func toggleFormattingKeyboard() {
+        guard let textView = proxy.textView else { return }
+        if formattingKeyboard != nil {
+            formattingKeyboard = nil
+            textView.inputView = nil
+        } else {
+            let host = UIHostingController(rootView: formattingKeyboardView())
+            host.view.backgroundColor = .clear
+            host.safeAreaRegions = []
+            let input = UIInputView(frame: CGRect(x: 0, y: 0, width: 0, height: keyboardHeight), inputViewStyle: .keyboard)
+            host.view.frame = input.bounds
+            host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            input.addSubview(host.view)
+            formattingKeyboard = host
+            textView.inputView = input
+        }
+        textView.reloadInputViews()
+    }
+
+    private func formattingKeyboardView() -> FormattingKeyboard {
+        FormattingKeyboard(theme: theme, state: formats, haptics: haptics, perform: perform)
+    }
+
+    private func perform(_ action: FormattingAction) {
+        guard let textView = proxy.textView else { return }
+        let selection = textView.selectedRange
+        // Inserts go after a selection rather than over it.
+        switch action {
+        case .block, .callout, .embed: textView.selectedRange = NSRange(location: NSMaxRange(selection), length: 0)
+        default: break
+        }
+        let caret = textView.selectedRange.location
+        switch action {
+        case let .line(format):
+            let plan = LineFormat.plan(format, in: textView.text, caret: caret)
+            if let start = textView.position(from: textView.beginningOfDocument, offset: plan.range.location),
+               let end = textView.position(from: start, offset: plan.range.length),
+               let range = textView.textRange(from: start, to: end) {
+                textView.replace(range, withText: plan.text)
+                textView.selectedRange = plan.selection
+            }
+        case .subtask: PhoneSubtask.perform(in: textView)
+        case .inline(.bold): proxy.apply(.bold)
+        case .inline(.italic): proxy.apply(.italic)
+        case .inline(.strikethrough): proxy.apply(.strikethrough)
+        case .inline(.highlight): proxy.apply(.highlight)
+        case .inline(.code): proxy.apply(.inlineCode)
+        case let .block(command): insert(LineFormat.blockInsertion(command, in: textView.text, caret: caret))
+        case let .callout(type): insert(LineFormat.blockInsertion(.callout, callout: type, in: textView.text, caret: caret))
+        case .wikiLink: PhoneWikiLink.perform(with: proxy, closes: closesWikiLinks)
+        case .link:
+            let text = (textView.text as NSString).substring(with: selection)
+            insert(text.isEmpty ? SlashCommand.link.insertion()
+                   : ("[\(text)]()", NSRange(location: (text as NSString).length + 3, length: 0)))
+        case .embed: "![[".forEach { proxy.type(String($0)) }
+        case .outdent: proxy.outdent()
+        case .indent: proxy.indent()
+        }
+        refresh()
     }
 
     /// Types `key` as the keyboard does, after a space when the caret follows text.
@@ -1279,7 +1381,7 @@ private struct EditorKeyboardBar: View {
             Text(verbatim: key)
                 .font(.system(size: 18, weight: .semibold, design: .monospaced))
                 .foregroundStyle(theme.color(\.fg))
-                .frame(width: 40, height: 36)
+                .frame(width: 34, height: 36)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -1291,7 +1393,7 @@ private struct EditorKeyboardBar: View {
             Image(systemName: symbol)
                 .font(.system(size: 17))
                 .foregroundStyle(theme.color(\.fg))
-                .frame(width: 40, height: 36)
+                .frame(width: 34, height: 36)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
