@@ -1194,6 +1194,7 @@ private struct EditorKeyboardBar: View {
     let hasAttributeKeys: Bool
     let hideKeyboard: () -> Void
     @State private var hides = 0
+    @State private var toggles = 0
     @State private var onSubtask = false
     @State private var canUndo = false
     @State private var canRedo = false
@@ -1249,13 +1250,17 @@ private struct EditorKeyboardBar: View {
                 .padding(.horizontal, 6)
             }
             .scrollIndicators(.never)
-            Button(action: toggleFormattingKeyboard) {
+            Button {
+                toggles += 1
+                toggleFormattingKeyboard()
+            } label: {
                 Text(verbatim: formattingKeyboard == nil ? "Aa" : "ABC")
-                    .font(.system(size: formattingKeyboard == nil ? 17 : 15, weight: .semibold))
-                    .foregroundStyle(theme.color(formattingKeyboard == nil ? \.fg : \.accent))
-                    .frame(width: formattingKeyboard == nil ? 44 : 52, height: 36)
-                    .background(formattingKeyboard == nil ? .clear : theme.tagFill(), in: .capsule)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(theme.color(\.fg))
+                    .contentTransition(.identity)
+                    .frame(width: 34, height: 36)
                     .contentShape(.rect)
+                    .transaction { $0.animation = nil }
             }
             .buttonStyle(.plain)
             .accessibilityLabel(formattingKeyboard == nil ? "Show Formatting Keyboard" : "Show Letters Keyboard")
@@ -1272,6 +1277,7 @@ private struct EditorKeyboardBar: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .sensoryFeedback(.impact(weight: .light), trigger: hides) { _, _ in haptics }
+        .sensoryFeedback(.impact(weight: .light), trigger: toggles) { _, _ in haptics }
         .onAppear {
             refresh()
             selectionChanges = proxy.textView?.publisher(for: \.selectedTextRange).sink { _ in refresh() }
@@ -1365,6 +1371,7 @@ private struct EditorKeyboardBar: View {
         case .embed: "![[".forEach { proxy.type(String($0)) }
         case .outdent: proxy.outdent()
         case .indent: proxy.indent()
+        case .deleteBackward: textView.deleteBackward()
         }
         refresh()
     }

@@ -1,6 +1,6 @@
 // The iPhone formatting keyboard: markdown keys in place of the system keyboard, swapped in by the keyboard bar's Aa.
-// Keys with a corner mark have variants: press and hold opens them above the key, slide to one and let go; letting go
-// on the line's own variant changes nothing.
+// Keys with a corner mark have variants: press and hold grows a panel of them out of the key, slide to one and let go;
+// letting go on the line's own variant changes nothing. Delete repeats while held.
 #if os(iOS)
 import SwiftUI
 import TaDaCore
@@ -22,6 +22,7 @@ enum FormattingAction: Equatable {
     case callout(CalloutType)
     case wikiLink, link, embed
     case outdent, indent
+    case deleteBackward
 }
 
 struct FormattingKeyboard: View {
@@ -37,9 +38,10 @@ struct FormattingKeyboard: View {
     @State private var holds = 0
 
     private static let rows: [[KeyID]] = [
-        [.heading, .bold, .italic, .strikethrough, .highlight],
-        [.list, .subtask, .quote, .callout, .divider],
-        [.code, .link, .table, .outdent, .indent],
+        [.heading, .bold, .italic, .strikethrough],
+        [.list, .subtask, .quote, .callout],
+        [.highlight, .code, .link, .table],
+        [.divider, .outdent, .indent, .delete],
     ]
 
     var body: some View {
@@ -113,7 +115,7 @@ struct FormattingKeyboard: View {
         case .strikethrough: state.inline.contains(.strikethrough)
         case .highlight: state.inline.contains(.highlight)
         case .code: state.inline.contains(.code)
-        case .subtask, .callout, .divider, .link, .table, .outdent, .indent: false
+        case .subtask, .callout, .divider, .link, .table, .outdent, .indent, .delete: false
         }
     }
 
@@ -122,28 +124,38 @@ struct FormattingKeyboard: View {
         perform(id.action)
     }
 
-    /// A tap performs the key; held, its variants open and the one under the finger is performed on release.
+    /// A tap performs the key; held, its variants open and the one under the finger is performed on release. Delete
+    /// performs on touch down and repeats while held.
     private func press(_ id: KeyID) -> some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
             .onChanged { value in
                 if holdTask == nil, hold == nil {
+                    if id == .delete { tap(id) }
                     holdTask = Task {
-                        try? await Task.sleep(for: .milliseconds(350))
+                        try? await Task.sleep(for: .milliseconds(id == .delete ? 450 : 350))
+                        if id == .delete {
+                            while !Task.isCancelled {
+                                perform(id.action)
+                                try? await Task.sleep(for: .milliseconds(90))
+                            }
+                        }
                         guard !Task.isCancelled, !id.variants.isEmpty else { return }
                         hold = Hold(key: id, highlight: id.current(state.line) ?? 0)
                         holds += 1
                     }
                 }
                 if let current = hold, let frame = keyFrames[id] {
-                    let layout = stripLayout(count: id.variants.count, above: frame, width: keyboardWidth)
-                    let index = Int(((value.location.x - layout.minX - Self.stripPadding) / Self.cellStride).rounded(.down))
+                    let layout = panelLayout(count: id.variants.count, key: frame, width: keyboardWidth)
+                    let index = Int(((value.location.x - layout.minX - Self.panelPadding) / Self.cellStride).rounded(.down))
                     hold = Hold(key: current.key, highlight: min(max(index, 0), id.variants.count - 1))
                 }
             }
             .onEnded { _ in
                 holdTask?.cancel()
                 holdTask = nil
-                if let hold {
+                if id == .delete {
+                    // Performed on touch down.
+                } else if let hold {
                     // The line's own variant keeps the line as it is.
                     if hold.highlight != id.current(state.line) {
                         taps += 1
@@ -156,64 +168,64 @@ struct FormattingKeyboard: View {
             }
     }
 
-    private var keyboardWidth: CGFloat { (keyFrames[.indent]?.maxX ?? 384) + 6 }
+    private var keyboardWidth: CGFloat { (keyFrames[.delete]?.maxX ?? 384) + 6 }
 
     // MARK: Variants
 
-    private static let cellWidth: CGFloat = 46
-    private static let cellStride: CGFloat = 48
-    private static let stripPadding: CGFloat = 6
-    private static let stripHeight: CGFloat = 50 + 12 + 26
+    private static let cellWidth: CGFloat = 52
+    private static let cellStride: CGFloat = 56
+    private static let panelPadding: CGFloat = 8
+    private static let panelHeight: CGFloat = 56 + 16
 
-    /// The strip's frame: centred over the key and kept on screen; below the key when there's no room above it.
-    private func stripLayout(count: Int, above key: CGRect, width: CGFloat) -> CGRect {
-        let stripWidth = Self.stripPadding * 2 + CGFloat(count) * Self.cellStride - 2
-        let x = min(max(key.midX - stripWidth / 2, 6), width - 6 - stripWidth)
-        let y = key.minY - 4 - Self.stripHeight >= 0 ? key.minY - 4 - Self.stripHeight : key.maxY + 4
-        return CGRect(x: x, y: y, width: stripWidth, height: Self.stripHeight)
+    /// The panel's frame: centred over the key and kept on screen, over the row above; below the key on the top row.
+    private func panelLayout(count: Int, key: CGRect, width: CGFloat) -> CGRect {
+        let panelWidth = Self.panelPadding * 2 + CGFloat(count) * Self.cellStride - (Self.cellStride - Self.cellWidth)
+        let x = min(max(key.midX - panelWidth / 2, 6), width - 6 - panelWidth)
+        let y = key.minY - 6 - Self.panelHeight >= 0 ? key.minY - 6 - Self.panelHeight : key.maxY + 6
+        return CGRect(x: x, y: y, width: panelWidth, height: Self.panelHeight)
     }
 
+    /// The panel grows out of the key in the key's fill; the variant under the finger fills in `accent`.
     private func variants(_ hold: Hold, above key: CGRect, width: CGFloat) -> some View {
         let variants = hold.key.variants
-        let layout = stripLayout(count: variants.count, above: key, width: width)
+        let layout = panelLayout(count: variants.count, key: key, width: width)
         let current = hold.key.current(state.line)
-        let highlighted = variants[hold.highlight]
-        return VStack(alignment: .leading, spacing: 0) {
+        let neck = layout.minY < key.minY
+            ? CGRect(x: key.minX, y: layout.maxY - 10, width: key.width, height: key.maxY - layout.maxY + 10)
+            : CGRect(x: key.minX, y: key.minY, width: key.width, height: layout.minY - key.minY + 10)
+        return ZStack(alignment: .topLeading) {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Self.key)
+                .frame(width: neck.width, height: neck.height)
+                .offset(x: neck.minX, y: neck.minY)
             HStack(spacing: Self.cellStride - Self.cellWidth) {
                 ForEach(Array(variants.enumerated()), id: \.offset) { index, variant in
-                    glyph(variant.glyph, size: 19)
-                        .foregroundStyle(theme.color(\.strong))
-                        .frame(width: Self.cellWidth, height: 50)
-                        .background(index == hold.highlight ? theme.color(\.surface) : .clear, in: .rect(cornerRadius: 12))
+                    let isHighlighted = index == hold.highlight
+                    glyph(variant.glyph, size: 21, onAccent: isHighlighted)
+                        .foregroundStyle(isHighlighted ? theme.color(\.bg) : Color.primary)
+                        .frame(width: Self.cellWidth, height: 56)
+                        .background(isHighlighted ? theme.color(\.accent) : .clear, in: .rect(cornerRadius: 10))
                         .overlay(alignment: .bottom) {
                             if index == current {
-                                Circle().fill(theme.color(\.accent)).frame(width: 4, height: 4).padding(.bottom, 4)
+                                Circle().fill(isHighlighted ? theme.color(\.bg) : Color.secondary)
+                                    .frame(width: 4, height: 4).padding(.bottom, 5)
                             }
                         }
                 }
             }
-            HStack(spacing: 8) {
-                Text(highlighted.label).fontWeight(.semibold).foregroundStyle(theme.color(\.strong))
-                Text(verbatim: highlighted.hint)
-                    .font(.system(size: 13, design: .monospaced))
-                    .foregroundStyle(theme.color(\.muted))
-            }
-            .font(.system(size: 15))
-            .lineLimit(1)
-            .padding(.horizontal, 8)
-            .frame(height: 26)
+            .padding(Self.panelPadding)
+            .frame(width: layout.width, height: layout.height, alignment: .leading)
+            .background(Self.key, in: .rect(cornerRadius: 16))
+            .shadow(color: .black.opacity(0.25), radius: 12, y: 6)
+            .offset(x: layout.minX, y: layout.minY)
         }
-        .padding(Self.stripPadding)
-        .frame(width: layout.width, height: layout.height, alignment: .topLeading)
-        .glassEffect(in: .rect(cornerRadius: 18))
-        .offset(x: layout.minX, y: layout.minY)
         .allowsHitTesting(false)
     }
 
     // MARK: Glyphs
 
     @ViewBuilder
-    private func glyph(_ glyph: Glyph, size: CGFloat) -> some View {
+    private func glyph(_ glyph: Glyph, size: CGFloat, onAccent: Bool = false) -> some View {
         switch glyph {
         case let .symbol(name):
             Image(systemName: name).font(.system(size: size))
@@ -222,10 +234,11 @@ struct FormattingKeyboard: View {
         case let .mono(text):
             Text(verbatim: text).font(.system(size: size * 0.7, weight: .semibold, design: .monospaced))
         case let .box(marker):
-            InlineCheckboxView(marker: marker, tint: theme.checkboxTint(marker), background: theme.bg)
+            InlineCheckboxView(marker: marker, tint: onAccent ? theme.bg : theme.checkboxTint(marker),
+                               background: onAccent ? theme.accent : theme.bg)
                 .frame(width: size, height: size)
         case let .callout(type):
-            CalloutIconView(type: type, tint: theme.calloutTint(type))
+            CalloutIconView(type: type, tint: onAccent ? theme.bg : theme.calloutTint(type))
                 .frame(width: size, height: size)
         }
     }
@@ -248,8 +261,6 @@ private enum Glyph: Equatable {
 
 private struct Variant: Identifiable {
     let label: String
-    /// Its markdown, named under the strip.
-    let hint: String
     let glyph: Glyph
     let action: FormattingAction
     var id: String { label }
@@ -258,7 +269,7 @@ private struct Variant: Identifiable {
 private enum KeyID: Hashable {
     case heading, bold, italic, strikethrough, highlight
     case list, subtask, quote, callout, divider
-    case code, link, table, outdent, indent
+    case code, link, table, outdent, indent, delete
 
     var label: String {
         switch self {
@@ -277,10 +288,11 @@ private enum KeyID: Hashable {
         case .table: "Table"
         case .outdent: "Outdent"
         case .indent: "Indent"
+        case .delete: "Delete"
         }
     }
 
-    var isStructural: Bool { self == .outdent || self == .indent }
+    var isStructural: Bool { self == .outdent || self == .indent || self == .delete }
 
     /// The subtask key shows the caret line's box.
     func glyph(_ line: LineFormat.State) -> Glyph {
@@ -300,6 +312,7 @@ private enum KeyID: Hashable {
         case .table: .symbol("tablecells")
         case .outdent: .symbol("decrease.indent")
         case .indent: .symbol("increase.indent")
+        case .delete: .symbol("delete.left")
         }
     }
 
@@ -320,6 +333,7 @@ private enum KeyID: Hashable {
         case .table: .block(.table)
         case .outdent: .outdent
         case .indent: .indent
+        case .delete: .deleteBackward
         }
     }
 
@@ -331,22 +345,22 @@ private enum KeyID: Hashable {
     var variants: [Variant] {
         switch self {
         case .heading:
-            (1...6).map { Variant(label: "Heading \($0)", hint: String(repeating: "#", count: $0), glyph: .text("H\($0)"), action: .line(.heading($0))) }
+            (1...6).map { Variant(label: "Heading \($0)", glyph: .text("H\($0)"), action: .line(.heading($0))) }
         case .list:
-            [Variant(label: "Bulleted list", hint: "-", glyph: .symbol("list.bullet"), action: .line(.bulletedList)),
-             Variant(label: "Numbered list", hint: "1.", glyph: .symbol("list.number"), action: .line(.numberedList))]
+            [Variant(label: "Bulleted list", glyph: .symbol("list.bullet"), action: .line(.bulletedList)),
+             Variant(label: "Numbered list", glyph: .symbol("list.number"), action: .line(.numberedList))]
         case .subtask:
-            Self.subtaskStates.map { Variant(label: $0.0, hint: "[\($0.1)]", glyph: .box($0.1), action: .line(.box($0.1))) }
+            Self.subtaskStates.map { Variant(label: $0.0, glyph: .box($0.1), action: .line(.box($0.1))) }
         case .callout:
-            Self.calloutTypes.map { Variant(label: $0.title, hint: "> [!\($0.rawValue)]", glyph: .callout($0), action: .callout($0)) }
+            Self.calloutTypes.map { Variant(label: $0.title, glyph: .callout($0), action: .callout($0)) }
         case .code:
-            [Variant(label: "Inline code", hint: "`", glyph: .symbol("chevron.left.forwardslash.chevron.right"), action: .inline(.code)),
-             Variant(label: "Code block", hint: "```", glyph: .symbol("terminal"), action: .block(.codeBlock))]
+            [Variant(label: "Inline code", glyph: .symbol("chevron.left.forwardslash.chevron.right"), action: .inline(.code)),
+             Variant(label: "Code block", glyph: .symbol("terminal"), action: .block(.codeBlock))]
         case .link:
-            [Variant(label: "Wikilink", hint: "[[ ]]", glyph: .mono("[[ ]]"), action: .wikiLink),
-             Variant(label: "Link", hint: "[ ]( )", glyph: .symbol("link"), action: .link),
-             Variant(label: "Embed", hint: "![[ ]]", glyph: .symbol("photo"), action: .embed)]
-        case .bold, .italic, .strikethrough, .highlight, .quote, .divider, .table, .outdent, .indent:
+            [Variant(label: "Wikilink", glyph: .mono("[[ ]]"), action: .wikiLink),
+             Variant(label: "Link", glyph: .symbol("link"), action: .link),
+             Variant(label: "Embed", glyph: .symbol("photo"), action: .embed)]
+        case .bold, .italic, .strikethrough, .highlight, .quote, .divider, .table, .outdent, .indent, .delete:
             []
         }
     }
