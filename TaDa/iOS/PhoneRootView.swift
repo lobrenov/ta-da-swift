@@ -28,6 +28,7 @@ struct PhoneRootView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        .undoToast(model)
         .tint(theme.color(\.accent))
         .sheet(item: $nav.sheet) { sheet in
             switch sheet {
@@ -65,6 +66,35 @@ struct PhoneRootView: View {
         .environment(nav)
         .phoneHaptics(nav, enabled: model.haptics)
         .onChange(of: nav.tab) { nav.endPicking() }
+        .onAppear { restorePlace() }
+        .onChange(of: nav.tab) { savePlace() }
+        .onChange(of: nav.stacks) { savePlace() }
+    }
+
+    /// The tab and its screens, kept so the folder opens there again.
+    private struct Place: Codable {
+        var tab: PhoneTab
+        var stack: [PhoneRoute]
+    }
+
+    private func savePlace() {
+        model.savedPlace = try? JSONEncoder().encode(Place(tab: nav.tab, stack: nav.stacks[nav.tab] ?? []))
+    }
+
+    /// Shows the tab and screens the folder was last left on, up to the first that's no longer there.
+    private func restorePlace() {
+        guard let data = model.savedPlace, let place = try? JSONDecoder().decode(Place.self, from: data) else { return }
+        nav.tab = place.tab
+        nav.stacks[place.tab] = Array(place.stack.prefix { route in
+            switch route {
+            case .file(let path): model.index[path] != nil
+            case .project(let path): model.exists(.project(path))
+            case .area(let path): model.exists(.area(path))
+            case .folder(let path): model.exists(.folder(path))
+            case .attachment(let path): model.attachments.contains(path)
+            case .loose, .settings, .integrations, .logbook, .attachments, .trash, .tag: true
+            }
+        })
     }
 
     /// Picks `tab`; picking the selected one again pops its screens, or takes the Agenda to today.

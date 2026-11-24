@@ -15,9 +15,9 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(task, "Ta Da/tasks/A.md", in: folder)
         try writeFile(task, "deep/a.md", in: folder)
         var index = await vault.loadIndex()
-        #expect(try vault.moveToTrash("Ta Da/tasks/A.md", index: index) == ["Ta Da/tasks/A.md"])
+        #expect(try vault.moveToTrash("Ta Da/tasks/A.md", index: index).map(\.from) == ["Ta Da/tasks/A.md"])
         index.remove("Ta Da/tasks/A.md")
-        #expect(try vault.moveToTrash("deep/a.md", index: index) == ["deep/a.md"])
+        #expect(try vault.moveToTrash("deep/a.md", index: index).map(\.from) == ["deep/a.md"])
         #expect(vault.markdownPaths().isEmpty)
         let trashed = vault.trashedItems()
         #expect(Set(trashed.map(\.id)) == [".trash/A.md", ".trash/a 2.md"])
@@ -32,7 +32,7 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(task(in: "P"), "Ta Da/tasks/One.md", in: folder)
         try writeFile(task(in: "P"), "notes/Two.md", in: folder)
         try writeFile(task, "Ta Da/tasks/Loose.md", in: folder)
-        let moved = try vault.moveToTrash("Ta Da/projects/P.md", index: await vault.loadIndex())
+        let moved = try vault.moveToTrash("Ta Da/projects/P.md", index: await vault.loadIndex()).map(\.from)
         #expect(moved == ["Ta Da/projects/P.md", "Ta Da/tasks/One.md", "notes/Two.md"])
         #expect(vault.markdownPaths() == ["Ta Da/tasks/Loose.md"])
         let trashed = vault.trashedItems()
@@ -159,7 +159,7 @@ private let today = LocalDate("2026-10-09")!
         try writeFile(task(in: "P"), "Ta Da/tasks/One.md", in: folder)
         try writeFile(filed("task", in: "Home"), "Ta Da/tasks/Filed.md", in: folder)
         try writeFile(task, "Ta Da/tasks/Loose.md", in: folder)
-        let moved = try vault.moveToTrash("Ta Da/areas/Home.md", index: await vault.loadIndex())
+        let moved = try vault.moveToTrash("Ta Da/areas/Home.md", index: await vault.loadIndex()).map(\.from)
         #expect(moved == ["Ta Da/areas/Home.md", "Ta Da/projects/P.md", "Ta Da/tasks/Filed.md", "Ta Da/tasks/One.md"])
         #expect(vault.markdownPaths() == ["Ta Da/tasks/Loose.md"])
         let trashed = vault.trashedItems()
@@ -326,5 +326,31 @@ private let today = LocalDate("2026-10-09")!
         #expect(attachments.map(\.id) == [".trash/attachments/Contract.pdf"])
         let photo = try #require(vault.trashedItems().first)
         #expect(TrashedAttachment.attachments(of: [photo], in: attachments, others: [photo], live: []).map(\.name) == ["Contract.pdf"])
+    }
+}
+
+@Test func moveBackReturnsTrashedFilesToTheirFolders() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(project, "Ta Da/projects/P.md", in: folder)
+        try writeFile(task(in: "P"), "notes/Two.md", in: folder)
+        try writeFile("A note\n", "Meetings/Ark.md", in: folder)
+        var moves = try vault.moveToTrash("Ta Da/projects/P.md", index: await vault.loadIndex())
+        moves += try vault.moveToTrash("Meetings/Ark.md", index: await vault.loadIndex())
+        let back = try vault.moveBack(moves)
+        #expect(back.map(\.to) == ["Ta Da/projects/P.md", "notes/Two.md", "Meetings/Ark.md"])
+        #expect(vault.trashedItems().isEmpty)
+        #expect(try vault.moveBack(back).map(\.to) == moves.map(\.to))
+        #expect(vault.markdownPaths().isEmpty)
+    }
+}
+
+@Test func moveBackNumbersANameTakenMeanwhile() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile(task, "Ta Da/tasks/A.md", in: folder)
+        let moves = try vault.moveToTrash("Ta Da/tasks/A.md", index: await vault.loadIndex())
+        try writeFile(task, "Ta Da/tasks/A.md", in: folder)
+        #expect(try vault.moveBack(moves).map(\.to) == ["Ta Da/tasks/A 2.md"])
     }
 }

@@ -4,12 +4,12 @@
 import SwiftUI
 import TaDaCore
 
-enum PhoneTab: Hashable {
+enum PhoneTab: Hashable, Codable {
     case agenda, tasks, tags, notes, other
 }
 
 /// A screen pushed onto a tab's stack.
-enum PhoneRoute: Hashable {
+enum PhoneRoute: Hashable, Codable {
     /// A task's or project's file.
     case file(String)
     /// The loose tasks: those with no project or area.
@@ -47,7 +47,7 @@ enum PhoneRoute: Hashable {
     }
 }
 
-enum SettingsSection: String, Hashable, CaseIterable {
+enum SettingsSection: String, Hashable, CaseIterable, Codable {
     case vault, themes, editor, dailyNotes, notifications, haptics, about
 
     var title: String {

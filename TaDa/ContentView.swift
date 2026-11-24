@@ -17,6 +17,7 @@ struct ContentView: View {
                 SidebarSplitView(model: model)
             }
         }
+        .undoToast(model)
         .imageDialogs(model)
         .folderImporter(isPresented: Bindable(VaultMenu.shared).isChoosingFolder, model: model)
         .onChange(of: model.quickSwitcherRequest) { quickSwitcher.toggle(model) }

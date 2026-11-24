@@ -6,7 +6,7 @@ import UIKit
 #endif
 
 @Observable final class AppModel {
-    enum Domain: Hashable {
+    enum Domain: Hashable, Codable {
         case agenda, loose, logbook, attachments, trash
         /// A project, by vault-relative path.
         case project(String)
@@ -57,6 +57,9 @@ import UIKit
             default: break
             }
             updateTagPage()
+            #if os(macOS)
+            savePlace()
+            #endif
         }
     }
     /// The file shown in the document pane, by vault-relative path. Picking another domain clears it.
@@ -69,6 +72,9 @@ import UIKit
             } else {
                 isSourceMode = false
             }
+            #if os(macOS)
+            savePlace()
+            #endif
             let previous = loading
             previous?.cancel()
             loading = Task {
@@ -491,6 +497,7 @@ import UIKit
         static let autocomplete = "autocomplete"
         static let hapticsOff = "hapticsOff"
         static let recentFiles = "recentFiles"
+        static let places = "places"
         static let sidebarMode = "sidebarMode"
         static let expandedTags = "expandedTags"
         static let expandedFolders = "expandedFolders"
@@ -647,6 +654,9 @@ import UIKit
         await reloadAttachmentGroups(vault, imagePaths: attachments)
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         state = .ready
+        #if os(macOS)
+        restorePlace()
+        #endif
         #if os(iOS)
         await Self.run { vault.downloadPlaceholders() }
         #endif
@@ -1246,32 +1256,187 @@ import UIKit
         case missing
     }
 
+    // MARK: Place
+
+    /// Where the app was in the open folder, as JSON, kept per folder: on the Mac the domain and open file, on
+    /// iPhone the tab and its screens. The folder opens there again.
+    var savedPlace: Data? {
+        get {
+            guard let root = vault?.root else { return nil }
+            return defaults.dictionary(forKey: Keys.places)?[root.resolvingSymlinksInPath().path] as? Data
+        }
+        set {
+            guard let root = vault?.root else { return }
+            var places = defaults.dictionary(forKey: Keys.places) ?? [:]
+            places[root.resolvingSymlinksInPath().path] = newValue
+            defaults.set(places, forKey: Keys.places)
+        }
+    }
+
+    /// Whether the folder still has what `domain` shows.
+    func exists(_ domain: Domain) -> Bool {
+        switch domain {
+        case .project(let path), .area(let path): index[path] != nil
+        case .folder(let path): path.isEmpty || index.items.keys.contains { $0.hasPrefix(path + "/") }
+        case .agenda, .loose, .logbook, .attachments, .trash, .tag: true
+        }
+    }
+
+    #if os(macOS)
+    private struct Place: Codable {
+        var domain: Domain
+        var selection: String?
+    }
+
+    private func savePlace() {
+        guard state == .ready else { return }
+        savedPlace = try? JSONEncoder().encode(Place(domain: domain, selection: selection))
+    }
+
+    /// Shows the domain and file the folder was last left on, where they're still there.
+    private func restorePlace() {
+        guard let data = savedPlace, let place = try? JSONDecoder().decode(Place.self, from: data) else { return }
+        if exists(place.domain) { domain = place.domain }
+        if let path = place.selection, index[path] != nil { selection = path }
+    }
+    #endif
+
+    // MARK: Undo
+
+    /// The window's undo manager: completing, moving, deleting and property changes register on it.
+    @ObservationIgnored var undoManager: UndoManager?
+    /// The last undoable change that offers Undo in a toast.
+    var undoToast: UndoToast?
+    struct UndoToast: Equatable, Identifiable {
+        let id = UUID()
+        let message: String
+        /// The undo manager's name for the change; the toast's Undo button is on while it's the one to undo.
+        let actionName: String
+    }
+
+    /// What an undoable change did to the folder.
+    enum UndoChange: Sendable {
+        case text(path: String, TextChange)
+        case moved([FileMove])
+    }
+
+    /// The changes of the undoable action running in a task.
+    final class UndoRecorder {
+        var changes: [UndoChange] = []
+    }
+
+    nonisolated private enum UndoRecording {
+        @TaskLocal static var recorder: UndoRecorder?
+    }
+
+    /// Runs `action` as one undo step named `name`, then shows `toast` when it changed something. An action run
+    /// inside another is part of the outer one's step.
+    func undoable(_ name: String, toast: String? = nil, _ action: () async -> Void) async {
+        guard UndoRecording.recorder == nil else { return await action() }
+        let recorder = UndoRecorder()
+        await UndoRecording.$recorder.withValue(recorder) { await action() }
+        guard !recorder.changes.isEmpty else { return }
+        registerUndo(of: recorder, name: name)
+        if let toast { undoToast = UndoToast(message: toast, actionName: name) }
+    }
+
+    /// Adds `change` to the undoable action running in this task, if any.
+    private func record(_ change: UndoChange) {
+        UndoRecording.recorder?.changes.append(change)
+    }
+
+    /// Registers undoing `step`'s changes. Undoing registers redoing them, with the changes the undo makes.
+    private func registerUndo(of step: UndoRecorder, name: String) {
+        undoManager?.registerUndo(withTarget: self) { model in
+            let undone = UndoRecorder()
+            model.registerUndo(of: undone, name: name)
+            Task { await model.reverse(step.changes, into: undone) }
+        }
+        undoManager?.setActionName(name)
+        undoToast = nil
+    }
+
+    /// Reverses `changes`, last first, adding the changes that reverse them to `recorder`. A file whose changed lines
+    /// have changed since, or that has gone, is left as it is.
+    private func reverse(_ changes: [UndoChange], into recorder: UndoRecorder) async {
+        guard let vault else { return }
+        undoToast = nil
+        var skipped = 0
+        for change in changes.reversed() {
+            switch change {
+            case .text(let path, let change):
+                if let document, document.path == path {
+                    guard let text = change.undone(in: document.text) else { skipped += 1; continue }
+                    document.text = text
+                    recorder.changes.append(.text(path: path, change.inverse))
+                    continue
+                }
+                let result = try? await Self.run { () throws -> (Item?, Bool) in
+                    var undone = false
+                    let item = try vault.update(path) { text in
+                        guard let text = change.undone(in: text) else { return text }
+                        undone = true
+                        return text
+                    }
+                    return (item, undone)
+                }
+                guard let (item, undone) = result, undone else { skipped += 1; continue }
+                updateIndex { if let item { $0.update(item) } else { $0.remove(path) } }
+                recorder.changes.append(.text(path: path, change.inverse))
+            case .moved(let moves):
+                if let back = try? await Self.run({ try vault.moveBack(moves) }) {
+                    recorder.changes.append(.moved(back))
+                } else {
+                    skipped += moves.count
+                }
+            }
+        }
+        if skipped > 0 {
+            errorMessage = skipped == 1 ? "1 file changed since, so it wasn’t undone." : "\(skipped) files changed since, so they weren’t undone."
+        }
+        await refresh()
+    }
+
     // MARK: Editing files
 
     /// Completes an open task or reopens a done or cancelled one. Only `status` and `completedDate` change. A project
     /// goes through `setStatus(_:in:)`, which asks first when it has open tasks.
     func toggleCompletion(_ item: Item) async {
-        guard item.properties.kind != .note else { return }
-        if item.properties.kind == .project {
-            return await setStatus(item.properties.status.isClosed ? .notStarted : .done, in: item.path)
+        await undoable(item.properties.status.isClosed ? "Reopen" : "Complete", toast: item.properties.status.isClosed ? nil : "Completed “\(item.title)”") {
+            guard item.properties.kind != .note else { return }
+            if item.properties.kind == .project {
+                return await setStatus(item.properties.status.isClosed ? .notStarted : .done, in: item.path)
+            }
+            let today = today, fallback = item.properties.status
+            await edit(item.path) { text in
+                Completion.toggle(Item(parsing: text, path: item.path)?.properties.status ?? fallback, in: text, today: today)
+            }
+            await reopenParent(of: item.path, wasClosed: item.properties.status.isClosed)
         }
-        let today = today, fallback = item.properties.status
-        await edit(item.path) { text in
-            Completion.toggle(Item(parsing: text, path: item.path)?.properties.status ?? fallback, in: text, today: today)
-        }
-        await reopenParent(of: item.path, wasClosed: item.properties.status.isClosed)
     }
 
     /// Applies a text change to one file, then patches the index. The open document is changed in memory
     /// and saved after a pause; any other file in a single coordinated read and write.
     func edit(_ path: String, _ transform: @escaping @Sendable (String) -> String) async {
         if let document, document.path == path {
+            let before = document.text
             document.text = transform(document.text)
+            // Source mode takes the change as an undo step of its own editor's.
+            if !isSourceMode { record(.text(path: path, TextChange(from: before, to: document.text))) }
             return
         }
         guard let vault else { return }
         do {
-            let item = try await Self.run { try vault.update(path, transform) }
+            let (item, change) = try await Self.run { () throws -> (Item?, TextChange?) in
+                var change: TextChange?
+                let item = try vault.update(path) { text in
+                    let edited = transform(text)
+                    change = TextChange(from: text, to: edited)
+                    return edited
+                }
+                return (item, change)
+            }
+            if let change { record(.text(path: path, change)) }
             updateIndex { if let item { $0.update(item) } else { $0.remove(path) } }
         } catch {
             errorMessage = Self.couldNot("save “\(Item.title(ofPath: path))”", error)
@@ -1280,8 +1445,10 @@ import UIKit
 
     /// Sets one frontmatter property, or empties it when `value` is nil.
     func setProperty(_ key: String, to value: PropertyValue?, in path: String) async {
-        await edit(path) { text in
-            value.map { FrontmatterEditor.set(key, to: $0, in: text) } ?? FrontmatterEditor.clear(key, in: text)
+        await undoable("Change \(key)") {
+            await edit(path) { text in
+                value.map { FrontmatterEditor.set(key, to: $0, in: text) } ?? FrontmatterEditor.clear(key, in: text)
+            }
         }
     }
 
@@ -1289,18 +1456,20 @@ import UIKit
     /// completing or cancelling a project that has open tasks asks first through `completionConfirmation`. A reopened task
     /// sets its Done or Cancelled project to Doing; a logged file that's reopened goes back to `Ta Da/tasks/` or `Ta Da/projects/`.
     func setStatus(_ status: Status, in path: String, confirmed: Bool = false) async {
-        if editDraft(path, { $0.status = status }) { return }
-        guard index[path]?.properties.kind != .note else { return }
-        if !confirmed, status.isClosed, let item = index[path], item.properties.kind == .project {
-            let tasks = index.openTasks(in: item)
-            if !tasks.isEmpty {
-                ask(CompletionConfirmation(project: item, status: status, tasks: tasks))
-                return
+        await undoable("Set Status", toast: status.isClosed ? "\(status == .done ? "Completed" : "Cancelled") “\(Item.title(ofPath: path))”" : nil) {
+            if editDraft(path, { $0.status = status }) { return }
+            guard index[path]?.properties.kind != .note else { return }
+            if !confirmed, status.isClosed, let item = index[path], item.properties.kind == .project {
+                let tasks = index.openTasks(in: item)
+                if !tasks.isEmpty {
+                    ask(CompletionConfirmation(project: item, status: status, tasks: tasks))
+                    return
+                }
             }
+            let today = today, wasClosed = index[path]?.properties.status.isClosed ?? false
+            await edit(path) { Completion.setStatus(status, in: $0, today: today) }
+            await reopenParent(of: path, wasClosed: wasClosed)
         }
-        let today = today, wasClosed = index[path]?.properties.status.isClosed ?? false
-        await edit(path) { Completion.setStatus(status, in: $0, today: today) }
-        await reopenParent(of: path, wasClosed: wasClosed)
     }
 
     /// Shows `request`, or keeps it pending behind the question already showing.
@@ -1311,16 +1480,18 @@ import UIKit
     /// Answers `completionConfirmation`: sets the project's status and the open tasks it has now to `tasksAs` (Done or
     /// Cancelled), or leaves them all when it's nil. Log Now then goes on, and the next pending question shows.
     func answerCompletion(_ request: CompletionConfirmation, tasksAs status: Status?) async {
-        if completionConfirmation?.id == request.id { completionConfirmation = nil }
-        if let status, let project = index[request.project.path] {
-            let tasks = index.openTasks(in: project)
-            if project.properties.status != request.status {
-                await setStatus(request.status, in: project.path, confirmed: true)
+        await undoable("Set Status", toast: "\(request.status == .done ? "Completed" : "Cancelled") “\(request.project.title)”") {
+            if completionConfirmation?.id == request.id { completionConfirmation = nil }
+            if let status, let project = index[request.project.path] {
+                let tasks = index.openTasks(in: project)
+                if project.properties.status != request.status {
+                    await setStatus(request.status, in: project.path, confirmed: true)
+                }
+                for task in tasks { await setStatus(status, in: task.path) }
             }
-            for task in tasks { await setStatus(status, in: task.path) }
+            if request.logsAfter { await logNow(asking: status != nil) }
+            if completionConfirmation == nil, !pendingCompletions.isEmpty { completionConfirmation = pendingCompletions.removeFirst() }
         }
-        if request.logsAfter { await logNow(asking: status != nil) }
-        if completionConfirmation == nil, !pendingCompletions.isEmpty { completionConfirmation = pendingCompletions.removeFirst() }
     }
 
     /// Renames a file from a new title, and points the `[[ ]]` links to it in other files' bodies at the new title.
@@ -1569,48 +1740,53 @@ import UIKit
     /// `.trash/attachments/`. Unless `confirmed`, deleting an area or files that embed images asks first through
     /// `trashConfirmation`. The selection moves to the next file in the list.
     func moveToTrash(_ paths: [String], confirmed: Bool = false, images: [String] = []) async {
-        let items = paths.compactMap { index[$0] }
-        guard let vault, let item = items.first else { return }
-        let affected = filesTrashed(with: items)
-        if let document, affected.contains(where: { $0.path == document.path }) {
-            await save(document)
-            guard !document.isDirty else {
-                errorMessage = "“\(Item.title(ofPath: document.path))” changed outside Ta Da. Choose which version to keep before deleting it."
-                return
+        await undoable("Move to Trash", toast: "Moved \(paths.count == 1 ? "“\(Item.title(ofPath: paths[0]))”" : "\(paths.count) items") to the Trash") {
+            let items = paths.compactMap { index[$0] }
+            guard let vault, let item = items.first else { return }
+            let affected = filesTrashed(with: items)
+            if let document, affected.contains(where: { $0.path == document.path }) {
+                await save(document)
+                guard !document.isDirty else {
+                    errorMessage = "“\(Item.title(ofPath: document.path))” changed outside Ta Da. Choose which version to keep before deleting it."
+                    return
+                }
             }
-        }
-        if !confirmed {
-            let groups = imageGroups(trashedWith: affected)
-            if !groups.isEmpty || items.contains(where: { $0.properties.kind == .area }) {
-                trashConfirmation = TrashConfirmation(paths: paths, items: items, count: affected.count, images: groups)
-                return
+            if !confirmed {
+                let groups = imageGroups(trashedWith: affected)
+                if !groups.isEmpty || items.contains(where: { $0.properties.kind == .area }) {
+                    trashConfirmation = TrashConfirmation(paths: paths, items: items, count: affected.count, images: groups)
+                    return
+                }
             }
-        }
-        let next = nextSelection(skipping: affected.map(\.path))
-        let index = index
-        do {
-            let moved = try await Self.run {
-                var moved: [String] = []
-                for item in items where !moved.contains(item.path) { moved += try vault.moveToTrash(item.path, index: index) }
-                return moved
-            }
-            updateIndex { for path in moved { $0.remove(path) } }
-            multiSelection.subtract(moved)
-            if let path = domainPath, moved.contains(path) {
-                domain = .agenda
-            } else if let selection, moved.contains(selection) {
-                self.selection = next
-            }
+            let next = nextSelection(skipping: affected.map(\.path))
+            let index = index
             do {
-                _ = try await Self.run { try vault.moveAttachmentsToTrash(images) }
+                let moves = try await Self.run {
+                    var moves: [FileMove] = []
+                    for item in items where !moves.contains(where: { $0.from == item.path }) { moves += try vault.moveToTrash(item.path, index: index) }
+                    return moves
+                }
+                record(.moved(moves))
+                let moved = moves.map(\.from)
+                updateIndex { for path in moved { $0.remove(path) } }
+                multiSelection.subtract(moved)
+                if let path = domainPath, moved.contains(path) {
+                    domain = .agenda
+                } else if let selection, moved.contains(selection) {
+                    self.selection = next
+                }
+                do {
+                    let trashed = try await Self.run { try vault.moveAttachmentsToTrash(images) }
+                    record(.moved(zip(images, trashed).map { FileMove(from: $0, to: $1) }))
+                } catch {
+                    errorMessage = Self.couldNot("move the images to the trash", error)
+                }
             } catch {
-                errorMessage = Self.couldNot("move the images to the trash", error)
+                let name = items.count == 1 ? "“\(item.title)”" : "the files"
+                errorMessage = Self.couldNot("move \(name) to the trash", error)
             }
-        } catch {
-            let name = items.count == 1 ? "“\(item.title)”" : "the files"
-            errorMessage = Self.couldNot("move \(name) to the trash", error)
+            await refresh()
         }
-        await refresh()
     }
 
     /// Deletes the files `request` asked about, and `images`. An alert has already cleared `trashConfirmation` by the
@@ -1873,14 +2049,18 @@ import UIKit
 
     /// Adds a tag to the file's `tags:`. A tag it has there already, ignoring case, isn't written.
     func addTag(_ tag: Tag, to path: String) async {
-        if editDraft(path, { if !$0.tags.contains(where: { $0.path == tag.path }) { $0.tags.append(tag) } }) { return }
-        await edit(path) { FrontmatterEditor.addTag(tag, in: $0) }
+        await undoable("Add Tag") {
+            if editDraft(path, { if !$0.tags.contains(where: { $0.path == tag.path }) { $0.tags.append(tag) } }) { return }
+            await edit(path) { FrontmatterEditor.addTag(tag, in: $0) }
+        }
     }
 
     /// Removes a tag from the file's `tags:`. The body's tags stay.
     func removeTag(_ tag: Tag, from path: String) async {
-        if editDraft(path, { $0.tags.removeAll { $0.path == tag.path } }) { return }
-        await edit(path) { FrontmatterEditor.removeTag(tag, in: $0) }
+        await undoable("Remove Tag") {
+            if editDraft(path, { $0.tags.removeAll { $0.path == tag.path } }) { return }
+            await edit(path) { FrontmatterEditor.removeTag(tag, in: $0) }
+        }
     }
 
     /// The tag at `path` in the tag tree, spelled as the index shows it; nil when no file carries it or a child.
@@ -2105,32 +2285,36 @@ import UIKit
     /// Files the tasks or projects at `paths` under `parent` (a project or an area), or under nothing when it's nil.
     /// A project only goes under an area. Files already there aren't written.
     func setParent(_ parent: Item?, of paths: [String]) async {
-        let target: Parent? = switch parent?.properties.kind {
-        case .project: .project(parent!.title)
-        case .area: .area(parent!.title)
-        case .task, .note, nil: nil
-        }
-        guard parent == nil || target != nil else { return }
-        if editDraft(paths.first, { if $0.kind == .task || target?.key != "project" { $0.parent = target } }) { return }
-        for path in paths {
-            guard let item = index[path], item.properties.kind != .area else { continue }
-            if item.properties.kind == .project, case .project = target { continue }
-            if let parent {
-                guard index.parent(of: item)?.path != parent.path else { continue }
-            } else {
-                guard item.properties.project != nil || item.properties.area != nil else { continue }
+        await undoable("Move", toast: "Moved \(paths.count == 1 ? "“\(Item.title(ofPath: paths[0]))”" : "\(paths.count) items") to \(parent?.title ?? "Loose")") {
+            let target: Parent? = switch parent?.properties.kind {
+            case .project: .project(parent!.title)
+            case .area: .area(parent!.title)
+            case .task, .note, nil: nil
             }
-            await edit(path) { Parent.set(target, in: $0) }
+            guard parent == nil || target != nil else { return }
+            if editDraft(paths.first, { if $0.kind == .task || target?.key != "project" { $0.parent = target } }) { return }
+            for path in paths {
+                guard let item = index[path], item.properties.kind != .area else { continue }
+                if item.properties.kind == .project, case .project = target { continue }
+                if let parent {
+                    guard index.parent(of: item)?.path != parent.path else { continue }
+                } else {
+                    guard item.properties.project != nil || item.properties.area != nil else { continue }
+                }
+                await edit(path) { Parent.set(target, in: $0) }
+            }
         }
     }
 
     /// Sets `kind`'s date of the files at `paths`, or empties it when `date` is nil. Files already on it aren't
     /// written.
     func setDate(_ kind: AgendaEntry.Kind, to date: LocalDate?, of paths: [String]) async {
-        if editDraft(paths.first, { if kind == .due { $0.dueDate = date } else { $0.deadline = date } }) { return }
-        for path in paths {
-            guard let item = index[path], item.properties[keyPath: kind.date] != date else { continue }
-            await setProperty(kind.key, to: date.map { .date($0) }, in: path)
+        await undoable(kind == .due ? "Set Due Date" : "Set Deadline") {
+            if editDraft(paths.first, { if kind == .due { $0.dueDate = date } else { $0.deadline = date } }) { return }
+            for path in paths {
+                guard let item = index[path], item.properties[keyPath: kind.date] != date else { continue }
+                await setProperty(kind.key, to: date.map { .date($0) }, in: path)
+            }
         }
     }
 
@@ -2138,23 +2322,25 @@ import UIKit
     /// with its day from the task's due date, else its deadline, else the rule's first date. A task with neither date that
     /// isn't repeating yet is made due on that first date. Tasks already repeating by the written rule aren't written.
     func setRepeat(_ rule: RepeatRule?, of paths: [String]) async {
-        let today = today
-        for path in paths {
-            guard let item = item(at: path), item.properties.kind == .task else { continue }
-            let p = item.properties
-            guard let rule else {
-                if editDraft(path, { $0.repeatText = nil }) { continue }
-                if p.repeatRule != nil { await setProperty("repeat", to: nil, in: path) }
-                continue
-            }
-            let start = p.dueDate ?? p.deadline ?? rule.firstDate(from: today)
-            let text = rule.anchored(to: start ?? today).phrase
-            let due = p.dueDate == nil && p.deadline == nil && p.repeatRule?.rule == nil ? start : nil
-            if editDraft(path, { $0.repeatText = text; if let due { $0.dueDate = due } }) { continue }
-            guard p.repeatRule?.text != text || due != nil else { continue }
-            await edit(path) { source in
-                let written = FrontmatterEditor.set("repeat", to: .text(text), in: source)
-                return due.map { FrontmatterEditor.set("dueDate", to: .date($0), in: written) } ?? written
+        await undoable("Set Repeat") {
+            let today = today
+            for path in paths {
+                guard let item = item(at: path), item.properties.kind == .task else { continue }
+                let p = item.properties
+                guard let rule else {
+                    if editDraft(path, { $0.repeatText = nil }) { continue }
+                    if p.repeatRule != nil { await setProperty("repeat", to: nil, in: path) }
+                    continue
+                }
+                let start = p.dueDate ?? p.deadline ?? rule.firstDate(from: today)
+                let text = rule.anchored(to: start ?? today).phrase
+                let due = p.dueDate == nil && p.deadline == nil && p.repeatRule?.rule == nil ? start : nil
+                if editDraft(path, { $0.repeatText = text; if let due { $0.dueDate = due } }) { continue }
+                guard p.repeatRule?.text != text || due != nil else { continue }
+                await edit(path) { source in
+                    let written = FrontmatterEditor.set("repeat", to: .text(text), in: source)
+                    return due.map { FrontmatterEditor.set("dueDate", to: .date($0), in: written) } ?? written
+                }
             }
         }
     }

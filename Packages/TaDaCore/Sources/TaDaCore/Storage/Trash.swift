@@ -83,6 +83,17 @@ public struct DiscardError: LocalizedError {
     }
 }
 
+/// A file moved from one vault-relative path to another.
+public struct FileMove: Hashable, Sendable {
+    public let from: String
+    public let to: String
+
+    public init(from: String, to: String) {
+        self.from = from
+        self.to = to
+    }
+}
+
 /// Deleting moves a file into `.trash/` (the folder Obsidian also uses), restoring moves it to `tasks/`, `projects/` or
 /// `areas/`, and discarding moves it to the system Trash (or deletes it where that isn't supported). Deleting and
 /// discarding take a project's tasks, and an area's projects and tasks; restoring brings back a file's parents.
@@ -93,9 +104,9 @@ extension Vault {
     public static let trashedAttachmentFolder = ".trash/attachments"
 
     /// Moves a file into `.trash/`, creating the folder if needed. A project takes the tasks linked to it; an area
-    /// takes its projects, their tasks and its own tasks. A note keeps its folder inside `.trash/`. Returns the paths that
-    /// were moved, the file first.
-    public func moveToTrash(_ path: String, index: VaultIndex) throws -> [String] {
+    /// takes its projects, their tasks and its own tasks. A note keeps its folder inside `.trash/`. Returns each moved
+    /// file's path and its path in `.trash/`, the file first.
+    public func moveToTrash(_ path: String, index: VaultIndex) throws -> [FileMove] {
         var paths = [path]
         if let item = index[path] {
             switch item.properties.kind {
@@ -104,11 +115,16 @@ extension Vault {
             case .task, .note: break
             }
         }
-        for path in paths {
+        return try paths.map { path in
             let isNote = index[path]?.properties.kind == .note
-            _ = try moveFile(path, into: isNote ? Self.join(Self.trashFolder, Self.folder(of: path)) : Self.trashFolder)
+            return FileMove(from: path, to: try moveFile(path, into: isNote ? Self.join(Self.trashFolder, Self.folder(of: path)) : Self.trashFolder))
         }
-        return paths
+    }
+
+    /// Moves files back to the folders `moves` took them from, numbering a name that's taken there now. Returns the
+    /// moves it made, so moving those back undoes it.
+    public func moveBack(_ moves: [FileMove]) throws -> [FileMove] {
+        try moves.map { FileMove(from: $0.to, to: try moveFile($0.to, into: Self.folder(of: $0.from))) }
     }
 
     /// Moves images into `.trash/attachments/`, creating the folder if needed and numbering names that are taken there.

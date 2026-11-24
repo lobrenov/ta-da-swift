@@ -109,7 +109,7 @@ private func project(_ status: String, completed: String? = nil) -> String {
         try writeFile(task("Doing", project: "Kombi"), "Ta Da/tasks/Open.md", in: folder)
         try writeFile(task("Done", completed: "2026-09-30", project: "Kombi"), "Ta Da/logbook/2026-09/Listing.md", in: folder)
         let index = await vault.loadIndex()
-        #expect(try vault.moveToTrash("Ta Da/projects/Kombi.md", index: index) == ["Ta Da/projects/Kombi.md", "Ta Da/tasks/Open.md"])
+        #expect(try vault.moveToTrash("Ta Da/projects/Kombi.md", index: index).map(\.from) == ["Ta Da/projects/Kombi.md", "Ta Da/tasks/Open.md"])
         #expect(vault.markdownPaths() == ["Ta Da/logbook/2026-09/Listing.md"])
     }
 }

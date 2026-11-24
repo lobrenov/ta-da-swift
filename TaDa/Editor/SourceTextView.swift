@@ -84,16 +84,16 @@ private struct SourceTextEditor: NSViewRepresentable {
             textView.rehighlight()
         }
         let newDocument = coordinator.documentID != documentID
-        if newDocument || textView.string != text {
-            // Changed outside this editor: a new file, a property edit or a reload from disk.
-            let selection = textView.selectedRange()
+        if newDocument {
             textView.string = text
             textView.rehighlight()
-            let length = (text as NSString).length
-            textView.setSelectedRange(newDocument ? NSRange() : NSRange(location: min(selection.location, length), length: 0))
+            textView.setSelectedRange(NSRange())
             textView.undoManager?.removeAllActions(withTarget: textView.textStorage!)
-            if newDocument { textView.scroll(.zero) }
+            textView.scroll(.zero)
             coordinator.documentID = documentID
+        } else if textView.string != text {
+            // Changed outside this editor (a property edit or a reload from disk): replaced as an undo step of its own.
+            textView.replaceChanged(with: text)
         }
     }
 
@@ -141,6 +141,26 @@ final class SourceTextView: NSTextView {
         selectedTextAttributes = [.backgroundColor: theme.surface]
         typingAttributes = [.font: font13, .foregroundColor: theme.fg, .paragraphStyle: paragraph, .baselineOffset: baselineOffset]
         needsDisplay = true
+    }
+
+    /// Replaces the part of the text that differs from `text` as one undo step, keeping the caret beside the text it was in.
+    func replaceChanged(with text: String) {
+        let old = string as NSString, new = text as NSString
+        var start = 0
+        while start < old.length, start < new.length, old.character(at: start) == new.character(at: start) { start += 1 }
+        var end = 0
+        while end < old.length - start, end < new.length - start,
+              old.character(at: old.length - 1 - end) == new.character(at: new.length - 1 - end) { end += 1 }
+        let range = NSRange(location: start, length: old.length - start - end)
+        let replacement = new.substring(with: NSRange(location: start, length: new.length - start - end))
+        let selection = selectedRange()
+        breakUndoCoalescing()
+        guard shouldChangeText(in: range, replacementString: replacement) else { return }
+        textStorage?.replaceCharacters(in: range, with: replacement)
+        didChangeText()
+        breakUndoCoalescing()
+        let shift = selection.location >= NSMaxRange(range) ? new.length - old.length : 0
+        setSelectedRange(NSRange(location: min(selection.location + shift, new.length), length: 0))
     }
 
     /// Recolours the whole text. Files are small; this runs after every edit.

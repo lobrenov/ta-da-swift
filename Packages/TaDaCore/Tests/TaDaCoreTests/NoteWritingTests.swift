@@ -189,8 +189,8 @@ private func exists(_ path: String, in folder: URL) -> Bool {
         let vault = Vault(root: folder)
         try writeFile("A\n", "Meetings/Ark.md", in: folder)
         try writeFile("B\n", "Loose.md", in: folder)
-        #expect(try vault.moveToTrash("Meetings/Ark.md", index: await vault.loadIndex()) == ["Meetings/Ark.md"])
-        #expect(try vault.moveToTrash("Loose.md", index: await vault.loadIndex()) == ["Loose.md"])
+        #expect(try vault.moveToTrash("Meetings/Ark.md", index: await vault.loadIndex()).map(\.from) == ["Meetings/Ark.md"])
+        #expect(try vault.moveToTrash("Loose.md", index: await vault.loadIndex()).map(\.from) == ["Loose.md"])
         #expect(Set(vault.trashedItems().map(\.id)) == [".trash/Meetings/Ark.md", ".trash/Loose.md"])
 
         try FileManager.default.removeItem(at: folder.appending(path: "Meetings"))

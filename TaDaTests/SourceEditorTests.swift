@@ -61,4 +61,45 @@ struct SourceModeTests {
         try await Task.sleep(for: .milliseconds(300))
         #expect(document.text.contains("status: [unclosed"))
     }
+
+    @Test func aPropertyEditKeepsTypingUndoAndUndoesFirst() async throws {
+        let model = await folder.model()
+        let window = NSWindow(contentRect: NSRect(x: -5000, y: -5000, width: 1280, height: 800),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        window.contentView = NSHostingView(rootView: ContentView(model: model))
+        window.orderFrontRegardless()
+        model.selection = "tasks/Task.md"
+        model.isSourceMode = true
+
+        func sourceView(in view: NSView) -> SourceTextView? {
+            if let textView = view as? SourceTextView { return textView }
+            return view.subviews.lazy.compactMap(sourceView(in:)).first
+        }
+        for _ in 0..<50 where sourceView(in: window.contentView!) == nil { try await Task.sleep(for: .milliseconds(100)) }
+        let editor = try #require(sourceView(in: window.contentView!), "within 5 s")
+        let document = try #require(model.document)
+        // Each step is an undo group of its own, as each of the app's events is.
+        let undoManager = try #require(editor.undoManager)
+        while undoManager.groupingLevel > 0 { undoManager.endUndoGrouping() }
+        undoManager.groupsByEvent = false
+        defer { undoManager.groupsByEvent = true }
+        let end = (editor.string as NSString).length
+        undoManager.beginUndoGrouping()
+        editor.setSelectedRange(NSRange(location: end, length: 0))
+        editor.insertText("Typed", replacementRange: NSRange(location: end, length: 0))
+        undoManager.endUndoGrouping()
+
+        undoManager.beginUndoGrouping()
+        await model.setStatus(.blocked, in: "tasks/Task.md")
+        try await Task.sleep(for: .milliseconds(300))
+        undoManager.endUndoGrouping()
+        #expect(editor.string == Self.task.replacingOccurrences(of: "Doing", with: "Blocked") + "Typed")
+        undoManager.undo()
+        #expect(document.text == Self.task + "Typed")
+        undoManager.undo()
+        #expect(document.text == Self.task)
+    }
 }
+
