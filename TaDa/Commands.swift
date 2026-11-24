@@ -1,6 +1,6 @@
 // Menu commands: ⌘N new task, or note in Notes; ⇧⌘N/⌥⌘N new project/area; File ▸ New Folder; ⌘O the quick switcher; File ▸ Open Vault and ⇧⌘O the vault menu; File ▸ Convert to for the open or
 // picked note; File ▸ Reveal in Finder for the picked or open files; ⌥⌘F search; ⌘1–4 switch domains; ⌘E Live/Source; View ▸ Theme Set and Appearance;
-// Task ▸ complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
+// Help ▸ Ta Da Help opens the README. Task ▸ ⌘K complete or reopen the selected task, ⌘L add a subtask in the editor, or complete the one
 // the caret is on, Extract to Task for the caret's subtask, ⌘P move the selected or picked tasks to a project, ⌘S/⌘D set their due date/deadline, ⌘T opens the open file's tag menu;
 // Format ▸ ⌘B/⌘I/⇧⌘H/⇧⌘S bold, italic, highlight, strikethrough in the Live editor.
 #if os(macOS)
@@ -11,6 +11,7 @@ struct AppCommands: Commands {
     @Bindable var model: AppModel
     let updater: Updater
     @FocusedValue(\.editor) private var editor
+    @Environment(\.openURL) private var openURL
 
     /// The open or picked file, when it's one note.
     private var pickedNote: String? {
@@ -97,6 +98,7 @@ struct AppCommands: Commands {
             Button(selected.map { StatusCheckbox.action(for: $0.properties.status).capitalized } ?? "Complete") {
                 if let selected { Task { await model.toggleCompletion(selected) } }
             }
+            .keyboardShortcut("k")
             .disabled(selected == nil)
             Button("Add Subtask") {
                 if let textView = editor?.textView { AddSubtask.perform(in: textView) }
@@ -131,6 +133,9 @@ struct AppCommands: Commands {
             Button("Tags…") { model.showTagMenu() }
                 .keyboardShortcut("t")
                 .disabled(model.isSourceMode || model.selection.flatMap { model.index[$0] } == nil)
+        }
+        CommandGroup(replacing: .help) {
+            Button("Ta Da Help") { openURL(URL(string: "https://github.com/lobrenov/ta-da-swift#readme")!) }
         }
         CommandMenu("Format") {
             format("Bold", .bold, key: "b")

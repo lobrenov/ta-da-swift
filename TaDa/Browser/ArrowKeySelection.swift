@@ -6,6 +6,7 @@
 #if os(macOS)
 import AppKit
 import SwiftUI
+import TaDaCore
 
 extension View {
     /// Marks the browser list on screen; `paths` are its tasks from top to bottom. Rows show
@@ -74,7 +75,7 @@ private struct ListKeys: NSViewRepresentable {
 }
 
 /// The list's responder: ↑/↓, ←/→ and Escape arrive as move and cancel commands, ⌫ and ⌦ as key presses.
-final class ListKeyView: NSView {
+final class ListKeyView: NSView, NSMenuItemValidation {
     let model: AppModel
     private var responders: NSKeyValueObservation?
 
@@ -140,6 +141,27 @@ final class ListKeyView: NSView {
     /// ⌘A in Attachments picks every image.
     override func selectAll(_ sender: Any?) {
         if model.domain == .attachments { model.selectAllAttachments() } else { super.selectAll(sender) }
+    }
+
+    /// ⌘C puts a `[[Title]]` link for each picked file on the pasteboard, in list order.
+    @objc func copy(_ sender: Any?) {
+        let text = linkText
+        guard !text.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        item.action == #selector(copy(_:)) ? !linkText.isEmpty : responds(to: item.action)
+    }
+
+    private var linkText: String {
+        model.domain == .attachments ? "" : Self.linkText(picked: model.picked, inOrder: model.arrowKeyList?.paths ?? [])
+    }
+
+    /// `[[Title]]` for each picked path, one per line, in the list's order.
+    static func linkText(picked: Set<String>, inOrder paths: [String]) -> String {
+        paths.filter(picked.contains).map { "[[\(Item.title(ofPath: $0))]]" }.joined(separator: "\n")
     }
 
     private func delete(_ flags: NSEvent.ModifierFlags) -> Bool {
