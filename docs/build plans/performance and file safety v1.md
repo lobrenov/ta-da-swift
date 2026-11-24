@@ -21,8 +21,8 @@ Scratch benchmark (release, same files), reading only:
 - **New files are written atomically.** A temporary file in the same folder, then `renamex_np(…, RENAME_EXCL)`.
 - **Settings that don't parse are not overwritten.** Loading uses defaults; writing throws and the app shows the error.
 - **Initial load:** one `prepare(forReadingItemsAt:)` around the scan, with the coordinated reads inside it, parsed in parallel (task group, chunks). On macOS, files that aren't downloaded (`ubiquitousItemDownloadingStatusKey` not current) are skipped and requested, as iOS placeholders are, and the watcher adds them as they arrive.
-- **Time to content:** `state = .ready` once the index is in. Trash, attachments and folders load after it, in parallel.
-- **Refresh:** the trash, attachment and folder scans run only when the pass found a change under them (or under the vault, for folders). The walks become one enumeration that yields markdown dates, folders, attachments and placeholders.
+- **Time to content:** `state = .ready` once the index is in. Trash, attachments and folders load after it, in parallel, kept only if no refresh ran meanwhile; the watcher starts after them.
+- **Refresh:** the watcher passes the files and folders that changed (FSEvents file events; on iOS, the presenter's URLs). The trash is scanned again only for a change under `.trash/`; folders and attachments only for a change to something that isn't Markdown, or when the Markdown files changed; a path it can't place scans everything. On iOS placeholders are asked for on every pass. App activation, opening the folder and Ta Da's own refreshes scan everything.
 - **Derived data is stored, not computed in `body`.** `titles`, `taskStatuses`, `tasks` and `liveItems` are kept by `VaultIndex` and updated by `update`/`remove`. The logbook groups and the Trash view's attachment data are stored on `AppModel`, computed in `updateLists` and `refresh`.
 - **Obsidian deletes:**
 
@@ -59,8 +59,8 @@ Check for the Part: `npm test` and `npm run build` pass.
 
 ## Part 3 — Load and refresh (TaDaCore and `AppModel`)
 11. **Initial load.** `loadIndex` as decided (one `prepare`, parallel parse, skip non-downloaded files on macOS). `open()` sets `.ready` after the index; trash, attachments and folders load after it with `async let`. Check: `LargeVaultTests` load index ≤ 300 ms at 1,200 files (from 1,294); a test that a not-downloaded file is left out and requested.
-12. **Refresh.** Skip the trash, attachment and folder scans when nothing changed under them; one enumeration for the walks. Add a full-pass timing to `LargeVaultTests`. Check: the new timing for a pass after a save with no outside change is ≤ 40 ms at 1,200 files; tests: a file trashed by another app still appears in Trash, a new image still appears in Attachments.
-13. **iOS background refresh.** `refreshBadgeInBackground` uses `changes(since:)` against the index in memory when there is one. Check: a test that it reads only changed files.
+12. **Refresh.** Scope the scans as decided (`Vault.refreshScope(for:)`). Add a refresh timing to `LargeVaultUITimingTests`. Check: a refresh after a save is ≤ 40 ms at 1,200 files; tests: the scope for each kind of path, a file trashed by another app appears in Trash, a new image appears in Attachments.
+13. **iOS background refresh.** `refreshBadgeInBackground` uses `changes(since:)` against the index in memory when the folder is open. Check: the iOS build.
 
 ## Part 4 — Rendering (app)
 14. **Index-derived data.** `titles`, `taskStatuses`, `tasks`, `liveItems` stored in `VaultIndex`; `LiveEditor`'s link fingerprint uses an index generation number. Views that need only "has items" or one item stop reading `model.index`. Check: TaDaCore tests that each stays equal to a full recomputation after update and remove; `LargeVaultTests` "index update, one keystroke" stays ≤ 0.2 ms.

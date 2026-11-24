@@ -52,4 +52,14 @@ struct LargeVaultUITimingTests {
         #expect(typing < 50)
         #expect(selecting < 100)
     }
+
+    @Test func aRefreshAfterASaveIsQuick() async throws {
+        let model = await folder.model(today: Self.today)
+        let path = try #require(model.index.tasks.first?.path)
+        let clock = ContinuousClock()
+        let full = await clock.measure { await model.refresh() }
+        let afterSave = await clock.measure { await model.refresh([folder.url.appending(path: path)]) }
+        print("LargeVault refresh: \(full) full pass, \(afterSave) after a save")
+        #expect(afterSave < .milliseconds(100))
+    }
 }

@@ -15,6 +15,26 @@ public enum CoordinatedFileIO {
         }
     }
 
+    /// Reads many files as UTF-8 text, one result per URL. One coordinator prepares them all, then reads each, which
+    /// costs far less than a coordinator per file.
+    public static func readAll(_ urls: [URL]) -> [Result<String, any Error>] {
+        var results = [Result<String, any Error>](repeating: .failure(CocoaError(.fileReadUnknown)), count: urls.count)
+        let coordinator = NSFileCoordinator(filePresenter: nil)
+        var error: NSError?
+        coordinator.prepare(forReadingItemsAt: urls, options: [], writingItemsAt: [], options: [], error: &error) { done in
+            for (index, url) in urls.enumerated() {
+                var readError: NSError?
+                coordinator.coordinate(readingItemAt: url, options: [], error: &readError) { url in
+                    results[index] = Result { try decode(url) }
+                }
+                if let readError { results[index] = .failure(readError) }
+            }
+            done()
+        }
+        if let error { return urls.map { _ in .failure(error) } }
+        return results
+    }
+
     /// Replaces the file atomically, creating it if needed.
     public static func write(_ text: String, to url: URL) throws {
         try coordinate { coordinator, error, body in

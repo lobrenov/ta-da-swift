@@ -475,6 +475,10 @@ import UIKit
     private var fileDates: [String: Date] = [:]
     private var refreshing: Task<Void, Never>?
     private var refreshAgain = false
+    /// What the next refresh pass scans besides the Markdown files' dates, gathered from the calls since the last pass.
+    private var refreshScope: Vault.RefreshScope = []
+    /// How many refresh passes have scanned the trash or attachments.
+    @ObservationIgnored private var refreshCount = 0
     /// When the settings file last changed, as last seen or written.
     private var settingsDate: Date?
     /// Loading the settings file sets the settings without writing it back.
@@ -653,21 +657,31 @@ import UIKit
         watcher = nil
         state = .loading
         // Dates first: anything that changes while the index loads shows up as changed on the next refresh.
-        fileDates = await Self.run { vault.modificationDates() }
+        let dates = await Self.run { vault.modificationDates() }
         await loadSettings(from: vault)
-        let loaded = await vault.loadIndex()
+        let loaded = await vault.load(dates.keys.sorted())
+        // A file not downloaded yet is left out, so a refresh reads it once it arrives.
+        fileDates = dates.filter { !loaded.notDownloaded.contains($0.key) }
         knownFolders = []
-        updateIndex { $0 = loaded }
-        await rescanFolders(vault)
-        trash = await Self.run { vault.trashedItems() }
-        trashedAttachments = await Self.run { vault.trashedAttachments() }
-        attachments = await Self.run { vault.attachmentPaths() }
-        await reloadAttachmentGroups(vault, imagePaths: attachments)
+        updateIndex { $0 = VaultIndex(loaded.items) }
         isInICloud = await Self.run { FileManager.default.isUbiquitousItem(at: vault.root) }
         state = .ready
         #if os(macOS)
         restorePlace()
         #endif
+        // The first screen doesn't need the folders, attachments and trash, so they load after it shows. A refresh that
+        // runs meanwhile has the newer lists.
+        let refreshes = refreshCount
+        async let folders: Void = rescanFolders(vault)
+        async let trashed = Self.run { vault.trashedItems() }
+        async let trashedFiles = Self.run { vault.trashedAttachments() }
+        async let attachmentPaths = Self.run { vault.attachmentPaths() }
+        let scanned = await (trashed, trashedFiles, attachmentPaths)
+        await folders
+        if refreshCount == refreshes, self.vault?.root == vault.root {
+            (trash, trashedAttachments, attachments) = scanned
+            await reloadAttachmentGroups(vault, imagePaths: attachments)
+        }
         #if os(iOS)
         await Self.run { vault.downloadPlaceholders() }
         #endif
@@ -676,15 +690,15 @@ import UIKit
     }
 
     private func startWatching(_ vault: Vault) {
-        watcher = VaultWatcher(root: vault.root) { [weak self] in
-            Task { await self?.refresh() }
+        watcher = VaultWatcher(root: vault.root) { [weak self] changed in
+            Task { await self?.refresh(changed) }
         }
         isWatching = watcher != nil
     }
 
     #if os(iOS)
-    /// Background app refresh: reads the saved folder's tasks afresh and sets the badge and its schedule from them,
-    /// leaving the open folder as it is.
+    /// Background app refresh: reads the saved folder's tasks and sets the badge and its schedule from them, leaving
+    /// the open folder as it is. When that folder is open, only the files changed since the last scan are read.
     func refreshBadgeInBackground() async {
         guard notifications.showsBadge, let bookmark = defaults.data(forKey: Keys.bookmark),
               let folder = try? Vault.resolve(bookmark).folder else { return }
@@ -692,7 +706,18 @@ import UIKit
         defer { if didStart { folder.stopAccessingSecurityScopedResource() } }
         let vault = Vault(root: folder)
         await Self.run { vault.downloadPlaceholders() }
-        let index = await vault.loadIndex()
+        var index: VaultIndex
+        if state == .ready, self.vault?.root.resolvingSymlinksInPath().path == vault.root.resolvingSymlinksInPath().path {
+            let known = fileDates
+            let changes = await Self.run { vault.changes(since: known) }
+            index = self.index
+            for path in changes.removed { index.remove(path) }
+            for (path, item) in changes.changed {
+                if let item { index.update(item) } else { index.remove(path) }
+            }
+        } else {
+            index = await vault.loadIndex()
+        }
         notifications.update(index.badgePlan(today: LocalDate(Date())))
     }
 
@@ -724,10 +749,13 @@ import UIKit
     // MARK: Changes made outside Ta Da
 
     /// Brings the index and the open document up to date with the files on disk. Runs when the folder
-    /// watcher fires and when the app becomes active. Calls during a refresh fold into one more pass, so
-    /// each call returns after a pass that started after it.
-    func refresh() async {
+    /// watcher fires (with the files it reported, `changed`) and when the app becomes active (nil: everything).
+    /// Folders, attachments and the trash are scanned again only when `changed` or the Markdown files' changes
+    /// call for it. Calls during a refresh fold into one more pass, so each call returns after a pass that
+    /// started after it.
+    func refresh(_ changed: Set<URL>? = nil) async {
         guard let vault else { return }
+        refreshScope.formUnion(vault.refreshScope(for: changed))
         if let refreshing {
             refreshAgain = true
             await refreshing.value
@@ -738,6 +766,8 @@ import UIKit
             defer { refreshing = nil }
             repeat {
                 refreshAgain = false
+                let scope = refreshScope
+                refreshScope = []
                 let epoch = attachmentEpoch
                 #if os(iOS)
                 await Self.run { vault.downloadPlaceholders() }
@@ -748,10 +778,18 @@ import UIKit
                 fileDates = changes.dates
                 await apply(changes, from: vault)
                 await loadSettings(from: vault, ifChanged: true)
-                await rescanFolders(vault)
-                trash = await Self.run { vault.trashedItems() }
-                trashedAttachments = await Self.run { vault.trashedAttachments() }
-                trashSelection.formIntersection(trash.map(\.id) + trashedAttachments.map(\.id))
+                let filesChanged = !changes.isEmpty || scope.contains(.other)
+                if filesChanged { await rescanFolders(vault) }
+                if scope.contains(.trash) {
+                    trash = await Self.run { vault.trashedItems() }
+                    trashedAttachments = await Self.run { vault.trashedAttachments() }
+                    trashSelection.formIntersection(trash.map(\.id) + trashedAttachments.map(\.id))
+                }
+                guard filesChanged || scope.contains(.trash) else {
+                    multiSelection = multiSelection.filter { index[$0] != nil }
+                    continue
+                }
+                refreshCount += 1
                 let attachments = await Self.run { vault.attachmentPaths() }
                 guard epoch == attachmentEpoch else { continue }
                 if attachments != self.attachments { self.attachments = attachments }

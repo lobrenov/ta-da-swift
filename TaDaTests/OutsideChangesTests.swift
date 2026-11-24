@@ -36,6 +36,20 @@ struct OutsideChangesTests {
         #expect(model.index["tasks/Other.md"] == nil)
     }
 
+    @Test func aRefreshFindsAFileTrashedByAnotherApp() async throws {
+        let model = await folder.model()
+        try folder.write("---\ntype: task\nstatus: Doing\n---\n", ".trash/Gone.md")
+        await model.refresh([folder.url.appending(path: ".trash/Gone.md")])
+        #expect(model.trash.map(\.id) == [".trash/Gone.md"])
+    }
+
+    @Test func aRefreshFindsANewImageTheWatcherSaw() async throws {
+        let model = await folder.model()
+        try folder.write("png", "Ta Da/attachments/New.png")
+        await model.refresh([folder.url.appending(path: "Ta Da/attachments/New.png")])
+        #expect(model.attachments.contains("Ta Da/attachments/New.png"))
+    }
+
     @Test func aRefreshCalledAsAnotherEndsStillScans() async throws {
         let model = await folder.model()
         let first = Task { await model.refresh() }

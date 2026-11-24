@@ -4,6 +4,8 @@ import Foundation
 /// File work is synchronous apart from `loadIndex()`: call it off the main actor.
 public struct Vault: Sendable {
     public let root: URL
+    /// Whether a file's contents are on this device; false for an iCloud Drive file not downloaded yet or evicted.
+    var isDownloaded: @Sendable (URL) -> Bool = Vault.isDownloaded
 
     /// Ta Da's own folder, at the top level: what Ta Da creates goes in it.
     public static let home = "Ta Da"
@@ -28,6 +30,41 @@ public struct Vault: Sendable {
         guard components.count > root.count, components.starts(with: root), url.pathExtension.lowercased() == "md" else { return nil }
         let relative = components.dropFirst(root.count)
         return relative.contains { $0.hasPrefix(".") } ? nil : relative.joined(separator: "/")
+    }
+
+    /// What a refresh scans besides the Markdown files' dates.
+    public struct RefreshScope: OptionSet, Sendable {
+        public let rawValue: Int
+        public init(rawValue: Int) { self.rawValue = rawValue }
+        /// `.trash/`.
+        public static let trash = RefreshScope(rawValue: 1)
+        /// Folders, attachments and iCloud placeholders.
+        public static let other = RefreshScope(rawValue: 2)
+        public static let all: RefreshScope = [.trash, .other]
+    }
+
+    /// What a refresh must scan for the files and folders a watcher reported (`all` for nil, which it couldn't say, and for
+    /// a path it can't place under the folder). Markdown files outside hidden folders need nothing, since their dates are
+    /// always compared; hidden files other than iCloud placeholders, such as temporary files and `.obsidian/`, need
+    /// nothing either.
+    public func refreshScope(for urls: Set<URL>?) -> RefreshScope {
+        guard let urls else { return .all }
+        let root = root.resolvingSymlinksInPath().pathComponents
+        var scope: RefreshScope = []
+        for url in urls {
+            let components = url.resolvingSymlinksInPath().pathComponents
+            guard components.starts(with: root) else { return .all }
+            let relative = components.dropFirst(root.count)
+            guard let first = relative.first else { return .all }
+            if first == Self.trashFolder {
+                scope.insert(.trash)
+            } else if relative.contains(where: { $0.hasPrefix(".") }) {
+                if Self.placeholderOriginal(url.lastPathComponent) != nil { scope.insert(.other) }
+            } else if url.pathExtension.lowercased() != "md" {
+                scope.insert(.other)
+            }
+        }
+        return scope
     }
 
     // MARK: Bookmarks
@@ -165,16 +202,63 @@ public struct Vault: Sendable {
 
     /// Reads and parses every Ta Da file. Unreadable files and other notes are left out.
     @concurrent public func loadIndex() async -> VaultIndex {
-        VaultIndex(markdownPaths().compactMap { try? load($0) })
+        VaultIndex(await load(markdownPaths()).items)
+    }
+
+    /// Reads and parses the files at `paths`, in parallel batches; files that can't be read are left out. `notDownloaded`
+    /// holds the files iCloud Drive hasn't downloaded, which are asked for instead of waited on.
+    @concurrent public func load(_ paths: [String]) async -> (items: [Item], notDownloaded: Set<String>) {
+        let size = max(64, paths.count / ProcessInfo.processInfo.activeProcessorCount + 1)
+        let batches = stride(from: 0, to: paths.count, by: size).map { Array(paths[$0..<min($0 + size, paths.count)]) }
+        return await withTaskGroup { group in
+            for batch in batches {
+                group.addTask { loadBatch(batch) }
+            }
+            var items: [Item] = [], notDownloaded: Set<String> = []
+            for await batch in group {
+                items += batch.items
+                notDownloaded.formUnion(batch.notDownloaded)
+            }
+            return (items, notDownloaded)
+        }
+    }
+
+    private func loadBatch(_ paths: [String]) -> (items: [Item], notDownloaded: [String]) {
+        var notDownloaded: [String] = [], present: [String] = []
+        for path in paths {
+            if isDownloaded(url(for: path)) {
+                present.append(path)
+            } else {
+                try? FileManager.default.startDownloadingUbiquitousItem(at: url(for: path))
+                notDownloaded.append(path)
+            }
+        }
+        let items = zip(present, CoordinatedFileIO.readAll(present.map(url(for:)))).compactMap { path, text in
+            (try? text.get()).flatMap { Item(parsing: $0, path: path) }
+        }
+        return (items, notDownloaded)
+    }
+
+    /// Whether the file's contents are on this device. A file outside iCloud Drive always is.
+    static func isDownloaded(_ url: URL) -> Bool {
+        guard let status = (try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey]))?.ubiquitousItemDownloadingStatus
+        else { return true }
+        return status == .current
     }
 
     /// What changed on disk since `known` (from an earlier `changes` or `modificationDates()`).
-    /// Changed and new files are reparsed; a file that can't be read right now keeps its old date,
-    /// so the next call tries it again. `presenter` is the open file's `FilePresenter`, if one is open.
+    /// Changed and new files are reparsed; a file that can't be read right now, or that iCloud Drive hasn't downloaded
+    /// (it's asked for), keeps its old date, so the next call tries it again. `presenter` is the open file's
+    /// `FilePresenter`, if one is open.
     public func changes(since known: [String: Date], presenter: FilePresenter? = nil) -> VaultChanges {
         var dates = modificationDates()
         var changed: [String: Item?] = [:]
         for (path, date) in dates where known[path] != date {
+            guard isDownloaded(url(for: path)) else {
+                try? FileManager.default.startDownloadingUbiquitousItem(at: url(for: path))
+                dates[path] = known[path]
+                continue
+            }
             do {
                 changed[path] = .some(try load(path, presenter: presenter))
             } catch {

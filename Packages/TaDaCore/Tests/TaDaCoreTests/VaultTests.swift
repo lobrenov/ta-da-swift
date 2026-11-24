@@ -58,6 +58,23 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
     }
 }
 
+@Test func filesNotDownloadedAreLeftOutUntilTheyAre() async throws {
+    try await withTemporaryFolder { folder in
+        var vault = Vault(root: folder)
+        try writeFile("---\ntype: task\n---\n", "Ta Da/tasks/Here.md", in: folder)
+        try writeFile("---\ntype: task\n---\n", "Ta Da/tasks/Away.md", in: folder)
+        vault.isDownloaded = { !$0.lastPathComponent.hasPrefix("Away") }
+        let dates = vault.modificationDates()
+        let loaded = await vault.load(dates.keys.sorted())
+        #expect(loaded.items.map(\.path) == ["Ta Da/tasks/Here.md"] && loaded.notDownloaded == ["Ta Da/tasks/Away.md"])
+
+        let known = dates.filter { !loaded.notDownloaded.contains($0.key) }
+        #expect(vault.changes(since: known).isEmpty, "still not downloaded")
+        vault.isDownloaded = { _ in true }
+        #expect(vault.changes(since: known).changed.keys.sorted() == ["Ta Da/tasks/Away.md"])
+    }
+}
+
 @Test func placeholdersReserveTheirNames() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)
@@ -244,10 +261,22 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
     }
 }
 
+@Test func aRefreshScansOnlyWhatTheChangesNeed() {
+    let vault = Vault(root: URL(filePath: "/tmp/Vault"))
+    func scope(_ paths: String...) -> Vault.RefreshScope { vault.refreshScope(for: Set(paths.map { URL(filePath: "/tmp/Vault/" + $0) })) }
+    #expect(vault.refreshScope(for: nil) == .all)
+    #expect(scope("Ta Da/tasks/Task.md", "Ta Da/tasks/.8F2A.tmp", ".obsidian/workspace.json") == [])
+    #expect(scope(".trash/Task.md") == .trash)
+    #expect(scope("Ta Da/attachments/a.png") == .other && scope("Meetings") == .other)
+    #expect(scope("Ta Da/tasks/.Task.md.icloud") == .other)
+    #expect(scope("") == .all)
+    #expect(vault.refreshScope(for: [URL(filePath: "/elsewhere/a.png")]) == .all, "a path it can't place")
+}
+
 @Test func theWatcherReportsChanges() async throws {
     try await withTemporaryFolder { folder in
         let fired = Fired()
-        let watcher = try #require(VaultWatcher(root: folder, latency: 0.05) { fired.set() })
+        let watcher = try #require(VaultWatcher(root: folder, latency: 0.05) { _ in fired.set() })
         try await Task.sleep(for: .milliseconds(200))
         #if os(macOS)
         try writeFile(task, "tasks/New.md", in: folder)
