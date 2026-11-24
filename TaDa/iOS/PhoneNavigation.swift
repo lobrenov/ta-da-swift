@@ -245,6 +245,36 @@ enum PhoneTabReselect: Equatable {
         return tab == .agenda && agenda != .day(today) ? .showAgendaToday : nil
     }
 
+    /// Shows what an intent or Handoff asked for: a task under its project's, area's or Loose's screen, a project or area
+    /// on its own, in the Tasks tab (the Logbook's in Other, a note under its folder in Notes); the Agenda, Loose tasks or
+    /// the Logbook.
+    func show(_ request: AppModel.OpenRequest, in index: VaultIndex) {
+        switch request {
+        case let .file(path):
+            guard let item = index[path] else { return }
+            let parent = index.parent(of: item).map(PhoneRoute.page) ?? .loose
+            if item.isLogged {
+                tab = .other
+                stacks[.other] = [.logbook, .file(path)]
+            } else if item.properties.kind == .note {
+                tab = .notes
+                stacks[.notes] = [.folder(Vault.folder(of: path)), .file(path)]
+            } else {
+                tab = .tasks
+                stacks[.tasks] = item.properties.kind == .task ? [parent, .file(path)] : [.page(of: item)]
+            }
+        case .domain(.loose):
+            tab = .tasks
+            stacks[.tasks] = [.loose]
+        case .domain(.logbook):
+            tab = .other
+            stacks[.other] = [.logbook]
+        case .domain:
+            tab = .agenda
+            stacks[.agenda] = []
+        }
+    }
+
     func stack(_ tab: PhoneTab) -> Binding<[PhoneRoute]> {
         Binding { self.stacks[tab] ?? [] } set: { self.stacks[tab] = $0 }
     }

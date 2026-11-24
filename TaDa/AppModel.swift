@@ -551,7 +551,18 @@ import UIKit
     /// Opens the saved folder, if there is one and it isn't open already (a reopened window calls this again).
     func start() async {
         guard vault == nil else { return }
-        await openSavedFolder()
+        if let starting { return await starting.value }
+        let task = Task { await openSavedFolder() }
+        starting = task
+        await task.value
+        starting = nil
+    }
+    @ObservationIgnored private var starting: Task<Void, Never>?
+
+    /// Opens the saved folder if it isn't open, as when an intent launches the app, and says whether a folder is ready.
+    func ready() async -> Bool {
+        if state != .ready { await start() }
+        return state == .ready
     }
 
     private func openSavedFolder() async {
@@ -945,6 +956,26 @@ import UIKit
     }
 
     // MARK: Navigation
+
+    /// A file or domain an intent asked to show.
+    enum OpenRequest: Equatable {
+        case file(String)
+        case domain(Domain)
+    }
+    /// On iPhone, the request the tabs show next; nil once shown.
+    var openRequest: OpenRequest?
+
+    /// Shows what an intent asked for: on the Mac in the window, on iPhone through `openRequest`.
+    func reveal(_ request: OpenRequest) {
+        #if os(macOS)
+        switch request {
+        case let .file(path): switchTo(path)
+        case let .domain(domain): show(domain)
+        }
+        #else
+        openRequest = request
+        #endif
+    }
 
     /// Shows a domain from the sidebar or a menu, ending any search.
     func show(_ domain: Domain) {

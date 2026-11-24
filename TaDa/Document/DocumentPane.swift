@@ -34,6 +34,7 @@ struct DocumentPane: View {
                         .padding(20)
                 }
             }
+            .fileActivity(model, path: document.path)
         } else if let error = model.documentError, model.selection != nil {
             EmptyState(systemImage: "exclamationmark.triangle", title: "Couldn’t open the file", message: "\(error)")
         } else if model.selection == nil, model.multiSelection.count > 1 {

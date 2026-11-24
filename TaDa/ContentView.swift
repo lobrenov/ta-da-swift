@@ -18,6 +18,7 @@ struct ContentView: View {
             }
         }
         .undoToast(model)
+        .continuesFileActivity(model)
         .imageDialogs(model)
         .folderImporter(isPresented: Bindable(VaultMenu.shared).isChoosingFolder, model: model)
         .onChange(of: model.quickSwitcherRequest) { quickSwitcher.toggle(model) }

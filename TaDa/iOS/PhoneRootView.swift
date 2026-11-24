@@ -30,6 +30,7 @@ struct PhoneRootView: View {
         .tabViewStyle(.sidebarAdaptable)
         // Above the tab bar.
         .undoToast(model, inset: 56)
+        .continuesFileActivity(model)
         .tint(theme.color(\.accent))
         .sheet(item: $nav.sheet) { sheet in
             switch sheet {
@@ -68,9 +69,13 @@ struct PhoneRootView: View {
         .phoneHaptics(nav, enabled: model.haptics)
         .onChange(of: nav.tab) { nav.endPicking() }
         // After the tab view is on screen: a restored screen hides the tab bar as it appears.
-        .task { restorePlace() }
+        .task {
+            restorePlace()
+            showRequest()
+        }
         .onChange(of: nav.tab) { savePlace() }
         .onChange(of: nav.stacks) { savePlace() }
+        .onChange(of: model.openRequest) { showRequest() }
     }
 
     /// The tab and its screens, kept so the folder opens there again.
@@ -97,6 +102,13 @@ struct PhoneRootView: View {
             case .loose, .settings, .integrations, .logbook, .attachments, .trash, .tag: true
             }
         })
+    }
+
+    /// Shows what an intent asked for, once.
+    private func showRequest() {
+        guard let request = model.openRequest else { return }
+        model.openRequest = nil
+        nav.show(request, in: model.index)
     }
 
     /// Picks `tab`; picking the selected one again pops its screens, or takes the Agenda to today.

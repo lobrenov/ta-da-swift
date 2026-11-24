@@ -1,6 +1,7 @@
 // App entry. On the Mac: one main window plus Settings, sharing one AppModel, which the app delegate owns.
 // On iOS: one window group; the model refreshes (and takes the date) when the scene becomes active and saves when it leaves,
 // and background app refresh sets the badge.
+import AppIntents
 import Combine
 import SwiftUI
 import TaDaCore
@@ -31,12 +32,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updater = Updater()
     private let hotkeys = HotkeyService()
     private lazy var quickEntry = QuickEntryPanel(model: model)
+    private lazy var spotlight = SpotlightSync(model: model)
+
+    override init() {
+        super.init()
+        let model = model
+        AppDependencyManager.shared.add { model }
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NotificationCenter.default.addObserver(forName: .NSCalendarDayChanged, object: nil, queue: .main) { [model] _ in
             MainActor.assumeIsolated { model.today = LocalDate(Date()) }
         }
         hotkeys.onPress = { [weak self] in self?.hotkeyPressed() }
+        spotlight.start()
         registerHotkey()
     }
 
@@ -94,8 +103,17 @@ import BackgroundTasks
 
 @main
 struct TaDaApp: App {
-    @State private var model = AppModel.forLaunch()
+    @State private var model: AppModel
+    private let spotlight: SpotlightSync
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        let model = AppModel.forLaunch()
+        self.model = model
+        AppDependencyManager.shared.add { model }
+        spotlight = SpotlightSync(model: model)
+        spotlight.start()
+    }
 
     var body: some Scene {
         WindowGroup {
