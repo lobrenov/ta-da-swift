@@ -25,15 +25,19 @@ extension AppModel {
         return item
     }
 
-    /// Adds a task to the open folder as Quick Entry would, with tags whose names are valid.
-    func addTask(_ title: String, in parent: Parent?, due: LocalDate?, tags: [String]) async throws -> Item {
+    /// Adds a task to the open folder as Quick Entry would, with tags whose names are valid and `note` as its body.
+    func addTask(_ title: String, in parent: Parent?, due: LocalDate?, tags: [String], repeating rule: RepeatRule? = nil,
+                 note: String? = nil) async throws -> Item {
         guard await ready() else { throw IntentError.noFolder }
         var draft = QuickEntryDraft()
         draft.title = title
         draft.parent = parent
         draft.dueDate = due
+        draft.repeatText = rule.map { $0.anchored(to: due ?? today).phrase }
         draft.tags = tags.compactMap(Tag.init).filter { Tag.isValidName($0.name) }
-        guard let path = await create(draft), let item = index[path] else { throw IntentError.notCreated }
+        guard let path = await create(draft) else { throw IntentError.notCreated }
+        if let note, !note.isEmpty { await edit(path) { $0 + note + "\n" } }
+        guard let item = index[path] else { throw IntentError.notCreated }
         return item
     }
 }
@@ -42,7 +46,7 @@ struct AddTaskIntent: AppIntent {
     static let title: LocalizedStringResource = "Add Task"
     static let description = IntentDescription("Adds a task to the open folder.")
 
-    @Parameter(title: "Title")
+    @Parameter(title: "Title", requestValueDialog: "What’s the task called?")
     var title: String
     @Parameter(title: "Project or Area")
     var parent: ParentEntity?
