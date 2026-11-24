@@ -50,7 +50,7 @@ struct ProjectGroups: View {
 
     var body: some View {
         ForEach(sections(groups), id: \.first?.id) { section in
-            VStack(alignment: .leading, spacing: 1) {
+            LazyVStack(alignment: .leading, spacing: 1) {
                 ForEach(section) { group in
                     header(group)
                     ForEach(group.tasks) { task in

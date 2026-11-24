@@ -77,6 +77,19 @@ struct LinkMarkerTests {
         let after = TitleResolver(titles: index.titles, statuses: index.taskStatuses).fingerprint()
         #expect(before != after)
     }
+
+    @Test func generationFingerprintChangesWithTheIndexAndTheBoxSwitch() {
+        var index = index()
+        func print(_ statuses: [String: Status]) -> AnyHashable {
+            TitleResolver(titles: [], statuses: statuses, generation: index.generation).fingerprint()
+        }
+        let before = print(index.taskStatuses)
+        #expect(print([:]) != before)
+        var task = index["Ta Da/tasks/A.md"]!
+        task.properties.status = .done
+        index.update(task)
+        #expect(print(index.taskStatuses) != before)
+    }
 }
 
 /// The editor's chips for a subtask's `>date` and `@[[parent]]`.

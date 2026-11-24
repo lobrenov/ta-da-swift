@@ -64,7 +64,7 @@ Check for the Part: `npm test` and `npm run build` pass.
 
 ## Part 4 — Rendering (app)
 14. **Index-derived data.** `titles`, `taskStatuses`, `tasks`, `liveItems` stored in `VaultIndex`; `LiveEditor`'s link fingerprint uses an index generation number. Views that need only "has items" or one item stop reading `model.index`. Check: TaDaCore tests that each stays equal to a full recomputation after update and remove; `LargeVaultTests` "index update, one keystroke" stays ≤ 0.2 ms.
-15. **Mac lists.** `TaskSections`, `ProjectGroups`, `LogbookView` and `AttachmentsBrowser` put headers and rows straight into the `LazyVStack`, with `isSelected` read per row. Check: with the 1,000-file vault, scrolling Loose and the Logbook and moving the selection with the arrow keys stays smooth (Instruments, SwiftUI template: rows re-evaluated per selection change ≤ 2).
+15. **Mac lists.** `TaskSections`, `ProjectGroups`, `LogbookView` and `AttachmentsBrowser` hold each section's rows in a `LazyVStack`, so only visible rows are built and the sections keep their spacing. Check: `LargeVaultUITimingTests` list step doesn't get worse.
 16. **Logbook.** Groups built once in `updateLists` by appending in place; `hasFilesToLog` reads them. Check: `TaDaTests` test of the groups unchanged; a 2,000-item month groups in ≤ 5 ms.
 17. **Per-keystroke search.** The link menu and Quick Switcher rank before sorting and sort only the matches; search waits 150 ms after typing and `Queries.search` computes each item's match once. Check: tests of the same results as before; a timing test: link menu ranking over 10k items ≤ 10 ms.
 18. **Trash view.** Attachment data computed once in `refresh`. Check: the Trash tests unchanged.

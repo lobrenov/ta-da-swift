@@ -11,7 +11,7 @@ struct PhoneLogbookScreen: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let groups = LogbookGroup.groups(model.logbook, index: model.index, today: model.today)
+        let groups = model.logbookGroups
         let waiting = groups.filter(\.isWaiting).map(\.items.count).reduce(0, +)
         List {
             ForEach(groups) { group in

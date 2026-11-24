@@ -83,11 +83,26 @@ final class LinkMenuSearch {
     private func links(_ query: String) -> (label: String?, choices: [LinkChoice]) {
         let index = source.index
         let recent = source.recent.compactMap { index[$0] }.filter { $0.path != source.openPath && !$0.isLogged }.prefix(Self.recentCount)
-        let others = index.liveItems.filter { $0.path != source.openPath && !recent.contains($0) }.sorted(by: VaultIndex.byTitle)
-        if query.trimmingCharacters(in: .whitespaces).isEmpty, !recent.isEmpty {
-            return ("Recent", recent.map(choice))
+        let others = index.liveItems.filter { $0.path != source.openPath && !recent.contains($0) }
+        if query.trimmingCharacters(in: .whitespaces).isEmpty {
+            if !recent.isEmpty { return ("Recent", recent.map(choice)) }
+            return (nil, others.sorted(by: VaultIndex.byTitle).prefix(Self.limit).map(choice))
         }
-        return (nil, LinkSearch.rank(Array(recent) + others, query: query, name: \.title).prefix(Self.limit).map(choice))
+        return (nil, Self.rank(recent: Array(recent), others: others, query: query, limit: Self.limit).map(choice))
+    }
+
+    /// The `recent` files then the `others` that match a typed `query`, best match first; within a rank, recent files
+    /// in their order, then the rest by title. Only the first `limit` are sorted.
+    static func rank(recent: [Item], others: [Item], query: String, limit: Int) -> [Item] {
+        let position = Dictionary(recent.enumerated().map { ($1.path, $0) }, uniquingKeysWith: { first, _ in first })
+        return LinkSearch.rank(recent + others, query: query, name: \.title, then: { a, b in
+            switch (position[a.path], position[b.path]) {
+            case let (x?, y?): x < y
+            case (_?, nil): true
+            case (nil, _?): false
+            case (nil, nil): VaultIndex.byTitle(a, b)
+            }
+        }, limit: limit)
     }
 
     private func embeds(_ query: String) -> (label: String?, choices: [LinkChoice]) {

@@ -7,14 +7,21 @@ import TaDaCore
 struct SearchResultsView: View {
     let model: AppModel
     @Environment(\.theme) private var theme
+    /// The text `results` are for, nil before the first search; it follows `AppModel.searchText` 150 ms after typing stops.
+    @State private var searched: String?
+    @State private var results: [Item] = []
+
+    private struct Run: Equatable {
+        let text: String
+        let revision: Int
+    }
 
     var body: some View {
-        let results = model.index.search(model.searchText)
-        let folders = FolderNode.search(model.searchText, in: model.folderTree)
+        let folders = FolderNode.search(searched ?? "", in: model.folderTree)
         let count = results.count + folders.count
         // Tasks and notes only: picking a project, area or folder leaves the search for its page.
         BrowserColumn(model: model, paths: results.filter { [.task, .note].contains($0.properties.kind) }.map(\.path), spacing: 1,
-                      empty: count == 0 ? noMatches : nil) {
+                      empty: count == 0 && searched != nil ? noMatches : nil) {
             DomainHeader(title: "Search", systemImage: "magnifyingglass", tint: \.muted) {
                 Text("\(count) match\(count == 1 ? "" : "es")")
             }
@@ -55,10 +62,19 @@ struct SearchResultsView: View {
                 }
             }
         }
+        .task(id: Run(text: model.searchText, revision: model.indexRevision)) {
+            let text = model.searchText
+            if searched != nil, text != searched {
+                try? await Task.sleep(for: .milliseconds(150))
+                if Task.isCancelled { return }
+            }
+            searched = text
+            results = model.index.search(text)
+        }
     }
 
     private var noMatches: EmptyState {
-        EmptyState(systemImage: "magnifyingglass", title: "No results for “\(model.searchText)”")
+        EmptyState(systemImage: "magnifyingglass", title: "No results for “\(searched ?? "")”")
     }
 
     /// A project, area or folder: its icon, its name over a muted `line`; a click leaves the search for its page.

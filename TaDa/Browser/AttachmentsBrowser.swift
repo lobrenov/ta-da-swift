@@ -57,7 +57,7 @@ struct AttachmentsBrowser: View {
     }
 
     private func group(_ title: String, uses: [AttachmentUse], note: String) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
+        LazyVStack(alignment: .leading, spacing: 1) {
             GroupTitle(title: title, note: note)
             ForEach(uses) { AttachmentRow(model: model, use: $0) }
         }

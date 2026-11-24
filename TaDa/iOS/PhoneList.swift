@@ -167,18 +167,25 @@ struct PhoneSearchResults: View {
     let query: String
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
+    /// The text `results` are for, nil before the first search; it follows `query` 150 ms after typing stops.
+    @State private var searched: String?
+    @State private var results: [Item] = []
+
+    private struct Run: Equatable {
+        let text: String
+        let revision: Int
+    }
 
     var body: some View {
-        let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
-        let results = model.index.search(query)
+        let words = (searched ?? "").split(whereSeparator: \.isWhitespace).map(String.init)
         let projects = results.filter { $0.properties.kind == .project }
         let tasks = results.filter { $0.properties.kind == .task }
         let notes = results.filter { $0.properties.kind == .note }
         let areas = results.filter { $0.properties.kind == .area }
-        let folders = FolderNode.search(query, in: model.folderTree)
+        let folders = FolderNode.search(searched ?? "", in: model.folderTree)
         LazyVStack(alignment: .leading, spacing: 0) {
-            if results.isEmpty, folders.isEmpty {
-                ContentUnavailableView.search(text: query).padding(.top, 60)
+            if let searched, results.isEmpty, folders.isEmpty {
+                ContentUnavailableView.search(text: searched).padding(.top, 60)
             }
             if !areas.isEmpty {
                 PhoneSectionHeader(title: "Areas")
@@ -246,6 +253,14 @@ struct PhoneSearchResults: View {
             PickingBarClearance()
         }
         .environment(\.swipesToPick, false)
+        .task(id: Run(text: query, revision: model.indexRevision)) {
+            if searched != nil, query != searched {
+                try? await Task.sleep(for: .milliseconds(150))
+                if Task.isCancelled { return }
+            }
+            searched = query
+            results = model.index.search(query)
+        }
     }
 
     private func place(of task: Item) -> String {

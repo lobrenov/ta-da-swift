@@ -13,7 +13,7 @@ struct WorkspaceView: View {
             if model.state == .loading {
                 ProgressView("Reading \(model.folderDisplayName)…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if model.index.items.isEmpty, model.domain != .trash {
+            } else if !model.hasItems, model.domain != .trash {
                 EmptyState(systemImage: "doc.badge.plus", title: "No Ta Da files yet",
                            message: "Nothing in “\(model.folderDisplayName)” has `type: task`, `type: project` or `type: area` frontmatter.")
             } else {

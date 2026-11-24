@@ -292,7 +292,7 @@ struct TaskSections: View {
     var body: some View {
         ForEach(sections) { section in
             let folded = model.isFolded(section, by: grouping, in: foldKey)
-            VStack(alignment: .leading, spacing: 1) {
+            LazyVStack(alignment: .leading, spacing: 1) {
                 CountGroupHeader(title: section.title, count: section.tasks.count, isExpanded: Binding(
                     get: { !folded },
                     set: { _ in model.toggleFolded(section, by: grouping, in: foldKey) }),

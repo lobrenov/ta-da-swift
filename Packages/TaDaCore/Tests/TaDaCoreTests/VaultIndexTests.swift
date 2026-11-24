@@ -223,6 +223,64 @@ private func expectInStep(_ index: VaultIndex, sourceLocation: SourceLocation = 
     #expect(index.taskStatuses["live"] == .blocked)
 }
 
+/// Every stored value of `index` against one rebuilt from the same items.
+private func expectStoredValuesMatchRebuild(_ index: VaultIndex, sourceLocation: SourceLocation = #_sourceLocation) {
+    let fresh = VaultIndex(Array(index.items.values))
+    #expect(index.titles == fresh.titles, sourceLocation: sourceLocation)
+    #expect(index.taskStatuses == fresh.taskStatuses, sourceLocation: sourceLocation)
+    #expect(Set(index.liveItems.map(\.path)) == Set(index.items.values.filter { !$0.isLogged }.map(\.path)), sourceLocation: sourceLocation)
+    for kind in [Item.Kind.task, .project, .area] {
+        let live = Set(index.items.values.filter { !$0.isLogged && $0.properties.kind == kind }.map(\.path))
+        let stored: [Item] = switch kind { case .task: index.tasks; case .project: index.projects; default: index.areas }
+        #expect(Set(stored.map(\.path)) == live, sourceLocation: sourceLocation)
+    }
+    #expect(Set(index.logged.map(\.path)) == Set(index.items.values.filter(\.isLogged).map(\.path)), sourceLocation: sourceLocation)
+}
+
+@Test func storedValuesEqualARebuildAfterUpdatesAndRemoves() {
+    var index = VaultIndex([
+        makeItem("tasks/Ark.md", "type: task\nstatus: Doing"),
+        makeItem("projects/Ark.md", "type: project"),
+        makeItem("Notes/Ark.md", "tags: []"),
+        makeItem("Ta Da/logbook/2026-09/Ark.md", "type: task\nstatus: Done"),
+        makeItem("tasks/Solo.md", "type: task\nstatus: Todo"),
+        makeItem("areas/Work.md", "type: area"),
+    ])
+    expectStoredValuesMatchRebuild(index)
+    let steps: [() -> (Item?, String?)] = [
+        { (makeItem("tasks/Ark.md", "type: task\nstatus: Blocked"), nil) },
+        { (makeItem("projects/Ark.md", "type: area"), nil) },
+        { (makeItem("tasks/Solo.md", "type: project"), nil) },
+        { (makeItem("Notes/Ark.md", "type: task\nstatus: Done"), nil) },
+        { (makeItem("Ta Da/logbook/2026-09/Solo.md", "type: task\nstatus: Done"), nil) },
+        { (nil, "tasks/Ark.md") },
+        { (nil, "projects/Ark.md") },
+        { (makeItem("Notes/New.md", "tags: []"), nil) },
+        { (nil, "tasks/Solo.md") },
+        { (nil, "Ta Da/logbook/2026-09/Ark.md") },
+        { (nil, "missing.md") },
+    ]
+    for step in steps {
+        let (item, path) = step()
+        if let item { index.update(item) }
+        if let path { index.remove(path) }
+        expectStoredValuesMatchRebuild(index)
+    }
+}
+
+@Test func generationChangesOnlyWhenTitlesOrStatusesChange() {
+    var index = VaultIndex([makeItem("tasks/Ark.md", "type: task\nstatus: Doing")])
+    let first = index.generation
+    index.update(makeItem("tasks/Ark.md", "type: task\nstatus: Doing\ntags: [a]"))
+    #expect(index.generation == first)
+    index.update(makeItem("tasks/Ark.md", "type: task\nstatus: Done"))
+    let second = index.generation
+    #expect(second != first)
+    index.update(makeItem("tasks/Other.md", "type: task\nstatus: Done"))
+    #expect(index.generation != second)
+    #expect(VaultIndex().generation != VaultIndex().generation)
+}
+
 @Test func notesAreNeverFiledOrParents() {
     let note = makeItem("Ark.md", "project: \"[[Ta Da MVP]]\"\narea: \"[[Work]]\"")
     let area = makeItem("areas/Work.md", "type: area")

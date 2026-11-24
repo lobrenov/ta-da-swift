@@ -25,6 +25,8 @@ struct LiveEditor: View {
     var linkTargets: Set<String> = []
     /// The status of the task each lowercased title resolves to (`TitleResolver`).
     var linkStatuses: [String: Status] = [:]
+    /// The index's `generation`; links restyle when it changes, instead of when `linkTargets` or `linkStatuses` hash differently.
+    var linkGeneration: VaultIndex.Generation? = nil
     var fitsContent = false
     var autocomplete = Autocomplete()
     /// Plays a light tap when a task box is toggled (iOS).
@@ -903,7 +905,7 @@ struct LiveEditor: View {
             fillOpacity: theme.isDark ? 0.14 : 0.09, ringOpacity: theme.isDark ? 0.3 : 0.24
         )
         config.services = MarkdownEditorServices(
-            wikiLinks: TitleResolver(titles: linkTargets, statuses: linkStatuses),
+            wikiLinks: TitleResolver(titles: linkTargets, statuses: linkStatuses, generation: linkGeneration),
             images: AttachmentImages(root: links?.vault?.root, paths: links?.attachments ?? []),
             syntaxHighlighter: CodeBlockStyle(background: theme.code)
         )
@@ -989,6 +991,8 @@ nonisolated private struct HighlightBubble: MarkdownExtension {
 nonisolated struct TitleResolver: WikiLinkResolver {
     let titles: Set<String>
     var statuses: [String: Status] = [:]
+    /// Stands for `titles` and `statuses` in the fingerprint when given.
+    var generation: VaultIndex.Generation? = nil
 
     func resolve(displayName: String, range: NSRange) -> WikiLinkResolution? {
         guard let link = WikiLink(inner: displayName) else { return nil }
@@ -997,7 +1001,10 @@ nonisolated struct TitleResolver: WikiLinkResolver {
         return WikiLinkResolution(id: displayName, exists: true, marker: statuses[title].map(StatusCheckbox.marker(for:)))
     }
 
-    func fingerprint() -> AnyHashable { [AnyHashable(titles), AnyHashable(statuses)] }
+    func fingerprint() -> AnyHashable {
+        guard let generation else { return [AnyHashable(titles), AnyHashable(statuses)] }
+        return [AnyHashable(generation), AnyHashable(statuses.isEmpty)]
+    }
 }
 
 /// Draws `![[name.png]]` from the folder's images, found as `Vault.attachmentPath(for:in:)` finds them. An image keeps

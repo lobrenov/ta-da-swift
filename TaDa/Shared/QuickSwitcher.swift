@@ -35,8 +35,8 @@ final class QuickSwitcherSearch {
         guard !query.isEmpty else {
             return recent.isEmpty ? [] : [PopupMenuSection(label: "Recent", items: recent.map { .file(choice($0)) })]
         }
-        let others = index.items.values.filter { !recent.contains($0) }.sorted(by: VaultIndex.byTitle)
-        let matches = LinkSearch.rank(recent + others, query: query, name: \.title).prefix(LinkMenuSearch.limit)
+        let others = index.items.values.filter { !recent.contains($0) }
+        let matches = LinkMenuSearch.rank(recent: recent, others: others, query: query, limit: LinkMenuSearch.limit)
         let groups: [(label: String, kind: Item.Kind)] = [("Tasks", .task), ("Projects", .project), ("Areas", .area), ("Notes", .note)]
         let sections = groups.map { group in
             let items = matches.filter { $0.properties.kind == group.kind }

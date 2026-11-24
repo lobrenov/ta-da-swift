@@ -10,11 +10,14 @@ public struct VaultIndex: Sendable {
     public private(set) var titles: Set<String> = []
     /// Lowercased title → the status of the item `items(titled:)` lists first, for titles whose first item is a task (logged
     /// included).
-    public var taskStatuses: [String: Status] {
-        pathsByTitle.compactMapValues { paths in
-            paths.first.flatMap { items[$0] }.flatMap { $0.properties.kind == .task ? $0.properties.status : nil }
-        }
+    public private(set) var taskStatuses: [String: Status] = [:]
+    /// Identifies one index's history: a copy that diverges and is assigned back could repeat a count.
+    /// Identifies this index's `titles` and `taskStatuses` as they stand: it changes when either changes, and differs between indexes.
+    public struct Generation: Hashable, Sendable {
+        let id = UUID()
+        var count = 0
     }
+    public private(set) var generation = Generation()
     /// Lowercased title → paths: live tasks, projects and areas first, then notes, then logged files, each by path, so
     /// resolution is stable when titles repeat across folders and prefers a live Ta Da file.
     private var pathsByTitle: [String: [String]] = [:]
@@ -32,6 +35,12 @@ public struct VaultIndex: Sendable {
     private var notesByFolder: [String: Set<String>] = [:]
     /// Tag path → the tag as spelled by the first carrier (live before logged, then by path), and that path, for each tag in `pathsByTag`.
     private var tagsByPath: [String: (tag: Tag, path: String)] = [:]
+    /// The paths of the live items, and of the live tasks, projects and areas, and the logged items.
+    private var livePaths: Set<String> = []
+    private var taskPaths: Set<String> = []
+    private var projectPaths: Set<String> = []
+    private var areaPaths: Set<String> = []
+    private var loggedPaths: Set<String> = []
 
     public init(_ items: [Item] = []) {
         for item in items { update(item) }
@@ -44,6 +53,7 @@ public struct VaultIndex: Sendable {
         if let old = items.updateValue(item, forKey: item.path) {
             removeLinks(of: old)
             removeTags(of: old)
+            removeKind(of: old)
             Self.remove(old.path, at: Vault.folder(of: old.path), from: &notesByFolder)
             if (old.properties.kind == .note) != (item.properties.kind == .note) { sortTitle(of: item.path) }
         } else {
@@ -51,6 +61,8 @@ public struct VaultIndex: Sendable {
         }
         addLinks(of: item)
         addTags(of: item)
+        addKind(of: item)
+        refreshStatus(ofTitle: Item.title(ofPath: item.path).lowercased())
         if item.properties.kind == .note, !item.isLogged { notesByFolder[Vault.folder(of: item.path), default: []].insert(item.path) }
     }
 
@@ -59,17 +71,19 @@ public struct VaultIndex: Sendable {
         removeTitle(of: path)
         removeLinks(of: old)
         removeTags(of: old)
+        removeKind(of: old)
         Self.remove(path, at: Vault.folder(of: path), from: &notesByFolder)
+        refreshStatus(ofTitle: Item.title(ofPath: path).lowercased())
     }
 
     /// Items that aren't logged.
-    public var liveItems: [Item] { items.values.filter { !$0.isLogged } }
-    public var tasks: [Item] { liveItems.filter { $0.properties.kind == .task } }
-    public var projects: [Item] { liveItems.filter { $0.properties.kind == .project } }
-    public var areas: [Item] { liveItems.filter { $0.properties.kind == .area } }
+    public var liveItems: [Item] { livePaths.compactMap { items[$0] } }
+    public var tasks: [Item] { taskPaths.compactMap { items[$0] } }
+    public var projects: [Item] { projectPaths.compactMap { items[$0] } }
+    public var areas: [Item] { areaPaths.compactMap { items[$0] } }
     public var notes: [Item] { notesByFolder.values.flatMap { $0 }.compactMap { items[$0] } }
     /// Logged tasks and projects.
-    public var logged: [Item] { items.values.filter(\.isLogged) }
+    public var logged: [Item] { loggedPaths.compactMap { items[$0] } }
 
     /// Every tag carried by an item, spelled as in the first carrier (live before logged, then by path), in no order.
     /// Parents carried by no file are left out.
@@ -215,7 +229,7 @@ public struct VaultIndex: Sendable {
         let title = Item.title(ofPath: path).lowercased()
         pathsByTitle[title, default: []].append(path)
         sortTitle(of: path)
-        titles.insert(title)
+        if titles.insert(title).inserted { generation.count += 1 }
     }
 
     /// Re-sorts the paths that share this path's title.
@@ -230,7 +244,35 @@ public struct VaultIndex: Sendable {
         if pathsByTitle[title]?.isEmpty == true {
             pathsByTitle[title] = nil
             titles.remove(title)
+            generation.count += 1
         }
+    }
+
+    /// Sets the title's entry in `taskStatuses` to the status of the item `items(titled:)` lists first, if that's a task.
+    private mutating func refreshStatus(ofTitle title: String) {
+        let status = pathsByTitle[title]?.first.flatMap { items[$0] }.flatMap { $0.properties.kind == .task ? $0.properties.status : nil }
+        guard taskStatuses[title] != status else { return }
+        taskStatuses[title] = status
+        generation.count += 1
+    }
+
+    private mutating func addKind(of item: Item) {
+        if item.isLogged { loggedPaths.insert(item.path); return }
+        livePaths.insert(item.path)
+        switch item.properties.kind {
+        case .task: taskPaths.insert(item.path)
+        case .project: projectPaths.insert(item.path)
+        case .area: areaPaths.insert(item.path)
+        case .note: break
+        }
+    }
+
+    private mutating func removeKind(of item: Item) {
+        loggedPaths.remove(item.path)
+        livePaths.remove(item.path)
+        taskPaths.remove(item.path)
+        projectPaths.remove(item.path)
+        areaPaths.remove(item.path)
     }
 
     /// Files the item under the titles it links to (a task's `project`, an `area`, and the links in its body) and the

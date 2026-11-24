@@ -9,19 +9,35 @@ struct LogbookGroup: Identifiable {
     /// "Completed today", "Waiting for open tasks", "Thursday 1 Oct", "September" or "September 2025".
     let title: String
     let kind: Kind
-    let items: [Item]
+    var items: [Item]
 
     var id: String { title }
     /// Whether the group holds files not logged yet.
     var isWaiting: Bool { kind != .logged }
 
-    /// Newest first, then by title. Files not logged yet come first: those that log tonight, then those `index` holds
+    /// Newest first, then by title (`items` in title order skip the sort). Files not logged yet come first: those that log tonight, then those `index` holds
     /// back for a project's open tasks. A file without a `completedDate` goes in `today`'s group. A repeating task that
     /// logging moves forward isn't logged, so it's left out; one whose series ends stays.
     static func groups(_ items: [Item], index: VaultIndex, today: LocalDate) -> [LogbookGroup] {
         func date(_ item: Item) -> LocalDate { item.properties.completedDate ?? today }
-        let sorted = items.sorted { date($0) != date($1) ? date($0) > date($1) : VaultIndex.byTitle($0, $1) }
-        let live = sorted.filter { !$0.isLogged }
+        let byTitle = items.isSorted(by: VaultIndex.byTitle) ? items : items.sorted(by: VaultIndex.byTitle)
+        let byDate = Dictionary(grouping: byTitle.indices) { date(byTitle[$0]) }
+        var live: [Item] = []
+        var logged: [LogbookGroup] = []
+        var current: (title: String, items: [Item])?
+        for day in byDate.keys.sorted(by: >) {
+            let title = title(for: day, today: today)
+            for item in byDate[day]!.map({ byTitle[$0] }) {
+                guard item.isLogged else { live.append(item); continue }
+                if current?.title == title {
+                    current?.items.append(item)
+                } else {
+                    if let current { logged.append(LogbookGroup(title: current.title, kind: .logged, items: current.items)) }
+                    current = (title, [item])
+                }
+            }
+        }
+        if let current { logged.append(LogbookGroup(title: current.title, kind: .logged, items: current.items)) }
         let held = live.filter(index.waitsForOpenTasks)
         let tonight = live.filter {
             if case .moves = index.repeatMove(of: $0, today: today) { return false }
@@ -30,14 +46,7 @@ struct LogbookGroup: Identifiable {
         var groups: [LogbookGroup] = []
         if !tonight.isEmpty { groups.append(LogbookGroup(title: "Completed today", kind: .logsTonight, items: tonight)) }
         if !held.isEmpty { groups.append(LogbookGroup(title: "Waiting for open tasks", kind: .waitsForOpenTasks, items: held)) }
-        for item in sorted where item.isLogged {
-            let title = title(for: date(item), today: today)
-            if groups.last?.title == title, groups.last?.kind == .logged {
-                groups[groups.count - 1] = LogbookGroup(title: title, kind: .logged, items: groups[groups.count - 1].items + [item])
-            } else {
-                groups.append(LogbookGroup(title: title, kind: .logged, items: [item]))
-            }
-        }
+        groups += logged
         return groups
     }
 
@@ -61,5 +70,12 @@ struct LogbookGroup: Identifiable {
         let tasks = index.tasks(in: item, includingLogged: true).count
         return (["Project", tasks == 1 ? "1 task" : "\(tasks) tasks"] + [index.area(of: item)?.title].compactMap { $0 })
             .joined(separator: " · ")
+    }
+}
+
+private extension Array {
+    /// Whether no element sorts before the one ahead of it.
+    func isSorted(by areInOrder: (Element, Element) -> Bool) -> Bool {
+        zip(self, dropFirst()).allSatisfy { !areInOrder($1, $0) }
     }
 }

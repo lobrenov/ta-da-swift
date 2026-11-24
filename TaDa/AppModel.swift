@@ -40,7 +40,9 @@ import UIKit
 
     private(set) var state = VaultState.noFolder
     private(set) var vault: Vault?
-    private(set) var index = VaultIndex()
+    private(set) var index = VaultIndex() { didSet { if hasItems == index.items.isEmpty { hasItems.toggle() } } }
+    /// Whether the index holds any item; views that only need this don't update with every change to `index`.
+    private(set) var hasItems = false
     var domain = Domain.agenda {
         didSet {
             guard domain != oldValue else { return }
@@ -128,9 +130,9 @@ import UIKit
     /// The folder's images, most recently changed first: what `![[` lists and embeds draw from.
     private(set) var attachments: [String] = []
     /// The Ta Da files in `.trash/`, most recently deleted first.
-    private(set) var trash: [TrashedItem] = []
+    private(set) var trash: [TrashedItem] = [] { didSet { updateTrashedAttachments() } }
     /// The images in `.trash/attachments/`, most recently deleted first.
-    private(set) var trashedAttachments: [TrashedAttachment] = []
+    private(set) var trashedAttachments: [TrashedAttachment] = [] { didSet { updateTrashedAttachments() } }
     /// The image the embed menu asked to rename or delete; the window shows its dialog.
     var imageDialog: ImageDialog?
     enum ImageDialog: Identifiable, Equatable {
@@ -1958,20 +1960,26 @@ import UIKit
 
     /// The trashed images that go with each trashed file, by its path: Trash lists them under it. An image that another
     /// trashed file or a file in the folder embeds goes with none of them.
-    var trashedAttachmentsByFile: [String: [TrashedAttachment]] {
-        let live = Set(index.items.values.flatMap(\.embeds).compactMap { $0.attachmentName?.lowercased() })
-        var byFile: [String: [TrashedAttachment]] = [:]
-        for entry in trash {
-            let images = TrashedAttachment.attachments(of: [entry], in: trashedAttachments, others: trash, live: live)
-            if !images.isEmpty { byFile[entry.id] = images }
-        }
-        return byFile
-    }
+    private(set) var trashedAttachmentsByFile: [String: [TrashedAttachment]] = [:]
 
     /// Trashed images that go with no trashed file: Trash lists them on their own.
-    var looseTrashedAttachments: [TrashedAttachment] {
-        let taken = Set(trashedAttachmentsByFile.values.joined())
-        return trashedAttachments.filter { !taken.contains($0) }
+    private(set) var looseTrashedAttachments: [TrashedAttachment] = []
+
+    /// Sets `trashedAttachmentsByFile` and `looseTrashedAttachments` from `trash`, `trashedAttachments` and the images the
+    /// folder's files embed.
+    private func updateTrashedAttachments() {
+        var byFile: [String: [TrashedAttachment]] = [:]
+        if !trashedAttachments.isEmpty {
+            let live = Set(index.items.values.flatMap(\.embeds).compactMap { $0.attachmentName?.lowercased() })
+            for entry in trash {
+                let images = TrashedAttachment.attachments(of: [entry], in: trashedAttachments, others: trash, live: live)
+                if !images.isEmpty { byFile[entry.id] = images }
+            }
+        }
+        let taken = Set(byFile.values.joined())
+        let loose = trashedAttachments.filter { !taken.contains($0) }
+        if byFile != trashedAttachmentsByFile { trashedAttachmentsByFile = byFile }
+        if loose != looseTrashedAttachments { looseTrashedAttachments = loose }
     }
 
     /// "In Photograph the Kombi, Kombi service history": the files whose embeds of a trashed image's name show as missing;
@@ -2082,7 +2090,7 @@ import UIKit
     /// Whether Log Now has anything to log or ask about: the Logbook lists a file not logged yet. A repeating task that
     /// only moves forward isn't listed, and moves at the daily run.
     var hasFilesToLog: Bool {
-        LogbookGroup.groups(logbook, index: index, today: today).contains(where: \.isWaiting)
+        logbookGroups.contains(where: \.isWaiting)
     }
 
     /// Moves files to the Logbook. Returns false when that failed.
@@ -2900,6 +2908,8 @@ import UIKit
     private(set) var areas: [AreaProjects] = []
     /// The Logbook: logged tasks and projects, and the completed ones not logged yet.
     private(set) var logbook: [Item] = []
+    /// `logbook` in its groups.
+    private(set) var logbookGroups: [LogbookGroup] = []
     /// Every tag in use and its parents, with counts.
     private(set) var tagTree: [TagNode] = []
     /// Areas, projects, tasks and notes without a tag.
@@ -2958,6 +2968,8 @@ import UIKit
     private func updateIndex(replacing item: Item) {
         guard let old = index[item.path], old.properties == item.properties else { return updateIndex { $0.update(item) } }
         index.update(item)
+        indexRevision += 1
+        if old.embeds != item.embeds { updateTrashedAttachments() }
         if old.checkboxes != item.checkboxes {
             if noteSubtasks { updateSubtaskLists() }
             let datedLines: (Item) -> [Checkbox] = { $0.checkboxes.filter { $0.due != nil } }
@@ -2972,7 +2984,12 @@ import UIKit
         for i in agendaOccurrences.indices where agendaOccurrences[i].item.path == item.path { agendaOccurrences[i].item = item }
         if let i = projects.firstIndex(where: { $0.project.path == item.path }) { projects[i].project = item }
         if let i = looseProjects.firstIndex(where: { $0.project.path == item.path }) { looseProjects[i].project = item }
-        if let i = logbook.firstIndex(where: { $0.path == item.path }) { logbook[i] = item }
+        if let i = logbook.firstIndex(where: { $0.path == item.path }) {
+            logbook[i] = item
+            for g in logbookGroups.indices {
+                if let j = logbookGroups[g].items.firstIndex(where: { $0.path == item.path }) { logbookGroups[g].items[j] = item }
+            }
+        }
         for i in areas.indices {
             if areas[i].area.path == item.path { areas[i].area = item }
             if let j = areas[i].projects.firstIndex(where: { $0.project.path == item.path }) { areas[i].projects[j].project = item }
@@ -2996,10 +3013,13 @@ import UIKit
     /// Counts the index changes that can alter what a project or area is or how far along it is, for views that draw them
     /// from the index (the editor's parent chips).
     private(set) var indexGeneration = 0
+    /// Counts every change to the index, body-only edits included, for views that read what the index holds (search results).
+    private(set) var indexRevision = 0
 
     /// Assigning a list equal to the old one doesn't notify the views that show it.
     private func updateLists() {
         indexGeneration += 1
+        indexRevision += 1
         todayTasks = index.today(today)
         looseTasks = index.loose()
         upcoming = index.upcoming(after: today)
@@ -3008,6 +3028,8 @@ import UIKit
         areas = index.areaProjects()
         logbook = index.items.values.filter { $0.properties.kind != .area && ($0.isLogged || $0.properties.status.isClosed) }
             .sorted(by: VaultIndex.byTitle)
+        logbookGroups = LogbookGroup.groups(logbook, index: index, today: today)
+        updateTrashedAttachments()
         updateTags()
         updateNotes()
         updateAgenda()

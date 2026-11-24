@@ -10,13 +10,13 @@ struct LogbookView: View {
     @Environment(\.theme) private var theme
 
     var body: some View {
-        let groups = LogbookGroup.groups(model.logbook, index: model.index, today: model.today)
+        let groups = model.logbookGroups
         BrowserColumn(model: model, paths: groups.flatMap(\.items).map(\.path), spacing: 20,
                       empty: groups.isEmpty ? empty : nil) {
             header(waiting: groups.filter(\.isWaiting).map(\.items.count).reduce(0, +))
         } content: {
             ForEach(groups) { group in
-                VStack(alignment: .leading, spacing: 1) {
+                LazyVStack(alignment: .leading, spacing: 1) {
                     GroupTitle(title: group.title, note: note(group.kind))
                     ForEach(group.items) { item in
                         LogbookRow(model: model, item: item)

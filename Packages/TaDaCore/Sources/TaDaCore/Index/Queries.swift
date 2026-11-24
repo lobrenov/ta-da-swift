@@ -334,8 +334,9 @@ extension VaultIndex {
             let area = area(of: item)?.title ?? item.properties.area?.title ?? ""
             return matches([item.title, item.summary ?? "", area].joined(separator: "\n"))
         }
+        let titleHits = Set(hits.filter { matches($0.title) }.map(\.path))
         return hits.sorted { a, b in
-            let (ta, tb) = (matches(a.title), matches(b.title))
+            let (ta, tb) = (titleHits.contains(a.path), titleHits.contains(b.path))
             return ta != tb ? ta : Self.byTitle(a, b)
         }
     }
