@@ -36,7 +36,7 @@ struct UndoTests {
         #expect(model.undoToast?.message == "Completed “One”")
 
         model.undoManager?.undo()
-        try await settle { try folder.read("Ta Da/tasks/One.md") == Self.open }
+        try await settle { model.index["Ta Da/tasks/One.md"]?.properties.status == .doing }
         #expect(try folder.read("Ta Da/tasks/One.md") == Self.open)
         #expect(model.index["Ta Da/tasks/One.md"]?.properties.status == .doing)
 
