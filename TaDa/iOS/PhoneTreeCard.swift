@@ -53,7 +53,7 @@ struct PhoneTreeRow: View {
     var body: some View {
         HStack(spacing: 0) {
             if depth != nil {
-                Button { withAnimation(.snappy, toggleFold) } label: {
+                Button { withMotion(.snappy, toggleFold) } label: {
                     Image(systemName: "chevron.right")
                         .scaledFont(size: 13, weight: .bold)
                         .rotationEffect(.degrees(isFolded ? 0 : 90))

@@ -39,9 +39,9 @@ struct PhoneList<Content: View, MenuItems: View>: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if !search.isOpen {
-                    header.transition(.asymmetric(
+                    header.transition(Motion.transition(.asymmetric(
                         insertion: .move(edge: .top).combined(with: .opacity.animation(.easeIn(duration: 0.2).delay(0.12))),
-                        removal: .opacity.animation(.linear(duration: 0.05))))
+                        removal: .opacity.animation(.linear(duration: 0.05)))))
                 }
                 if search.isSearching {
                     if let searchResults { searchResults(search.query) } else { PhoneSearchResults(model: model, query: search.query) }

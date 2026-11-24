@@ -219,7 +219,7 @@ private struct TocPanelModifier: ViewModifier {
             TocPanel(content: toc, current: current, maxHeight: viewport.height - Self.panelTop - 12,
                      scroll: state.scroll.toLine, open: { model.openLink(to: $0) })
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { panelHeight = $0 }
-                .offset(x: isOpen ? 0 : Self.panelWidth + Self.panelTrailing)
+                .offset(x: isOpen || Motion.isReduced ? 0 : Self.panelWidth + Self.panelTrailing)
                 .opacity(isOpen ? 1 : 0)
                 .allowsHitTesting(isOpen)
                 .onHover { hovering in
@@ -246,7 +246,7 @@ private struct TocPanelModifier: ViewModifier {
         pending = Task {
             try? await Task.sleep(for: wants ? Self.openDelay : Self.closeDelay)
             guard !Task.isCancelled else { return }
-            withAnimation(wants ? Self.slideIn : Self.slideOut) { isOpen = wants }
+            withAnimation(Motion.isReduced ? .easeOut(duration: 0.15) : wants ? Self.slideIn : Self.slideOut) { isOpen = wants }
         }
     }
 

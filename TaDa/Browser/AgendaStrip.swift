@@ -37,7 +37,7 @@ struct AgendaStrip: View {
     }
 
     private func swipe(_ swipe: AgendaSwipe) {
-        DispatchQueue.main.async { withAnimation(AgendaMotion.spring) { model.agendaMonthOpen = swipe == .openMonth } }
+        DispatchQueue.main.async { withMotion(AgendaMotion.spring) { model.agendaMonthOpen = swipe == .openMonth } }
     }
 
     /// What a ScrollView of pages is rebuilt for: its kind and its width.
@@ -85,7 +85,7 @@ struct AgendaStrip: View {
         })
         .id(ShownPages(open: open, width: proxy.size.width)) }
         .frame(height: CGFloat(rows) * Self.rowHeight + CGFloat(rows - 1) * Self.rowSpacing)
-        .animation(AgendaMotion.spring, value: rows)
+        .animation(Motion.animation(AgendaMotion.spring), value: rows)
     }
 
     private func weekRow(_ week: ISOWeek, month: LocalDate, marks: [LocalDate: DayMarks]) -> some View {
@@ -120,15 +120,15 @@ struct AgendaStrip: View {
     private var stepper: some View {
         let unit: String = if case .week = model.agendaSelection { "week" } else { "day" }
         return HStack(spacing: 0) {
-            stepButton("chevron.left", label: "Previous \(unit)") { withAnimation(AgendaMotion.spring) { model.stepAgenda(by: -1) } }
+            stepButton("chevron.left", label: "Previous \(unit)") { withMotion(AgendaMotion.spring) { model.stepAgenda(by: -1) } }
             Rectangle().fill(theme.color(\.border)).frame(width: 1)
-            Button { withAnimation(AgendaMotion.spring) { model.showAgendaToday() } } label: {
+            Button { withMotion(AgendaMotion.spring) { model.showAgendaToday() } } label: {
                 Text("Today").font(.system(size: 12)).foregroundStyle(theme.color(\.fg)).padding(.horizontal, 8)
                     .frame(maxHeight: .infinity).contentShape(.rect)
             }
             .buttonStyle(.plain)
             Rectangle().fill(theme.color(\.border)).frame(width: 1)
-            stepButton("chevron.right", label: "Next \(unit)") { withAnimation(AgendaMotion.spring) { model.stepAgenda(by: 1) } }
+            stepButton("chevron.right", label: "Next \(unit)") { withMotion(AgendaMotion.spring) { model.stepAgenda(by: 1) } }
         }
         .frame(height: 26)
         .background(theme.color(\.code), in: .rect(cornerRadius: 7))

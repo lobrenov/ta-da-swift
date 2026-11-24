@@ -59,7 +59,7 @@ final class CalendarPicker {
         model.firstWeekday = Calendar.current.firstWeekday
         model.phrase = ""
         model.cursor = selected ?? today
-        model.theme = theme
+        model.theme = theme.contrasted(Theme.systemIncreasesContrast)
         model.configure(repeating)
         model.set = set
         model.revision += 1

@@ -124,11 +124,11 @@ final class ListKeyView: NSView, NSMenuItemValidation {
 
     /// In the Agenda, ← and → step the day, or the week.
     override func moveLeft(_ sender: Any?) {
-        if model.domain == .agenda, !model.isSearching { withAnimation(AgendaMotion.spring) { model.stepAgenda(by: -1) } } else { super.moveLeft(sender) }
+        if model.domain == .agenda, !model.isSearching { withMotion(AgendaMotion.spring) { model.stepAgenda(by: -1) } } else { super.moveLeft(sender) }
     }
 
     override func moveRight(_ sender: Any?) {
-        if model.domain == .agenda, !model.isSearching { withAnimation(AgendaMotion.spring) { model.stepAgenda(by: 1) } } else { super.moveRight(sender) }
+        if model.domain == .agenda, !model.isSearching { withMotion(AgendaMotion.spring) { model.stepAgenda(by: 1) } } else { super.moveRight(sender) }
     }
 
     override func cancelOperation(_ sender: Any?) {

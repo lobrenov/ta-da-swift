@@ -27,7 +27,7 @@ final class ListSearch {
 
     func open() {
         // The keyboard comes once the field has landed: bringing it up holds the main thread for a moment.
-        withAnimation(morph) {
+        withMotion(morph) {
             isOpen = true
         } completion: { [self] in
             if isOpen { isFocused = true }
@@ -38,7 +38,7 @@ final class ListSearch {
         isArmed = false
         query = ""
         isFocused = false
-        withAnimation(morph) { isOpen = false }
+        withMotion(morph) { isOpen = false }
     }
 
     func reset() {
@@ -158,7 +158,7 @@ private struct PullSearchField: View {
                 field(size: size, isDot: isDot)
                     .position(center)
                     .opacity(search.isOpen ? 1 : min(1, search.distance / 28))
-                    .animation(.spring(response: 0.3, dampingFraction: 0.55), value: search.isArmed)
+                    .animation(Motion.animation(.spring(response: 0.3, dampingFraction: 0.55)), value: search.isArmed)
                 Button("Cancel", systemImage: "xmark") { search.close() }
                     .labelStyle(.iconOnly)
                     .font(.system(size: 17, weight: .medium))
@@ -206,7 +206,7 @@ private struct PullSearchField: View {
             Circle()
                 .strokeBorder(theme.color(\.accent), lineWidth: 2)
                 .keyframeAnimator(initialValue: 0.0, trigger: search.isArmed) { ring, phase in
-                    ring.scaleEffect(1 + (1 - phase) * 0.9).opacity(isDot ? phase * 0.6 : 0)
+                    ring.scaleEffect(Motion.isReduced ? 1 : 1 + (1 - phase) * 0.9).opacity(isDot ? phase * 0.6 : 0)
                 } keyframes: { _ in
                     LinearKeyframe(1.0, duration: 0)
                     LinearKeyframe(0.0, duration: 0.38)

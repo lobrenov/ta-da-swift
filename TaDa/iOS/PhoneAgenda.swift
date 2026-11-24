@@ -42,7 +42,7 @@ struct PhoneAgendaScreen: View {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Today") {
                             nav.play(.pick)
-                            withAnimation { model.showAgendaToday() }
+                            withMotion { model.showAgendaToday() }
                         }
                         .fontWeight(.semibold)
                     }
@@ -89,7 +89,7 @@ struct PhoneAgendaScreen: View {
                 .accessibilityAction(named: "Previous \(unit)") { model.stepAgenda(by: -1) }
                 .accessibilityAction(named: "Next \(unit)") { model.stepAgenda(by: 1) }
             Spacer(minLength: 0)
-            Button { withAnimation(AgendaMotion.spring) { model.agendaMonthOpen.toggle() } } label: {
+            Button { withMotion(AgendaMotion.spring) { model.agendaMonthOpen.toggle() } } label: {
                 HStack(spacing: 4) {
                     Text(model.agendaAnchor.formatted(.monthYear)).lineLimit(1)
                     Image(systemName: model.agendaMonthOpen ? "chevron.up" : "chevron.down")
@@ -165,7 +165,7 @@ struct PhoneAgendaStrip: View {
             .padding(.bottom, 2)
             .accessibilityHidden(true)
             AgendaStripRows(model: model, marks: marks, progress: drag ?? (model.agendaMonthOpen ? 1 : 0), rowHeight: rowHeight)
-            Button { withAnimation(AgendaMotion.spring) { model.agendaMonthOpen.toggle() } } label: {
+            Button { withMotion(AgendaMotion.spring) { model.agendaMonthOpen.toggle() } } label: {
                 Capsule().fill(theme.color(\.surface)).frame(width: 36, height: 5)
                     .frame(maxWidth: .infinity, minHeight: 18)
                     .contentShape(.rect)
@@ -183,7 +183,7 @@ struct PhoneAgendaStrip: View {
             let progress = AgendaMonthDrag.progress(start: model.agendaMonthOpen ? 1 : 0, translation: dy, range: range)
             let open = AgendaMonthDrag.settlesOpen(progress: progress, velocity: velocity, range: range)
             let speed = AgendaMonthDrag.settleVelocity(from: progress, open: open, velocity: velocity, range: range)
-            withAnimation(.interpolatingSpring(duration: 0.3, bounce: 0, initialVelocity: speed)) {
+            withMotion(.interpolatingSpring(duration: 0.3, bounce: 0, initialVelocity: speed)) {
                 model.agendaMonthOpen = open
                 drag = nil
             }
@@ -276,7 +276,7 @@ struct AgendaMonthStrip: View {
         .scrollTargetBehavior(.paging)
         .scrollIndicators(.hidden)
         .frame(height: rowHeight + AgendaMonthDrag.range(weeks: weeks, rowHeight: rowHeight))
-        .animation(AgendaMotion.spring, value: weeks)
+        .animation(Motion.animation(AgendaMotion.spring), value: weeks)
         .scrollPosition(id: Binding<Int?> {
             AgendaPaging.monthKey(of: model.agendaSelection)
         } set: { key in
@@ -327,7 +327,7 @@ struct AgendaWeekRow: View {
 
     private func weekCell(_ isSelected: Bool) -> some View {
         let hasNote = model.weekNotes && model.index.weekNote(for: week, names: model.dailyNoteNames) != nil
-        return Button { withAnimation(AgendaMotion.spring) { pick(.week(week)) } } label: {
+        return Button { withMotion(AgendaMotion.spring) { pick(.week(week)) } } label: {
             Text("\(week.week)")
                 .scaledFont(size: 13, weight: isSelected ? .bold : .semibold)
                 .monospacedDigit()
@@ -347,7 +347,7 @@ struct AgendaWeekRow: View {
         let isSelected = model.agendaSelection == .day(day)
         let isToday = day == model.today
         let faded = day.month != month.month || day < model.today
-        return Button { withAnimation(AgendaMotion.spring) { pick(.day(day)) } } label: {
+        return Button { withMotion(AgendaMotion.spring) { pick(.day(day)) } } label: {
             VStack(spacing: 3) {
                 Text("\(day.day)")
                     .scaledFont(size: 18, weight: isSelected || isToday ? .bold : .medium)

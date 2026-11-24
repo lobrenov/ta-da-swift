@@ -63,10 +63,10 @@ struct SidebarSplitView: View {
                     .background { model.theme.color(\.side).ignoresSafeArea() }
                     .overlay(alignment: .trailing) { Hairline(axis: .vertical).ignoresSafeArea() }
                     .shadow(color: .black.opacity(0.18), radius: 16)
-                    .transition(.move(edge: .leading))
+                    .transition(Motion.transition(.move(edge: .leading)))
             }
         }
-        .animation(.sidebarSlide, value: state.floats)
+        .animation(Motion.animation(.sidebarSlide), value: state.floats)
     }
 
     /// Hides the sidebar when the window is too narrow for it, as it opens or resizes, and shows it again when there's
@@ -78,7 +78,7 @@ struct SidebarSplitView: View {
     /// Slides the split view's sidebar in or out to `columns`, if there are any.
     private func slide(to columns: NavigationSplitViewVisibility?) {
         guard let columns else { return }
-        withAnimation(.sidebarSlide) { state.columns = columns } completion: { state.slid() }
+        withMotion(.sidebarSlide) { state.columns = columns } completion: { state.slid() }
     }
 
     /// Two-finger swipes, for `SidebarState.swiped` or the sidebar's view, and the mouse's back (button 3) and forward

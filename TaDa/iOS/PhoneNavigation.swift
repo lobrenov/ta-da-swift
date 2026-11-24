@@ -257,7 +257,7 @@ enum PhoneTabReselect: Equatable {
     static let pickFade = Animation.easeOut(duration: 0.25)
 
     func startPicking(_ path: String? = nil) {
-        withAnimation(Self.pickSpring) {
+        withMotion(Self.pickSpring) {
             isPicking = true
             picked = path.map { [$0] } ?? []
         }
@@ -265,7 +265,7 @@ enum PhoneTabReselect: Equatable {
     }
 
     func endPicking() {
-        withAnimation(Self.pickSpring) {
+        withMotion(Self.pickSpring) {
             isPicking = false
             picked = []
         }
@@ -273,7 +273,7 @@ enum PhoneTabReselect: Equatable {
 
     /// Picks or unpicks a row; unpicking the last one ends picking.
     func togglePicked(_ path: String) {
-        withAnimation(Self.pickSpring) {
+        withMotion(Self.pickSpring) {
             if let i = picked.firstIndex(of: path) {
                 picked.remove(at: i)
                 if picked.isEmpty { isPicking = false }
@@ -301,7 +301,7 @@ enum PhoneTabReselect: Equatable {
     }
 
     func pickAll() {
-        withAnimation(Self.pickSpring) { picked = pickable }
+        withMotion(Self.pickSpring) { picked = pickable }
         play(.pick)
     }
 }
