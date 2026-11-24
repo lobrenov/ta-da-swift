@@ -283,7 +283,7 @@ final class PopupMenu<Item: PopupMenuItem, Row: View> {
         model.header = header
         model.sections = sections.filter { !$0.items.isEmpty }
         model.highlight = highlight
-        model.theme = theme
+        model.theme = theme.contrasted(Theme.systemIncreasesContrast)
         model.pick = pick
         parentWindow = parent
         model.revision += 1

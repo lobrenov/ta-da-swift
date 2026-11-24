@@ -73,7 +73,7 @@ struct PhoneRootView: View {
         case .popToRoot: nav.stacks[tab] = []
         case .showAgendaToday:
             nav.play(.pick)
-            withAnimation(AgendaMotion.spring) { model.showAgendaToday() }
+            withMotion(AgendaMotion.spring) { model.showAgendaToday() }
         case nil: nav.tab = tab
         }
     }

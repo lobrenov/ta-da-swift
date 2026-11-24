@@ -75,7 +75,7 @@ private struct SwipeToPick: ViewModifier {
     /// Springs the row back and picks or unpicks it in the same animation, so everything settles together.
     private func ended(_ isCancelled: Bool) {
         let picks = isPastThreshold && !isCancelled
-        withAnimation(PhoneNavigation.pickSpring) {
+        withMotion(PhoneNavigation.pickSpring) {
             shift = 0
             if picks { nav.pick(path) }
         }
@@ -191,7 +191,7 @@ private struct PickingBars: ViewModifier {
             .overlay(alignment: .bottom) {
                 if nav.isPicking {
                     PhoneBottomBar { customActions ?? AnyView(actions) }
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .transition(Motion.transition(.move(edge: .bottom).combined(with: .opacity)))
                 }
             }
     }

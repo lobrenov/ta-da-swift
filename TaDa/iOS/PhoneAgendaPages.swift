@@ -157,7 +157,7 @@ private struct PhoneAgendaWeek: View {
         let note = model.index.dailyNote(for: day, names: model.dailyNoteNames)
         let counts = model.agendaDaySummary(day, entries: entries, occurrences: occurrences)
         let firstRepeat = model.firstRepeat(on: day, entries: entries, occurrences: occurrences)
-        return Button { withAnimation { model.agendaSelection = .day(day) } } label: {
+        return Button { withMotion { model.agendaSelection = .day(day) } } label: {
             HStack(spacing: 12) {
                 Text(day.formatted(.weekdayDay))
                     .scaledFont(size: 15, weight: .semibold)

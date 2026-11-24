@@ -177,7 +177,7 @@ struct PhoneFoldHeader: View {
 
     var body: some View {
         let isFolded = folded ?? model.isFolded(group, in: list)
-        Button { withAnimation(.snappy) { model.toggleFolded(group, in: list) } } label: {
+        Button { withMotion(.snappy) { model.toggleFolded(group, in: list) } } label: {
             VStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.right")

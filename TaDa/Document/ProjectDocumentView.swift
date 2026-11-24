@@ -36,7 +36,7 @@ struct ProjectDocumentView: View {
             .tocPanel(model: model, document: document, state: toc)
             .task(id: revealed) {
                 guard let revealed else { return }
-                withAnimation { proxy.scrollTo(revealed, anchor: .center) }
+                withMotion { proxy.scrollTo(revealed, anchor: .center) }
             }
         }
     }

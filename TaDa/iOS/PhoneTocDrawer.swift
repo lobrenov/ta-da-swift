@@ -67,16 +67,16 @@ private struct PhoneTocDrawerLayer: View {
         .onChange(of: openRequested) { _, requested in
             guard requested else { return }
             openRequested = false
-            withAnimation(.snappy) { progress = 1 }
+            withMotion(.snappy) { progress = 1 }
         }
     }
 
     private func settle(velocity: CGFloat) {
-        withAnimation(.snappy) { progress = TocDrawerRules.settlesOpen(progress: progress, velocity: velocity) ? 1 : 0 }
+        withMotion(.snappy) { progress = TocDrawerRules.settlesOpen(progress: progress, velocity: velocity) ? 1 : 0 }
     }
 
     private func close() {
-        withAnimation(.snappy) { progress = 0 }
+        withMotion(.snappy) { progress = 0 }
     }
 
     private func drawer(_ toc: TocContent) -> some View {

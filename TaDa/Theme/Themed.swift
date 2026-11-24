@@ -16,16 +16,28 @@ extension View {
 
 private struct Themed: ViewModifier {
     let model: AppModel
+    @Environment(\.colorSchemeContrast) private var contrast
+    #if os(macOS)
+    @State private var systemIncreasesContrast = Theme.systemIncreasesContrast
+    #endif
     #if os(iOS)
     @State private var registration: (any UITraitChangeRegistration)?
     #endif
 
     func body(content: Content) -> some View {
-        content
-            .environment(\.theme, model.theme)
+        #if os(macOS)
+        let isIncreased = contrast == .increased || systemIncreasesContrast
+        #else
+        let isIncreased = contrast == .increased
+        #endif
+        return content
+            .environment(\.theme, model.theme.contrasted(isIncreased))
             // Light schemes use the light system appearance so pickers, context menus and scroll bars match.
             #if os(macOS)
             .preferredColorScheme(model.theme.isDark ? .dark : .light)
+            .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification)) { _ in
+                systemIncreasesContrast = Theme.systemIncreasesContrast
+            }
             .onReceive(NSApp.publisher(for: \.effectiveAppearance)) { _ in
                 model.systemIsDark = Appearance.systemIsDark
             }
