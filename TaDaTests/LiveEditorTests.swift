@@ -1,4 +1,7 @@
 import Foundation
+#if os(iOS)
+import UIKit
+#endif
 import MarkdownEngine
 import TaDaCore
 import Testing
@@ -122,3 +125,29 @@ struct TaskAttributeChipTests {
         #expect(a != LiveEditor.taskAttributeStyle(theme: theme, index: index(), today: today.adding(days: 1), generation: 1).fingerprint())
     }
 }
+
+#if os(iOS)
+/// The iPhone editor's body text scales with the text size, and headings, derived from it, keep their ratio.
+struct EditorDynamicTypeTests {
+    private func size(_ category: UIContentSizeCategory) -> CGFloat {
+        LiveEditor.scaledBodySize(in: UITraitCollection(preferredContentSizeCategory: category))
+    }
+
+    @Test func bodyIs17AtTheDefaultSizeAndGrowsWithoutACap() {
+        #expect(size(.large) == 17)
+        #expect(size(.accessibilityExtraExtraExtraLarge) > size(.extraExtraExtraLarge))
+        #expect(size(.accessibilityExtraExtraExtraLarge) > 17)
+        #expect(size(.extraSmall) < 17)
+    }
+
+    @Test func headingsKeepTheirRatioToTheBody() {
+        let headings = MarkdownEditorConfiguration.default.headings
+        for level in 1...6 {
+            let ratio = headings.fontMultiplier(for: level)
+            #expect(abs(size(.large) * ratio / size(.large) - ratio) < 0.001)
+            #expect(abs(size(.accessibilityExtraExtraExtraLarge) * ratio / size(.accessibilityExtraExtraExtraLarge) - ratio) < 0.001)
+        }
+        #expect(size(.accessibilityExtraExtraExtraLarge) * headings.fontMultiplier(for: 1) > size(.large) * headings.fontMultiplier(for: 1))
+    }
+}
+#endif
