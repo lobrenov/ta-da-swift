@@ -1,4 +1,4 @@
-// Settings ▸ About: the app's version and build, and the packages it ships with and their licences.
+// Settings ▸ About: the app's version and build, a link to the privacy policy, and the packages it ships with and their licences.
 #if os(macOS)
 import SwiftUI
 
@@ -13,6 +13,11 @@ struct AboutSettingsView: View {
                     row("Version", Bundle.main.version)
                     Hairline()
                     row("Build", Bundle.main.build)
+                    Hairline()
+                    Link("Privacy Policy", destination: .privacyPolicy)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(theme.color(\.border)))
             }

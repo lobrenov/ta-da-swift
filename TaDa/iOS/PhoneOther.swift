@@ -177,6 +177,7 @@ struct PhoneSettingsScreen: View {
                     Section {
                         value("Version", Bundle.main.version)
                         value("Build", Bundle.main.build)
+                        Link("Privacy Policy", destination: .privacyPolicy)
                     }
                     Section("Acknowledgements") {
                         ForEach(Acknowledgement.all, id: \.url) { package in

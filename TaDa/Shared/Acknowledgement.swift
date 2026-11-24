@@ -40,3 +40,7 @@ extension Bundle {
     var version: String { object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
     var build: String { object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "" }
 }
+
+extension URL {
+    static let privacyPolicy = URL(string: "https://github.com/lobrenov/ta-da-swift/blob/main/PRIVACY.md")!
+}
