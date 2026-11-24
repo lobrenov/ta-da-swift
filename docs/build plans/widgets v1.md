@@ -30,7 +30,7 @@ The extension shares data with the app through an App Group. App Groups need a p
   - Add Task: Quick Entry on the Mac; on iPhone, a new task as the iPhone's + makes one. `OpenRequest` gains `.newTask`.
   - Agenda: the Agenda on today; its label shows today's count from the snapshot.
   - Available in Control Centre, the Lock Screen and the Action Button on iPhone, and Control Centre and the menu bar on the Mac.
-- **Version**: 0.45.0 (tag `feature`).
+- **Version**: 0.46.0 (tag `feature`).
 - **Not in v1**: a widget for one project or area; configurable widgets; completing from the Lock Screen (accessory widgets can't hold buttons); a Mac-only design; iPad.
 
 ## Steps

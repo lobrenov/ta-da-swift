@@ -95,4 +95,4 @@ Check for the Part: `npm test` and `npm run build` pass.
 Parts 1–5 done 2026-11-24: app `0275ff3`, `bce7ef7`, `2e742eb`, `e7ea74b`; plugin `2aa8da6`, `5df9dff`, `89093f0`, `4909f69`, `57835f8`. Each Part was reviewed independently and its findings fixed before commit.
 - Timings (Debug, 1,200 files): load index 1,294 → about 200 ms; a refresh after a save 27 ms (full pass 50 ms); 7.4 ms per keystroke and 4.9 ms per list step in the window (from 9.6 and 10.0); link menu ranking over 10k items 6.6 ms; a 2,000-item Logbook month 3.8 ms.
 - Left for manual checks: the 1,000-file vault on the Mac and the iPhone, timed to the first list; step 11's load in an iCloud Drive vault, with Optimize Mac Storage on; the 10k-note vault in Obsidian on desktop and iPhone; scrolling Loose and the Logbook with Instruments.
-- Step 22's release (version, release notes, archive) waits for those checks.
+- Released as Ta Da 0.45.0 (63) and plugin 0.9.0 before those checks.

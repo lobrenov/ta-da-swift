@@ -13,7 +13,7 @@ The extension can't open the folder (on the Mac, the folder's access belongs to 
 - **Inbox**: `Inbox/` in the group container, one JSON file per share (`<UUID>.json`: `title`, `url?`, `sharedAt`), so the extension and the app never write the same file. The type and the folder's location are in `ShareInbox.swift`, built by both targets. After writing, the extension posts the Darwin notification `com.lobrenov.TaDa.share`.
 - **Intake**: `ShareIntake` in `TaDa/Share/` takes the inbox when the folder is ready, when the app becomes active, and on the notification. For each file, oldest first: `addTask(title, in: nil, due: nil, tags: [], note: url)`, then the file is deleted. A file whose task wasn't written stays for the next intake; with no folder open, the inbox waits.
 - **The task**: written by `addTask`, as Siri's Add Task is: Loose tasks, `status: Not Started`, `createdDate` today, the file named from the title with the app's collision rules, the URL on its own line under the frontmatter. It goes through undo like any other new task, without the toast.
-- **Version**: 0.46.0 (tag `feature`).
+- **Version**: 0.47.0 (tag `feature`).
 - **Not in v1**: choosing a project or area, a due date, tags; page metadata (LinkPresentation); images and files; opening the task after sharing; Share… from inside Ta Da (its own item on the task note).
 
 ## Steps
