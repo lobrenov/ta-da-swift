@@ -38,14 +38,15 @@ struct UndoToastView: View {
 }
 
 extension View {
-    /// Shows the model's undo toast at the bottom, and gives the model the window's undo manager.
-    func undoToast(_ model: AppModel) -> some View {
-        modifier(UndoToastHost(model: model))
+    /// Shows the model's undo toast at the bottom, `inset` above it, and gives the model the window's undo manager.
+    func undoToast(_ model: AppModel, inset: CGFloat = 0) -> some View {
+        modifier(UndoToastHost(model: model, inset: inset))
     }
 }
 
 private struct UndoToastHost: ViewModifier {
     let model: AppModel
+    let inset: CGFloat
     @Environment(\.undoManager) private var undoManager
 
     func body(content: Content) -> some View {
@@ -53,6 +54,7 @@ private struct UndoToastHost: ViewModifier {
             .overlay(alignment: .bottom) {
                 if let toast = model.undoToast {
                     UndoToastView(model: model, toast: toast)
+                        .padding(.bottom, inset)
                         .transition(.opacity)
                 }
             }

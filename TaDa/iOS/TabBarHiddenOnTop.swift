@@ -21,7 +21,12 @@ struct TabBarHiddenOnTop: UIViewControllerRepresentable {
         }
 
         private func setTabBarHidden(_ hidden: Bool) {
-            tabBarController?.setTabBarHidden(hidden, animated: transitionCoordinator != nil)
+            guard transitionCoordinator == nil else {
+                tabBarController?.setTabBarHidden(hidden, animated: true)
+                return
+            }
+            // Without a transition (a screen shown as the app opens), after the layout pass that adds it.
+            DispatchQueue.main.async { [weak self] in self?.tabBarController?.setTabBarHidden(hidden, animated: false) }
         }
     }
 }

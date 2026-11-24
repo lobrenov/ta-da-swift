@@ -28,7 +28,8 @@ struct PhoneRootView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
-        .undoToast(model)
+        // Above the tab bar.
+        .undoToast(model, inset: 56)
         .tint(theme.color(\.accent))
         .sheet(item: $nav.sheet) { sheet in
             switch sheet {
@@ -66,7 +67,8 @@ struct PhoneRootView: View {
         .environment(nav)
         .phoneHaptics(nav, enabled: model.haptics)
         .onChange(of: nav.tab) { nav.endPicking() }
-        .onAppear { restorePlace() }
+        // After the tab view is on screen: a restored screen hides the tab bar as it appears.
+        .task { restorePlace() }
         .onChange(of: nav.tab) { savePlace() }
         .onChange(of: nav.stacks) { savePlace() }
     }
