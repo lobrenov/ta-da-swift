@@ -1421,8 +1421,11 @@ import UIKit
         if let document, document.path == path {
             let before = document.text
             document.text = transform(document.text)
-            // Source mode takes the change as an undo step of its own editor's.
-            if !isSourceMode { record(.text(path: path, TextChange(from: before, to: document.text))) }
+            // The Mac's Source editor takes the change as an undo step of its own.
+            #if os(macOS)
+            if isSourceMode { return }
+            #endif
+            record(.text(path: path, TextChange(from: before, to: document.text)))
             return
         }
         guard let vault else { return }
