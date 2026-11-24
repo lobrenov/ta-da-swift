@@ -430,8 +430,10 @@
 				"INFOPLIST_FILE[sdk=iphoneos*]" = TaDa/iOS/Info.plist;
 				"INFOPLIST_FILE[sdk=iphonesimulator*]" = TaDa/iOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Ta Da";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Ta Da shows your calendar events beside your tasks in the Agenda. It never changes your calendars.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Leon Obrenov";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Ta Da shows your reminders beside your tasks in the Agenda. It never changes your reminders.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -494,8 +496,10 @@
 				"INFOPLIST_FILE[sdk=iphoneos*]" = TaDa/iOS/Info.plist;
 				"INFOPLIST_FILE[sdk=iphonesimulator*]" = TaDa/iOS/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Ta Da";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Ta Da shows your calendar events beside your tasks in the Agenda. It never changes your calendars.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Leon Obrenov";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Ta Da shows your reminders beside your tasks in the Agenda. It never changes your reminders.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
