@@ -48,14 +48,34 @@ public enum CoordinatedFileIO {
         try create(Data(text.utf8), at: url)
     }
 
-    /// Writes a new file, creating its folder; fails if the file already exists.
+    /// Writes a new file, creating its folder; fails with `fileWriteFileExists` if the file already exists. The data goes
+    /// to a hidden temporary file beside it first, which is then renamed into place without replacing anything.
     public static func create(_ data: Data, at url: URL) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try coordinate { coordinator, error, body in
             coordinator.coordinate(writingItemAt: url, options: [], error: error) { url in
-                body { try data.write(to: url, options: .withoutOverwriting) }
+                body {
+                    let temporary = url.deletingLastPathComponent().appending(path: ".\(UUID().uuidString).tmp")
+                    do { try data.write(to: temporary) } catch {
+                        try? FileManager.default.removeItem(at: temporary)
+                        throw error
+                    }
+                    guard renamex_np(temporary.path(percentEncoded: false), url.path(percentEncoded: false), UInt32(RENAME_EXCL)) == 0 else {
+                        let code = errno
+                        try? FileManager.default.removeItem(at: temporary)
+                        if code == EEXIST {
+                            throw CocoaError(.fileWriteFileExists, userInfo: [NSFilePathErrorKey: url.path(percentEncoded: false)])
+                        }
+                        throw POSIXError(POSIXErrorCode(rawValue: code) ?? .EIO)
+                    }
+                }
             }
         }
+    }
+
+    /// Removes an empty folder; fails, leaving it, if it holds anything.
+    public static func removeEmptyFolder(_ url: URL) throws {
+        guard rmdir(url.path(percentEncoded: false)) == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
     }
 
     /// Copies a file, failing if the destination exists.

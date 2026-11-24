@@ -32,13 +32,11 @@ extension Vault {
     }
 
     /// Moves a folder whole to the same path inside `.trash/`, merging it into a folder already there (as when one of its
-    /// notes was trashed before) and numbering the files whose names are taken. A folder that holds no files is removed
+    /// notes was trashed before) and numbering the files whose names are taken. A folder that holds nothing is removed
     /// instead. Returns its path in `.trash/`.
     public func trashFolder(_ path: String) throws -> String {
         let trashed = Self.join(Self.trashFolder, path)
-        if emptyFolders().contains(path) {
-            try FileManager.default.removeItem(at: folderURL(path))
-        } else {
+        if (try? CoordinatedFileIO.removeEmptyFolder(folderURL(path))) == nil {
             try merge(path, into: trashed)
         }
         return trashed
@@ -59,7 +57,7 @@ extension Vault {
                 _ = try moveFile(child, into: destination)
             }
         }
-        try manager.removeItem(at: folderURL(source))
+        try CoordinatedFileIO.removeEmptyFolder(folderURL(source))
     }
 
     func folderURL(_ path: String) -> URL {
@@ -96,20 +94,51 @@ extension Vault {
     }
 
     /// Makes each subtask in a project's body a task under it (`SubtaskExtraction.extractAll`); once they're all made,
-    /// their lines leave the project's file. When one can't be made, the lines all stay. Returns the tasks' paths.
+    /// their lines leave the project's file. When one can't be made, or the lines can't be removed, the tasks made so far
+    /// are deleted and the lines all stay. Returns the tasks' paths.
     @discardableResult
     public func extractSubtasks(ofProject path: String, today: LocalDate) throws -> [String] {
-        let extracts = SubtaskExtraction.extractAll(from: FrontmatterSplitter.split(try read(path)).body).extracts
-        guard !extracts.isEmpty else { return [] }
-        let tasks = try extracts.map { extract in
+        try extractSubtasks(ofProject: path) { extract in
             try create(SubtaskExtraction.taskText(extract, project: Item.title(ofPath: path), today: today),
                        in: Self.taskFolder, title: extract.title)
         }
-        _ = try update(path) { text in
-            let split = FrontmatterSplitter.split(text)
-            return split.block + SubtaskExtraction.extractAll(from: split.body).text
+    }
+
+    /// `extractSubtasks(ofProject:today:)`, making each task with `make`. Only the lines of the subtasks it read leave
+    /// the file, so a subtask written or changed there meanwhile stays.
+    func extractSubtasks(ofProject path: String, make: (SubtaskExtraction.Extract) throws -> String) throws -> [String] {
+        let extracts = SubtaskExtraction.extractAll(from: FrontmatterSplitter.split(try read(path)).body).extracts
+        guard !extracts.isEmpty else { return [] }
+        var tasks: [String] = []
+        do {
+            for extract in extracts { tasks.append(try make(extract)) }
+            _ = try update(path) { text in
+                let split = FrontmatterSplitter.split(text)
+                var body = split.body as NSString, pending = extracts, location = 0
+                while location < body.length {
+                    guard let extract = SubtaskExtraction.extract(lineAt: location, in: body as String) else {
+                        location = NSMaxRange(body.lineRange(for: NSRange(location: location, length: 0)))
+                        continue
+                    }
+                    if let match = pending.firstIndex(where: { Self.isSame($0, extract) }) {
+                        pending.remove(at: match)
+                        body = body.replacingCharacters(in: extract.range, with: "") as NSString
+                    } else {
+                        location = NSMaxRange(extract.range)
+                    }
+                }
+                return split.block + (body as String)
+            }
+        } catch {
+            for task in tasks { try? FileManager.default.removeItem(at: url(for: task)) }
+            throw error
         }
         return tasks
+    }
+
+    /// Whether two extracts are the same subtask, wherever they are in the file.
+    private static func isSame(_ a: SubtaskExtraction.Extract, _ b: SubtaskExtraction.Extract) -> Bool {
+        a.title == b.title && a.status == b.status && a.body == b.body && a.due == b.due && a.parent == b.parent
     }
 
     /// Moves a file and points the links to it at its new path, and at its new title if that changed and its old title

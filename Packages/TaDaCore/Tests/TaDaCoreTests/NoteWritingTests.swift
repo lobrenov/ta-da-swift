@@ -156,6 +156,75 @@ private func exists(_ path: String, in folder: URL) -> Bool {
     }
 }
 
+@Test func extractingSubtasksLeavesEveryLineWhenATaskCantBeMade() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        let project = "---\ntype: project\nstatus: Doing\n---\n- [ ] One\n- [ ] Two\n- [ ] Three\n"
+        try writeFile(project, "Ta Da/projects/P.md", in: folder)
+        struct Failed: Error {}
+        #expect(throws: Failed.self) {
+            try vault.extractSubtasks(ofProject: "Ta Da/projects/P.md") { extract in
+                if extract.title == "Three" { throw Failed() }
+                return try vault.create("x\n", in: Vault.taskFolder, title: extract.title)
+            }
+        }
+        #expect(try read("Ta Da/projects/P.md", in: folder) == project)
+        #expect(!exists("Ta Da/tasks/One.md", in: folder) && !exists("Ta Da/tasks/Two.md", in: folder))
+    }
+}
+
+@Test func extractingSubtasksKeepsASubtaskWrittenMeanwhile() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("---\ntype: project\n---\n- [ ] One\n- [ ] Two\n", "Ta Da/projects/P.md", in: folder)
+        let made = try vault.extractSubtasks(ofProject: "Ta Da/projects/P.md") { extract in
+            if extract.title == "Two" {
+                _ = try vault.update("Ta Da/projects/P.md") { $0 + "- [ ] Added elsewhere\n- [ ] One\n" }
+            }
+            return try vault.create("x\n", in: Vault.taskFolder, title: extract.title)
+        }
+        #expect(made == ["Ta Da/tasks/One.md", "Ta Da/tasks/Two.md"])
+        #expect(try read("Ta Da/projects/P.md", in: folder) == "---\ntype: project\n---\n- [ ] Added elsewhere\n- [ ] One\n")
+    }
+}
+
+@Test func extractingSubtasksKeepsASubtaskChangedMeanwhile() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("---\ntype: project\n---\n- [ ] One\n", "Ta Da/projects/P.md", in: folder)
+        _ = try vault.extractSubtasks(ofProject: "Ta Da/projects/P.md") { extract in
+            _ = try vault.update("Ta Da/projects/P.md") { $0.replacingOccurrences(of: "- [ ] One", with: "- [ ] One >2026-12-01") }
+            return try vault.create("x\n", in: Vault.taskFolder, title: extract.title)
+        }
+        #expect(try read("Ta Da/projects/P.md", in: folder) == "---\ntype: project\n---\n- [ ] One >2026-12-01\n")
+    }
+}
+
+@Test func aFolderHoldingOnlyHiddenFilesGoesToTrashWhole() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("keep", "Work/.gitkeep", in: folder)
+        try writeFile("ref: main", "Repo/.git/HEAD", in: folder)
+        try writeFile("x", "Nested/Inner/.stfolder", in: folder)
+        #expect(vault.emptyFolders().isSuperset(of: ["Work", "Repo", "Nested"]))
+        for name in ["Work", "Repo", "Nested"] { _ = try vault.trashFolder(name) }
+        #expect(try read(".trash/Work/.gitkeep", in: folder) == "keep")
+        #expect(try read(".trash/Repo/.git/HEAD", in: folder) == "ref: main")
+        #expect(try read(".trash/Nested/Inner/.stfolder", in: folder) == "x")
+    }
+}
+
+@Test func removingAFolderOnlyRemovesItWhenEmpty() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile("arrived", "Synced/Late.md", in: folder)
+        #expect(throws: (any Error).self) { try CoordinatedFileIO.removeEmptyFolder(folder.appending(path: "Synced")) }
+        #expect(try read("Synced/Late.md", in: folder) == "arrived")
+        try FileManager.default.createDirectory(at: folder.appending(path: "Empty"), withIntermediateDirectories: true)
+        try CoordinatedFileIO.removeEmptyFolder(folder.appending(path: "Empty"))
+        #expect(!exists("Empty", in: folder))
+    }
+}
+
 @Test func caseOnlyFolderRenamesKeepTheNameAndRelink() async throws {
     try await withTemporaryFolder { folder in
         let vault = Vault(root: folder)

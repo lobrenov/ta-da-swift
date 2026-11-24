@@ -122,6 +122,21 @@ private let daily = VaultSettings.DailyNotes(dailyFolder: "Journal", dailyTempla
     }
 }
 
+@Test func aSettingsFileThatDoesntParseIsLeftAsItIs() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        let truncated = "{\"unknown\": 1, \"theme\": {\"themeSet\": "
+        try writeFile(truncated, Vault.settingsPath, in: folder)
+        #expect(vault.readSettings() == VaultSettings())
+        #expect(throws: SettingsFileUnreadable.self) { try vault.writeSettings(dailyNotes: daily) }
+        #expect(try String(contentsOf: folder.appending(path: Vault.settingsPath), encoding: .utf8) == truncated)
+
+        try writeFile("\n", Vault.settingsPath, in: folder)
+        try vault.writeSettings(dailyNotes: daily)
+        #expect(vault.readSettings().dailyNotes == daily)
+    }
+}
+
 @Test func noteSubtasksReadsAndWritesKeepingTheEditorsOtherKeys() throws {
     #expect(VaultSettings(data: data("{\"editor\": {\"noteSubtasks\": true}}")).noteSubtasks == true)
     #expect(VaultSettings(data: data("{\"editor\": {\"noteSubtasks\": 1}}")).noteSubtasks == nil)

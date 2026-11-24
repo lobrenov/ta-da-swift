@@ -315,7 +315,7 @@ extension Vault {
             for name in names {
                 let child = Self.join(path, name)
                 if folderExists(child), child != Self.trashedAttachmentFolder, prune(child) {
-                    try? manager.removeItem(at: folderURL(child))
+                    try? CoordinatedFileIO.removeEmptyFolder(folderURL(child))
                 } else {
                     isEmpty = false
                 }

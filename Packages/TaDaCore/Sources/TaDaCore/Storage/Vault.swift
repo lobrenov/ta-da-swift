@@ -351,10 +351,10 @@ public struct Vault: Sendable {
         path.split(separator: "/").dropLast().joined(separator: "/")
     }
 
-    /// The names of the files in `folder`, from disk.
+    /// The names of the files in `folder`, from disk, with the name each iCloud placeholder will have.
     public func filenames(in folder: String) -> Set<String> {
-        let names = try? FileManager.default.contentsOfDirectory(atPath: url(for: folder).path(percentEncoded: false))
-        return Set(names ?? [])
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: url(for: folder).path(percentEncoded: false))) ?? []
+        return Set(names + names.compactMap(Self.placeholderOriginal))
     }
 }
 

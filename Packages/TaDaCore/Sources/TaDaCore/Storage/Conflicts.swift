@@ -7,6 +7,12 @@ public struct ConflictVersion: Hashable, Sendable {
     public var modified: Date?
     /// Where the version's contents can be read.
     public var url: URL
+
+    public init(device: String? = nil, modified: Date? = nil, url: URL) {
+        self.device = device
+        self.modified = modified
+        self.url = url
+    }
 }
 
 /// Unresolved iCloud conflicts for one file, through `NSFileVersion`.

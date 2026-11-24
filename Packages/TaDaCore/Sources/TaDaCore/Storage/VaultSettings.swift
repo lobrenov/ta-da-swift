@@ -174,7 +174,8 @@ extension Vault {
     }
 
     /// Sets the keys of the groups given in the settings file, creating it if needed (see `VaultSettings.updated`), in
-    /// one coordinated access.
+    /// one coordinated access. A file that isn't empty and isn't a JSON object is left as it is, and this throws
+    /// `SettingsFileUnreadable`.
     public func writeSettings(dailyNotes: VaultSettings.DailyNotes? = nil, theme: VaultSettings.Theme? = nil,
                               autocomplete: VaultSettings.Autocomplete? = nil, taskLinkBoxes: Bool? = nil,
                               noteSubtasks: Bool? = nil) throws {
@@ -186,7 +187,18 @@ extension Vault {
         do {
             try CoordinatedFileIO.create(updated(nil), at: url)
         } catch let error as CocoaError where error.code == .fileWriteFileExists {
-            try CoordinatedFileIO.update(url) { String(decoding: updated(Data($0.utf8)), as: UTF8.self) }
+            try CoordinatedFileIO.update(url) { text in
+                guard text.allSatisfy(\.isWhitespace)
+                        || (try? JSONSerialization.jsonObject(with: Data(text.utf8))) is [String: Any] else {
+                    throw SettingsFileUnreadable()
+                }
+                return String(decoding: updated(Data(text.utf8)), as: UTF8.self)
+            }
         }
     }
+}
+
+/// The settings file isn't a JSON object, so it wasn't written over.
+public struct SettingsFileUnreadable: LocalizedError {
+    public var errorDescription: String? { "\(Vault.settingsPath) isn’t valid JSON, so it was left as it is" }
 }

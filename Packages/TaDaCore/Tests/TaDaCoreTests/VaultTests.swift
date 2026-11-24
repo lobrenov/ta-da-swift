@@ -47,6 +47,29 @@ private let task = "---\ntype: task\nstatus: Not Started\n---\n"
     }
 }
 
+@Test func creatingOverAnExistingFileLeavesIt() async throws {
+    try await withTemporaryFolder { folder in
+        try writeFile("Old\n", "Taken.md", in: folder)
+        #expect { try CoordinatedFileIO.create("New\n", at: folder.appending(path: "Taken.md")) } throws: { error in
+            (error as? CocoaError)?.code == .fileWriteFileExists
+        }
+        #expect(try String(contentsOf: folder.appending(path: "Taken.md"), encoding: .utf8) == "Old\n")
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path(percentEncoded: false)) == ["Taken.md"])
+    }
+}
+
+@Test func placeholdersReserveTheirNames() async throws {
+    try await withTemporaryFolder { folder in
+        let vault = Vault(root: folder)
+        try writeFile("", "Ta Da/tasks/.Call mum.md.icloud", in: folder)
+        try writeFile("A\n", "Inbox/Call mum.md", in: folder)
+        #expect(vault.filenames(in: "Ta Da/tasks").contains("Call mum.md"))
+        #expect(try vault.create("B\n", in: "Ta Da/tasks", title: "Call mum") == "Ta Da/tasks/Call mum 2.md")
+        #expect(try vault.moveFile("Inbox/Call mum.md", into: "Ta Da/tasks") == "Ta Da/tasks/Call mum 3.md")
+        #expect(try vault.rename("Ta Da/tasks/Call mum 3.md", to: "Call mum") == "Ta Da/tasks/Call mum 3.md")
+    }
+}
+
 @Test func onlyMarkdownAndImagePlaceholdersAreDownloaded() async throws {
     try await withTemporaryFolder { folder in
         for path in ["tasks/.Not here.md.icloud", "tasks/.Image.png.icloud", "tasks/.Report.pdf.icloud", "tasks/.Clip.mov.icloud"] {

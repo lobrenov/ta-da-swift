@@ -126,6 +126,17 @@ struct OutsideChangesTests {
         #expect(model.errorMessage?.contains("Task (unsaved edits)") == true)
     }
 
+    @Test func usingAnotherVersionKeepsUnsavedEditsInACopy() async throws {
+        try folder.write(Self.task + "Other device.\n", "Version.md")
+        let model = await folder.model(selecting: "tasks/Task.md")
+        let document = try #require(model.document)
+        document.body += "Mine.\n"
+        await model.adopt(ConflictVersion(url: folder.url.appending(path: "Version.md")), for: document)
+        #expect(document.text == Self.task + "Other device.\n" && !document.isDirty)
+        #expect(try folder.read("tasks/Task.md") == Self.task + "Other device.\n")
+        #expect(try folder.read("tasks/Task (unsaved edits).md") == Self.task + "Mine.\n")
+    }
+
     @Test func leavingAConflictedFileTwiceQuicklyKeepsOneCopy() async throws {
         try folder.write("---\ntype: task\nstatus: Not Started\n---\n", "tasks/Third.md")
         let model = await folder.model(selecting: "tasks/Task.md")
@@ -164,6 +175,35 @@ struct OutsideChangesTests {
         await model.saveAgain(document)
         #expect(try folder.read("tasks/Task.md") == Self.task + "Mine.\n")
         #expect(!document.isRemovedOnDisk)
+    }
+
+    @Test func savingAgainOverAFileThatCameBackUsesANumberedName() async throws {
+        let model = await folder.model(selecting: "tasks/Task.md")
+        let document = try #require(model.document)
+        document.body += "Mine.\n"
+        try FileManager.default.removeItem(at: folder.url.appending(path: "tasks/Task.md"))
+        await model.refresh()
+        try folder.write("Back.\n", "tasks/Task.md")
+
+        await model.saveAgain(document)
+        #expect(try folder.read("tasks/Task.md") == "Back.\n")
+        #expect(try folder.read("tasks/Task 2.md") == Self.task + "Mine.\n")
+        #expect(document.path == "tasks/Task 2.md" && !document.isRemovedOnDisk)
+        #expect(model.index["tasks/Task.md"]?.properties.kind == .note, "the file that came back is indexed as it is")
+        #expect(model.index["tasks/Task 2.md"] != nil)
+    }
+
+    @Test func savingAgainKeepsANameTaDaWouldntChoose() async throws {
+        try folder.write(Self.task, "tasks/Plan: Q1.md")
+        let model = await folder.model(selecting: "tasks/Plan: Q1.md")
+        let document = try #require(model.document)
+        document.body += "Mine.\n"
+        try FileManager.default.removeItem(at: folder.url.appending(path: "tasks/Plan: Q1.md"))
+        await model.refresh()
+
+        await model.saveAgain(document)
+        #expect(try folder.read("tasks/Plan: Q1.md") == Self.task + "Mine.\n")
+        #expect(document.path == "tasks/Plan: Q1.md")
     }
 
     @Test func aRenameOutsideTaDaIsFollowed() async throws {

@@ -31,7 +31,7 @@ Scratch benchmark (release, same files), reading only:
   | a. `vault.trash(file, false)` (as the plugin's `CLAUDE.md` says) | Always `.trash/`, so always recoverable and shown in the Tasks Trash | Ignores the user's "Deleted files" setting; Obsidian's review lint flags it (why `0ac261c` moved to `trashFile`) |
   | b. Keep `fileManager.trashFile` | Follows the user's setting; passes the lint | "Permanently delete" makes Delete area unrecoverable; "System trash" files never show in the Tasks Trash |
 
-  Recommended: a, with the reason given to the reviewers. Decided in step 7.
+  Decided: b.
 - **Version:** each Part is the next `z` version of the app (tag `bug` for Parts 1–2, `patch` for 3–4) or a plugin patch version (Parts 2 and 5), paired as `docs/versioning.md` says. Completing the plan is the next free `y` version.
 - **Not in v1:** a persisted index cache; FSEvents per-path updates; off-main-actor list queries; virtualised lists in the plugin; async image decoding in the editor fork; the TOC panel, iOS agenda pages and `BodyScanner.isNested` costs; repeated "(unsaved edits)" copies while a conflict is open; log and unlog with a dirty document.
 
@@ -50,7 +50,7 @@ Check for the Part: `swift test --package-path Packages/TaDaCore` and `xcodebuil
 ## Part 2 — File safety (Obsidian plugin)
 In `~/Projects/ta-da-obsidian`.
 
-7. **Deletes.** The user picks option a or b. a: `trashPaths` uses `vault.trash(file, false)`. b: keep `trashFile`; the delete modals say when the setting deletes permanently; the Trash view says it lists only `.trash/`; fix `CLAUDE.md`. Check: the user decides; tests for the chosen behaviour; `CLAUDE.md` matches the code.
+7. **Deletes.** Keep `trashFile`; the delete modals say when the setting deletes permanently; the Trash view says it lists only `.trash/`; fix `CLAUDE.md`. Check: tests for the modal text per setting; `CLAUDE.md` matches the code.
 8. **Convert with extracted subtasks.** `convertTask.ts`: on a failed `createTask`, remove only the lines of tasks already created and show one notice with the count. Check: test: a failure on the third task leaves two tasks and only their lines removed.
 9. **Status changes.** `statusActions.ts`: catch per change, carry on, one notice with a count of failures. Check: test: one failing write still applies the others and reports 1.
 10. **Frontmatter guards.** `frontmatterEditor.ts` refuses to write when line 0 is a fence with no closing fence; the splitter keeps a leading U+FEFF at the start. Port both to TaDaCore and regenerate the conformance fixtures. Check: `npm test` and `swift test … --filter writeConformance` pass; new fixtures for both cases.

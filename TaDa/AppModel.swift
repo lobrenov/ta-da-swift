@@ -703,6 +703,7 @@ import UIKit
     /// couldn't answer for.
     func enterBackground() async {
         isInBackground = true
+        await savingImage?.value
         if document?.isDirty == true { await saveBeforeQuitting() }
         guard isInBackground else { return }
         watcher = nil
@@ -894,14 +895,27 @@ import UIKit
     }
 
     /// Writes a file that was deleted outside Ta Da back, with the unsaved edits.
+    /// When another file is at its path by then, it's saved under a numbered name and the document follows it.
     func saveAgain(_ document: OpenDocument) async {
         guard let vault else { return }
         do {
             let text = document.text, path = document.path
-            document.modified = try await Self.run {
-                try vault.write(text, to: path)
-                return vault.modificationDate(of: path)
+            let (saved, modified, returned) = try await Self.run { () throws -> (String, Date?, Item?) in
+                do {
+                    try CoordinatedFileIO.create(text, at: vault.url(for: path))
+                    return (path, vault.modificationDate(of: path), nil)
+                } catch let error as CocoaError where error.code == .fileWriteFileExists {
+                    let saved = try vault.create(text, in: Vault.folder(of: path), title: Item.title(ofPath: path))
+                    return (saved, vault.modificationDate(of: saved), try? vault.load(path))
+                }
             }
+            if saved != path {
+                updateIndex { index in
+                    if let returned { index.update(returned) } else { index.remove(path) }
+                }
+                followPointers(path, to: saved)
+            }
+            document.modified = modified
             document.savedText = document.text
             document.isRemovedOnDisk = false
             if let item = document.item { updateIndex { $0.update(item) } }
@@ -930,9 +944,11 @@ import UIKit
         }
     }
 
-    /// Replaces the file with one of iCloud's other versions.
+    /// Replaces the file with one of iCloud's other versions. Unsaved edits go to a copy first.
     func adopt(_ version: ConflictVersion, for document: OpenDocument) async {
         guard let vault else { return }
+        await keepUnsavedEdits(of: document)
+        guard !document.isDirty else { return }
         let url = vault.url(for: document.path)
         do {
             let text = try await Self.run { try Conflicts.adopt(version, at: url) }
@@ -1271,10 +1287,11 @@ import UIKit
         }
     }
 
-    /// Saves the open document before the app quits or goes to the background, after any save already under way.
-    /// If another app changed or removed the file meanwhile, the edits go to a copy instead.
+    /// Saves the open document before the app quits or goes to the background, after any save already under way and
+    /// any pasted image being written. If another app changed or removed the file meanwhile, the edits go to a copy instead.
     func saveBeforeQuitting() async {
         await finishSavingSettings()
+        await savingImage?.value
         guard let document else { return }
         await save(document)
         await keepUnsavedEdits(of: document)
