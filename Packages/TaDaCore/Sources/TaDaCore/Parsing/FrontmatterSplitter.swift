@@ -10,8 +10,8 @@ public struct FrontmatterSplit: Equatable, Sendable {
 }
 
 public enum FrontmatterSplitter {
-    /// Frontmatter is a `---` first line up to the next `---` line (trailing spaces allowed, LF or CRLF).
-    /// Without a closing fence the whole file is body.
+    /// Frontmatter is a `---` first line up to the next `---` line (trailing spaces allowed, LF or CRLF, a byte-order
+    /// mark before the first). Without a closing fence the whole file is body.
     public static func split(_ text: String) -> FrontmatterSplit {
         let noFrontmatter = FrontmatterSplit(yaml: nil, block: "", body: text, bodyFirstLineIndex: 0)
         let utf8 = text.utf8
@@ -44,6 +44,7 @@ public enum FrontmatterSplitter {
 
     static func isFenceLine(_ line: Substring.UnicodeScalarView) -> Bool {
         var rest = line
+        if rest.first == "\u{FEFF}" { rest.removeFirst() }
         while let last = rest.last, last == " " || last == "\t" || last == "\r" { rest.removeLast() }
         return rest.elementsEqual("---".unicodeScalars)
     }

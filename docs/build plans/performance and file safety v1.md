@@ -53,7 +53,7 @@ In `~/Projects/ta-da-obsidian`.
 7. **Deletes.** Keep `trashFile`; the delete modals say when the setting deletes permanently; the Trash view says it lists only `.trash/`; fix `CLAUDE.md`. Check: tests for the modal text per setting; `CLAUDE.md` matches the code.
 8. **Convert with extracted subtasks.** `convertTask.ts`: on a failed `createTask`, remove only the lines of tasks already created and show one notice with the count. Check: test: a failure on the third task leaves two tasks and only their lines removed.
 9. **Status changes.** `statusActions.ts`: catch per change, carry on, one notice with a count of failures. Check: test: one failing write still applies the others and reports 1.
-10. **Frontmatter guards.** `frontmatterEditor.ts` refuses to write when line 0 is a fence with no closing fence; the splitter keeps a leading U+FEFF at the start. Port both to TaDaCore and regenerate the conformance fixtures. Check: `npm test` and `swift test … --filter writeConformance` pass; new fixtures for both cases.
+10. **Byte-order mark.** The fence check on the first line allows a leading U+FEFF, which stays in the frontmatter block, in TaDaCore and the plugin. A file with an unclosed opening fence still gets a new block put in front, keeping its text; refusing the write would leave conversions half done. Check: `npm test` and `swift test … --filter writeConformance` pass; a "byte-order mark" conformance input.
 
 Check for the Part: `npm test` and `npm run build` pass.
 

@@ -868,6 +868,78 @@
       "args" : {
         "status" : "Done"
       },
+      "expected" : "﻿---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-02\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "Completion.setStatus byte-order mark -> Done (LF)",
+      "op" : "Completion.setStatus"
+    },
+    {
+      "args" : {
+        "status" : "Done"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Done\r\ncompletedDate: 2026-10-02\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "Completion.setStatus byte-order mark -> Done (CRLF)",
+      "op" : "Completion.setStatus"
+    },
+    {
+      "args" : {
+        "status" : "Cancelled"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Cancelled\ncompletedDate: 2026-10-02\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "Completion.setStatus byte-order mark -> Cancelled (LF)",
+      "op" : "Completion.setStatus"
+    },
+    {
+      "args" : {
+        "status" : "Cancelled"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Cancelled\r\ncompletedDate: 2026-10-02\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "Completion.setStatus byte-order mark -> Cancelled (CRLF)",
+      "op" : "Completion.setStatus"
+    },
+    {
+      "args" : {
+        "status" : "Not Started"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Not Started\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "Completion.setStatus byte-order mark -> Not Started (LF)",
+      "op" : "Completion.setStatus"
+    },
+    {
+      "args" : {
+        "status" : "Not Started"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Not Started\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "Completion.setStatus byte-order mark -> Not Started (CRLF)",
+      "op" : "Completion.setStatus"
+    },
+    {
+      "args" : {
+        "status" : "Doing"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "Completion.setStatus byte-order mark -> Doing (LF)",
+      "op" : "Completion.setStatus"
+    },
+    {
+      "args" : {
+        "status" : "Doing"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "Completion.setStatus byte-order mark -> Doing (CRLF)",
+      "op" : "Completion.setStatus"
+    },
+    {
+      "args" : {
+        "status" : "Done"
+      },
       "expected" : "---\ntype: task\nstatus: Done\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\ncompletedDate: 2026-10-02\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
       "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
       "name" : "Completion.setStatus home buy seed -> Done (LF)",
@@ -6400,6 +6472,268 @@
       "args" : {
         "tag" : "new"
       },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\ntags: [new]\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.addTag byte-order mark new (LF)",
+      "op" : "TagEditor.addTag"
+    },
+    {
+      "args" : {
+        "tag" : "new"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\ntags: [new]\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.addTag byte-order mark new (CRLF)",
+      "op" : "TagEditor.addTag"
+    },
+    {
+      "args" : {
+        "tag" : "Café"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\ntags: [Café]\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.addTag byte-order mark Café (LF)",
+      "op" : "TagEditor.addTag"
+    },
+    {
+      "args" : {
+        "tag" : "Café"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\ntags: [Café]\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.addTag byte-order mark Café (CRLF)",
+      "op" : "TagEditor.addTag"
+    },
+    {
+      "args" : {
+        "tag" : "A"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\ntags: [A]\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.addTag byte-order mark A (LF)",
+      "op" : "TagEditor.addTag"
+    },
+    {
+      "args" : {
+        "tag" : "A"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\ntags: [A]\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.addTag byte-order mark A (CRLF)",
+      "op" : "TagEditor.addTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.removeTag byte-order mark a (LF)",
+      "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.removeTag byte-order mark a (CRLF)",
+      "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.removeTag byte-order mark B C (LF)",
+      "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.removeTag byte-order mark B C (CRLF)",
+      "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.removeTag byte-order mark missing (LF)",
+      "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.removeTag byte-order mark missing (CRLF)",
+      "op" : "TagEditor.removeTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.renameTag byte-order mark a to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "x"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag byte-order mark a to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.renameTag byte-order mark A to B C (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "A",
+        "to" : "B C"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag byte-order mark A to B C (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.renameTag byte-order mark b c to a (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "b c",
+        "to" : "a"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag byte-order mark b c to a (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.renameTag byte-order mark a to Café, x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a",
+        "to" : "Café, x"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag byte-order mark a to Café, x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.renameTag byte-order mark missing to x (LF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing",
+        "to" : "x"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.renameTag byte-order mark missing to x (CRLF)",
+      "op" : "TagEditor.renameTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.deleteTag byte-order mark a (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "a"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.deleteTag byte-order mark a (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.deleteTag byte-order mark B C (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "B C"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.deleteTag byte-order mark B C (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "TagEditor.deleteTag byte-order mark missing (LF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "missing"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "TagEditor.deleteTag byte-order mark missing (CRLF)",
+      "op" : "TagEditor.deleteTag"
+    },
+    {
+      "args" : {
+        "tag" : "new"
+      },
       "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping, new]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
       "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
       "name" : "TagEditor.addTag home buy seed new (LF)",
@@ -9134,6 +9468,72 @@
       "expected" : "---\r\ntype: task\r\nstatus: Doing\r\nproject:\r\narea:\r\n---\r\n",
       "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
       "name" : "Parent.set both parents none (CRLF)",
+      "op" : "Parent.set"
+    },
+    {
+      "args" : {
+        "parent" : {
+          "kind" : "project",
+          "title" : "Garden"
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "Parent.set byte-order mark project Garden (LF)",
+      "op" : "Parent.set"
+    },
+    {
+      "args" : {
+        "parent" : {
+          "kind" : "project",
+          "title" : "Garden"
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "Parent.set byte-order mark project Garden (CRLF)",
+      "op" : "Parent.set"
+    },
+    {
+      "args" : {
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\narea: \"[[Home]]\"\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "Parent.set byte-order mark area Home (LF)",
+      "op" : "Parent.set"
+    },
+    {
+      "args" : {
+        "parent" : {
+          "kind" : "area",
+          "title" : "Home"
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\narea: \"[[Home]]\"\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "Parent.set byte-order mark area Home (CRLF)",
+      "op" : "Parent.set"
+    },
+    {
+      "args" : {
+        "parent" : null
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "Parent.set byte-order mark none (LF)",
+      "op" : "Parent.set"
+    },
+    {
+      "args" : {
+        "parent" : null
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "Parent.set byte-order mark none (CRLF)",
       "op" : "Parent.set"
     },
     {
@@ -12672,6 +13072,278 @@
           "value" : "Doing"
         }
       },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.set byte-order mark status=Doing (LF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "status",
+        "value" : {
+          "kind" : "text",
+          "value" : "Doing"
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.set byte-order mark status=Doing (CRLF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "status",
+        "value" : {
+          "kind" : "text",
+          "value" : "yes"
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: \"yes\"\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.set byte-order mark status=yes (LF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "status",
+        "value" : {
+          "kind" : "text",
+          "value" : "yes"
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: \"yes\"\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.set byte-order mark status=yes (CRLF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "repeat",
+        "value" : {
+          "kind" : "text",
+          "value" : "a: b # c"
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\nrepeat: \"a: b # c\"\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.set byte-order mark repeat=a: b # c (LF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "repeat",
+        "value" : {
+          "kind" : "text",
+          "value" : "a: b # c"
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\nrepeat: \"a: b # c\"\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.set byte-order mark repeat=a: b # c (CRLF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "dueDate",
+        "value" : {
+          "kind" : "date",
+          "value" : "2026-10-09"
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\ndueDate: 2026-10-09\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.set byte-order mark dueDate=2026-10-09 (LF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "dueDate",
+        "value" : {
+          "kind" : "date",
+          "value" : "2026-10-09"
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\ndueDate: 2026-10-09\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.set byte-order mark dueDate=2026-10-09 (CRLF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "project",
+        "value" : {
+          "kind" : "link",
+          "value" : "My Project"
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\nproject: \"[[My Project]]\"\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.set byte-order mark project=My Project (LF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "project",
+        "value" : {
+          "kind" : "link",
+          "value" : "My Project"
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[My Project]]\"\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.set byte-order mark project=My Project (CRLF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "tags",
+        "value" : {
+          "kind" : "list",
+          "value" : [
+            "a",
+            "b c"
+          ]
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\ntags:\n  - \"a\"\n  - \"b c\"\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.set byte-order mark tags=[\"a\", \"b c\"] (LF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "tags",
+        "value" : {
+          "kind" : "list",
+          "value" : [
+            "a",
+            "b c"
+          ]
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\ntags:\r\n  - \"a\"\r\n  - \"b c\"\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.set byte-order mark tags=[\"a\", \"b c\"] (CRLF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "tags",
+        "value" : {
+          "kind" : "list",
+          "value" : [
+
+          ]
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\ntags: []\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.set byte-order mark tags=[] (LF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "tags",
+        "value" : {
+          "kind" : "list",
+          "value" : [
+
+          ]
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\ntags: []\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.set byte-order mark tags=[] (CRLF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "newKey",
+        "value" : {
+          "kind" : "text",
+          "value" : "value"
+        }
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\nnewKey: value\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.set byte-order mark newKey=value (LF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "newKey",
+        "value" : {
+          "kind" : "text",
+          "value" : "value"
+        }
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\nnewKey: value\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.set byte-order mark newKey=value (CRLF)",
+      "op" : "FrontmatterEditor.set"
+    },
+    {
+      "args" : {
+        "key" : "status"
+      },
+      "expected" : "﻿---\ntype: task\nstatus:\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.clear byte-order mark status (LF)",
+      "op" : "FrontmatterEditor.clear"
+    },
+    {
+      "args" : {
+        "key" : "status"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus:\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.clear byte-order mark status (CRLF)",
+      "op" : "FrontmatterEditor.clear"
+    },
+    {
+      "args" : {
+        "key" : "tags"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.clear byte-order mark tags (LF)",
+      "op" : "FrontmatterEditor.clear"
+    },
+    {
+      "args" : {
+        "key" : "tags"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.clear byte-order mark tags (CRLF)",
+      "op" : "FrontmatterEditor.clear"
+    },
+    {
+      "args" : {
+        "key" : "missing"
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.clear byte-order mark missing (LF)",
+      "op" : "FrontmatterEditor.clear"
+    },
+    {
+      "args" : {
+        "key" : "missing"
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.clear byte-order mark missing (CRLF)",
+      "op" : "FrontmatterEditor.clear"
+    },
+    {
+      "args" : {
+        "key" : "status",
+        "value" : {
+          "kind" : "text",
+          "value" : "Doing"
+        }
+      },
       "expected" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
       "input" : "---\ntype: task\nstatus: Doing\nproject: \"[[Garden]]\"\ncreatedDate: 2026-09-25\ndueDate: 2026-10-02\ndeadline: 2026-10-06\nrepeat: Weekly · Fri\ntags: [shopping]\n---\nPick up seed for the front bed. See [[Fix tap|the tap]] and [[Garden#Plan]].\n\n![[seed packet.jpg|300]]\n\n## Subtasks\n\n- [ ] Tomatoes #garden\n- [/] Basil\n  - [x] Check the label\n- [>] Carrots\n- [<] Peas\n- [X] Lettuce\n- [-] Radishes\n- [?] Ask the neighbour\n- [y] not a box\n\n```\n- [ ] in code #notatag\n```\n",
       "name" : "FrontmatterEditor.set home buy seed status=Doing (LF)",
@@ -15118,6 +15790,120 @@
       "expected" : "---\r\nproject: \"[[Garden]]\"\r\ntags:\r\n  - \"x\"\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
       "input" : "---\r\ntype: task\r\nstatus: Doing\r\nproject: \"[[Garden]]\"\r\narea: \"[[Home]]\"\r\n---\r\n",
       "name" : "FrontmatterEditor.insertAtTop both parents set 2 (CRLF)",
+      "op" : "FrontmatterEditor.insertAtTop"
+    },
+    {
+      "args" : {
+        "keys" : [
+          {
+            "key" : "type",
+            "value" : {
+              "kind" : "text",
+              "value" : "task"
+            }
+          },
+          {
+            "key" : "status",
+            "value" : {
+              "kind" : "text",
+              "value" : "Not Started"
+            }
+          },
+          {
+            "key" : "createdDate",
+            "value" : {
+              "kind" : "date",
+              "value" : "2026-10-02"
+            }
+          }
+        ]
+      },
+      "expected" : "﻿---\ntype: task\nstatus: Not Started\ncreatedDate: 2026-10-02\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.insertAtTop byte-order mark set 1 (LF)",
+      "op" : "FrontmatterEditor.insertAtTop"
+    },
+    {
+      "args" : {
+        "keys" : [
+          {
+            "key" : "type",
+            "value" : {
+              "kind" : "text",
+              "value" : "task"
+            }
+          },
+          {
+            "key" : "status",
+            "value" : {
+              "kind" : "text",
+              "value" : "Not Started"
+            }
+          },
+          {
+            "key" : "createdDate",
+            "value" : {
+              "kind" : "date",
+              "value" : "2026-10-02"
+            }
+          }
+        ]
+      },
+      "expected" : "﻿---\r\ntype: task\r\nstatus: Not Started\r\ncreatedDate: 2026-10-02\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.insertAtTop byte-order mark set 1 (CRLF)",
+      "op" : "FrontmatterEditor.insertAtTop"
+    },
+    {
+      "args" : {
+        "keys" : [
+          {
+            "key" : "project",
+            "value" : {
+              "kind" : "link",
+              "value" : "Garden"
+            }
+          },
+          {
+            "key" : "tags",
+            "value" : {
+              "kind" : "list",
+              "value" : [
+                "x"
+              ]
+            }
+          }
+        ]
+      },
+      "expected" : "﻿---\nproject: \"[[Garden]]\"\ntags:\n  - \"x\"\ntype: task\nstatus: Doing\n---\nBody\n",
+      "input" : "﻿---\ntype: task\nstatus: Doing\n---\nBody\n",
+      "name" : "FrontmatterEditor.insertAtTop byte-order mark set 2 (LF)",
+      "op" : "FrontmatterEditor.insertAtTop"
+    },
+    {
+      "args" : {
+        "keys" : [
+          {
+            "key" : "project",
+            "value" : {
+              "kind" : "link",
+              "value" : "Garden"
+            }
+          },
+          {
+            "key" : "tags",
+            "value" : {
+              "kind" : "list",
+              "value" : [
+                "x"
+              ]
+            }
+          }
+        ]
+      },
+      "expected" : "﻿---\r\nproject: \"[[Garden]]\"\r\ntags:\r\n  - \"x\"\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "input" : "﻿---\r\ntype: task\r\nstatus: Doing\r\n---\r\nBody\r\n",
+      "name" : "FrontmatterEditor.insertAtTop byte-order mark set 2 (CRLF)",
       "op" : "FrontmatterEditor.insertAtTop"
     },
     {

@@ -285,6 +285,7 @@ private let frontmatterInputs: [(label: String, text: String)] = [
     ("done task", "---\ntype: task\nstatus: Done\ncompletedDate: 2026-10-01\nproject: \"[[Garden]]\"\n---\n"),
     ("unknown keys", "---\ntype: project\nstatus: Doing\ncontexts: [x]\nfoo:\n  - 1\n  - 2\nbar: baz\n---\nBody\n"),
     ("tag-like first line", "#hash\n---\ntype: task\n---\n"),
+    ("byte-order mark", "\u{FEFF}---\ntype: task\nstatus: Doing\n---\nBody\n"),
     ("home buy seed", fixtureText("HomeVault", "Ta Da/tasks/Buy seed.md")),
     ("home fix tap", fixtureText("HomeVault", "Ta Da/tasks/Fix tap.md")),
     ("home call plumber", fixtureText("HomeVault", "Ta Da/tasks/Call plumber.md")),
@@ -338,7 +339,7 @@ private func propertyValue(_ kind: String, _ value: Any) -> (PropertyValue, [Str
     func tag(_ name: String) -> TaDaCore.Tag { TaDaCore.Tag(name)! }
     let coreLabels: Set<String> = ["task", "task with body", "comments", "no trailing newline", "no frontmatter", "empty file",
                                    "empty keys", "flow tags", "block tags", "string tags", "tags with comment", "both parents",
-                                   "home buy seed", "home odd status", "home inbox", "design resolve cabin"]
+                                   "home buy seed", "home odd status", "home inbox", "design resolve cabin", "byte-order mark"]
     let core = frontmatterInputs.filter { coreLabels.contains($0.label) }
 
     // Completion

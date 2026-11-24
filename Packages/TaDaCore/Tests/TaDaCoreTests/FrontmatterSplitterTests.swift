@@ -58,3 +58,10 @@ func splitterKeepsEveryByte(_ text: String) {
     #expect(split.yaml == "type: task\n")
     #expect(split.body == "Body\n\n---\n\nMore\n")
 }
+
+@Test func aByteOrderMarkBeforeTheOpeningFenceStaysInTheBlock() {
+    let split = FrontmatterSplitter.split("\u{FEFF}---\ntype: task\n---\nBody\n")
+    #expect(split.yaml == "type: task\n" && split.block == "\u{FEFF}---\ntype: task\n---\n" && split.body == "Body\n")
+    #expect(FrontmatterEditor.set("status", to: .text("Doing"), in: "\u{FEFF}---\ntype: task\n---\n")
+        == "\u{FEFF}---\ntype: task\nstatus: Doing\n---\n")
+}
