@@ -56,6 +56,9 @@ struct LiveEditor: View {
     var isCursorExcluded: ((CGPoint) -> Bool)? = nil
 
     @State private var slashCommand = SlashCommandProxy()
+    #if os(iOS)
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    #endif
     /// Whether the editor has the keyboard; setting it gives or drops it.
     @State private var focused = false
     #if os(macOS)
@@ -168,8 +171,8 @@ struct LiveEditor: View {
         NativeTextViewWrapper(
             text: $text,
             configuration: configuration,
-            fontName: UIFont.systemFont(ofSize: 17).fontName,
-            fontSize: 17,
+            fontName: UIFont.systemFont(ofSize: Self.bodySize).fontName,
+            fontSize: Self.scaledBodySize(for: dynamicTypeSize),
             documentId: documentID,
             isFocused: $focused,
             onLinkClick: onLinkClick,
@@ -405,6 +408,18 @@ struct LiveEditor: View {
     }
 
     #if os(iOS)
+    /// The body text's size at the default text size; headings and the rest derive from it.
+    static let bodySize: CGFloat = 17
+
+    /// The body size at a text size, scaled as the system's body style, with no upper limit.
+    static func scaledBodySize(for size: DynamicTypeSize) -> CGFloat {
+        scaledBodySize(in: UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(size)))
+    }
+
+    static func scaledBodySize(in traits: UITraitCollection) -> CGFloat {
+        UIFontMetrics(forTextStyle: .body).scaledValue(for: bodySize, compatibleWith: traits)
+    }
+
     /// The content of the popover a tap on a drawn date or parent opens.
     @ViewBuilder private func attributePopover(_ click: TaskAttributeClick) -> some View {
         if let model = taskAttributes {

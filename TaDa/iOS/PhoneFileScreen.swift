@@ -16,6 +16,7 @@ struct PhoneFileScreen: View {
     @State private var isVisible = false
     @State private var search = ListSearch()
     @State private var toc = TocState()
+    @ScaledMetric(relativeTo: .body) private var titleSize: CGFloat = 28
     @Environment(PhoneNavigation.self) private var nav
     @Environment(\.theme) private var theme
 
@@ -99,7 +100,7 @@ struct PhoneFileScreen: View {
         VStack(alignment: .leading, spacing: 14) {
             DocumentBanner(model: model, document: document)
                 .padding(.horizontal, -16)
-            TitleField(model: model, document: document, size: 28)
+            TitleField(model: model, document: document, size: titleSize)
             if let item = document.item {
                 if item.properties.kind != .area {
                     if item.properties.kind != .note { PhoneChips(model: model, item: model.index[item.path] ?? item) }
