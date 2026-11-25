@@ -350,12 +350,12 @@ struct AppModelTests {
         #expect(model.grouping(of: .today) == .project, "a choice the list doesn't offer falls back to its default")
     }
 
-    @Test func doneAndDatesCompletedStartFolded() async {
+    @Test func doneAndCompletedStartFolded() async {
         let model = await folder.model()
         let done = ListSection(kind: .status(.done), tasks: []), completed = ListSection(kind: .completed, tasks: [])
         #expect(model.isFolded(done, by: .status, in: GroupedList.loose.foldKey))
         #expect(model.isFolded(completed, by: .date, in: "Ta Da/projects/Ta Da MVP.md"))
-        #expect(!model.isFolded(completed, by: .open, in: "Ta Da/projects/Ta Da MVP.md"))
+        #expect(model.isFolded(completed, by: .open, in: "Ta Da/areas/Work.md"))
         model.toggleFolded(done, by: .status, in: GroupedList.loose.foldKey)
         #expect(!model.isFolded(done, by: .status, in: GroupedList.loose.foldKey))
     }

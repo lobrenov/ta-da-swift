@@ -1,5 +1,5 @@
-// An area beside the document pane: its header with the tag filter, its projects one line each, the tasks filed straight
-// to it, then their Completed group, which starts folded.
+// An area beside the document pane: its header with the Group button and the tag filter, its projects one line each, then
+// the tasks filed straight to it by the project grouping, each group foldable.
 #if os(macOS)
 import SwiftUI
 import TaDaCore
@@ -14,11 +14,10 @@ struct AreaBrowserView: View {
         let filter = model.tagFilter(on: .area(area.path))
         let projects = filter.apply(allProjects).map { model.index.progress(of: $0) }
         let tasks = filter.apply(allTasks)
-        let open = tasks.filter { !$0.properties.status.isClosed }
-        let done = tasks.filter { $0.properties.status.isClosed }
-        let shown = open + (isFolded ? [] : done)
+        let grouping = model.grouping(of: .project)
+        let sections = ListSection.sections(tasks, by: grouping, today: model.today)
 
-        BrowserColumn(model: model, paths: shown.map(\.path), spacing: 22,
+        BrowserColumn(model: model, paths: ListSection.shownPaths(sections, by: grouping, in: area.path, model: model), spacing: 22,
                       empty: filter.isActive && projects.isEmpty && tasks.isEmpty ? .noTagMatch : nil) {
             header(projects: allProjects.count, tasks: allTasks.count { !$0.properties.status.isClosed },
                    files: allProjects + allTasks, shown: projects.count + tasks.count)
@@ -28,19 +27,7 @@ struct AreaBrowserView: View {
                     ForEach(projects) { projectRow($0) }
                 }
             }
-            if !open.isEmpty {
-                VStack(alignment: .leading, spacing: 1) {
-                    ForEach(open) { taskRow($0) }
-                }
-            }
-            if !done.isEmpty {
-                VStack(alignment: .leading, spacing: 1) {
-                    CountGroupHeader(title: "Completed", count: done.count, isExpanded: Binding(
-                        get: { !isFolded },
-                        set: { _ in model.toggleFolded("Completed", in: area.path) }), quiet: true)
-                    ForEach(isFolded ? [] : done) { taskRow($0) }
-                }
-            }
+            TaskSections(model: model, sections: sections, grouping: grouping, foldKey: area.path, dates: .elsewhere)
             if projects.isEmpty, tasks.isEmpty, !filter.isActive {
                 Text("No tasks")
                     .font(.system(size: 12.5))
@@ -63,7 +50,7 @@ struct AreaBrowserView: View {
                         .accessibilityAddTraits(.isHeader)
                 }
                 Spacer(minLength: 12)
-                GroupFilterButton(model: model, domain: .area(area.path), items: files)
+                GroupFilterButton(model: model, list: .project, domain: .area(area.path), items: files)
                 Button { model.selection = area.path } label: {
                     Label("Open area file", systemImage: "doc")
                 }
@@ -77,9 +64,6 @@ struct AreaBrowserView: View {
             TagFilterRow(model: model, domain: .area(area.path), items: files, shown: (shown, files.count))
         }
     }
-
-    /// Completed starts folded: a stored entry for it means it was opened.
-    private var isFolded: Bool { !model.isFolded("Completed", in: area.path) }
 
     /// A project on one line: ring, name, deadline and open-task count; clicking opens its page.
     private func projectRow(_ progress: ProjectProgress) -> some View {
@@ -125,15 +109,6 @@ struct AreaBrowserView: View {
         .buttonStyle(.plain)
         .accessibilityValue(progress.isOngoing ? "Ongoing" : "\(progress.done) of \(progress.total) tasks done")
         .fileMenu(model, path: project.path)
-    }
-
-    private func taskRow(_ task: Item) -> some View {
-        TaskRow(item: task, selected: model.isSelected(task.path), today: model.today, dates: .elsewhere,
-                move: model.index.repeatMove(of: task, today: model.today),
-                onToggle: { Task { await model.toggleCompletion(task) } },
-                onSelect: { model.click(task.path) })
-        .fileMenu(model, path: task.path)
-        .taskDrag(model, path: task.path)
     }
 }
 #endif

@@ -2,7 +2,7 @@
 import SwiftUI
 import TaDaCore
 
-/// A list with a Group choice. Every project shares one.
+/// A list with a Group choice. Every project and area shares `project`.
 enum GroupedList: String {
     case today, loose, project
 
@@ -22,7 +22,7 @@ enum GroupedList: String {
         }
     }
 
-    /// The key Today's and Loose tasks' folds are kept under; a project's are under its path.
+    /// The key Today's and Loose tasks' folds are kept under; a project's or area's are under its path.
     var foldKey: String { ":" + rawValue }
 }
 
@@ -40,11 +40,11 @@ extension ListSection {
             .filter { seen.insert($0).inserted }
     }
 
-    /// Done, Cancelled, and Date's and Tag's Completed start folded.
+    /// Done, Cancelled and Completed start folded.
     func startsFolded(_ grouping: Grouping) -> Bool {
         switch kind {
         case .status(let status): status.isClosed
-        case .completed: grouping == .date || grouping == .tag
+        case .completed: true
         case .date, .open, .tag, .untagged: false
         }
     }

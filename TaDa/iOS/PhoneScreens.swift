@@ -352,16 +352,16 @@ struct PhoneAreaScreen: View {
             let filter = model.tagFilter(on: .area(path))
             let projects = filter.apply(allProjects).map { model.index.progress(of: $0) }
             let filed = filter.apply(allFiled)
-            let open = filed.filter { !$0.properties.status.isClosed }
-            let done = filed.filter { $0.properties.status.isClosed }
-            let shown = open + (isFolded ? [] : done)
+            let open = filed.count { !$0.properties.status.isClosed }
+            let grouping = model.grouping(of: .project)
+            let sections = ListSection.sections(filed, by: grouping, today: model.today)
 
             PhoneList(model: model, title: area.title,
-                      subtitle: "\(projects.count == 1 ? "1 project" : "\(projects.count) projects") · \(tasks(open.count))",
+                      subtitle: "\(projects.count == 1 ? "1 project" : "\(projects.count) projects") · \(tasks(open))",
                       icon: AnyView(AreaIcon(size: 30)),
-                      pickable: shown.map(\.path), add: { await newTask(in: area) },
+                      pickable: ListSection.shownPaths(sections, by: grouping, in: path, model: model), add: { await newTask(in: area) },
                       moveToTrash: { Task { await model.moveToTrash([path]) } }) {
-                PhoneGroupFilterItems(model: model, domain: .area(path), items: allProjects + allFiled, isFiltering: $isFiltering)
+                PhoneGroupFilterItems(model: model, group: .project, domain: .area(path), items: allProjects + allFiled, isFiltering: $isFiltering)
                 Divider()
                 Button("New Task", systemImage: "plus") { Task { await newTask(in: area) } }
                 Button("New Project", systemImage: "chart.pie") { Task { await newProject() } }
@@ -382,22 +382,12 @@ struct PhoneAreaScreen: View {
                                            description: Text("Nothing here carries the picked tags.")).padding(.top, 40)
                 } else {
                     ForEach(projects) { PhoneProjectRow(model: model, progress: $0) }
-                    if !open.isEmpty {
-                        Color.clear.frame(height: projects.isEmpty ? 0 : 22)
-                        ForEach(open) { PhoneTaskRow(model: model, item: $0) }
-                    }
+                    PhoneTaskSections(model: model, sections: sections, grouping: grouping, foldKey: path, dates: .elsewhere)
                     if projects.isEmpty, filed.isEmpty, !filter.isActive {
                         Text("No tasks")
                             .scaledFont(size: 15)
                             .foregroundStyle(theme.color(\.muted))
                             .padding(16)
-                    }
-                    if !done.isEmpty {
-                        PhoneFoldHeader(model: model, title: "Completed", count: done.count, group: "Completed", in: path,
-                                        isFolded: isFolded, quiet: true)
-                        if !isFolded {
-                            ForEach(done) { PhoneTaskRow(model: model, item: $0) }
-                        }
                     }
                     SubtaskCards(model: model, cards: filter.isActive ? [] : model.subtaskCards(of: area), parent: area)
                 }
@@ -415,9 +405,6 @@ struct PhoneAreaScreen: View {
                                    description: Text("This area’s file is no longer in the folder."))
         }
     }
-
-    /// Completed starts folded: a stored entry for it means it was opened.
-    private var isFolded: Bool { !model.isFolded("Completed", in: path) }
 
     private func newTask(in area: Item) async {
         if let path = await model.newLinkedTask(in: area) { nav.push(.file(path)) }
